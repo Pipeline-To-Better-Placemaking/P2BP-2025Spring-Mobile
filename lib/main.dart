@@ -44,7 +44,7 @@ class _MyHomePageState extends State<MyHomePage> {
           children: [
             TextButton(
               onPressed: () {
-                Navigator.push(
+                Navigator.push( // pushes ForgotPasswordPage onto nav stack
                     context,
                     MaterialPageRoute(builder: (context) => const ForgotPasswordPage())
                 );
@@ -53,7 +53,7 @@ class _MyHomePageState extends State<MyHomePage> {
             ),
             TextButton(
               onPressed: () {
-                Navigator.push(
+                Navigator.push( // pushes ResetPasswordPage onto nav stack
                     context,
                     MaterialPageRoute(builder: (context) => const ResetPasswordPage())
                 );
