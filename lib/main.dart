@@ -112,8 +112,7 @@ class ObscuredTextBox2 extends StatelessWidget {
 }
 
 class _MyHomePageState extends State<MyHomePage> {
-  @override
-  Widget build(BuildContext context) {
+  Scaffold buildSlide() {
     return Scaffold(
       appBar: AppBar(
         title: const Text("P2BP"),
@@ -275,6 +274,11 @@ class _MyHomePageState extends State<MyHomePage> {
         ),
       ),
     );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return MaterialApp(home: buildSlide());
   }
 }
 
