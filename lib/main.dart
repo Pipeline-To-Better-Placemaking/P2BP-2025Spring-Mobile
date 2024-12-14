@@ -2,6 +2,7 @@
 
 import 'package:flutter/material.dart';
 import 'package:sliding_up_panel/sliding_up_panel.dart';
+import 'theme.dart';
 
 void main() {
   runApp(const MyApp());
@@ -124,8 +125,7 @@ class _MyHomePageState extends State<MyHomePage> {
         /// panel itself
         panel: Container(
           decoration: BoxDecoration(
-            // background color of panel
-            color: Colors.blueAccent,
+            gradient: defaultGrad,
             // rounded corners of panel
             borderRadius: BorderRadius.only(
               topLeft: Radius.circular(24.0),
