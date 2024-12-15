@@ -31,3 +31,27 @@ LinearGradient defaultGrad = LinearGradient(
 // Button color = 0xFFFFCC00
 // TEXT COLOR = 0xFF333333
 // TEXT LINK COLOR = 0xFFFFD700
+
+// Bar Indicator for the Sliding Up Panels (Edit Project, Results)
+class BarIndicator extends StatelessWidget {
+  const BarIndicator({
+    super.key,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: EdgeInsets.all(20),
+      child: Center(
+        child: Container(
+          width: 40,
+          height: 5,
+          decoration: BoxDecoration(
+            color: Colors.white60,
+            borderRadius: BorderRadius.all(Radius.circular(10)),
+          ),
+        ),
+      ),
+    );
+  }
+}
