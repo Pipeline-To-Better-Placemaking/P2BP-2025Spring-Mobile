@@ -4,159 +4,191 @@ import 'theme.dart';
 // TODO: Change text pick color from purple
 
 class EditProjectPanel extends StatefulWidget {
-  // TODO: Fix scrolling (get rid of scroll controller?)
-  final ScrollController controller;
-
-  const EditProjectPanel({
-    super.key,
-    required this.controller,
-  });
+  const EditProjectPanel({super.key});
 
   @override
-  State<EditProjectPanel> createState() => _EditPanelState();
+  State<EditProjectPanel> createState() => _EditProjectPanel();
 }
 
-class _EditPanelState extends State<EditProjectPanel> {
+class _EditProjectPanel extends State<EditProjectPanel> {
   @override
   Widget build(BuildContext context) {
-    return Container(
-      decoration: BoxDecoration(
-        gradient: defaultGrad,
-        // rounded corners of panel
-        borderRadius: BorderRadius.only(
-          topLeft: Radius.circular(24.0),
-          topRight: Radius.circular(24.0),
-        ),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          BarIndicator(),
-          Container(
-            alignment: Alignment.center,
-            margin: const EdgeInsets.only(bottom: 20),
-            child: Text(
-              "Edit Project",
-              style: TextStyle(
-                  color: Colors.yellow[700],
-                  fontSize: 24,
-                  fontWeight: FontWeight.bold),
-            ),
-          ),
-          Row(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Expanded(
-                flex: 2,
-                child: Container(
-                  // alignment: Alignment.center,
-                  padding: EdgeInsets.only(bottom: 20),
-                  margin: const EdgeInsets.only(left: 20),
-                  child: ObscuredTextBox(
-                    maxLength: 60,
-                    maxLines: 2,
-                    minLines: 1,
-                    labelText: 'Project Name',
-                  ),
-                ),
-              ),
-              Expanded(
-                flex: 1,
-                child: Column(
-                  children: [
-                    CircleAvatar(
-                      radius: 27.0,
-                      backgroundColor: Color(0xFFFFCC00),
-                      child: Center(
-                          child: Icon(Icons.add_photo_alternate, size: 37)),
-                    ),
-                    Padding(
-                      padding: const EdgeInsets.only(top: 3),
-                      child: Text(
-                        'Update Cover',
-                        style: TextStyle(color: Color(0xFFFFD700)),
+    return Scaffold(
+      body: Center(
+        child: FilledButton(
+          onPressed: () {
+            showModalBottomSheet<void>(
+              context: context,
+              isScrollControlled: true,
+              useSafeArea: true,
+              builder: (context) {
+                return Padding(
+                  padding: EdgeInsets.only(
+                      bottom: MediaQuery.of(context).viewInsets.bottom),
+                  child: SingleChildScrollView(
+                    child: Container(
+                      decoration: BoxDecoration(
+                        gradient: defaultGrad,
+                        // rounded corners of panel
+                        borderRadius: BorderRadius.only(
+                          topLeft: Radius.circular(24.0),
+                          topRight: Radius.circular(24.0),
+                        ),
                       ),
-                    )
-                  ],
-                ),
-              )
-            ],
-          ),
-          Expanded(
-            child: Container(
-              padding: EdgeInsets.only(bottom: 20),
-              margin: const EdgeInsets.only(left: 20, right: 20),
-              child: ObscuredTextBox(
-                maxLength: 240,
-                maxLines: 4,
-                minLines: 3,
-                labelText: 'Project Description',
-              ),
-            ),
-          ),
-          Row(
-            children: [
-              Container(
-                alignment: Alignment.topLeft,
-                margin: const EdgeInsets.only(left: 20, right: 5),
-                child: EditButton(
-                  text: 'Update Map',
-                  foregroundColor: Colors.black,
-                  backgroundColor: Color(0xFFFFCC00),
-                  icon: Icon(Icons.gps_fixed),
-                  // TODO: edit w/ actual function
-                  onPressed: () {},
-                ),
-              ),
-              Container(
-                alignment: Alignment.topLeft,
-                margin: const EdgeInsets.only(left: 5, right: 20),
-                child: EditButton(
-                  text: 'Delete Project',
-                  foregroundColor: Colors.white,
-                  backgroundColor: Colors.black,
-                  icon: Icon(Icons.delete),
-                  // TODO: edit w/ actual function
-                  onPressed: () {},
-                ),
-              ),
-            ],
-          ),
-          Row(
-            children: [
-              SafeArea(
-                child: Padding(
-                  padding:
-                      const EdgeInsets.only(left: 165, top: 20, bottom: 20),
-                  child: EditButton(
-                    text: 'Save Changes',
-                    foregroundColor: Colors.black,
-                    backgroundColor: Color(0xFFFFCC00),
-                    icon: Icon(Icons.save),
-                    // TODO: edit w/ actual function
-                    onPressed: () {},
-                  ),
-                ),
-              ),
-              SafeArea(
-                child: InkWell(
-                  child: Padding(
-                    padding:
-                        const EdgeInsets.only(left: 20, top: 20, bottom: 20),
-                    child: Text(
-                      'Cancel',
-                      style: TextStyle(fontSize: 16, color: Color(0xFFFFD700)),
+                      child: Column(
+                        children: [
+                          BarIndicator(),
+                          Column(
+                            children: [
+                              ListView(
+                                shrinkWrap: true,
+                                physics: const ClampingScrollPhysics(),
+                                children: <Widget>[
+                                  Container(
+                                    alignment: Alignment.center,
+                                    margin: const EdgeInsets.only(bottom: 20),
+                                    child: Text(
+                                      "Edit Project",
+                                      style: TextStyle(
+                                          color: Colors.yellow[700],
+                                          fontSize: 24,
+                                          fontWeight: FontWeight.bold),
+                                    ),
+                                  ),
+                                  Row(
+                                    crossAxisAlignment:
+                                        CrossAxisAlignment.start,
+                                    children: [
+                                      Expanded(
+                                        flex: 2,
+                                        child: Container(
+                                          // alignment: Alignment.center,
+                                          padding: EdgeInsets.only(bottom: 20),
+                                          margin:
+                                              const EdgeInsets.only(left: 20),
+                                          child: ObscuredTextBox(
+                                            maxLength: 60,
+                                            maxLines: 2,
+                                            minLines: 1,
+                                            labelText: 'Project Name',
+                                          ),
+                                        ),
+                                      ),
+                                      Expanded(
+                                        flex: 1,
+                                        child: Column(
+                                          children: [
+                                            CircleAvatar(
+                                              radius: 27.0,
+                                              backgroundColor:
+                                                  Color(0xFFFFCC00),
+                                              child: Center(
+                                                child: Icon(
+                                                    Icons.add_photo_alternate,
+                                                    size: 37),
+                                              ),
+                                            ),
+                                            Padding(
+                                              padding:
+                                                  const EdgeInsets.only(top: 3),
+                                              child: Text(
+                                                'Update Cover',
+                                                style: TextStyle(
+                                                  color: Color(0xFFFFD700),
+                                                ),
+                                              ),
+                                            ),
+                                          ],
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                  Container(
+                                    padding: EdgeInsets.only(bottom: 20),
+                                    margin: const EdgeInsets.only(
+                                        left: 20, right: 20),
+                                    child: ObscuredTextBox(
+                                      maxLength: 240,
+                                      maxLines: 4,
+                                      minLines: 3,
+                                      labelText: 'Project Description',
+                                    ),
+                                  ),
+                                  Row(
+                                    children: [
+                                      Container(
+                                        alignment: Alignment.topLeft,
+                                        margin: const EdgeInsets.only(
+                                            left: 20, right: 5),
+                                        child: EditButton(
+                                          text: 'Update Map',
+                                          foregroundColor: Colors.black,
+                                          backgroundColor: Color(0xFFFFCC00),
+                                          icon: Icon(Icons.gps_fixed),
+                                          // TODO: edit w/ actual function
+                                          onPressed: () {},
+                                        ),
+                                      ),
+                                      Container(
+                                        alignment: Alignment.topLeft,
+                                        margin: const EdgeInsets.only(
+                                            left: 5, right: 20),
+                                        child: EditButton(
+                                          text: 'Delete Project',
+                                          foregroundColor: Colors.white,
+                                          backgroundColor: Colors.black,
+                                          icon: Icon(Icons.delete),
+                                          // TODO: edit w/ actual function
+                                          onPressed: () {},
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                  Row(
+                                    children: [
+                                      Padding(
+                                        padding: const EdgeInsets.only(
+                                            left: 165, top: 20, bottom: 20),
+                                        child: EditButton(
+                                          text: 'Save Changes',
+                                          foregroundColor: Colors.black,
+                                          backgroundColor: Color(0xFFFFCC00),
+                                          icon: Icon(Icons.save),
+                                          // TODO: edit w/ actual function
+                                          onPressed: () {},
+                                        ),
+                                      ),
+                                      InkWell(
+                                        child: Padding(
+                                          padding: const EdgeInsets.only(
+                                              left: 20, top: 20, bottom: 20),
+                                          child: Text(
+                                            'Cancel',
+                                            style: TextStyle(
+                                                fontSize: 16,
+                                                color: Color(0xFFFFD700)),
+                                          ),
+                                        ),
+                                        onTap: () {
+                                          setState(() {});
+                                        },
+                                      )
+                                    ],
+                                  ),
+                                ],
+                              ),
+                            ],
+                          ),
+                        ],
+                      ),
                     ),
                   ),
-                  onTap: () {
-                    setState(() {});
-                  },
-                ),
-              )
-            ],
-          ),
-        ],
+                );
+              },
+            );
+          },
+          child: const Text('Open bottom sheet'),
+        ),
       ),
     );
   }
