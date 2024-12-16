@@ -48,6 +48,7 @@ class _HomePageStates extends State<HomePage> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
+            // Button 1: Edit Project
             Expanded(
               child: TextButton(
                   style: TextButton.styleFrom(
@@ -62,6 +63,8 @@ class _HomePageStates extends State<HomePage> {
                   },
                   child: const Text('Edit Project')),
             ),
+
+            // Button 2: Results
             Expanded(
               child: TextButton(
                   style: TextButton.styleFrom(
