@@ -52,7 +52,7 @@ class _EditProjectPanel extends State<EditProjectPanel> {
           child: Column(
             children: [
               // Creates little indicator on top of sheet
-              BarIndicator(),
+              const BarIndicator(),
               Column(
                 children: [
                   ListView(
@@ -138,8 +138,8 @@ class _EditProjectPanel extends State<EditProjectPanel> {
                             child: EditButton(
                               text: 'Update Map',
                               foregroundColor: Colors.black,
-                              backgroundColor: Color(0xFFFFCC00),
-                              icon: Icon(Icons.gps_fixed),
+                              backgroundColor: const Color(0xFFFFCC00),
+                              icon: const Icon(Icons.gps_fixed),
                               // TODO: edit w/ actual function
                               onPressed: () {},
                             ),
@@ -154,7 +154,7 @@ class _EditProjectPanel extends State<EditProjectPanel> {
                               text: 'Delete Project',
                               foregroundColor: Colors.white,
                               backgroundColor: Colors.black,
-                              icon: Icon(Icons.delete),
+                              icon: const Icon(Icons.delete),
                               // TODO: edit w/ actual function
                               onPressed: () {},
                             ),
@@ -170,8 +170,8 @@ class _EditProjectPanel extends State<EditProjectPanel> {
                             child: EditButton(
                               text: 'Save Changes',
                               foregroundColor: Colors.black,
-                              backgroundColor: Color(0xFFFFCC00),
-                              icon: Icon(Icons.save),
+                              backgroundColor: const Color(0xFFFFCC00),
+                              icon: const Icon(Icons.save),
                               // TODO: edit w/ actual function
                               onPressed: () {},
                             ),
