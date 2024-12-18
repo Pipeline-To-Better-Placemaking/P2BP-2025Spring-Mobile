@@ -55,3 +55,86 @@ class BarIndicator extends StatelessWidget {
     );
   }
 }
+
+// Text Boxes used in Edit Project. With correct text counters, alignment, and
+// coloring.
+class EditProjectTextBox extends StatelessWidget {
+  final int maxLength;
+  final int maxLines;
+  final int minLines;
+  final String labelText;
+
+  const EditProjectTextBox(
+      {super.key,
+      required this.maxLength,
+      required this.labelText,
+      required this.maxLines,
+      required this.minLines});
+  @override
+  Widget build(BuildContext context) {
+    return SizedBox(
+      child: TextField(
+        style: const TextStyle(color: Colors.white),
+        maxLength: maxLength,
+        maxLines: maxLines,
+        minLines: minLines,
+        cursorColor: Colors.white10,
+        decoration: InputDecoration(
+          alignLabelWithHint: true,
+          counterStyle: const TextStyle(color: Colors.white70),
+          enabledBorder: const OutlineInputBorder(
+            borderSide: BorderSide(color: Colors.white70),
+          ),
+          focusedBorder: const OutlineInputBorder(
+            borderSide: BorderSide(color: Colors.white),
+          ),
+          labelText: labelText,
+          floatingLabelAlignment: FloatingLabelAlignment.start,
+          floatingLabelStyle: const TextStyle(
+            color: Colors.white,
+          ),
+          labelStyle: const TextStyle(
+            color: Colors.white60,
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+// Icon buttons used in Edit Project Panel. Rounded buttons with icon alignment
+// set to end. 15 padding on left and right.
+class EditButton extends StatelessWidget {
+  final String text;
+  final Color foregroundColor;
+  final Color backgroundColor;
+  final Icon icon;
+  final Function onPressed;
+
+  const EditButton({
+    super.key,
+    required this.text,
+    required this.foregroundColor,
+    required this.backgroundColor,
+    required this.icon,
+    required this.onPressed,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return FilledButton.icon(
+      style: FilledButton.styleFrom(
+        padding: EdgeInsets.only(left: 15, right: 15),
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(10.0),
+        ),
+        foregroundColor: foregroundColor,
+        backgroundColor: backgroundColor,
+      ),
+      onPressed: () => onPressed(),
+      label: Text(text),
+      icon: icon,
+      iconAlignment: IconAlignment.end,
+    );
+  }
+}
