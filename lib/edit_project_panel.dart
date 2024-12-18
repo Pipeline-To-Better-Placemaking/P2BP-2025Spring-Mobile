@@ -44,7 +44,7 @@ class _EditProjectPanel extends State<EditProjectPanel> {
           // Container decoration- rounded corners and gradient
           decoration: BoxDecoration(
             gradient: defaultGrad,
-            borderRadius: BorderRadius.only(
+            borderRadius: const BorderRadius.only(
               topLeft: Radius.circular(24.0),
               topRight: Radius.circular(24.0),
             ),
@@ -79,9 +79,9 @@ class _EditProjectPanel extends State<EditProjectPanel> {
                             flex: 2,
                             child: Container(
                               // alignment: Alignment.center,
-                              padding: EdgeInsets.only(bottom: 20),
+                              padding: const EdgeInsets.only(bottom: 20),
                               margin: const EdgeInsets.only(left: 20),
-                              child: ObscuredTextBox(
+                              child: const EditProjectTextBox(
                                 maxLength: 60,
                                 maxLines: 2,
                                 minLines: 1,
@@ -91,7 +91,7 @@ class _EditProjectPanel extends State<EditProjectPanel> {
                           ),
 
                           // Add photo button
-                          Expanded(
+                          const Expanded(
                             flex: 1,
                             child: Column(
                               children: [
@@ -104,7 +104,7 @@ class _EditProjectPanel extends State<EditProjectPanel> {
                                   ),
                                 ),
                                 Padding(
-                                  padding: const EdgeInsets.only(top: 3),
+                                  padding: EdgeInsets.only(top: 3),
                                   child: Text(
                                     'Update Cover',
                                     style: TextStyle(
@@ -120,9 +120,9 @@ class _EditProjectPanel extends State<EditProjectPanel> {
 
                       // Project description text field
                       Container(
-                        padding: EdgeInsets.only(bottom: 20),
+                        padding: const EdgeInsets.only(bottom: 20),
                         margin: const EdgeInsets.only(left: 20, right: 20),
-                        child: ObscuredTextBox(
+                        child: const EditProjectTextBox(
                           maxLength: 240,
                           maxLines: 4,
                           minLines: 3,
@@ -166,7 +166,7 @@ class _EditProjectPanel extends State<EditProjectPanel> {
                           // Save changes button
                           Padding(
                             padding: const EdgeInsets.only(
-                                left: 165, top: 20, bottom: 20),
+                                left: 170, top: 20, bottom: 20),
                             child: EditButton(
                               text: 'Save Changes',
                               foregroundColor: Colors.black,
@@ -179,8 +179,8 @@ class _EditProjectPanel extends State<EditProjectPanel> {
 
                           // Cancel text inkwell pressable
                           InkWell(
-                            child: Padding(
-                              padding: const EdgeInsets.only(
+                            child: const Padding(
+                              padding: EdgeInsets.only(
                                   left: 20, top: 20, bottom: 20),
                               child: Text(
                                 'Cancel',
@@ -199,85 +199,6 @@ class _EditProjectPanel extends State<EditProjectPanel> {
                 ],
               ),
             ],
-          ),
-        ),
-      ),
-    );
-  }
-}
-
-class EditButton extends StatelessWidget {
-  final String text;
-  final Color foregroundColor;
-  final Color backgroundColor;
-  final Icon icon;
-  final Function onPressed;
-
-  const EditButton({
-    super.key,
-    required this.text,
-    required this.foregroundColor,
-    required this.backgroundColor,
-    required this.icon,
-    required this.onPressed,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return FilledButton.icon(
-      style: FilledButton.styleFrom(
-        padding: EdgeInsets.only(left: 15, right: 10),
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(10.0),
-        ),
-        foregroundColor: foregroundColor,
-        backgroundColor: backgroundColor,
-      ),
-      onPressed: () => onPressed(),
-      label: Text(text),
-      icon: icon,
-      iconAlignment: IconAlignment.end,
-    );
-  }
-}
-
-class ObscuredTextBox extends StatelessWidget {
-  final int maxLength;
-  final int maxLines;
-  final int minLines;
-  final String labelText;
-
-  const ObscuredTextBox(
-      {super.key,
-      required this.maxLength,
-      required this.labelText,
-      required this.maxLines,
-      required this.minLines});
-  @override
-  Widget build(BuildContext context) {
-    return SizedBox(
-      child: TextField(
-        style: const TextStyle(color: Colors.white),
-        maxLength: maxLength,
-        maxLines: maxLines,
-        minLines: minLines,
-        cursorColor: Colors.white10,
-        decoration: InputDecoration(
-          alignLabelWithHint: true,
-          counterStyle: const TextStyle(color: Colors.white70),
-          enabledBorder: const OutlineInputBorder(
-            borderSide: BorderSide(color: Colors.white70),
-          ),
-          focusedBorder: const OutlineInputBorder(
-            borderSide: BorderSide(color: Colors.white),
-          ),
-          labelText: labelText,
-          floatingLabelAlignment: FloatingLabelAlignment.start,
-          floatingLabelStyle: const TextStyle(
-            color: Colors.white,
-          ),
-          labelStyle: const TextStyle(
-            color: Colors.white60,
           ),
         ),
       ),
