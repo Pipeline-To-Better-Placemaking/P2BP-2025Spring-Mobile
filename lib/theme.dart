@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 
-LinearGradient defaultGrad = LinearGradient(
+LinearGradient defaultGrad = const LinearGradient(
   begin: Alignment.topLeft,
   end: Alignment.bottomRight,
   colors: <Color>[
@@ -41,12 +41,12 @@ class BarIndicator extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Padding(
-      padding: EdgeInsets.all(20),
+      padding: const EdgeInsets.all(20),
       child: Center(
         child: Container(
           width: 40,
           height: 5,
-          decoration: BoxDecoration(
+          decoration: const BoxDecoration(
             color: Colors.white60,
             borderRadius: BorderRadius.all(Radius.circular(10)),
           ),
@@ -124,7 +124,7 @@ class EditButton extends StatelessWidget {
   Widget build(BuildContext context) {
     return FilledButton.icon(
       style: FilledButton.styleFrom(
-        padding: EdgeInsets.only(left: 15, right: 15),
+        padding: const EdgeInsets.only(left: 15, right: 15),
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(10.0),
         ),
