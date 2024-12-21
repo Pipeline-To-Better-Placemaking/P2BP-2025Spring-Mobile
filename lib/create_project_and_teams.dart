@@ -12,6 +12,7 @@ class CreateProjectAndTeamsPage extends StatefulWidget {
       _CreateProjectAndTeamsPageState();
 }
 
+// TODO: Align labels, standardize colors. Create teams page.s
 class _CreateProjectAndTeamsPageState extends State<CreateProjectAndTeamsPage> {
   PageView pageSelection = PageView.project;
   @override
@@ -28,12 +29,12 @@ class _CreateProjectAndTeamsPageState extends State<CreateProjectAndTeamsPage> {
             child: Column(
               children: <Widget>[
                 SegmentedButton(
-                  selectedIcon: Icon(Icons.check_circle),
+                  selectedIcon: const Icon(Icons.check_circle),
                   style: SegmentedButton.styleFrom(
-                    backgroundColor: const Color(0xFF2180EA),
+                    backgroundColor: const Color(0xFF3664B3),
                     foregroundColor: Colors.white70,
                     selectedForegroundColor: Colors.white,
-                    selectedBackgroundColor: const Color(0xFF1F78DC),
+                    selectedBackgroundColor: const Color(0xFF2E5598),
                     side: const BorderSide(
                       width: 0,
                       color: Color(0xFF2180EA),
@@ -66,25 +67,71 @@ class _CreateProjectAndTeamsPageState extends State<CreateProjectAndTeamsPage> {
                 Container(
                   width: 400,
                   height: 500,
-                  decoration: const BoxDecoration(color: Colors.white70),
-                  child: Column(
-                    children: <Widget>[
-                      const Text(
-                        'Cover Photo',
-                        textAlign: TextAlign.left,
-                      ),
-                      Container(
-                        decoration: const BoxDecoration(color: Colors.white70),
-                      ),
-                      const Text(
-                        'Project Name',
-                        textAlign: TextAlign.left,
-                      ),
-                      const Text(
-                        'Project Description',
-                        textAlign: TextAlign.left,
-                      ),
-                    ],
+                  decoration: const BoxDecoration(
+                    color: Colors.white30,
+                    borderRadius: BorderRadius.all(Radius.circular(10)),
+                  ),
+                  child: Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 10),
+                    child: Column(
+                      children: <Widget>[
+                        const Text(
+                          'Cover Photo',
+                          textAlign: TextAlign.left,
+                        ),
+                        // TODO: Extract to themes? move themes back to respective files
+                        InkWell(
+                          child: Container(
+                            width: 380,
+                            height: 125,
+                            decoration: BoxDecoration(
+                              color: const Color(0x2A000000),
+                              borderRadius:
+                                  const BorderRadius.all(Radius.circular(10)),
+                              border:
+                                  Border.all(color: const Color(0xFF6A89B8)),
+                            ),
+                            child: const Icon(
+                              Icons.add_photo_alternate,
+                              size: 50,
+                            ),
+                          ),
+                          onTap: () {
+                            // Function
+                          },
+                        ),
+                        const Text(
+                          'Project Name',
+                          textAlign: TextAlign.left,
+                        ),
+                        const CreationTextBox(
+                            maxLength: 60,
+                            labelText: 'Project Name',
+                            maxLines: 1,
+                            minLines: 1),
+                        const Text(
+                          'Project Description',
+                          textAlign: TextAlign.left,
+                        ),
+                        const CreationTextBox(
+                            maxLength: 240,
+                            labelText: 'Project Description',
+                            maxLines: 3,
+                            minLines: 3),
+                        Align(
+                          alignment: Alignment.centerRight,
+                          child: EditButton(
+                            text: 'Next',
+                            foregroundColor: Colors.white,
+                            backgroundColor: const Color(0xFF4871AE),
+                            icon: const Icon(Icons.chevron_right),
+                            onPressed: () {
+                              // function
+                            },
+                          ),
+                        )
+                      ],
+                    ),
                   ),
                 )
               ],
@@ -92,7 +139,9 @@ class _CreateProjectAndTeamsPageState extends State<CreateProjectAndTeamsPage> {
           ),
         ),
         bottomNavigationBar: BottomAppBar(
-          child: Container(height: 1000.0, child: Text('Placeholder 3')),
+          child: Container(
+              decoration: const BoxDecoration(),
+              child: const Text('Placeholder 3')),
         ),
       ),
     );
