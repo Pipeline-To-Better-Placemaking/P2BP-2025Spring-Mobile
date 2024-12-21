@@ -138,3 +138,58 @@ class EditButton extends StatelessWidget {
     );
   }
 }
+
+class CreationTextBox extends StatelessWidget {
+  final int maxLength;
+  final int maxLines;
+  final int minLines;
+  final String labelText;
+
+  const CreationTextBox(
+      {super.key,
+      required this.maxLength,
+      required this.labelText,
+      required this.maxLines,
+      required this.minLines});
+  @override
+  Widget build(BuildContext context) {
+    return SizedBox(
+      child: Theme(
+        data: Theme.of(context).copyWith(
+          textSelectionTheme: const TextSelectionThemeData(
+              selectionColor: Colors.blue, selectionHandleColor: Colors.blue),
+        ),
+        child: TextField(
+          style: const TextStyle(color: Colors.black),
+          maxLength: maxLength,
+          maxLines: maxLines,
+          minLines: minLines,
+          cursorColor: const Color(0xFF585A6A),
+          decoration: InputDecoration(
+            alignLabelWithHint: true,
+            counterStyle: const TextStyle(color: Colors.black),
+            enabledBorder: const OutlineInputBorder(
+              borderRadius: BorderRadius.all(Radius.circular(10)),
+              borderSide: BorderSide(
+                width: 1.5,
+                color: Color(0xFF6A89B8),
+              ),
+            ),
+            focusedBorder: const OutlineInputBorder(
+              borderRadius: BorderRadius.all(Radius.circular(10)),
+              borderSide: BorderSide(
+                width: 2,
+                color: Color(0xFF5C78A1),
+              ),
+            ),
+            hintText: labelText,
+            hintStyle: const TextStyle(
+              fontWeight: FontWeight.w300,
+              color: Color(0xA9000000),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}

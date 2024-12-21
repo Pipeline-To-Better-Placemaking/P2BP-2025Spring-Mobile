@@ -28,14 +28,14 @@ class _ResultsPanelState extends State<ResultsPanel> {
                       decoration: BoxDecoration(
                         gradient: defaultGrad,
                         // rounded corners of panel
-                        borderRadius: BorderRadius.only(
+                        borderRadius: const BorderRadius.only(
                           topLeft: Radius.circular(24.0),
                           topRight: Radius.circular(24.0),
                         ),
                       ),
                       child: Column(
                         children: [
-                          BarIndicator(),
+                          const BarIndicator(),
                           Text(
                             "Results",
                             style: TextStyle(
