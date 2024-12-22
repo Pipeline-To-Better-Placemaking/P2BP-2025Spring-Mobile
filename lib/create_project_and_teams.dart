@@ -12,9 +12,11 @@ class CreateProjectAndTeamsPage extends StatefulWidget {
       _CreateProjectAndTeamsPageState();
 }
 
-// TODO: Align labels, standardize colors. Create teams page.s
+// TODO: Align labels, standardize colors. Create teams page.
 class _CreateProjectAndTeamsPageState extends State<CreateProjectAndTeamsPage> {
+  PageView page = PageView.project;
   PageView pageSelection = PageView.project;
+
   @override
   Widget build(BuildContext context) {
     return SafeArea(
@@ -24,126 +26,153 @@ class _CreateProjectAndTeamsPageState extends State<CreateProjectAndTeamsPage> {
           title: const Text('Placeholder'),
         ),
         // Creation screens
-        body: SingleChildScrollView(
-          child: Center(
-            child: Column(
-              children: <Widget>[
-                SegmentedButton(
-                  selectedIcon: const Icon(Icons.check_circle),
-                  style: SegmentedButton.styleFrom(
-                    backgroundColor: const Color(0xFF3664B3),
-                    foregroundColor: Colors.white70,
-                    selectedForegroundColor: Colors.white,
-                    selectedBackgroundColor: const Color(0xFF2E5598),
-                    side: const BorderSide(
-                      width: 0,
-                      color: Color(0xFF2180EA),
+        body: Padding(
+          padding: const EdgeInsets.only(bottom: 0.0),
+          child: SingleChildScrollView(
+            child: Center(
+              child: Column(
+                children: <Widget>[
+                  SegmentedButton(
+                    selectedIcon: const Icon(Icons.check_circle),
+                    style: SegmentedButton.styleFrom(
+                      backgroundColor: const Color(0xFF3664B3),
+                      foregroundColor: Colors.white70,
+                      selectedForegroundColor: Colors.white,
+                      selectedBackgroundColor: const Color(0xFF2E5598),
+                      side: const BorderSide(
+                        width: 0,
+                        color: Color(0xFF2180EA),
+                      ),
+                      elevation: 100,
+                      visualDensity:
+                          const VisualDensity(vertical: 1, horizontal: 1),
                     ),
-                    elevation: 100,
-                    visualDensity:
-                        const VisualDensity(vertical: 1, horizontal: 1),
+                    segments: const <ButtonSegment>[
+                      ButtonSegment(
+                          value: PageView.project,
+                          label: Text('Project'),
+                          icon: Icon(Icons.developer_board)),
+                      ButtonSegment(
+                          value: PageView.team,
+                          label: Text('Team'),
+                          icon: Icon(Icons.people)),
+                    ],
+                    selected: {pageSelection},
+                    onSelectionChanged: (Set newSelection) {
+                      setState(() {
+                        // By default there is only a single segment that can be
+                        // selected at one time, so its value is always the first
+                        // item in the selected set.
+                        pageSelection = newSelection.first;
+                      });
+                    },
                   ),
-                  segments: const <ButtonSegment>[
-                    ButtonSegment(
-                        value: PageView.project,
-                        label: Text('Project'),
-                        icon: Icon(Icons.developer_board)),
-                    ButtonSegment(
-                        value: PageView.team,
-                        label: Text('Team'),
-                        icon: Icon(Icons.people)),
-                  ],
-                  selected: {pageSelection},
-                  onSelectionChanged: (Set newSelection) {
-                    setState(() {
-                      // By default there is only a single segment that can be
-                      // selected at one time, so its value is always the first
-                      // item in the selected set.
-                      pageSelection = newSelection.first;
-                    });
-                  },
-                ),
-                const SizedBox(height: 100),
-                Container(
-                  width: 400,
-                  height: 500,
-                  decoration: const BoxDecoration(
-                    color: Colors.white30,
-                    borderRadius: BorderRadius.all(Radius.circular(10)),
-                  ),
-                  child: Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 10),
-                    child: Column(
-                      children: <Widget>[
-                        const Text(
-                          'Cover Photo',
-                          textAlign: TextAlign.left,
-                        ),
-                        // TODO: Extract to themes? move themes back to respective files
-                        InkWell(
-                          child: Container(
+                  const SizedBox(height: 100),
+                  Container(
+                    width: 400,
+                    height: 500,
+                    decoration: const BoxDecoration(
+                      color: Colors.white30,
+                      borderRadius: BorderRadius.all(Radius.circular(10)),
+                    ),
+                    child: Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 10),
+                      child: Column(
+                        children: <Widget>[
+                          const Text(
+                            'Cover Photo',
+                            textAlign: TextAlign.left,
+                          ),
+                          // TODO: Extract to themes? move themes back to respective files
+                          PhotoUpload(
                             width: 380,
                             height: 125,
-                            decoration: BoxDecoration(
-                              color: const Color(0x2A000000),
-                              borderRadius:
-                                  const BorderRadius.all(Radius.circular(10)),
-                              border:
-                                  Border.all(color: const Color(0xFF6A89B8)),
-                            ),
-                            child: const Icon(
-                              Icons.add_photo_alternate,
-                              size: 50,
-                            ),
-                          ),
-                          onTap: () {
-                            // Function
-                          },
-                        ),
-                        const Text(
-                          'Project Name',
-                          textAlign: TextAlign.left,
-                        ),
-                        const CreationTextBox(
-                            maxLength: 60,
-                            labelText: 'Project Name',
-                            maxLines: 1,
-                            minLines: 1),
-                        const Text(
-                          'Project Description',
-                          textAlign: TextAlign.left,
-                        ),
-                        const CreationTextBox(
-                            maxLength: 240,
-                            labelText: 'Project Description',
-                            maxLines: 3,
-                            minLines: 3),
-                        Align(
-                          alignment: Alignment.centerRight,
-                          child: EditButton(
-                            text: 'Next',
-                            foregroundColor: Colors.white,
-                            backgroundColor: const Color(0xFF4871AE),
-                            icon: const Icon(Icons.chevron_right),
-                            onPressed: () {
-                              // function
+                            icon: Icons.add_photo_alternate,
+                            onTap: () {
+                              // TODO: Actual function
+                              print('Test');
+                              return;
                             },
                           ),
-                        )
-                      ],
+                          const Text(
+                            'Project Name',
+                            textAlign: TextAlign.left,
+                          ),
+                          const CreationTextBox(
+                              maxLength: 60,
+                              labelText: 'Project Name',
+                              maxLines: 1,
+                              minLines: 1),
+                          const Text(
+                            'Project Description',
+                            textAlign: TextAlign.left,
+                          ),
+                          const CreationTextBox(
+                              maxLength: 240,
+                              labelText: 'Project Description',
+                              maxLines: 3,
+                              minLines: 3),
+                          Align(
+                            alignment: Alignment.centerRight,
+                            child: EditButton(
+                              text: 'Next',
+                              foregroundColor: Colors.white,
+                              backgroundColor: const Color(0xFF4871AE),
+                              icon: const Icon(Icons.chevron_right),
+                              onPressed: () {
+                                // function
+                              },
+                            ),
+                          )
+                        ],
+                      ),
                     ),
-                  ),
-                )
-              ],
+                  )
+                ],
+              ),
             ),
           ),
         ),
-        bottomNavigationBar: BottomAppBar(
-          child: Container(
-              decoration: const BoxDecoration(),
-              child: const Text('Placeholder 3')),
-        ),
+
+        bottomNavigationBar: BottomFloatingNavBar(),
       ),
     );
+  }
+}
+
+// Requires width, height, function, and IconData (in format: Icons.<icon_name>)
+class PhotoUpload extends StatelessWidget {
+  final double width;
+  final double height;
+  final IconData icon;
+  final GestureTapCallback onTap;
+
+  const PhotoUpload({
+    super.key,
+    required this.width,
+    required this.height,
+    required this.icon,
+    required this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    double iconSize = ((width + height) / 10);
+
+    return InkWell(
+        onTap: onTap,
+        child: Container(
+          width: width,
+          height: height,
+          decoration: BoxDecoration(
+            color: const Color(0x2A000000),
+            borderRadius: const BorderRadius.all(Radius.circular(10)),
+            border: Border.all(color: const Color(0xFF6A89B8)),
+          ),
+          child: Icon(
+            icon,
+            size: iconSize,
+          ),
+        ));
   }
 }
