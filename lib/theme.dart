@@ -32,6 +32,65 @@ LinearGradient defaultGrad = const LinearGradient(
 // TEXT COLOR = 0xFF333333
 // TEXT LINK COLOR = 0xFFFFD700
 
+// Floating bottom navigation bar to be invoked with every page that has a navigation bar.
+class BottomFloatingNavBar extends StatelessWidget {
+  const BottomFloatingNavBar({
+    super.key,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.only(top: 0, bottom: 20, left: 10, right: 10),
+      child: Container(
+        decoration: const BoxDecoration(
+          color: Colors.transparent,
+          borderRadius: BorderRadius.all(
+            Radius.circular(50.0),
+          ),
+        ),
+        child: ClipRRect(
+          borderRadius: const BorderRadius.all(
+            Radius.circular(50.0),
+          ),
+          child: BottomNavigationBar(
+            showSelectedLabels: false,
+            showUnselectedLabels: false,
+            items: const [
+              BottomNavigationBarItem(
+                backgroundColor: Colors.blue,
+                icon: Icon(Icons.home),
+                label: 'Home',
+              ),
+              BottomNavigationBarItem(
+                backgroundColor: Colors.blue,
+                // TODO: which icon?
+                icon: Icon(Icons.short_text),
+                label: 'Projects',
+              ),
+              BottomNavigationBarItem(
+                backgroundColor: Colors.blue,
+                icon: Icon(Icons.add_circle_outline),
+                label: 'Add Project or Team',
+              ),
+              BottomNavigationBarItem(
+                backgroundColor: Colors.blue,
+                icon: Icon(Icons.bar_chart),
+                label: 'Results',
+              ),
+              BottomNavigationBarItem(
+                backgroundColor: Colors.blue,
+                icon: Icon(Icons.person),
+                label: 'Profile',
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
 // Bar Indicator for the Sliding Up Panels (Edit Project, Results)
 class BarIndicator extends StatelessWidget {
   const BarIndicator({
