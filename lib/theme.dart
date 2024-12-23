@@ -54,6 +54,10 @@ class BottomFloatingNavBar extends StatelessWidget {
             Radius.circular(50.0),
           ),
           child: BottomNavigationBar(
+            // TODO: Fix colors
+            type: BottomNavigationBarType.fixed,
+            backgroundColor: Colors.blue,
+            selectedItemColor: Colors.yellow,
             showSelectedLabels: false,
             showUnselectedLabels: false,
             items: const [
@@ -203,13 +207,18 @@ class CreationTextBox extends StatelessWidget {
   final int maxLines;
   final int minLines;
   final String labelText;
+  final ValueChanged? onChanged;
+  final Icon? icon;
 
-  const CreationTextBox(
-      {super.key,
-      required this.maxLength,
-      required this.labelText,
-      required this.maxLines,
-      required this.minLines});
+  const CreationTextBox({
+    super.key,
+    required this.maxLength,
+    required this.labelText,
+    required this.maxLines,
+    required this.minLines,
+    this.onChanged,
+    this.icon,
+  });
   @override
   Widget build(BuildContext context) {
     return SizedBox(
@@ -219,12 +228,14 @@ class CreationTextBox extends StatelessWidget {
               selectionColor: Colors.blue, selectionHandleColor: Colors.blue),
         ),
         child: TextField(
+          onChanged: onChanged,
           style: const TextStyle(color: Colors.black),
           maxLength: maxLength,
           maxLines: maxLines,
           minLines: minLines,
           cursorColor: const Color(0xFF585A6A),
           decoration: InputDecoration(
+            prefixIcon: icon,
             alignLabelWithHint: true,
             counterStyle: const TextStyle(color: Colors.black),
             enabledBorder: const OutlineInputBorder(
