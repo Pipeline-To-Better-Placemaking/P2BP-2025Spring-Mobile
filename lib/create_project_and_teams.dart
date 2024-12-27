@@ -106,10 +106,19 @@ class CreateProjectWidget extends StatelessWidget {
         padding: const EdgeInsets.symmetric(horizontal: 10),
         child: Column(
           children: <Widget>[
-            const Text(
-              'Cover Photo',
-              textAlign: TextAlign.left,
+            Align(
+              alignment: Alignment.centerLeft,
+              child: Text(
+                'Cover Photo',
+                textAlign: TextAlign.left,
+                style: TextStyle(
+                  fontWeight: FontWeight.bold,
+                  fontSize: 16.0,
+                  color: Colors.blue[900],
+                ),
+              ),
             ),
+            const SizedBox(height: 5),
             // TODO: Extract to themes? move themes back to respective files
             PhotoUpload(
               width: 380,
@@ -122,26 +131,49 @@ class CreateProjectWidget extends StatelessWidget {
                 return;
               },
             ),
-            const Text(
-              'Project Name',
-              textAlign: TextAlign.left,
-            ),
-            const CreationTextBox(
-                maxLength: 60,
-                labelText: 'Project Name',
-                maxLines: 1,
-                minLines: 1),
-            const Text(
-              'Project Description',
-              textAlign: TextAlign.left,
-            ),
-            const CreationTextBox(
-                maxLength: 240,
-                labelText: 'Project Description',
-                maxLines: 3,
-                minLines: 3),
+            const SizedBox(height: 15.0),
             Align(
-              alignment: Alignment.centerRight,
+              alignment: Alignment.centerLeft,
+              child: Text(
+                'Project Name',
+                textAlign: TextAlign.left,
+                style: TextStyle(
+                  fontWeight: FontWeight.bold,
+                  fontSize: 16.0,
+                  color: Colors.blue[900],
+                ),
+              ),
+            ),
+            const SizedBox(height: 5),
+            const CreationTextBox(
+              maxLength: 60,
+              labelText: 'Project Name',
+              maxLines: 1,
+              minLines: 1,
+            ),
+            const SizedBox(height: 10.0),
+            Align(
+              alignment: Alignment.centerLeft,
+              child: Text(
+                'Project Description',
+                textAlign: TextAlign.left,
+                style: TextStyle(
+                  fontWeight: FontWeight.bold,
+                  fontSize: 16.0,
+                  color: Colors.blue[900],
+                ),
+              ),
+            ),
+            const SizedBox(height: 5),
+            const CreationTextBox(
+              maxLength: 240,
+              labelText: 'Project Description',
+              maxLines: 3,
+              minLines: 3,
+            ),
+            const SizedBox(height: 10.0),
+            Align(
+              alignment: Alignment.bottomRight,
               child: EditButton(
                 text: 'Next',
                 foregroundColor: Colors.white,
@@ -177,76 +209,121 @@ class CreateTeamWidget extends StatelessWidget {
         padding: const EdgeInsets.symmetric(horizontal: 10),
         child: Column(
           children: <Widget>[
-            const Row(
-              children: <Widget>[
-                Text(
-                  'Team Photo',
-                  textAlign: TextAlign.left,
-                ),
-                Text(
-                  'Team Color',
-                  textAlign: TextAlign.left,
-                ),
-              ],
-            ),
             Row(
               children: <Widget>[
-                PhotoUpload(
-                  width: 75,
-                  height: 75,
-                  icon: Icons.add_photo_alternate,
-                  circular: true,
-                  onTap: () {
-                    // TODO: Actual function
-                    print('Test');
-                    return;
-                  },
+                Padding(
+                  padding: const EdgeInsets.only(left: 75.0, bottom: 5),
+                  child: Text(
+                    'Team Photo',
+                    textAlign: TextAlign.left,
+                    style: TextStyle(
+                      fontWeight: FontWeight.bold,
+                      fontSize: 16.0,
+                      color: Colors.blue[900],
+                    ),
+                  ),
                 ),
-                Column(
-                  children: <Widget>[
-                    Row(
-                      children: <Widget>[
-                        ColorSelectCircle(
-                          gradient: defaultGrad,
-                        ),
-                        ColorSelectCircle(
-                          gradient: defaultGrad,
-                        ),
-                        ColorSelectCircle(
-                          gradient: defaultGrad,
-                        ),
-                      ],
+                Padding(
+                  padding: const EdgeInsets.only(left: 75.0, bottom: 5),
+                  child: Text(
+                    'Team Color',
+                    textAlign: TextAlign.left,
+                    style: TextStyle(
+                      fontWeight: FontWeight.bold,
+                      fontSize: 16.0,
+                      color: Colors.blue[900],
                     ),
-                    Row(
-                      children: <Widget>[
-                        ColorSelectCircle(
-                          gradient: defaultGrad,
-                        ),
-                        ColorSelectCircle(
-                          gradient: defaultGrad,
-                        ),
-                        ColorSelectCircle(
-                          gradient: defaultGrad,
-                        ),
-                      ],
-                    ),
-                  ],
+                  ),
                 ),
               ],
             ),
-            const Text(
-              'Team Name',
-              textAlign: TextAlign.left,
+            Padding(
+              padding: const EdgeInsets.only(bottom: 15.0),
+              child: Row(
+                children: <Widget>[
+                  Padding(
+                    padding: const EdgeInsets.only(left: 75.0),
+                    child: PhotoUpload(
+                      width: 75,
+                      height: 75,
+                      icon: Icons.add_photo_alternate,
+                      circular: true,
+                      onTap: () {
+                        // TODO: Actual function
+                        print('Test');
+                        return;
+                      },
+                    ),
+                  ),
+                  Padding(
+                    padding: const EdgeInsets.only(left: 75.0),
+                    child: Column(
+                      children: <Widget>[
+                        Row(
+                          children: <Widget>[
+                            ColorSelectCircle(
+                              gradient: defaultGrad,
+                            ),
+                            ColorSelectCircle(
+                              gradient: defaultGrad,
+                            ),
+                            ColorSelectCircle(
+                              gradient: defaultGrad,
+                            ),
+                          ],
+                        ),
+                        Row(
+                          children: <Widget>[
+                            ColorSelectCircle(
+                              gradient: defaultGrad,
+                            ),
+                            ColorSelectCircle(
+                              gradient: defaultGrad,
+                            ),
+                            ColorSelectCircle(
+                              gradient: defaultGrad,
+                            ),
+                          ],
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
             ),
+            Align(
+              alignment: Alignment.centerLeft,
+              child: Text(
+                'Team Name',
+                textAlign: TextAlign.left,
+                style: TextStyle(
+                  fontWeight: FontWeight.bold,
+                  fontSize: 16.0,
+                  color: Colors.blue[900],
+                ),
+              ),
+            ),
+            const SizedBox(height: 5.0),
             const CreationTextBox(
-                maxLength: 60,
-                labelText: 'Team Name',
-                maxLines: 1,
-                minLines: 1),
-            const Text(
-              'Members',
-              textAlign: TextAlign.left,
+              maxLength: 60,
+              labelText: 'Team Name',
+              maxLines: 1,
+              minLines: 1,
             ),
+            const SizedBox(height: 10.0),
+            Align(
+              alignment: Alignment.centerLeft,
+              child: Text(
+                'Members',
+                textAlign: TextAlign.left,
+                style: TextStyle(
+                  fontWeight: FontWeight.bold,
+                  fontSize: 16.0,
+                  color: Colors.blue[900],
+                ),
+              ),
+            ),
+            const SizedBox(height: 5.0),
             CreationTextBox(
               maxLength: 60,
               labelText: 'Members',
@@ -257,8 +334,9 @@ class CreateTeamWidget extends StatelessWidget {
                 print('Members text field: $text');
               },
             ),
+            const SizedBox(height: 10.0),
             Align(
-              alignment: Alignment.centerRight,
+              alignment: Alignment.bottomRight,
               child: EditButton(
                 text: 'Create',
                 foregroundColor: Colors.white,
@@ -286,13 +364,16 @@ class ColorSelectCircle extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      decoration: BoxDecoration(
-        shape: BoxShape.circle,
-        gradient: gradient,
+    return Padding(
+      padding: const EdgeInsets.all(5.0),
+      child: Container(
+        decoration: BoxDecoration(
+          shape: BoxShape.circle,
+          gradient: gradient,
+        ),
+        width: 30,
+        height: 30,
       ),
-      width: 30,
-      height: 30,
     );
   }
 }
