@@ -4,6 +4,7 @@ import 'edit_project_panel.dart';
 import 'forgot_password_page.dart';
 import 'reset_password_page.dart';
 import 'create_project_and_teams.dart';
+import 'settings_page.dart';
 
 void main() {
   runApp(const MyApp());
@@ -28,6 +29,7 @@ class MyApp extends StatelessWidget {
         '/reset_password': (context) => const ResetPasswordPage(),
         '/create_project_and_teams': (context) =>
             const CreateProjectAndTeamsPage(),
+        '/settings': (context) => const SettingsPage(),
       },
     );
   }
@@ -88,6 +90,13 @@ class _HomePageStates extends State<HomePage> {
                   route: '/create_project_and_teams',
                   name: 'Create Project and Teams',
                   version: 0),
+
+              // Button 6: Settings
+              buildTempButton(
+                  context: context,
+                  route: '/settings',
+                  name: 'Settings',
+                  version: 1),
             ],
           ),
         ),
