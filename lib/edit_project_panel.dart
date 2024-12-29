@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'theme.dart';
+import 'widgets.dart';
 
 // TODO: Change text pick color from purple
 class EditProjectPanel extends StatefulWidget {

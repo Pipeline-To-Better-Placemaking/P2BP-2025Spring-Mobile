@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'theme.dart';
+import 'widgets.dart';
 
 class ResultsPanel extends StatefulWidget {
   const ResultsPanel({super.key});

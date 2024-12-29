@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'widgets.dart';
 import 'theme.dart';
 
 // For page selection switch. 0 = project, 1 = team.
@@ -119,7 +120,6 @@ class CreateProjectWidget extends StatelessWidget {
               ),
             ),
             const SizedBox(height: 5),
-            // TODO: Extract to themes? move themes back to respective files
             PhotoUpload(
               width: 380,
               height: 125,
@@ -375,50 +375,5 @@ class ColorSelectCircle extends StatelessWidget {
         height: 30,
       ),
     );
-  }
-}
-
-// Square drop/upload area widget, with variable size and icon.
-// Requires width, height, function, and IconData (in format: Icons.<icon_name>)
-class PhotoUpload extends StatelessWidget {
-  final double width;
-  final double height;
-  final IconData icon;
-  final bool circular;
-  final GestureTapCallback onTap;
-
-  const PhotoUpload({
-    super.key,
-    required this.width,
-    required this.height,
-    required this.icon,
-    required this.onTap,
-    required this.circular,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return InkWell(
-        onTap: onTap,
-        child: Container(
-          width: width,
-          height: height,
-          decoration: circular
-              ? BoxDecoration(
-                  color: const Color(0x2A000000),
-                  shape: BoxShape.circle,
-                  border: Border.all(color: const Color(0xFF6A89B8)),
-                )
-              : BoxDecoration(
-                  color: const Color(0x2A000000),
-                  shape: BoxShape.rectangle,
-                  borderRadius: const BorderRadius.all(Radius.circular(10)),
-                  border: Border.all(color: const Color(0xFF6A89B8)),
-                ),
-          child: Icon(
-            icon,
-            size: circular ? ((width + height) / 4) : ((width + height) / 10),
-          ),
-        ));
   }
 }
