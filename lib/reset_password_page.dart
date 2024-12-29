@@ -27,7 +27,7 @@ class ResetPasswordPage extends StatelessWidget {
               child: SingleChildScrollView(
                 padding: const EdgeInsets.all(20),
                 child: Column(
-                  children: [
+                  children: <Widget>[
                     Padding(
                       padding: const EdgeInsets.fromLTRB(0, 64.0, 0, 8.0),
                       child: Image(
@@ -37,9 +37,9 @@ class ResetPasswordPage extends StatelessWidget {
                         )
                       )
                     ),
-                    Padding(
-                      padding: const EdgeInsets.fromLTRB(0, 8.0, 0, 8.0),
-                      child: const Text(
+                    const Padding(
+                      padding: EdgeInsets.fromLTRB(0, 8.0, 0, 8.0),
+                      child: Text(
                         'Reset Password',
                         style: TextStyle(
                             fontWeight: FontWeight.bold,
@@ -47,9 +47,9 @@ class ResetPasswordPage extends StatelessWidget {
                         ),
                       ),
                     ),
-                    Padding(
-                      padding: const EdgeInsets.fromLTRB(0, 12.0, 0, 12.0),
-                      child: const TextField(
+                    const Padding(
+                      padding: EdgeInsets.fromLTRB(0, 12.0, 0, 12.0),
+                      child: TextField(
                         decoration: InputDecoration(
                           enabledBorder: UnderlineInputBorder(
                               borderSide: BorderSide(
@@ -72,9 +72,9 @@ class ResetPasswordPage extends StatelessWidget {
                         ),
                       ),
                     ),
-                    Padding(
-                      padding: const EdgeInsets.fromLTRB(0, 12.0, 0, 20.0),
-                      child: const TextField(
+                    const Padding(
+                      padding: EdgeInsets.fromLTRB(0, 12.0, 0, 20.0),
+                      child: TextField(
                         decoration: InputDecoration(
                           enabledBorder: UnderlineInputBorder(
                               borderSide: BorderSide(
@@ -101,7 +101,7 @@ class ResetPasswordPage extends StatelessWidget {
                       padding: const EdgeInsets.fromLTRB(0, 4.0, 0, 4.0),
                       child: TextButton(
                         onPressed: () {}, // TODO actual updating of password
-                        style: ButtonStyle(
+                        style: const ButtonStyle(
                           backgroundColor: WidgetStatePropertyAll(Color(0xFFFFCC00)),
                           foregroundColor: WidgetStatePropertyAll(Color(0xFF333333)),
                         ),
@@ -118,7 +118,7 @@ class ResetPasswordPage extends StatelessWidget {
                       padding: const EdgeInsets.fromLTRB(0, 4.0, 0, 4.0),
                       child: TextButton(
                         onPressed: () => Navigator.pop(context), // pops current screen off nav stack
-                        style: ButtonStyle(
+                        style: const ButtonStyle(
                           foregroundColor: WidgetStatePropertyAll(Color(0xFFFFD700)),
                         ),
                         child: const Text(
