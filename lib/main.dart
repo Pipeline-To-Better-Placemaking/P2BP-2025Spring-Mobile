@@ -5,6 +5,7 @@ import 'forgot_password_page.dart';
 import 'reset_password_page.dart';
 import 'create_project_and_teams.dart';
 import 'settings_page.dart';
+import 'teams_and_invites_page.dart';
 
 void main() {
   runApp(const MyApp());
@@ -30,6 +31,7 @@ class MyApp extends StatelessWidget {
         '/create_project_and_teams': (context) =>
             const CreateProjectAndTeamsPage(),
         '/settings': (context) => const SettingsPage(),
+        '/teams_and_invites': (context) => const TeamsAndInvitesPage(),
       },
     );
   }
@@ -97,6 +99,11 @@ class _HomePageStates extends State<HomePage> {
                   route: '/settings',
                   name: 'Settings',
                   version: 1),
+              buildTempButton(
+                  context: context,
+                  route: '/teams_and_invites',
+                  name: 'Teams and Invite',
+                  version: 0),
             ],
           ),
         ),
