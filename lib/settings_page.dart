@@ -16,53 +16,153 @@ class SettingsPage extends StatelessWidget {
         bottomNavigationBar: const BottomFloatingNavBar(),
         body: ListTileTheme(
           tileColor: _clickableColor,
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(10),
-          ),
           contentPadding: const EdgeInsets.symmetric(horizontal: 8),
           iconColor: Colors.white,
           textColor: Colors.white,
-          child: ListView(
-            padding: const EdgeInsets.symmetric(horizontal: 35),
-            children: <Widget>[
-              Column(
-                children: <Widget>[
-                  PhotoUpload(
-                    width: 60,
-                    height: 60,
-                    icon: Icons.add_photo_alternate,
-                    circular: true,
-                    onTap: () {
-                      // TODO: Actual functionality
-                      print('Test');
-                      return;
-                    },
-                  ),
-                  ElevatedButton(
-                    style: ElevatedButton.styleFrom(
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(10),
+          child: DefaultTextStyle(
+            style: const TextStyle(
+              color: _clickableColor,
+              fontSize: 20,
+              fontWeight: FontWeight.bold,
+            ),
+            child: ListView(
+              padding: const EdgeInsets.symmetric(horizontal: 35),
+              children: <Widget>[
+                Column(
+                  children: <Widget>[
+                    PhotoUpload(
+                      width: 60,
+                      height: 60,
+                      icon: Icons.add_photo_alternate,
+                      circular: true,
+                      onTap: () {
+                        // TODO: Actual functionality
+                        print('Test');
+                        return;
+                      },
+                    ),
+                    ElevatedButton(
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: _clickableColor,
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(10),
+                        ),
+                      ),
+                      onPressed: () {
+                        // TODO: Actual functionality
+                        print('Test');
+                        return;
+                      },
+                      child: const Text(
+                        'Edit Profile',
+                        style: TextStyle(color: Colors.white),
                       ),
                     ),
-                    onPressed: () {
-                      // TODO: Actual functionality
-                      print('Test');
-                      return;
-                    },
-                    child: const Text('Edit Profile'),
+                  ],
+                ),
+                const Padding(
+                  padding: EdgeInsets.only(
+                    top: 20,
+                    bottom: 10,
                   ),
-                ],
-              ),
-              const Text('Appearance'),
-              const DarkModeSwitch(),
-              const ListTile(
-                leading: Icon(Icons.format_size),
-                title: Text('Font Size'),
-                trailing: Icon(Icons.chevron_right),
-              ),
-              const Text('Account'),
-              const Text('Support'),
-            ],
+                  child: Text('Appearance'),
+                ),
+                const DarkModeSwitch(
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.only(
+                      topLeft: Radius.circular(10),
+                      topRight: Radius.circular(10),
+                    ),
+                  ),
+                ),
+                const ListTile(
+                  leading: Icon(Icons.format_size),
+                  title: Text('Font Size'),
+                  trailing: Icon(Icons.chevron_right),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.only(
+                      bottomLeft: Radius.circular(10),
+                      bottomRight: Radius.circular(10),
+                    ),
+                  ),
+                ),
+                const Padding(
+                  padding: EdgeInsets.only(
+                    top: 20,
+                    bottom: 10,
+                  ),
+                  child: Text('Account'),
+                ),
+                const ListTile(
+                  leading: Icon(Icons.gpp_maybe),
+                  title: Text('Change Password'),
+                  trailing: Icon(Icons.chevron_right),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.only(
+                      topLeft: Radius.circular(10),
+                      topRight: Radius.circular(10),
+                    ),
+                  ),
+                ),
+                const ListTile(
+                  leading: Icon(Icons.lock_outline),
+                  title: Text('Account Privacy'),
+                  trailing: Icon(Icons.chevron_right),
+                ),
+                const ListTile(
+                  leading: Icon(Icons.lock_outline),
+                  title: Text('Delete Account'),
+                  iconColor: Colors.redAccent,
+                  textColor: Colors.redAccent,
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.only(
+                      bottomLeft: Radius.circular(10),
+                      bottomRight: Radius.circular(10),
+                    ),
+                  ),
+                ),
+                const Padding(
+                  padding: EdgeInsets.only(
+                    top: 20,
+                    bottom: 10,
+                  ),
+                  child: Text('Support'),
+                ),
+                const ListTile(
+                  leading: Icon(Icons.help),
+                  title: Text('Help Center'),
+                  trailing: Icon(Icons.chevron_right),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.only(
+                      topLeft: Radius.circular(10),
+                      topRight: Radius.circular(10),
+                    ),
+                  ),
+                ),
+                const ListTile(
+                  leading: Icon(Icons.bug_report),
+                  title: Text('Submit a bug report'),
+                  trailing: Icon(Icons.chevron_right),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.only(
+                      bottomLeft: Radius.circular(10),
+                      bottomRight: Radius.circular(10),
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 30),
+                ListTile(
+                  leading: const Icon(Icons.logout),
+                  title: const Text('Log Out'),
+                  iconColor: Colors.redAccent,
+                  textColor: Colors.redAccent,
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(10),
+                  ),
+                ),
+                const SizedBox(height: 30),
+              ],
+            ),
           ),
         ),
       ),
@@ -71,7 +171,9 @@ class SettingsPage extends StatelessWidget {
 }
 
 class DarkModeSwitch extends StatefulWidget {
-  const DarkModeSwitch({super.key});
+  final ShapeBorder shape;
+
+  const DarkModeSwitch({super.key, required this.shape});
   
   @override
   State<DarkModeSwitch> createState() => _DarkModeSwitchState();
@@ -83,10 +185,11 @@ class _DarkModeSwitchState extends State<DarkModeSwitch> {
       app's visuals accordingly.
   */
   bool _isDarkMode = false;
-// const Color(0xFF2D87E8)
+
   @override
   Widget build(BuildContext context) {
     return SwitchListTile(
+      shape: widget.shape,
       secondary: const Icon(Icons.dark_mode_outlined),
       title: const Text('Dark Mode'),
       value: _isDarkMode,
@@ -97,5 +200,4 @@ class _DarkModeSwitchState extends State<DarkModeSwitch> {
       },
     );
   }
-  
 }
