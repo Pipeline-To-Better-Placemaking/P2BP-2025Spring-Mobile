@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
+import 'change_password_page.dart';
 import 'widgets.dart';
-
-const _clickableColor = Color(0xFF2D87E8);
 
 class SettingsPage extends StatelessWidget {
   const SettingsPage({super.key});
@@ -15,13 +14,13 @@ class SettingsPage extends StatelessWidget {
         ),
         bottomNavigationBar: const BottomFloatingNavBar(),
         body: ListTileTheme(
-          tileColor: _clickableColor,
+          tileColor: Colors.blue,
           contentPadding: const EdgeInsets.symmetric(horizontal: 8),
           iconColor: Colors.white,
           textColor: Colors.white,
           child: DefaultTextStyle(
             style: const TextStyle(
-              color: _clickableColor,
+              color: Colors.blue,
               fontSize: 20,
               fontWeight: FontWeight.bold,
             ),
@@ -43,7 +42,7 @@ class SettingsPage extends StatelessWidget {
                     ),
                     ElevatedButton(
                       style: ElevatedButton.styleFrom(
-                        backgroundColor: _clickableColor,
+                        backgroundColor: Colors.blue,
                         shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(10),
                         ),
@@ -67,7 +66,7 @@ class SettingsPage extends StatelessWidget {
                   ),
                   child: Text('Appearance'),
                 ),
-                const DarkModeSwitch(
+                const DarkModeSwitchListTile(
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.only(
                       topLeft: Radius.circular(10),
@@ -93,7 +92,7 @@ class SettingsPage extends StatelessWidget {
                   ),
                   child: Text('Account'),
                 ),
-                const ListTile(
+                ListTile(
                   leading: Icon(Icons.gpp_maybe),
                   title: Text('Change Password'),
                   trailing: Icon(Icons.chevron_right),
@@ -103,6 +102,12 @@ class SettingsPage extends StatelessWidget {
                       topRight: Radius.circular(10),
                     ),
                   ),
+                  onTap: () {
+                    Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                            builder: (context) => const ChangePasswordPage()));
+                  },
                 ),
                 const ListTile(
                   leading: Icon(Icons.lock_outline),
@@ -170,16 +175,16 @@ class SettingsPage extends StatelessWidget {
   }
 }
 
-class DarkModeSwitch extends StatefulWidget {
+class DarkModeSwitchListTile extends StatefulWidget {
   final ShapeBorder shape;
 
-  const DarkModeSwitch({super.key, required this.shape});
-  
+  const DarkModeSwitchListTile({super.key, required this.shape});
+
   @override
-  State<DarkModeSwitch> createState() => _DarkModeSwitchState();
+  State<DarkModeSwitchListTile> createState() => _DarkModeSwitchListTileState();
 }
 
-class _DarkModeSwitchState extends State<DarkModeSwitch> {
+class _DarkModeSwitchListTileState extends State<DarkModeSwitchListTile> {
   /* TODO: Add functionality to get initial state when opening the app from
       previous settings or account or something, and to actually change the
       app's visuals accordingly.

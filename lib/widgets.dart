@@ -297,3 +297,21 @@ class PhotoUpload extends StatelessWidget {
         ));
   }
 }
+
+class PasswordTextFormField extends StatelessWidget {
+  final InputDecoration _decoration;
+
+  PasswordTextFormField({super.key, decoration})
+      : _decoration = decoration ??
+            InputDecoration().applyDefaults(ThemeData().inputDecorationTheme);
+
+  @override
+  Widget build(BuildContext context) {
+    return TextFormField(
+      obscureText: true,
+      enableSuggestions: false,
+      autocorrect: false,
+      decoration: _decoration,
+    );
+  }
+}
