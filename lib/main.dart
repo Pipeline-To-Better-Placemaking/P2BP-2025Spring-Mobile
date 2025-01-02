@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'create_project_details.dart';
 import 'results_panel.dart';
 import 'edit_project_panel.dart';
 import 'forgot_password_page.dart';
@@ -32,6 +33,7 @@ class MyApp extends StatelessWidget {
             const CreateProjectAndTeamsPage(),
         '/settings': (context) => const SettingsPage(),
         '/teams_and_invites': (context) => const TeamsAndInvitesPage(),
+        '/create_project_details': (context) => const CreateProjectDetails(),
       },
     );
   }
