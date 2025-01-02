@@ -1,26 +1,5 @@
 import 'package:flutter/material.dart';
 
-class GradientContainer extends StatelessWidget {
-  final Widget? child;
-  final List<Color> colors;
-
-  const GradientContainer({super.key, this.child, required this.colors});
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      decoration: BoxDecoration(
-        gradient: LinearGradient(
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-          colors: colors,
-        ),
-      ),
-      child: child,
-    );
-  }
-}
-
 // Floating bottom navigation bar to be invoked with every page that has a navigation bar.
 class BottomFloatingNavBar extends StatelessWidget {
   const BottomFloatingNavBar({
@@ -295,5 +274,23 @@ class PhotoUpload extends StatelessWidget {
             size: circular ? ((width + height) / 4) : ((width + height) / 10),
           ),
         ));
+  }
+}
+
+class PasswordTextFormField extends StatelessWidget {
+  final InputDecoration _decoration;
+
+  PasswordTextFormField({super.key, decoration})
+      : _decoration = decoration ??
+            InputDecoration().applyDefaults(ThemeData().inputDecorationTheme);
+
+  @override
+  Widget build(BuildContext context) {
+    return TextFormField(
+      obscureText: true,
+      enableSuggestions: false,
+      autocorrect: false,
+      decoration: _decoration,
+    );
   }
 }
