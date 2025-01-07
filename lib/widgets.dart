@@ -253,27 +253,28 @@ class PhotoUpload extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return InkWell(
-        onTap: onTap,
-        child: Container(
-          width: width,
-          height: height,
-          decoration: circular
-              ? BoxDecoration(
-                  color: const Color(0x2A000000),
-                  shape: BoxShape.circle,
-                  border: Border.all(color: const Color(0xFF6A89B8)),
-                )
-              : BoxDecoration(
-                  color: const Color(0x2A000000),
-                  shape: BoxShape.rectangle,
-                  borderRadius: const BorderRadius.all(Radius.circular(10)),
-                  border: Border.all(color: const Color(0xFF6A89B8)),
-                ),
-          child: Icon(
-            icon,
-            size: circular ? ((width + height) / 4) : ((width + height) / 10),
-          ),
-        ));
+      onTap: onTap,
+      child: Container(
+        width: width,
+        height: height,
+        decoration: circular
+            ? BoxDecoration(
+                color: const Color(0x2A000000),
+                shape: BoxShape.circle,
+                border: Border.all(color: const Color(0xFF6A89B8)),
+              )
+            : BoxDecoration(
+                color: const Color(0x2A000000),
+                shape: BoxShape.rectangle,
+                borderRadius: const BorderRadius.all(Radius.circular(10)),
+                border: Border.all(color: const Color(0xFF6A89B8)),
+              ),
+        child: Icon(
+          icon,
+          size: circular ? ((width + height) / 4) : ((width + height) / 10),
+        ),
+      ),
+    );
   }
 }
 
@@ -286,7 +287,6 @@ class PasswordTextFormField extends StatelessWidget {
       {super.key, controller, decoration, validator, forceErrorText})
       : _decoration = decoration ??
             InputDecoration().applyDefaults(ThemeData().inputDecorationTheme),
-        // Default validator that checks if field is empty
         _controller = controller,
         _forceErrorText = forceErrorText;
 

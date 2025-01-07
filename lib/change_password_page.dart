@@ -7,21 +7,22 @@ class ChangePasswordPage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return SafeArea(
-        child: Scaffold(
-      appBar: AppBar(
-        title: const Text('Change Password'),
-      ),
-      body: Container(
-        decoration: BoxDecoration(
-          gradient: defaultGrad,
+      child: Scaffold(
+        appBar: AppBar(
+          title: const Text('Change Password'),
         ),
-        padding: const EdgeInsets.symmetric(horizontal: 30),
-        child: DefaultTextStyle(
-          style: TextStyle(color: Colors.white, fontSize: 16),
-          child: ChangePasswordForm(),
+        body: Container(
+          decoration: BoxDecoration(
+            gradient: defaultGrad,
+          ),
+          padding: const EdgeInsets.symmetric(horizontal: 30),
+          child: DefaultTextStyle(
+            style: TextStyle(color: Colors.white, fontSize: 16),
+            child: ChangePasswordForm(),
+          ),
         ),
       ),
-    ));
+    );
   }
 }
 
@@ -34,8 +35,8 @@ class ChangePasswordForm extends StatefulWidget {
 
 class ChangePasswordFormState extends State<ChangePasswordForm> {
   final _formKey = GlobalKey<FormState>();
-  final TextEditingController _currentPasswordController =
-          TextEditingController(),
+  final TextEditingController // this comment is for fixing formatting
+      _currentPasswordController = TextEditingController(),
       _newPasswordController = TextEditingController(),
       _confirmPasswordController = TextEditingController();
   String? _currentPassErrorText, _newPassErrorText, _confirmPassErrorText;
