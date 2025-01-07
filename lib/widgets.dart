@@ -279,10 +279,16 @@ class PhotoUpload extends StatelessWidget {
 
 class PasswordTextFormField extends StatelessWidget {
   final InputDecoration _decoration;
+  final TextEditingController? _controller;
+  final String? _forceErrorText;
 
-  PasswordTextFormField({super.key, decoration})
+  PasswordTextFormField(
+      {super.key, controller, decoration, validator, forceErrorText})
       : _decoration = decoration ??
-            InputDecoration().applyDefaults(ThemeData().inputDecorationTheme);
+            InputDecoration().applyDefaults(ThemeData().inputDecorationTheme),
+        // Default validator that checks if field is empty
+        _controller = controller,
+        _forceErrorText = forceErrorText;
 
   @override
   Widget build(BuildContext context) {
@@ -290,7 +296,10 @@ class PasswordTextFormField extends StatelessWidget {
       obscureText: true,
       enableSuggestions: false,
       autocorrect: false,
+      autovalidateMode: AutovalidateMode.disabled,
       decoration: _decoration,
+      controller: _controller,
+      forceErrorText: _forceErrorText,
     );
   }
 }
