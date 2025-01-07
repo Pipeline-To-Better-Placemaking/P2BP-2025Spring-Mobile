@@ -74,10 +74,10 @@ class ResetPasswordForm extends StatefulWidget {
   const ResetPasswordForm({super.key});
 
   @override
-  ResetPasswordFormState createState() => ResetPasswordFormState();
+  State<ResetPasswordForm> createState() => _ResetPasswordFormState();
 }
 
-class ResetPasswordFormState extends State<ResetPasswordForm> {
+class _ResetPasswordFormState extends State<ResetPasswordForm> {
   final _formKey = GlobalKey<FormState>();
   final TextEditingController // this comment is for fixing formatting
       _newPasswordController = TextEditingController(),
