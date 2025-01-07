@@ -81,40 +81,41 @@ class ChangePasswordFormState extends State<ChangePasswordForm> {
               ),
             ),
             onPressed: () {
-              // All validation logic is here
-              String currentPass = _currentPasswordController.text,
-                  newPass = _newPasswordController.text,
-                  confirmPass = _confirmPasswordController.text;
-              // Resets all error states to null before checking
-              _currentPassErrorText = null;
-              _newPassErrorText = null;
-              _confirmPassErrorText = null;
-              if (currentPass.isEmpty) {
-                _currentPassErrorText = 'Please enter some text.';
-              }
-              if (newPass.isEmpty) {
-                _newPassErrorText = 'Please enter some text.';
-              }
-              if (confirmPass.isEmpty) {
-                _confirmPassErrorText = 'Please enter some text.';
-              }
-              // TODO: Add check/error text for if current pass is wrong
-              if (newPass.isNotEmpty &&
-                  confirmPass.isNotEmpty &&
-                  newPass != confirmPass) {
-                _newPassErrorText = 'Passwords do not match.';
-                _confirmPassErrorText = 'Passwords do not match.';
-              }
-              // Only succeeds if none of the fields had an error
-              if (_currentPassErrorText == null &&
-                  _newPassErrorText == null &&
-                  _confirmPassErrorText == null) {
-                // TODO: Change password on backend here
-                ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(content: Text('Processing Data...')),
-                );
-              }
-              setState(() {}); // Updates UI after all checks
+              setState(() {
+                // All validation logic is here
+                String currentPass = _currentPasswordController.text,
+                    newPass = _newPasswordController.text,
+                    confirmPass = _confirmPasswordController.text;
+                // Resets all error states to null before checking
+                _currentPassErrorText = null;
+                _newPassErrorText = null;
+                _confirmPassErrorText = null;
+                if (currentPass.isEmpty) {
+                  _currentPassErrorText = 'Please enter some text.';
+                }
+                if (newPass.isEmpty) {
+                  _newPassErrorText = 'Please enter some text.';
+                }
+                if (confirmPass.isEmpty) {
+                  _confirmPassErrorText = 'Please enter some text.';
+                }
+                // TODO: Add check/error text for if current pass is wrong
+                if (newPass.isNotEmpty &&
+                    confirmPass.isNotEmpty &&
+                    newPass != confirmPass) {
+                  _newPassErrorText = 'Passwords do not match.';
+                  _confirmPassErrorText = 'Passwords do not match.';
+                }
+                // Only succeeds if none of the fields had an error
+                if (_currentPassErrorText == null &&
+                    _newPassErrorText == null &&
+                    _confirmPassErrorText == null) {
+                  // TODO: Change password on backend here
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(content: Text('Processing Data...')),
+                  );
+                }
+              });
             },
             child: const Text(
               'Submit',

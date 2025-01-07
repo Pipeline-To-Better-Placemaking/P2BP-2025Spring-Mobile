@@ -283,8 +283,7 @@ class PasswordTextFormField extends StatelessWidget {
   final TextEditingController? _controller;
   final String? _forceErrorText;
 
-  PasswordTextFormField(
-      {super.key, controller, decoration, validator, forceErrorText})
+  PasswordTextFormField({super.key, decoration, controller, forceErrorText})
       : _decoration = decoration ??
             InputDecoration().applyDefaults(ThemeData().inputDecorationTheme),
         _controller = controller,

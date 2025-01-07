@@ -95,7 +95,7 @@ class ForgotPasswordFormState extends State<ForgotPasswordForm> {
       key: _formKey,
       child: Column(
         children: <Widget>[
-          TextField(
+          TextFormField(
             decoration: InputDecoration(
               enabledBorder: UnderlineInputBorder(
                 borderSide: BorderSide(
@@ -120,7 +120,7 @@ class ForgotPasswordFormState extends State<ForgotPasswordForm> {
           SizedBox(height: 10),
           TextButton(
             onPressed: () {
-              // TODO actually send a reset link
+              // TODO: actually send a reset link
             },
             style: const ButtonStyle(
               backgroundColor: WidgetStatePropertyAll(
