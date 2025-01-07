@@ -79,6 +79,17 @@ class ResetPasswordForm extends StatefulWidget {
 
 class ResetPasswordFormState extends State<ResetPasswordForm> {
   final _formKey = GlobalKey<FormState>();
+  final TextEditingController // this comment is for fixing formatting
+      _newPasswordController = TextEditingController(),
+      _confirmPasswordController = TextEditingController();
+  String? _newPassErrorText, _confirmPassErrorText;
+
+  @override
+  void dispose() {
+    _newPasswordController.dispose();
+    _confirmPasswordController.dispose();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -87,6 +98,8 @@ class ResetPasswordFormState extends State<ResetPasswordForm> {
       child: Column(
         children: <Widget>[
           PasswordTextFormField(
+            controller: _newPasswordController,
+            forceErrorText: _newPassErrorText,
             decoration: InputDecoration(
               enabledBorder: UnderlineInputBorder(
                 borderSide: BorderSide(
@@ -105,11 +118,13 @@ class ResetPasswordFormState extends State<ResetPasswordForm> {
                 Icons.lock_open,
                 color: Color(0xD8C3C3C3),
               ),
-              hintText: 'Password',
+              hintText: 'New Password',
             ),
           ),
           SizedBox(height: 10),
           PasswordTextFormField(
+            controller: _confirmPasswordController,
+            forceErrorText: _confirmPassErrorText,
             decoration: InputDecoration(
               enabledBorder: UnderlineInputBorder(
                 borderSide: BorderSide(
@@ -133,7 +148,6 @@ class ResetPasswordFormState extends State<ResetPasswordForm> {
           ),
           SizedBox(height: 10),
           ElevatedButton(
-            onPressed: () {}, // TODO actual updating of password
             style: const ButtonStyle(
               backgroundColor: WidgetStatePropertyAll(
                 Color(0xFFFFCC00),
@@ -142,9 +156,43 @@ class ResetPasswordFormState extends State<ResetPasswordForm> {
                 Color(0xFF333333),
               ),
             ),
+            onPressed: () {
+              setState(() {
+                // All validation logic is here
+                String newPass = _newPasswordController.text,
+                    confirmPass = _confirmPasswordController.text;
+                // Resets all error states to null before checking
+                _newPassErrorText = null;
+                _confirmPassErrorText = null;
+                if (newPass.isEmpty) {
+                  _newPassErrorText = 'Please enter some text.';
+                }
+                if (confirmPass.isEmpty) {
+                  _confirmPassErrorText = 'Please enter some text.';
+                }
+                // TODO: Add check/error text for if current pass is wrong
+                if (newPass.isNotEmpty &&
+                    confirmPass.isNotEmpty &&
+                    newPass != confirmPass) {
+                  _newPassErrorText = 'Passwords do not match.';
+                  _confirmPassErrorText = 'Passwords do not match.';
+                }
+                // Only succeeds if none of the fields had an error
+                if (_newPassErrorText == null &&
+                    _confirmPassErrorText == null) {
+                  // TODO: Change password on backend here
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(content: Text('Processing Data...')),
+                  );
+                }
+              });
+            },
             child: const Text(
               'Update Password',
-              style: TextStyle(fontWeight: FontWeight.bold, fontSize: 24),
+              style: TextStyle(
+                fontWeight: FontWeight.bold,
+                fontSize: 24,
+              ),
             ),
           ),
         ],
