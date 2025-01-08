@@ -170,7 +170,6 @@ class _ResetPasswordFormState extends State<ResetPasswordForm> {
                 if (confirmPass.isEmpty) {
                   _confirmPassErrorText = 'Please enter some text.';
                 }
-                // TODO: Add check/error text for if current pass is wrong
                 if (newPass.isNotEmpty &&
                     confirmPass.isNotEmpty &&
                     newPass != confirmPass) {
