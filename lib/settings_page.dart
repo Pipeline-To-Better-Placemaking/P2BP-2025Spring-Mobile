@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:url_launcher/url_launcher.dart';
-
-import 'change_password_page.dart';
 import 'widgets.dart';
+import 'change_password_page.dart';
+import 'submit_bug_report_page.dart';
 
 class SettingsPage extends StatelessWidget {
   const SettingsPage({super.key});
@@ -31,17 +31,7 @@ class SettingsPage extends StatelessWidget {
               children: <Widget>[
                 Column(
                   children: <Widget>[
-                    PhotoUpload(
-                      width: 60,
-                      height: 60,
-                      icon: Icons.add_photo_alternate,
-                      circular: true,
-                      onTap: () {
-                        // TODO: Actual functionality
-                        print('Test');
-                        return;
-                      },
-                    ),
+                    ProfileIconEditStack(),
                     ElevatedButton(
                       style: ElevatedButton.styleFrom(
                         backgroundColor: Colors.blue,
@@ -51,12 +41,13 @@ class SettingsPage extends StatelessWidget {
                       ),
                       onPressed: () {
                         // TODO: Actual functionality
-                        print('Test');
-                        return;
                       },
                       child: const Text(
                         'Edit Profile',
-                        style: TextStyle(color: Colors.white),
+                        style: TextStyle(
+                          color: Colors.white,
+                          fontSize: 16,
+                        ),
                       ),
                     ),
                   ],
@@ -160,7 +151,7 @@ class SettingsPage extends StatelessWidget {
                     _launchUrl(_faqURL);
                   },
                 ),
-                const ListTile(
+                ListTile(
                   leading: Icon(Icons.bug_report),
                   title: Text('Submit a bug report'),
                   trailing: Icon(Icons.chevron_right),
@@ -170,6 +161,14 @@ class SettingsPage extends StatelessWidget {
                       bottomRight: Radius.circular(10),
                     ),
                   ),
+                  onTap: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => const SubmitBugReportPage(),
+                      ),
+                    );
+                  },
                 ),
                 const SizedBox(height: 30),
                 ListTile(
@@ -211,6 +210,7 @@ class _DarkModeSwitchListTileState extends State<DarkModeSwitchListTile> {
   Widget build(BuildContext context) {
     return SwitchListTile(
       shape: widget.shape,
+      activeTrackColor: Colors.yellow[600],
       secondary: const Icon(Icons.dark_mode_outlined),
       title: const Text('Dark Mode'),
       value: _isDarkMode,
@@ -219,6 +219,59 @@ class _DarkModeSwitchListTileState extends State<DarkModeSwitchListTile> {
           _isDarkMode = value;
         });
       },
+    );
+  }
+}
+
+class ProfileIconEditStack extends StatefulWidget {
+  const ProfileIconEditStack({super.key});
+
+  @override
+  State<ProfileIconEditStack> createState() => _ProfileIconEditStackState();
+}
+
+class _ProfileIconEditStackState extends State<ProfileIconEditStack> {
+  @override
+  Widget build(BuildContext context) {
+    return Stack(
+      children: <Widget>[
+        CircleAvatar(
+          // TODO: Add getting profile image from backend
+          backgroundColor: Colors.black12,
+          radius: 32,
+          // Initials of account holder example
+          child: const Text('RG'),
+          /* Might make final default profile icon similar to this format
+              but dynamically getting the initials based on account ofc
+           */
+        ),
+        Positioned(
+          bottom: 1,
+          right: 1,
+          child: InkResponse(
+            highlightShape: BoxShape.circle,
+            onTap: () {
+              /* TODO: Functionality to pick a photo, and then send that to firebase
+                  to be saved as new profile icon and then get it from there to
+                  display updated icon in this widget immediately
+               */
+            },
+            child: Container(
+              padding: EdgeInsets.all(1),
+              decoration: BoxDecoration(
+                borderRadius: BorderRadius.all(
+                  Radius.circular(50),
+                ),
+                color: Colors.yellow[600],
+              ),
+              child: Icon(
+                Icons.edit_outlined,
+                color: Colors.white,
+              ),
+            ),
+          ),
+        ),
+      ],
     );
   }
 }

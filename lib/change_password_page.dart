@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'widgets.dart';
-import 'theme.dart';
 
 class ChangePasswordPage extends StatelessWidget {
   const ChangePasswordPage({super.key});
@@ -11,13 +10,14 @@ class ChangePasswordPage extends StatelessWidget {
         appBar: AppBar(
           title: const Text('Change Password'),
         ),
-        body: Container(
-          decoration: BoxDecoration(
-            gradient: defaultGrad,
-          ),
-          padding: const EdgeInsets.symmetric(horizontal: 30),
+        body: Padding(
+          padding: const EdgeInsets.all(20),
           child: DefaultTextStyle(
-            style: TextStyle(color: Colors.white, fontSize: 16),
+            style: TextStyle(
+              color: Colors.blue[800],
+              fontSize: 16,
+              fontWeight: FontWeight.bold,
+            ),
             child: ChangePasswordForm(),
           ),
         ),
@@ -30,10 +30,10 @@ class ChangePasswordForm extends StatefulWidget {
   const ChangePasswordForm({super.key});
 
   @override
-  ChangePasswordFormState createState() => ChangePasswordFormState();
+  State<ChangePasswordForm> createState() => _ChangePasswordFormState();
 }
 
-class ChangePasswordFormState extends State<ChangePasswordForm> {
+class _ChangePasswordFormState extends State<ChangePasswordForm> {
   final _formKey = GlobalKey<FormState>();
   final TextEditingController // this comment is for fixing formatting
       _currentPasswordController = TextEditingController(),
@@ -61,64 +61,73 @@ class ChangePasswordFormState extends State<ChangePasswordForm> {
             forceErrorText: _currentPassErrorText,
             decoration: InputDecoration(border: OutlineInputBorder()),
           ),
+          SizedBox(height: 12),
           const Text('New Password'),
           PasswordTextFormField(
             controller: _newPasswordController,
             forceErrorText: _newPassErrorText,
             decoration: InputDecoration(border: OutlineInputBorder()),
           ),
+          SizedBox(height: 12),
           const Text('Confirm New Password'),
           PasswordTextFormField(
             controller: _confirmPasswordController,
             forceErrorText: _confirmPassErrorText,
             decoration: InputDecoration(border: OutlineInputBorder()),
           ),
+          SizedBox(height: 12),
           ElevatedButton(
             style: ElevatedButton.styleFrom(
               backgroundColor: Colors.blue,
+              padding: EdgeInsets.symmetric(vertical: 8),
               shape: RoundedRectangleBorder(
                 borderRadius: BorderRadius.circular(10),
               ),
             ),
             onPressed: () {
-              // All validation logic is here
-              String currentPass = _currentPasswordController.text,
-                  newPass = _newPasswordController.text,
-                  confirmPass = _confirmPasswordController.text;
-              // Resets all error states to null before checking
-              _currentPassErrorText = null;
-              _newPassErrorText = null;
-              _confirmPassErrorText = null;
-              if (currentPass.isEmpty) {
-                _currentPassErrorText = 'Please enter some text.';
-              }
-              if (newPass.isEmpty) {
-                _newPassErrorText = 'Please enter some text.';
-              }
-              if (confirmPass.isEmpty) {
-                _confirmPassErrorText = 'Please enter some text.';
-              }
-              // TODO: Add check/error text for if current pass is wrong
-              if (newPass.isNotEmpty &&
-                  confirmPass.isNotEmpty &&
-                  newPass != confirmPass) {
-                _newPassErrorText = 'Passwords do not match.';
-                _confirmPassErrorText = 'Passwords do not match.';
-              }
-              // Only succeeds if none of the fields had an error
-              if (_currentPassErrorText == null &&
-                  _newPassErrorText == null &&
-                  _confirmPassErrorText == null) {
-                // TODO: Change password on backend here
-                ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(content: Text('Processing Data...')),
-                );
-              }
-              setState(() {}); // Updates UI after all checks
+              setState(() {
+                // All validation logic is here
+                String currentPass = _currentPasswordController.text,
+                    newPass = _newPasswordController.text,
+                    confirmPass = _confirmPasswordController.text;
+                // Resets all error states to null before validating
+                _currentPassErrorText = null;
+                _newPassErrorText = null;
+                _confirmPassErrorText = null;
+                if (currentPass.isEmpty) {
+                  _currentPassErrorText = 'Please enter some text.';
+                }
+                if (newPass.isEmpty) {
+                  _newPassErrorText = 'Please enter some text.';
+                }
+                if (confirmPass.isEmpty) {
+                  _confirmPassErrorText = 'Please enter some text.';
+                }
+                // TODO: Add check/error text for if current pass is wrong
+                if (newPass.isNotEmpty &&
+                    confirmPass.isNotEmpty &&
+                    newPass != confirmPass) {
+                  _newPassErrorText = 'Passwords do not match.';
+                  _confirmPassErrorText = 'Passwords do not match.';
+                }
+                // Only succeeds if none of the fields had an error
+                if (_currentPassErrorText == null &&
+                    _newPassErrorText == null &&
+                    _confirmPassErrorText == null) {
+                  // TODO: Change password on backend here
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(content: Text('Processing Data...')),
+                  );
+                }
+              });
             },
             child: const Text(
               'Submit',
-              style: TextStyle(color: Colors.white),
+              style: TextStyle(
+                color: Colors.white,
+                fontSize: 20,
+                fontWeight: FontWeight.bold,
+              ),
             ),
           ),
         ],
