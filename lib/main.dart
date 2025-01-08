@@ -6,6 +6,9 @@ import 'reset_password_page.dart';
 import 'create_project_and_teams.dart';
 import 'settings_page.dart';
 import 'teams_and_invites_page.dart';
+import 'login_screen.dart';
+import 'signup_screen.dart';
+import 'home_screen.dart';
 
 void main() {
   runApp(const MyApp());
@@ -32,6 +35,9 @@ class MyApp extends StatelessWidget {
             const CreateProjectAndTeamsPage(),
         '/settings': (context) => const SettingsPage(),
         '/teams_and_invites': (context) => const TeamsAndInvitesPage(),
+        '/login': (context) => const LoginScreen(),
+        '/signup': (context) => const SignUpScreen(),
+        '/home': (context) => const HomeScreen(),
       },
     );
   }
@@ -60,50 +66,74 @@ class _HomePageStates extends State<HomePage> {
             children: [
               // Button 1: Edit Project
               buildTempButton(
-                  context: context,
-                  route: '/edit_project',
-                  name: 'Edit Project',
-                  version: 0),
-
+                context: context,
+                route: '/edit_project',
+                name: 'Edit Project',
+                version: 0,
+              ),
               // Button 2: Results
               buildTempButton(
-                  context: context,
-                  route: '/results',
-                  name: 'Results',
-                  version: 1),
-
+                context: context,
+                route: '/results',
+                name: 'Results',
+                version: 1,
+              ),
               // Button 3: Forgot Password
               buildTempButton(
-                  context: context,
-                  route: '/forgot_password',
-                  name: 'Forgot Password',
-                  version: 0),
-
+                context: context,
+                route: '/forgot_password',
+                name: 'Forgot Password',
+                version: 0,
+              ),
               // Button 4: Reset Password
               buildTempButton(
-                  context: context,
-                  route: '/reset_password',
-                  name: 'Reset Password',
-                  version: 1),
-
+                context: context,
+                route: '/reset_password',
+                name: 'Reset Password',
+                version: 1,
+              ),
               // Button 5: Create Project/Teams
               buildTempButton(
-                  context: context,
-                  route: '/create_project_and_teams',
-                  name: 'Create Project and Teams',
-                  version: 0),
-
+                context: context,
+                route: '/create_project_and_teams',
+                name: 'Create Project and Teams',
+                version: 0,
+              ),
               // Button 6: Settings
               buildTempButton(
-                  context: context,
-                  route: '/settings',
-                  name: 'Settings',
-                  version: 1),
+                context: context,
+                route: '/settings',
+                name: 'Settings',
+                version: 1,
+              ),
+              // Button 7: Teams and Invites
               buildTempButton(
-                  context: context,
-                  route: '/teams_and_invites',
-                  name: 'Teams and Invite',
-                  version: 0),
+                context: context,
+                route: '/teams_and_invites',
+                name: 'Teams and Invite',
+                version: 0,
+              ),
+              // Button 8: Login
+              buildTempButton(
+                context: context,
+                route: '/login',
+                name: 'Login',
+                version: 1,
+              ),
+              // Button 9: Sign Up
+              buildTempButton(
+                context: context,
+                route: '/signup',
+                name: 'Sign Up',
+                version: 0,
+              ),
+              // Button 10: Home
+              buildTempButton(
+                context: context,
+                route: '/home',
+                name: 'Home',
+                version: 1,
+              ),
             ],
           ),
         ),
