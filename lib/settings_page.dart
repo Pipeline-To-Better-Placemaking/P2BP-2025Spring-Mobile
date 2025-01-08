@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:url_launcher/url_launcher.dart';
-
-import 'change_password_page.dart';
 import 'widgets.dart';
+import 'change_password_page.dart';
+import 'submit_bug_report_page.dart';
 
 class SettingsPage extends StatelessWidget {
   const SettingsPage({super.key});
@@ -160,7 +160,7 @@ class SettingsPage extends StatelessWidget {
                     _launchUrl(_faqURL);
                   },
                 ),
-                const ListTile(
+                ListTile(
                   leading: Icon(Icons.bug_report),
                   title: Text('Submit a bug report'),
                   trailing: Icon(Icons.chevron_right),
@@ -170,6 +170,14 @@ class SettingsPage extends StatelessWidget {
                       bottomRight: Radius.circular(10),
                     ),
                   ),
+                  onTap: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => const SubmitBugReportPage(),
+                      ),
+                    );
+                  },
                 ),
                 const SizedBox(height: 30),
                 ListTile(
