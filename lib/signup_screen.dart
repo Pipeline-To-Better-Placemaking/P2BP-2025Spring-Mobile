@@ -1,25 +1,6 @@
 import 'package:flutter/material.dart';
 import 'theme.dart';
 
-void main() {
-  runApp(MyApp());
-}
-
-class MyApp extends StatelessWidget {
-  const MyApp({super.key});
-
-  @override
-  Widget build(BuildContext context) {
-    return MaterialApp(
-      title: 'Sign Up Screen',
-      theme: ThemeData(
-        primarySwatch: Colors.blue,
-      ),
-      home: SignUpScreen(),
-    );
-  }
-}
-
 class SignUpScreen extends StatelessWidget {
   const SignUpScreen({super.key});
 

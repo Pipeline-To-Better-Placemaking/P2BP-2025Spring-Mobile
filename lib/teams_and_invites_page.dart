@@ -155,7 +155,7 @@ class TeamCard extends StatelessWidget {
                   children: [
                     Text(
                       'Members: ',
-                      style: const TextStyle(
+                      style: TextStyle(
                         color: Colors.white,
                       ),
                     ),

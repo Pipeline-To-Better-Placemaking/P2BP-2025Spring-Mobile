@@ -52,13 +52,9 @@ class SettingsPage extends StatelessWidget {
                     ),
                   ],
                 ),
-                const Padding(
-                  padding: EdgeInsets.only(
-                    top: 20,
-                    bottom: 10,
-                  ),
-                  child: Text('Appearance'),
-                ),
+                const SizedBox(height: 20),
+                Text('Appearance'),
+                const SizedBox(height: 10),
                 const DarkModeSwitchListTile(
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.only(
@@ -78,13 +74,9 @@ class SettingsPage extends StatelessWidget {
                     ),
                   ),
                 ),
-                const Padding(
-                  padding: EdgeInsets.only(
-                    top: 20,
-                    bottom: 10,
-                  ),
-                  child: Text('Account'),
-                ),
+                const SizedBox(height: 20),
+                Text('Account'),
+                const SizedBox(height: 10),
                 ListTile(
                   leading: Icon(Icons.gpp_maybe),
                   title: Text('Change Password'),
@@ -130,13 +122,9 @@ class SettingsPage extends StatelessWidget {
                     // TODO: actual backend functionality to delete account
                   },
                 ),
-                const Padding(
-                  padding: EdgeInsets.only(
-                    top: 20,
-                    bottom: 10,
-                  ),
-                  child: Text('Support'),
-                ),
+                const SizedBox(height: 20),
+                Text('Support'),
+                const SizedBox(height: 10),
                 ListTile(
                   leading: Icon(Icons.help),
                   title: Text('Help Center'),
