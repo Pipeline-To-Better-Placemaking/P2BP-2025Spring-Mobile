@@ -14,7 +14,7 @@ class _CreateProjectDetailsState extends State<CreateProjectDetails> {
       appBar: AppBar(
         title: const Text('Placeholder'),
       ),
-      body: (const Text('placeholder')),
+      body: (const Text('Google maps API call here')),
     );
   }
 }

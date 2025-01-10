@@ -82,8 +82,6 @@ class _CreateProjectAndTeamsPageState extends State<CreateProjectAndTeamsPage> {
             ),
           ),
         ),
-
-        bottomNavigationBar: const BottomFloatingNavBar(),
       ),
     );
   }
