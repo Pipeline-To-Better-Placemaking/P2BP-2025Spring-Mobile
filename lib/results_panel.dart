@@ -23,7 +23,8 @@ class _ResultsPanelState extends State<ResultsPanel> {
               builder: (context) {
                 return Padding(
                   padding: EdgeInsets.only(
-                      bottom: MediaQuery.of(context).viewInsets.bottom),
+                    bottom: MediaQuery.of(context).viewInsets.bottom,
+                  ),
                   child: SingleChildScrollView(
                     child: Container(
                       decoration: BoxDecoration(
@@ -40,9 +41,10 @@ class _ResultsPanelState extends State<ResultsPanel> {
                           Text(
                             "Results",
                             style: TextStyle(
-                                color: Colors.yellow[700],
-                                fontSize: 24,
-                                fontWeight: FontWeight.bold),
+                              color: Colors.yellow[700],
+                              fontSize: 24,
+                              fontWeight: FontWeight.bold,
+                            ),
                           ),
                         ],
                       ),

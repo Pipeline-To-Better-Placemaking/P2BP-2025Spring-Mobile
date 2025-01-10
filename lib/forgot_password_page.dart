@@ -83,10 +83,10 @@ class ForgotPasswordForm extends StatefulWidget {
   const ForgotPasswordForm({super.key});
 
   @override
-  ForgotPasswordFormState createState() => ForgotPasswordFormState();
+  State<ForgotPasswordForm> createState() => _ForgotPasswordFormState();
 }
 
-class ForgotPasswordFormState extends State<ForgotPasswordForm> {
+class _ForgotPasswordFormState extends State<ForgotPasswordForm> {
   final _formKey = GlobalKey<FormState>();
 
   @override
@@ -95,7 +95,7 @@ class ForgotPasswordFormState extends State<ForgotPasswordForm> {
       key: _formKey,
       child: Column(
         children: <Widget>[
-          TextField(
+          TextFormField(
             decoration: InputDecoration(
               enabledBorder: UnderlineInputBorder(
                 borderSide: BorderSide(
@@ -120,7 +120,7 @@ class ForgotPasswordFormState extends State<ForgotPasswordForm> {
           SizedBox(height: 10),
           TextButton(
             onPressed: () {
-              // TODO actually send a reset link
+              // TODO: actually send a reset link
             },
             style: const ButtonStyle(
               backgroundColor: WidgetStatePropertyAll(

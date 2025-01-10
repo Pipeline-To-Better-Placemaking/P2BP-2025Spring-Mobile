@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 
-LinearGradient defaultGrad = const LinearGradient(
+const LinearGradient defaultGrad = LinearGradient(
   begin: Alignment.topLeft,
   end: Alignment.bottomRight,
   colors: <Color>[
