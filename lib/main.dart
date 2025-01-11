@@ -9,6 +9,7 @@ import 'teams_and_invites_page.dart';
 import 'login_screen.dart';
 import 'signup_screen.dart';
 import 'home_screen.dart';
+import 'project_comparison_page.dart';
 
 void main() {
   runApp(const MyApp());
@@ -41,6 +42,7 @@ class MyApp extends StatelessWidget {
         '/login': (context) => const LoginScreen(),
         '/signup': (context) => const SignUpScreen(),
         '/home': (context) => const HomeScreen(),
+        '/compare_projects': (context) => const ProjectComparisonPage(),
       },
     );
   }
@@ -135,6 +137,12 @@ class _HomePageStates extends State<HomePage> {
                 context: context,
                 route: '/home',
                 name: 'Home',
+                version: 1,
+              ),
+              buildTempButton(
+                context: context,
+                route: '/compare_projects',
+                name: 'Compare Projects',
                 version: 1,
               ),
             ],
