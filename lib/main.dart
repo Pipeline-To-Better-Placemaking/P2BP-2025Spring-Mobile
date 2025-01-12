@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:p2bp_2025spring_mobile/search_location_screen.dart';
 import 'results_panel.dart';
 import 'edit_project_panel.dart';
 import 'forgot_password_page.dart';
@@ -9,6 +10,7 @@ import 'teams_and_invites_page.dart';
 import 'login_screen.dart';
 import 'signup_screen.dart';
 import 'home_screen.dart';
+import 'search_location_screen.dart';
 
 void main() {
   runApp(const MyApp());
@@ -41,6 +43,7 @@ class MyApp extends StatelessWidget {
         '/login': (context) => const LoginScreen(),
         '/signup': (context) => const SignUpScreen(),
         '/home': (context) => const HomeScreen(),
+        '/search': (context) => const SearchScreen(),
       },
     );
   }
@@ -136,6 +139,13 @@ class _HomePageStates extends State<HomePage> {
                 route: '/home',
                 name: 'Home',
                 version: 1,
+              ),
+              // Button 11: Search
+              buildTempButton(
+                context: context,
+                route: '/search',
+                name: 'Search',
+                version: 0,
               ),
             ],
           ),
