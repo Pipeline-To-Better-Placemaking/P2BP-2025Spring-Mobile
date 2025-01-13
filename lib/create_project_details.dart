@@ -43,9 +43,18 @@ class _CreateProjectDetailsState extends State<CreateProjectDetails> {
                   ),
                 ),
               ),
-              IconButton(
-                onPressed: () {},
-                icon: Icon(Icons.edit),
+              Padding(
+                padding: const EdgeInsets.all(10.0),
+                child: Container(
+                  width: 40,
+                  height: 40,
+                  decoration: BoxDecoration(
+                      color: Colors.white, shape: BoxShape.circle),
+                  child: IconButton(
+                    onPressed: () {},
+                    icon: Icon(Icons.edit),
+                  ),
+                ),
               )
             ],
           ),
