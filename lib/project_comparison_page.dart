@@ -428,20 +428,22 @@ class _TestTabBarViewState extends State<_TestTabBarView> {
 
     for (var name in _testNames) {
       result.add(
-        Container(
-          padding: EdgeInsets.all(15),
-          decoration: ShapeDecoration(
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(10),
+        Card(
+          child: Container(
+            padding: EdgeInsets.all(15),
+            decoration: ShapeDecoration(
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(10),
+              ),
+              gradient: verticalBlueGrad,
             ),
-            gradient: verticalBlueGrad,
-          ),
-          child: Text(
-            name,
-            style: TextStyle(
-              color: Colors.white,
-              fontWeight: FontWeight.bold,
-              fontSize: 16,
+            child: Text(
+              name,
+              style: TextStyle(
+                color: Colors.white,
+                fontWeight: FontWeight.bold,
+                fontSize: 16,
+              ),
             ),
           ),
         ),
