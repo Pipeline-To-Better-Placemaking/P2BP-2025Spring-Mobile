@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'widgets.dart';
 import 'strings.dart';
+import 'theme.dart';
 
 enum _PageNames { text, compare }
 
@@ -77,12 +78,10 @@ class _ProjectComparisonPageState extends State<ProjectComparisonPage> {
             child: Padding(
               padding: EdgeInsets.all(18),
               child: Column(
-                mainAxisSize: MainAxisSize.max,
                 children: <Widget>[
                   // Permanent row with dropdowns at top
                   _dropdownRowForm,
                   const SizedBox(height: 25),
-
                   // Dynamically switches between text default and comparison
                   _pages[currentPage.index],
                 ],
@@ -137,14 +136,14 @@ class _DropdownRowFormState extends State<_DropdownRowForm> {
       child: Row(
         children: [
           Expanded(
-            flex: 9,
+            flex: 12,
             child: _ProjectDropdown(
               controller: _dropdownController1,
             ),
           ),
-          Spacer(flex: 1),
+          Spacer(flex: 2),
           Expanded(
-            flex: 9,
+            flex: 12,
             child: _ProjectDropdown(
               controller: _dropdownController2,
             ),
@@ -182,14 +181,7 @@ class _ProjectDropdownState extends State<_ProjectDropdown> {
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(10),
         ),
-        gradient: LinearGradient(
-          begin: Alignment.topCenter,
-          end: Alignment.bottomCenter,
-          colors: <Color>[
-            Colors.blue[900]!,
-            Colors.blueAccent,
-          ],
-        ),
+        gradient: verticalBlueGrad,
       ),
       child: DropdownMenu<String>(
         controller: widget.controller,
@@ -203,13 +195,13 @@ class _ProjectDropdownState extends State<_ProjectDropdown> {
           ),
         ),
         textStyle: TextStyle(
-          fontSize: 12,
+          fontSize: 14,
           color: Colors.white,
         ),
         inputDecorationTheme: InputDecorationTheme(
           isDense: true,
           contentPadding: EdgeInsets.only(left: 9),
-          constraints: BoxConstraints.tight(Size.fromHeight(50)),
+          constraints: BoxConstraints(maxHeight: 55),
           border: OutlineInputBorder(
             borderRadius: BorderRadius.circular(10),
             borderSide: BorderSide.none,
@@ -290,25 +282,50 @@ class _CompareDataPage extends StatefulWidget {
   State<_CompareDataPage> createState() => _CompareDataPageState();
 }
 
-class _CompareDataPageState extends State<_CompareDataPage> {
+class _CompareDataPageState extends State<_CompareDataPage>
+    with TickerProviderStateMixin {
+  late final TabController _tabController =
+      TabController(length: _testNames.length, vsync: this);
+
   @override
   Widget build(BuildContext context) {
-    return _TestNavigationTabBar();
+    return Expanded(
+      child: Column(
+        mainAxisSize: MainAxisSize.max,
+        children: [
+          _TestNavigationTabBar(
+            tabController: _tabController,
+          ),
+          Spacer(flex: 1),
+          Expanded(
+            flex: 40,
+            child: _TestTabBarView(
+              tabController: _tabController,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  @override
+  void dispose() {
+    _tabController.dispose();
+    super.dispose();
   }
 }
 
+/// TabBar that displays all tests common to both selected projects.
 class _TestNavigationTabBar extends StatefulWidget {
-  const _TestNavigationTabBar({super.key});
+  final TabController tabController;
+
+  const _TestNavigationTabBar({super.key, required this.tabController});
 
   @override
   State<_TestNavigationTabBar> createState() => _TestNavigationTabBarState();
 }
 
-class _TestNavigationTabBarState extends State<_TestNavigationTabBar>
-    with TickerProviderStateMixin {
-  late final TabController _tabBarController =
-      TabController(length: _testNames.length, vsync: this);
-
+class _TestNavigationTabBarState extends State<_TestNavigationTabBar> {
   @override
   void initState() {
     super.initState();
@@ -321,23 +338,18 @@ class _TestNavigationTabBarState extends State<_TestNavigationTabBar>
     final List<Tab> testTabList = _buildTestTabList();
 
     return Container(
-      height: 58,
-      width: double.maxFinite,
+      constraints: BoxConstraints(
+        minHeight: 56,
+        maxHeight: 64,
+      ),
       decoration: ShapeDecoration(
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(50),
         ),
-        gradient: LinearGradient(
-          begin: Alignment.topCenter,
-          end: Alignment.bottomCenter,
-          colors: <Color>[
-            Colors.blue[900]!,
-            Colors.blueAccent,
-          ],
-        ),
+        gradient: verticalBlueGrad,
       ),
       child: TabBar(
-        controller: _tabBarController,
+        controller: widget.tabController,
         isScrollable: true,
         tabAlignment: TabAlignment.start,
         labelColor: Colors.white,
@@ -347,7 +359,7 @@ class _TestNavigationTabBarState extends State<_TestNavigationTabBar>
           fontSize: 14,
           fontWeight: FontWeight.bold,
         ),
-        labelPadding: EdgeInsets.symmetric(horizontal: 0),
+        labelPadding: EdgeInsets.zero,
         padding: EdgeInsets.symmetric(horizontal: 4),
         indicator: ShapeDecoration(
           shape: RoundedRectangleBorder(
@@ -359,16 +371,18 @@ class _TestNavigationTabBarState extends State<_TestNavigationTabBar>
     );
   }
 
+  /// Builds the tabs dynamically based on tests in common.
   List<Tab> _buildTestTabList() {
+    // TODO once backend: backend test fetching stuff
     List<Tab> result = [];
 
-    for (var value in _testNames) {
+    for (var name in _testNames) {
       result.add(
         Tab(
           child: ConstrainedBox(
             constraints: BoxConstraints(maxWidth: 80),
             child: Text(
-              value,
+              name,
               maxLines: 2,
               textAlign: TextAlign.center,
             ),
@@ -379,10 +393,61 @@ class _TestNavigationTabBarState extends State<_TestNavigationTabBar>
 
     return result;
   }
+}
+
+class _TestTabBarView extends StatefulWidget {
+  final TabController tabController;
+
+  const _TestTabBarView({super.key, required this.tabController});
 
   @override
-  void dispose() {
-    _tabBarController.dispose();
-    super.dispose();
+  State<_TestTabBarView> createState() => _TestTabBarViewState();
+}
+
+class _TestTabBarViewState extends State<_TestTabBarView> {
+  @override
+  void initState() {
+    super.initState();
+    // TODO once backend: get list of tests that these projects have in common
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final List<Widget> testViewList = _buildTestViewList();
+
+    return TabBarView(
+      controller: widget.tabController,
+      children: testViewList,
+    );
+  }
+
+  /// Builds the list of views dynamically based on tests in common.
+  List<Widget> _buildTestViewList() {
+    // TODO once backend: backend test fetching stuff again
+    List<Widget> result = [];
+
+    for (var name in _testNames) {
+      result.add(
+        Container(
+          padding: EdgeInsets.all(15),
+          decoration: ShapeDecoration(
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(10),
+            ),
+            gradient: verticalBlueGrad,
+          ),
+          child: Text(
+            name,
+            style: TextStyle(
+              color: Colors.white,
+              fontWeight: FontWeight.bold,
+              fontSize: 16,
+            ),
+          ),
+        ),
+      );
+    }
+
+    return result;
   }
 }
