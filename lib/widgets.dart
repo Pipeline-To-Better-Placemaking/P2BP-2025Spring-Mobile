@@ -219,21 +219,24 @@ class PasswordTextFormField extends StatelessWidget {
   final InputDecoration _decoration;
   final TextEditingController? _controller;
   final String? _forceErrorText;
+  final bool _obscureText;
 
   PasswordTextFormField({
     super.key,
     decoration,
     controller,
     forceErrorText,
+    obscureText,
   })  : _decoration = decoration ??
             InputDecoration().applyDefaults(ThemeData().inputDecorationTheme),
         _controller = controller,
-        _forceErrorText = forceErrorText;
+        _forceErrorText = forceErrorText,
+        _obscureText = obscureText ?? true;
 
   @override
   Widget build(BuildContext context) {
     return TextFormField(
-      obscureText: true,
+      obscureText: _obscureText,
       enableSuggestions: false,
       autocorrect: false,
       autovalidateMode: AutovalidateMode.disabled,

@@ -21,11 +21,14 @@ class MyApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final ColorScheme colorScheme = ColorScheme.fromSeed(
+      seedColor: Colors.blue,
+    );
     return MaterialApp(
       title: 'Flutter Demo',
       theme: ThemeData(
-          // Insert theme here
-          ),
+        colorScheme: colorScheme,
+      ),
       debugShowCheckedModeBanner: false,
       home: const HomePage(title: 'Home Page'),
       routes: {
