@@ -9,6 +9,15 @@ const LinearGradient defaultGrad = LinearGradient(
   ],
 );
 
+final LinearGradient verticalBlueGrad = LinearGradient(
+  begin: Alignment.topCenter,
+  end: Alignment.bottomCenter,
+  colors: <Color>[
+    Colors.blue[900]!,
+    Colors.blueAccent,
+  ],
+);
+
 // List<ThemeData> appThemes = [
 //   ThemeData(
 //     //
