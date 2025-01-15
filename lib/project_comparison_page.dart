@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'widgets.dart';
 import 'strings.dart';
 import 'theme.dart';
 
@@ -68,7 +67,6 @@ class _ProjectComparisonPageState extends State<ProjectComparisonPage> {
   Widget build(BuildContext context) {
     return SafeArea(
       child: Scaffold(
-        bottomNavigationBar: const BottomFloatingNavBar(),
         body: DefaultTextStyle(
           style: TextStyle(
             fontSize: 14,

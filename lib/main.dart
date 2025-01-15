@@ -145,15 +145,15 @@ class _HomePageStates extends State<HomePage> {
               ),
               buildTempButton(
                 context: context,
-                route: '/compare_projects',
-                name: 'Compare Projects',
-                version: 1,
-              ),
-              buildTempButton(
-                context: context,
                 route: '/new_home',
                 name: 'New Home Page',
                 version: 0,
+              ),
+              buildTempButton(
+                context: context,
+                route: '/compare_projects',
+                name: 'Compare Projects',
+                version: 1,
               ),
             ],
           ),
