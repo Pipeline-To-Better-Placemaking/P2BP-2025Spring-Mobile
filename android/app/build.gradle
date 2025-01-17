@@ -17,7 +17,7 @@ android {
     }
 
     kotlinOptions {
-        jvmTarget = JavaVersion.VERSION_21
+        jvmTarget = "21"
     }
 
     defaultConfig {

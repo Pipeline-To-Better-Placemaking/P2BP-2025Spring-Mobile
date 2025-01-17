@@ -1,4 +1,8 @@
 import 'package:flutter/material.dart';
+import 'package:firebase_core/firebase_core.dart';
+import 'firebase_options.dart';
+import 'package:firebase_auth/firebase_auth.dart';
+
 import 'create_project_details.dart';
 import 'results_panel.dart';
 import 'edit_project_panel.dart';
@@ -13,7 +17,19 @@ import 'home_screen.dart';
 import 'new_home_page.dart';
 import 'project_comparison_page.dart';
 
-void main() {
+void main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+  try {
+    // Ensure Firebase is initialized correctly
+    await Firebase.initializeApp(
+      options: DefaultFirebaseOptions.currentPlatform,
+    );
+    // Set Firebase persistence to SESSION to log out on tab/browser close
+    await FirebaseAuth.instance.setPersistence(Persistence.SESSION);
+  } catch (e) {
+    print("Firebase initialization failed: $e");
+    // Handle the error here, maybe show an error screen or fallback UI
+  }
   runApp(const MyApp());
 }
 
