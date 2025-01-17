@@ -1,5 +1,9 @@
 import 'package:flutter/material.dart';
 import 'theme.dart';
+import 'create_project_and_teams.dart';
+import 'project_comparison_page.dart';
+import 'settings_page.dart';
+import 'teams_and_invites_page.dart';
 
 List<String> navIcons2 = [
   'assets/Home_Icon.png',
@@ -8,133 +12,181 @@ List<String> navIcons2 = [
   'assets/Profile_Icon.png',
 ];
 
-int selectedIndex = 0;
-
-class HomeScreen extends StatelessWidget {
+class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
+
+  @override
+  _HomeScreenState createState() => _HomeScreenState();
+}
+
+class _HomeScreenState extends State<HomeScreen> {
+  int selectedIndex = 0;
+
+  void onNavItemTapped(int index) {
+    setState(() {
+      selectedIndex = index; // Update the selected index
+    });
+  }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      body: SingleChildScrollView(
-        child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 20),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            mainAxisSize: MainAxisSize.min,
-            children: <Widget>[
-              // P2BP Logo centered at the top
-              Padding(
-                padding: const EdgeInsets.only(top: 50),
-                child: Stack(
-                  children: [
-                    Align(
-                      alignment: Alignment.topCenter,
-                      child: Image.asset(
-                        'assets/P2BP_Logo.png',
-                        width: 40,
-                        height: 40,
-                      ),
-                    ),
-                    Align(
-                      alignment: Alignment.topRight,
-                      child: Row(
-                        mainAxisAlignment: MainAxisAlignment.end,
-                        children: [
-                          // Notification button
-                          IconButton(
-                            icon: Image.asset('assets/bell-03.png'),
-                            onPressed: () {
-                              // Handle notification button action
-                            },
-                            iconSize: 24,
-                          ),
-                          // Teams Button
-                          IconButton(
-                            icon: const Icon(Icons.group),
-                            color: const Color(0xFF0A2A88),
-                            onPressed: () {
-                              // Handle teams button action
-                            },
-                            iconSize: 24,
-                          ),
-                        ],
-                      ),
-                    ),
-                    // "Hello, [user]" greeting, aligned to the left below the logo
-                    Padding(
-                      padding: const EdgeInsets.only(top: 40),
-                      child: Row(
-                        mainAxisAlignment: MainAxisAlignment.start,
-                        children: [
-                          ShaderMask(
-                            shaderCallback: (bounds) {
-                              return defaultGrad.createShader(bounds);
-                            },
-                            child: const Text(
-                              'Hello,\nMichael',
-                              style: TextStyle(
-                                  fontSize: 36,
-                                  fontWeight: FontWeight.bold,
-                                  color: Colors.white,
-                                  height: 1.2 // Masked text with gradient
-                                  ),
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-              // "Your Projects" label, aligned to the right of the screen"
-              Padding(
-                padding: const EdgeInsets.only(right: 5),
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.end,
-                  children: [
-                    ShaderMask(
-                      shaderCallback: (bounds) {
-                        return defaultGrad.createShader(bounds);
-                      },
-                      child: const Text(
-                        'Your Projects',
-                        style: TextStyle(
-                          fontSize: 24,
-                          fontWeight: FontWeight.bold,
-                          color: Colors.white,
-                          height: 1.2,
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-              // Project Cards
-              Column(
+      body: Stack(
+        children: [
+          IndexedStack(
+            index: selectedIndex,
+            children: [
+              // Screens for each tab
+              _buildHomeContent(),
+              CreateProjectAndTeamsPage(),
+              ProjectComparisonPage(),
+              SettingsPage(),
+            ],
+          ),
+          // Bottom Navigation Bar
+          Positioned(
+            bottom: 50,
+            left: 20,
+            right: 20,
+            child: _navBar(),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildHomeContent() {
+    return //Scrollable content
+        SingleChildScrollView(
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 20),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          mainAxisSize: MainAxisSize.min,
+          children: <Widget>[
+            // P2BP Logo centered at the top
+            Padding(
+              padding: const EdgeInsets.only(top: 50),
+              child: Stack(
                 children: [
-                  // First Project Card
-                  buildProjectCard(
-                    context,
-                    'assets/RedHouse.png',
-                    'Project Eola',
-                    'Team: Eola Design Group',
+                  Align(
+                    alignment: Alignment.topCenter,
+                    child: Image.asset(
+                      'assets/P2BP_Logo.png',
+                      width: 40,
+                      height: 40,
+                    ),
                   ),
-                  const SizedBox(height: 20),
-                  // Second Project Card
-                  buildProjectCard(
-                    context,
-                    'assets/PinkHouse.png',
-                    'Project Neocity',
-                    'Team: New Horizons Placemakers',
+                  Align(
+                    alignment: Alignment.topRight,
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.end,
+                      children: [
+                        // Notification button
+                        IconButton(
+                          icon: Image.asset('assets/bell-03.png'),
+                          onPressed: () {
+                            // Handle notification button action
+                          },
+                          iconSize: 24,
+                        ),
+                        // Teams Button
+                        IconButton(
+                          icon: const Icon(Icons.group),
+                          color: const Color(0xFF0A2A88),
+                          onPressed: () {
+                            // Navigate to Teams/Invites screen
+                            Navigator.push(
+                                context,
+                                MaterialPageRoute(
+                                  builder: (context) =>
+                                      const TeamsAndInvitesPage(),
+                                ));
+                          },
+                          iconSize: 24,
+                        ),
+                      ],
+                    ),
+                  ),
+                  // "Hello, [user]" greeting, aligned to the left below the logo
+                  Padding(
+                    padding: const EdgeInsets.only(top: 40),
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.start,
+                      children: [
+                        ShaderMask(
+                          shaderCallback: (bounds) {
+                            return defaultGrad.createShader(bounds);
+                          },
+                          child: const Text(
+                            'Hello,\nMichael',
+                            style: TextStyle(
+                                fontSize: 36,
+                                fontWeight: FontWeight.bold,
+                                color: Colors.white,
+                                height: 1.2 // Masked text with gradient
+                                ),
+                          ),
+                        ),
+                      ],
+                    ),
                   ),
                 ],
               ),
-              const SizedBox(height: 10),
-              // Bottom Navigation Bar
-              _navBar()
-            ],
-          ),
+            ),
+            // "Your Projects" label, aligned to the right of the screen"
+            Padding(
+              padding: const EdgeInsets.only(right: 5),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.end,
+                children: [
+                  ShaderMask(
+                    shaderCallback: (bounds) {
+                      return defaultGrad.createShader(bounds);
+                    },
+                    child: const Text(
+                      'Your Projects',
+                      style: TextStyle(
+                        fontSize: 24,
+                        fontWeight: FontWeight.bold,
+                        color: Colors.white,
+                        height: 1.2,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            // Project Cards
+            Column(
+              children: [
+                // First Project Card
+                buildProjectCard(
+                  context,
+                  'assets/RedHouse.png',
+                  'Project Eola',
+                  'Team: Eola Design Group',
+                ),
+                const SizedBox(height: 20),
+                // Second Project Card
+                buildProjectCard(
+                  context,
+                  'assets/PinkHouse.png',
+                  'Project Neocity',
+                  'Team: New Horizons Placemakers',
+                ),
+                const SizedBox(height: 20),
+                // Third Project Card
+                buildProjectCard(
+                  context,
+                  'assets/RedHouse.png',
+                  'Project Knight Library',
+                  'Team: Lake Nona Design Group',
+                ),
+                const SizedBox(height: 150),
+              ],
+            ),
+          ],
         ),
       ),
     );
@@ -273,9 +325,13 @@ class HomeScreen extends StatelessWidget {
         borderRadius: BorderRadius.circular(120),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withAlpha(20),
-            blurRadius: 20,
-            spreadRadius: 10,
+            color: Color.alphaBlend(
+              Colors.black.withAlpha(102), // 40% opacity for the shadow
+              Colors.transparent, // Transparent background blending
+            ),
+            blurRadius: 30,
+            spreadRadius: 5,
+            offset: const Offset(0, 10),
           ),
         ],
       ),
@@ -285,8 +341,8 @@ class HomeScreen extends StatelessWidget {
         children: navIcons2.map((iconPath) {
           int index = navIcons2.indexOf(iconPath);
           bool isSelected = selectedIndex == index;
-          return Material(
-            color: Colors.transparent,
+          return GestureDetector(
+            onTap: () => onNavItemTapped(index), // Update selectedIndex
             child: Column(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [

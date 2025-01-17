@@ -82,8 +82,6 @@ class _CreateProjectAndTeamsPageState extends State<CreateProjectAndTeamsPage> {
             ),
           ),
         ),
-
-        bottomNavigationBar: const BottomFloatingNavBar(),
       ),
     );
   }
@@ -180,6 +178,7 @@ class CreateProjectWidget extends StatelessWidget {
                 backgroundColor: const Color(0xFF4871AE),
                 icon: const Icon(Icons.chevron_right),
                 onPressed: () {
+                  Navigator.pushNamed(context, '/create_project_details');
                   // function
                 },
               ),

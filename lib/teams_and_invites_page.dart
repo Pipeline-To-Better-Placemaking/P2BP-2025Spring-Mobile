@@ -19,9 +19,22 @@ class _TeamsAndInvitesPageState extends State<TeamsAndInvitesPage> {
         child: Scaffold(
           appBar: AppBar(
             bottom: const TabBar(
+              labelColor: Colors.blue,
+              indicatorColor: Colors.blue,
+              indicatorSize: TabBarIndicatorSize.tab,
               tabs: [
-                Tab(text: 'Teams'),
-                Tab(text: 'Invites'),
+                Tab(
+                  child: Text(
+                    'Teams',
+                    style: TextStyle(fontSize: 18),
+                  ),
+                ),
+                Tab(
+                  child: Text(
+                    'Invites',
+                    style: TextStyle(fontSize: 18),
+                  ),
+                ),
               ],
             ),
           ),

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'create_project_details.dart';
 import 'package:p2bp_2025spring_mobile/search_location_screen.dart';
 import 'results_panel.dart';
 import 'edit_project_panel.dart';
@@ -10,8 +11,9 @@ import 'teams_and_invites_page.dart';
 import 'login_screen.dart';
 import 'signup_screen.dart';
 import 'home_screen.dart';
+import 'new_home_page.dart';
+import 'project_comparison_page.dart';
 import 'search_location_screen.dart';
-
 void main() {
   runApp(const MyApp());
 }
@@ -40,9 +42,12 @@ class MyApp extends StatelessWidget {
             const CreateProjectAndTeamsPage(),
         '/settings': (context) => const SettingsPage(),
         '/teams_and_invites': (context) => const TeamsAndInvitesPage(),
+        '/create_project_details': (context) => const CreateProjectDetails(),
         '/login': (context) => const LoginScreen(),
         '/signup': (context) => const SignUpScreen(),
         '/home': (context) => const HomeScreen(),
+        '/new_home': (context) => const BottomFloatingNavBar(),
+        '/compare_projects': (context) => const ProjectComparisonPage(),
         '/search': (context) => const SearchScreen(),
       },
     );
@@ -140,7 +145,19 @@ class _HomePageStates extends State<HomePage> {
                 name: 'Home',
                 version: 1,
               ),
-              // Button 11: Search
+              buildTempButton(
+                context: context,
+                route: '/new_home',
+                name: 'New Home Page',
+                version: 0,
+              ),
+              buildTempButton(
+                context: context,
+                route: '/compare_projects',
+                name: 'Compare Projects',
+                version: 1,
+              ),
+              // Button 13: Search
               buildTempButton(
                 context: context,
                 route: '/search',
