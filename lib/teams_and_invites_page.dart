@@ -10,6 +10,7 @@ class TeamsAndInvitesPage extends StatefulWidget {
 class _TeamsAndInvitesPageState extends State<TeamsAndInvitesPage> {
   List<int> items = [123, 3, 51, 2, 531, 3, 5];
   int itemCount = 7;
+  int selectedIndex = 0;
 
   @override
   Widget build(BuildContext context) {
@@ -54,11 +55,11 @@ class _TeamsAndInvitesPageState extends State<TeamsAndInvitesPage> {
                       ),
                       itemCount: itemCount,
                       itemBuilder: (BuildContext context, int index) {
-                        return TeamCard(
-                          color: Colors.blue,
-                          teamName: 'Placeholder',
-                          numProjects: items[index],
-                        );
+                        return buildContainer(
+                            index: index,
+                            color: Colors.blue,
+                            numProjects: items[index],
+                            teamName: 'PlaceHolder');
                       },
                       separatorBuilder: (BuildContext context, int index) =>
                           const SizedBox(
@@ -96,24 +97,12 @@ class _TeamsAndInvitesPageState extends State<TeamsAndInvitesPage> {
       ),
     );
   }
-}
 
-class TeamCard extends StatelessWidget {
-  final Color color;
-  final String teamName;
-  final int numProjects; // TODO: Variable class project, project.numProjects
-  // TODO: final List<Members> members; (implement list of members to use for
-  // members section with cover photos)
-
-  const TeamCard({
-    super.key,
-    required this.color,
-    required this.teamName,
-    required this.numProjects,
-  });
-
-  @override
-  Widget build(BuildContext context) {
+  Container buildContainer(
+      {required int index,
+      required Color color,
+      required int numProjects,
+      required String teamName}) {
     return Container(
       decoration: BoxDecoration(
         color: color,
@@ -122,7 +111,26 @@ class TeamCard extends StatelessWidget {
       height: 200,
       child: Row(
         children: <Widget>[
-          const SelectedIconInkWell(),
+          Align(
+            alignment: Alignment.bottomLeft,
+            child: Padding(
+              padding: const EdgeInsets.only(
+                  left: 10.0, bottom: 10.0, right: 5.0, top: 5.0),
+              child: Tooltip(
+                message: "Select team",
+                child: InkWell(
+                  child: selectedIndex == index
+                      ? const Icon(Icons.radio_button_on)
+                      : const Icon(Icons.radio_button_off),
+                  onTap: () {
+                    setState(() {
+                      selectedIndex = index;
+                    });
+                  },
+                ),
+              ),
+            ),
+          ),
           const CircleAvatar(
             radius: 35,
           ),
@@ -196,48 +204,34 @@ class TeamCard extends StatelessWidget {
   }
 }
 
-class SelectedIconInkWell extends StatefulWidget {
-  const SelectedIconInkWell({
-    super.key,
-  });
-
-  @override
-  State<SelectedIconInkWell> createState() => _SelectedIconInkWellState();
-}
-
-class _SelectedIconInkWellState extends State<SelectedIconInkWell> {
-  bool selected = false;
-  Icon icon = const Icon(Icons.radio_button_off);
-  int i = 0;
-
-  @override
-  Widget build(BuildContext context) {
-    return Align(
-      alignment: Alignment.bottomLeft,
-      child: Padding(
-        padding: const EdgeInsets.only(
-            left: 10.0, bottom: 10.0, right: 5.0, top: 5.0),
-        child: Tooltip(
-          message: "Select team",
-          child: InkWell(
-            child: icon,
-            onTap: () {
-              print("Tapped $i");
-              i++;
-              setState(() {
-                selected = !selected;
-                selected
-                    ? icon = const Icon(Icons.radio_button_on)
-                    : icon = const Icon(Icons.radio_button_off);
-              });
-              // TODO: Actual function
-            },
-          ),
-        ),
-      ),
-    );
-  }
-}
+// class TeamCard extends StatefulWidget {
+//   final Color color;
+//   final String teamName;
+//   final bool selected;
+//   final Function onTap;
+//   final int numProjects; // TODO: Variable class project, project.numProjects
+//   // TODO: final List<Members> members; (implement list of members to use for
+//   // members section with cover photos)
+//
+//   const TeamCard({
+//     super.key,
+//     required this.color,
+//     required this.teamName,
+//     required this.numProjects,
+//     required this.selected,
+//     required this.onTap,
+//   });
+//
+//   @override
+//   State<TeamCard> createState() => _TeamCardState();
+// }
+//
+// class _TeamCardState extends State<TeamCard> {
+//   @override
+//   Widget build(BuildContext context) {
+//     return
+//   }
+// }
 
 class InviteCard extends StatelessWidget {
   final Color color;

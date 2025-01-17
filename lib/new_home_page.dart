@@ -65,28 +65,28 @@ class _BottomFloatingNavBarState extends State<BottomFloatingNavBar> {
               showUnselectedLabels: false,
               items: const [
                 BottomNavigationBarItem(
-                  backgroundColor: Colors.blue,
+                  backgroundColor: Color(0xFF2F6DCF),
                   icon: Icon(Icons.home),
                   label: 'Home',
                 ),
                 BottomNavigationBarItem(
-                  backgroundColor: Colors.blue,
+                  backgroundColor: Color(0xFF2F6DCF),
                   // TODO: which icon?
                   icon: Icon(Icons.short_text),
                   label: 'Projects',
                 ),
                 BottomNavigationBarItem(
-                  backgroundColor: Colors.blue,
+                  backgroundColor: Color(0xFF2F6DCF),
                   icon: Icon(Icons.add_circle_outline),
                   label: 'Add Project or Team',
                 ),
                 BottomNavigationBarItem(
-                  backgroundColor: Colors.blue,
+                  backgroundColor: Color(0xFF2F6DCF),
                   icon: Icon(Icons.bar_chart),
                   label: 'Results',
                 ),
                 BottomNavigationBarItem(
-                  backgroundColor: Colors.blue,
+                  backgroundColor: Color(0xFF2F6DCF),
                   icon: Icon(Icons.person),
                   label: 'Profile',
                 ),

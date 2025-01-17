@@ -9,7 +9,7 @@ plugins {
 android {
     namespace = "com.example.p2bp_2025spring_mobile"
     compileSdk = flutter.compileSdkVersion
-    ndkVersion = flutter.ndkVersion
+    ndkVersion = "27.2.12479018"
 
     compileOptions {
         sourceCompatibility = JavaVersion.VERSION_21
@@ -53,4 +53,5 @@ dependencies {
 
     // Add the dependencies for any other desired Firebase products
     // https://firebase.google.com/docs/android/setup#available-libraries
+    implementation 'com.google.android.gms:play-services-auth:21.3.0'
 }

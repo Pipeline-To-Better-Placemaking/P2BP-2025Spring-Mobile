@@ -4,6 +4,8 @@ import 'create_project_and_teams.dart';
 import 'project_comparison_page.dart';
 import 'settings_page.dart';
 import 'teams_and_invites_page.dart';
+import 'results_panel.dart';
+import 'edit_project_panel.dart';
 
 List<String> navIcons2 = [
   'assets/Home_Icon.png',
@@ -271,6 +273,7 @@ class _HomeScreenState extends State<HomeScreen> {
                   OutlinedButton(
                     onPressed: () {
                       // Handle navigation to Edit menu
+                      showEditProjectModalSheet(context);
                     },
                     style: OutlinedButton.styleFrom(
                       side: const BorderSide(
@@ -292,6 +295,7 @@ class _HomeScreenState extends State<HomeScreen> {
                   ElevatedButton(
                     onPressed: () {
                       // Handle navigation to Results menu
+                      showResultsModalSheet(context);
                     },
                     style: ElevatedButton.styleFrom(
                       backgroundColor: const Color(0xFFFFCC00),
