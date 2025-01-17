@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'create_project_details.dart';
 
 class TeamSettingsScreen extends StatelessWidget {
   @override
@@ -35,6 +36,7 @@ class TeamSettingsScreen extends StatelessWidget {
                         icon: Icon(Icons.arrow_back, color: Colors.white),
                         onPressed: () {
                           // Add back navigation
+                          Navigator.pop(context);
                         },
                       ),
                       Spacer(), // Push settings icon to the right edge of the screen
@@ -328,6 +330,12 @@ class TeamSettingsScreen extends StatelessWidget {
                                 Icon(Icons.chevron_right, color: Colors.white),
                             onTap: () {
                               // Navigate to project details
+                              Navigator.push(
+                                  context,
+                                  MaterialPageRoute(
+                                    builder: (context) =>
+                                        CreateProjectDetails(),
+                                  ));
                             }, // Replace with project title
                           ),
                           Divider(

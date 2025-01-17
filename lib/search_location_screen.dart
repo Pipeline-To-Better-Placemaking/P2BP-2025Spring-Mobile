@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'theme.dart';
+import 'create_project_details.dart';
 
 class SearchScreen extends StatefulWidget {
   const SearchScreen({super.key});
@@ -343,6 +344,11 @@ class _SearchScreenState extends State<SearchScreen> {
                     trailing: ElevatedButton(
                       onPressed: () {
                         // Handle result action
+                        Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (context) => CreateProjectDetails(),
+                            ));
                       },
                       child: const Text("Select"),
                     ),

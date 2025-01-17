@@ -4,6 +4,7 @@ import 'create_project_and_teams.dart';
 import 'project_comparison_page.dart';
 import 'settings_page.dart';
 import 'teams_and_invites_page.dart';
+import 'main.dart';
 
 List<String> navIcons2 = [
   'assets/Home_Icon.png',
@@ -87,6 +88,12 @@ class _HomeScreenState extends State<HomeScreen> {
                           icon: Image.asset('assets/bell-03.png'),
                           onPressed: () {
                             // Handle notification button action
+                            Navigator.push(
+                                context,
+                                MaterialPageRoute(
+                                    builder: (context) => const HomePage(
+                                          title: '/home',
+                                        )));
                           },
                           iconSize: 24,
                         ),

@@ -34,7 +34,7 @@ class MyApp extends StatelessWidget {
         colorScheme: colorScheme,
       ),
       debugShowCheckedModeBanner: false,
-      home: const HomePage(title: 'Home Page'),
+      home: LoginScreen(), // const HomePage(title: 'Home Page'),
       routes: {
         '/results': (context) => const ResultsPanel(),
         '/edit_project': (context) => const EditProjectPanel(),

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'teams_settings_screen.dart';
 
 class TeamsAndInvitesPage extends StatefulWidget {
   const TeamsAndInvitesPage({super.key});
@@ -187,6 +188,10 @@ class TeamCard extends StatelessWidget {
               tooltip: 'Open team settings',
               onPressed: () {
                 // TODO: Actual function
+                Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                        builder: (context) => TeamSettingsScreen()));
               },
             ),
           ),

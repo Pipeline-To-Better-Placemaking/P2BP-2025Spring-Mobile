@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'widgets.dart';
 import 'theme.dart';
+import 'search_location_screen.dart';
 
 // For page selection switch. 0 = project, 1 = team.
 enum PageView { project, team }
@@ -178,7 +179,8 @@ class CreateProjectWidget extends StatelessWidget {
                 backgroundColor: const Color(0xFF4871AE),
                 icon: const Icon(Icons.chevron_right),
                 onPressed: () {
-                  Navigator.pushNamed(context, '/create_project_details');
+                  Navigator.push(context,
+                      MaterialPageRoute(builder: (context) => SearchScreen()));
                   // function
                 },
               ),
