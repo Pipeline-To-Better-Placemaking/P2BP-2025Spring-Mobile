@@ -1,6 +1,9 @@
 import 'package:flutter/material.dart';
 import 'widgets.dart';
 import 'theme.dart';
+import 'home_screen.dart';
+import 'signup_screen.dart';
+import 'forgot_password_page.dart';
 
 class LoginScreen extends StatelessWidget {
   const LoginScreen({super.key});
@@ -94,6 +97,10 @@ class LoginScreen extends StatelessWidget {
                   TextButton(
                     onPressed: () {
                       // Handle navigation to Register screen
+                      Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                              builder: (context) => SignUpScreen()));
                     },
                     style: TextButton.styleFrom(
                       padding: EdgeInsets.zero,
@@ -217,21 +224,39 @@ class _LoginFormState extends State<LoginForm> {
               ),
             ),
           ),
-          const Align(
+          Align(
             alignment: Alignment.centerRight,
-            child: Text(
-              'Forgot?',
-              style: TextStyle(
-                color: Color(0xFFFFCC00),
-                fontWeight: FontWeight.bold,
+            child: TextButton(
+              onPressed: () {
+                // Handle navigation to Register screen
+                Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                        builder: (context) => const ForgotPasswordPage()));
+              },
+              style: TextButton.styleFrom(
+                padding: EdgeInsets.zero,
+                minimumSize: const Size(50, 30),
+                tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                alignment: Alignment.centerLeft,
+              ),
+              child: const Text(
+                "Forgot?",
+                style: TextStyle(
+                  fontWeight: FontWeight.bold,
+                  color: Color(0xFFFFCC00),
+                ),
               ),
             ),
           ),
+
           const SizedBox(height: 20),
           // Login Button
           ElevatedButton(
             onPressed: () {
               // Handle login logic
+              Navigator.push(context,
+                  MaterialPageRoute(builder: (context) => const HomeScreen()));
             },
             style: ElevatedButton.styleFrom(
               backgroundColor: const Color(0xFFFFCC00),

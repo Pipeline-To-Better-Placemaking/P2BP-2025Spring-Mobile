@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:url_launcher/url_launcher.dart';
-import 'widgets.dart';
 import 'change_password_page.dart';
 import 'submit_bug_report_page.dart';
 
@@ -14,7 +13,6 @@ class SettingsPage extends StatelessWidget {
         appBar: AppBar(
           title: const Text('Settings'),
         ),
-        bottomNavigationBar: const BottomFloatingNavBar(),
         body: ListTileTheme(
           tileColor: Colors.blue,
           contentPadding: const EdgeInsets.symmetric(horizontal: 8),
@@ -168,7 +166,7 @@ class SettingsPage extends StatelessWidget {
                     borderRadius: BorderRadius.circular(10),
                   ),
                 ),
-                const SizedBox(height: 30),
+                const SizedBox(height: 150),
               ],
             ),
           ),

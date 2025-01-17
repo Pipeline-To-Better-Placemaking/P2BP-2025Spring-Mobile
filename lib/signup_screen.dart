@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'theme.dart';
+import 'login_screen.dart';
+import 'home_screen.dart';
 
 class SignUpScreen extends StatelessWidget {
   const SignUpScreen({super.key});
@@ -218,6 +220,12 @@ class SignUpScreen extends StatelessWidget {
             ElevatedButton(
               onPressed: () {
                 // Handle sign up logic
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => const HomeScreen(),
+                  ),
+                );
               },
               style: ElevatedButton.styleFrom(
                 backgroundColor: Color(0xFFFFCC00),
@@ -246,6 +254,12 @@ class SignUpScreen extends StatelessWidget {
                   TextButton(
                     onPressed: () {
                       // Handle navigation to the Login screen
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) => const LoginScreen(),
+                        ),
+                      );
                     },
                     style: TextButton.styleFrom(
                       padding: EdgeInsets.zero,

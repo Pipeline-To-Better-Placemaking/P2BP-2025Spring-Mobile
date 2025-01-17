@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'create_project_details.dart';
+import 'package:p2bp_2025spring_mobile/search_location_screen.dart';
 import 'results_panel.dart';
 import 'edit_project_panel.dart';
 import 'forgot_password_page.dart';
@@ -9,8 +11,10 @@ import 'teams_and_invites_page.dart';
 import 'login_screen.dart';
 import 'signup_screen.dart';
 import 'home_screen.dart';
+import 'new_home_page.dart';
+import 'project_comparison_page.dart';
 import 'teams_settings_screen.dart';
-
+import 'search_location_screen.dart';
 void main() {
   runApp(const MyApp());
 }
@@ -36,9 +40,13 @@ class MyApp extends StatelessWidget {
             const CreateProjectAndTeamsPage(),
         '/settings': (context) => const SettingsPage(),
         '/teams_and_invites': (context) => const TeamsAndInvitesPage(),
+        '/create_project_details': (context) => const CreateProjectDetails(),
         '/login': (context) => const LoginScreen(),
         '/signup': (context) => const SignUpScreen(),
         '/home': (context) => const HomeScreen(),
+        '/new_home': (context) => const BottomFloatingNavBar(),
+        '/compare_projects': (context) => const ProjectComparisonPage(),
+        '/search': (context) => const SearchScreen(),
         '/teams_settings': (context) => TeamSettingsScreen(),
       },
     );
@@ -136,12 +144,31 @@ class _HomePageStates extends State<HomePage> {
                 name: 'Home',
                 version: 1,
               ),
-              // Button 11: Team Settings
+              buildTempButton(
+                context: context,
+                route: '/new_home',
+                name: 'New Home Page',
+                version: 0,
+              ),
+              buildTempButton(
+                context: context,
+                route: '/compare_projects',
+                name: 'Compare Projects',
+                version: 1,
+              ),
+              // Button 13: Team Settings
               buildTempButton(
                 context: context,
                 route: '/teams_settings',
                 name: 'Team Settings',
                 version: 0,
+              ),
+              // Button 14: Search
+              buildTempButton(
+                context: context,
+                route: '/search',
+                name: 'Search',
+                version: 1,
               ),
             ],
           ),
