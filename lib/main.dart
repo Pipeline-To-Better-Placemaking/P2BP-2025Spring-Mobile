@@ -15,6 +15,7 @@ import 'new_home_page.dart';
 import 'project_comparison_page.dart';
 import 'teams_settings_screen.dart';
 import 'search_location_screen.dart';
+
 void main() {
   runApp(const MyApp());
 }
@@ -24,11 +25,14 @@ class MyApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final ColorScheme colorScheme = ColorScheme.fromSeed(
+      seedColor: Colors.blue,
+    );
     return MaterialApp(
       title: 'Flutter Demo',
       theme: ThemeData(
-          // Insert theme here
-          ),
+        colorScheme: colorScheme,
+      ),
       debugShowCheckedModeBanner: false,
       home: const HomePage(title: 'Home Page'),
       routes: {
