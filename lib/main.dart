@@ -1,5 +1,10 @@
 import 'package:flutter/material.dart';
+import 'package:firebase_core/firebase_core.dart';
+import 'firebase_options.dart';
+import 'package:firebase_auth/firebase_auth.dart';
+
 import 'create_project_details.dart';
+import 'package:p2bp_2025spring_mobile/search_location_screen.dart';
 import 'results_panel.dart';
 import 'edit_project_panel.dart';
 import 'forgot_password_page.dart';
@@ -12,8 +17,22 @@ import 'signup_screen.dart';
 import 'home_screen.dart';
 import 'new_home_page.dart';
 import 'project_comparison_page.dart';
+import 'teams_settings_screen.dart';
+import 'search_location_screen.dart';
 
-void main() {
+void main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+  try {
+    // Ensure Firebase is initialized correctly
+    await Firebase.initializeApp(
+      options: DefaultFirebaseOptions.currentPlatform,
+    );
+    // Set Firebase persistence to SESSION to log out on tab/browser close
+    await FirebaseAuth.instance.setPersistence(Persistence.SESSION);
+  } catch (e) {
+    print("Firebase initialization failed: $e");
+    // Handle the error here, maybe show an error screen or fallback UI
+  }
   runApp(const MyApp());
 }
 
@@ -31,7 +50,7 @@ class MyApp extends StatelessWidget {
         colorScheme: colorScheme,
       ),
       debugShowCheckedModeBanner: false,
-      home: const HomePage(title: 'Home Page'),
+      home: LoginScreen(), // const HomePage(title: 'Home Page'),
       routes: {
         '/results': (context) => const ResultsPanel(),
         '/edit_project': (context) => const EditProjectPanel(),
@@ -47,6 +66,8 @@ class MyApp extends StatelessWidget {
         '/home': (context) => const HomeScreen(),
         '/new_home': (context) => const BottomFloatingNavBar(),
         '/compare_projects': (context) => const ProjectComparisonPage(),
+        '/search': (context) => const SearchScreen(),
+        '/teams_settings': (context) => TeamSettingsScreen(),
       },
     );
   }
@@ -153,6 +174,20 @@ class _HomePageStates extends State<HomePage> {
                 context: context,
                 route: '/compare_projects',
                 name: 'Compare Projects',
+                version: 1,
+              ),
+              // Button 13: Team Settings
+              buildTempButton(
+                context: context,
+                route: '/teams_settings',
+                name: 'Team Settings',
+                version: 0,
+              ),
+              // Button 14: Search
+              buildTempButton(
+                context: context,
+                route: '/search',
+                name: 'Search',
                 version: 1,
               ),
             ],
