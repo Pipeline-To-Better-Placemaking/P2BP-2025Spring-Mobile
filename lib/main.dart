@@ -13,6 +13,7 @@ import 'signup_screen.dart';
 import 'home_screen.dart';
 import 'new_home_page.dart';
 import 'project_comparison_page.dart';
+import 'teams_settings_screen.dart';
 import 'search_location_screen.dart';
 void main() {
   runApp(const MyApp());
@@ -23,14 +24,11 @@ class MyApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final ColorScheme colorScheme = ColorScheme.fromSeed(
-      seedColor: Colors.blue,
-    );
     return MaterialApp(
       title: 'Flutter Demo',
       theme: ThemeData(
-        colorScheme: colorScheme,
-      ),
+          // Insert theme here
+          ),
       debugShowCheckedModeBanner: false,
       home: const HomePage(title: 'Home Page'),
       routes: {
@@ -49,6 +47,7 @@ class MyApp extends StatelessWidget {
         '/new_home': (context) => const BottomFloatingNavBar(),
         '/compare_projects': (context) => const ProjectComparisonPage(),
         '/search': (context) => const SearchScreen(),
+        '/teams_settings': (context) => TeamSettingsScreen(),
       },
     );
   }
@@ -157,12 +156,19 @@ class _HomePageStates extends State<HomePage> {
                 name: 'Compare Projects',
                 version: 1,
               ),
-              // Button 13: Search
+              // Button 13: Team Settings
+              buildTempButton(
+                context: context,
+                route: '/teams_settings',
+                name: 'Team Settings',
+                version: 0,
+              ),
+              // Button 14: Search
               buildTempButton(
                 context: context,
                 route: '/search',
                 name: 'Search',
-                version: 0,
+                version: 1,
               ),
             ],
           ),
