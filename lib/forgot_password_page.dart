@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'theme.dart';
 import 'strings.dart';
+import 'reset_password_page.dart';
 
 class ForgotPasswordPage extends StatelessWidget {
   const ForgotPasswordPage({super.key});
@@ -121,6 +122,12 @@ class _ForgotPasswordFormState extends State<ForgotPasswordForm> {
           TextButton(
             onPressed: () {
               // TODO: actually send a reset link
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (context) => const ResetPasswordPage(),
+                ),
+              );
             },
             style: const ButtonStyle(
               backgroundColor: WidgetStatePropertyAll(
