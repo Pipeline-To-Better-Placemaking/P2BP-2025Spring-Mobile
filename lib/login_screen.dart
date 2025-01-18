@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:firebase_auth/firebase_auth.dart';
+import 'package:cloud_firestore/cloud_firestore.dart'; // Import Firestore package
 import 'widgets.dart';
 import 'theme.dart';
 import 'home_screen.dart';
@@ -137,13 +139,113 @@ class _LoginFormState extends State<LoginForm> {
   final _formKey = GlobalKey<FormState>();
   final TextEditingController _emailController = TextEditingController(),
       _passwordController = TextEditingController();
+  final FirebaseFirestore _firestore = FirebaseFirestore.instance;
   bool _obscureText = true;
+  String _fullName = '';
 
   @override
   void dispose() {
     _emailController.dispose();
     _passwordController.dispose();
     super.dispose();
+  }
+
+  Future<void> _loginUser() async {
+    try {
+      // Sign in using Firebase Auth
+      UserCredential userCredential =
+          await FirebaseAuth.instance.signInWithEmailAndPassword(
+        email: _emailController.text.trim(),
+        password: _passwordController.text,
+      );
+
+      // Check if the email is verified
+      User? user = userCredential.user;
+      if (user != null && !user.emailVerified) {
+        // Log the user out immediately
+        await FirebaseAuth.instance.signOut();
+
+        ScaffoldMessenger.of(context).clearSnackBars();
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(
+              'Please verify your email before logging in.',
+            ),
+          ),
+        );
+
+        return;
+      }
+
+      // Add/Update last login time in Firestore
+      await _firestore.collection('users').doc(userCredential.user?.uid).set({
+        'lastLogin': FieldValue.serverTimestamp(), // Add last login timestamp
+      }, SetOptions(merge: true)); // Merge data to avoid overwriting
+
+      // Fetch the user's full name from Firestore
+      String userId = userCredential.user!.uid;
+      var userDoc = await FirebaseFirestore.instance
+          .collection('users')
+          .doc(userId)
+          .get();
+
+      if (userDoc.exists) {
+        // Retrieve full name from Firestore if available
+        String fullName = userDoc['fullName'] ?? 'User';
+        setState(() {
+          _fullName = fullName;
+        });
+
+        // Successfully logged in, navigate to the home screen
+        ScaffoldMessenger.of(context)
+            .clearSnackBars(); // Clear any existing snackbars
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Welcome, $_fullName!')),
+        );
+
+        Navigator.pushReplacement(
+          context,
+          MaterialPageRoute(
+              builder: (context) =>
+                  HomeScreen()), // Replace with your home page
+        );
+      } else {
+        // Handle case where user data does not exist in Firestore (shouldn't happen if user data is properly saved)
+        ScaffoldMessenger.of(context).clearSnackBars();
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('User data not found in Firestore')),
+        );
+      }
+    } on FirebaseAuthException catch (e) {
+      String errorMessage;
+
+      // Provide user-friendly error messages
+      switch (e.code) {
+        case 'user-not-found':
+          errorMessage = 'No user found with this email.';
+          break;
+        case 'wrong-password':
+          errorMessage = 'Incorrect password. Please try again.';
+          break;
+        case 'invalid-email':
+          errorMessage = 'Invalid email address.';
+          break;
+        default:
+          errorMessage = 'Login failed. Please try again.';
+      }
+
+      // Clear any existing snackbars and show new one
+      ScaffoldMessenger.of(context).clearSnackBars();
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(errorMessage)),
+      );
+    } catch (e) {
+      // General error handling
+      ScaffoldMessenger.of(context).clearSnackBars();
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('An error occurred: $e')),
+      );
+    }
   }
 
   @override
@@ -218,7 +320,7 @@ class _LoginFormState extends State<LoginForm> {
                 onPressed: () {
                   // Toggle password visibility
                   setState(() {
-                    _obscureText = _obscureText ? false : true;
+                    _obscureText = !_obscureText;
                   });
                 },
               ),
@@ -254,9 +356,9 @@ class _LoginFormState extends State<LoginForm> {
           // Login Button
           ElevatedButton(
             onPressed: () {
-              // Handle login logic
-              Navigator.push(context,
-                  MaterialPageRoute(builder: (context) => const HomeScreen()));
+              if (_formKey.currentState!.validate()) {
+                _loginUser();
+              }
             },
             style: ElevatedButton.styleFrom(
               backgroundColor: const Color(0xFFFFCC00),
