@@ -197,8 +197,7 @@ class _LoginFormState extends State<LoginForm> {
         });
 
         // Successfully logged in, navigate to the home screen
-        ScaffoldMessenger.of(context)
-            .clearSnackBars(); // Clear any existing snackbars
+        ScaffoldMessenger.of(context).clearSnackBars();
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(content: Text('Welcome, $_fullName!')),
         );

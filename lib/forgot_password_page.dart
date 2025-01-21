@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'theme.dart';
 import 'strings.dart';
-import 'reset_password_page.dart';
 
 class ForgotPasswordPage extends StatelessWidget {
   const ForgotPasswordPage({super.key});
@@ -144,7 +143,7 @@ class _ForgotPasswordFormState extends State<ForgotPasswordForm> {
               _message,
               style: TextStyle(
                   color: !_isEmailValid ? Colors.red : Colors.green,
-                  fontWeight: FontWeight.bold),
+                  fontWeight: FontWeight.normal),
             ),
           TextFormField(
             controller: _emailController,
