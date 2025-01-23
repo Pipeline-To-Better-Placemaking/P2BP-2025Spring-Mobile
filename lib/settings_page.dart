@@ -5,6 +5,8 @@ import 'package:url_launcher/url_launcher.dart';
 import 'change_password_page.dart';
 import 'submit_bug_report_page.dart';
 
+final FirebaseAuth _auth = FirebaseAuth.instance;
+
 class SettingsPage extends StatefulWidget {
   const SettingsPage({super.key});
 
@@ -13,9 +15,6 @@ class SettingsPage extends StatefulWidget {
 }
 
 class _SettingsPageState extends State<SettingsPage> {
-  final FirebaseAuth _auth = FirebaseAuth.instance;
-  final FirebaseFirestore _firestore = FirebaseFirestore.instance;
-
   void _signOutUser() async {
     try {
       await _auth.signOut();
@@ -47,7 +46,7 @@ class _SettingsPageState extends State<SettingsPage> {
               fontWeight: FontWeight.bold,
             ),
             child: ListView(
-              padding: const EdgeInsets.symmetric(horizontal: 35),
+              padding: const EdgeInsets.symmetric(horizontal: 30),
               children: <Widget>[
                 Column(
                   children: <Widget>[
@@ -240,19 +239,66 @@ class ProfileIconEditStack extends StatefulWidget {
 }
 
 class _ProfileIconEditStackState extends State<ProfileIconEditStack> {
+  late Future<String> _initials;
+
+  @override
+  void initState() {
+    super.initState();
+    _initials = _getUserInitials();
+  }
+
+  // Gets the user's initials via their full name from firebase
+  Future<String> _getUserInitials() async {
+    String result = '';
+
+    try {
+      // Get user's full name from firebase
+      final userId = _auth.currentUser?.uid;
+      final userDoc = await FirebaseFirestore.instance
+          .collection('users')
+          .doc(userId)
+          .get();
+      final String fullName = userDoc['fullName'];
+
+      // Adds the first letter of each word of the full name to result string
+      final splitFullNameList = fullName.split(' ');
+      for (var word in splitFullNameList) {
+        result += word.substring(0, 1);
+      }
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('An error occurred: $e')),
+      );
+    }
+
+    return result;
+  }
+
   @override
   Widget build(BuildContext context) {
     return Stack(
       children: <Widget>[
-        CircleAvatar(
-          // TODO: Add getting profile image from backend
-          backgroundColor: Colors.black12,
-          radius: 32,
-          // Initials of account holder example
-          child: const Text('RG'),
-          /* Might make final default profile icon similar to this format
-              but dynamically getting the initials based on account ofc
-           */
+        // TODO: modify below FutureBuilder for profile icon uploaded by user
+        // Shows the user's initials once loaded as default profile icon
+        FutureBuilder<String>(
+          future: _initials,
+          builder: (BuildContext context, AsyncSnapshot<String> snapshot) {
+            if (snapshot.hasData) {
+              return CircleAvatar(
+                backgroundColor: Colors.black12,
+                radius: 32,
+                // Initials of account holder example
+                child: Text(snapshot.data!),
+              );
+            } else {
+              return CircleAvatar(
+                backgroundColor: Colors.black12,
+                radius: 32,
+                // Initials of account holder example
+                child: Text('...'),
+              );
+            }
+          },
         ),
         Positioned(
           bottom: 1,
