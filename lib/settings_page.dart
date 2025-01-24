@@ -4,6 +4,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'change_password_page.dart';
 import 'submit_bug_report_page.dart';
+import 'edit_profile_page.dart';
 
 final FirebaseAuth _auth = FirebaseAuth.instance;
 
@@ -59,7 +60,12 @@ class _SettingsPageState extends State<SettingsPage> {
                         ),
                       ),
                       onPressed: () {
-                        // TODO: Actual functionality
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (context) => EditProfilePage(),
+                          ),
+                        );
                       },
                       child: const Text(
                         'Edit Profile',

@@ -36,7 +36,6 @@ class ChangePasswordForm extends StatefulWidget {
 
 class _ChangePasswordFormState extends State<ChangePasswordForm> {
   final _formKey = GlobalKey<FormState>();
-  final User? _currentUser = FirebaseAuth.instance.currentUser;
   final TextEditingController // this comment is for fixing formatting
       _currentPasswordController = TextEditingController(),
       _newPasswordController = TextEditingController(),
@@ -45,6 +44,8 @@ class _ChangePasswordFormState extends State<ChangePasswordForm> {
   bool _currentPassObscureText = true;
   bool _newPassObscureText = true;
   bool _confirmPassObscureText = true;
+
+  final User? _currentUser = FirebaseAuth.instance.currentUser;
 
   @override
   void dispose() {
@@ -117,7 +118,7 @@ class _ChangePasswordFormState extends State<ChangePasswordForm> {
       _confirmPassErrorText = 'Passwords do not match.';
     }
 
-    // Only succeeds if none of the fields had an error and current pass was valid.
+    // Only succeeds if none of the fields had an error and current pass valid
     if (_currentPassErrorText == null &&
         _newPassErrorText == null &&
         _confirmPassErrorText == null &&

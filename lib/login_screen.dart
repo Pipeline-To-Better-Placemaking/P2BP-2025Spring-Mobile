@@ -152,10 +152,12 @@ class _LoginFormState extends State<LoginForm> {
 
   Future<void> _loginUser() async {
     try {
+      String? emailText = _emailController.text.trim();
+
       // Sign in using Firebase Auth
       UserCredential userCredential =
           await FirebaseAuth.instance.signInWithEmailAndPassword(
-        email: _emailController.text.trim(),
+        email: emailText,
         password: _passwordController.text,
       );
 
@@ -188,6 +190,19 @@ class _LoginFormState extends State<LoginForm> {
           .collection('users')
           .doc(userId)
           .get();
+
+      // Update email in Firestore to new email in Auth if they are different
+      /* This is done on login because there does not seem to be a way to listen
+          for when the user has verified their new email address after changing
+          it in order to only change email in Firestore after verification
+       */
+      if (emailText != userDoc['email']) {
+        print(userDoc['email']);
+        await _firestore
+            .collection('users')
+            .doc(userCredential.user?.uid)
+            .set({'email': emailText}, SetOptions(merge: true));
+      }
 
       if (userDoc.exists) {
         // Retrieve full name from Firestore if available
@@ -282,6 +297,7 @@ class _LoginFormState extends State<LoginForm> {
               ),
               filled: false,
             ),
+            keyboardType: TextInputType.emailAddress,
           ),
           const SizedBox(height: 10),
           // Password Input

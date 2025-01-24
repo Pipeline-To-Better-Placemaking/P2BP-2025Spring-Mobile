@@ -4,7 +4,6 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:p2bp_2025spring_mobile/widgets.dart';
 import 'theme.dart';
 import 'login_screen.dart';
-import 'home_screen.dart';
 
 class SignUpScreen extends StatelessWidget {
   const SignUpScreen({super.key});
@@ -234,6 +233,7 @@ class _SignUpFormState extends State<SignUpForm> {
     });
   }
 
+  @override
   Widget build(BuildContext context) {
     return Form(
       key: _formKey,
@@ -294,6 +294,16 @@ class _SignUpFormState extends State<SignUpForm> {
               ),
               filled: false,
             ),
+            keyboardType: TextInputType.emailAddress,
+            validator: (value) {
+              if (value == null || value.isEmpty) {
+                return 'Please enter your email';
+              }
+              if (!RegExp(r'^[^@]+@[^@]+\.[^@]+').hasMatch(value)) {
+                return 'Please enter a valid email address';
+              }
+              return null;
+            },
           ),
           const SizedBox(height: 10),
           // Password Input
