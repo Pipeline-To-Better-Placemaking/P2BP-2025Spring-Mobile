@@ -289,7 +289,9 @@ class _ProfileIconEditStackState extends State<ProfileIconEditStack> {
     return Stack(
       children: <Widget>[
         // TODO: modify below FutureBuilder for profile icon uploaded by user
-        // Shows the user's initials once loaded as default profile icon
+        // Shows profile icon based on state of Future.
+        // Gets user's initials and has fallback. Planned to get image
+        // previously uploaded by user if there is one.
         FutureBuilder<String>(
           future: _initials,
           builder: (BuildContext context, AsyncSnapshot<String> snapshot) {
