@@ -201,7 +201,7 @@ class _LoginFormState extends State<LoginForm> {
         await _firestore
             .collection('users')
             .doc(userCredential.user?.uid)
-            .set({'email': emailText}, SetOptions(merge: true));
+            .update({'email': emailText});
       }
 
       if (userDoc.exists) {

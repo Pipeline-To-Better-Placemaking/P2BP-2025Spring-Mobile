@@ -26,8 +26,6 @@ class ChangeEmailPage extends StatelessWidget {
               const Text(Strings.changeEmailText1),
               const SizedBox(height: 16),
               ChangeEmailForm(),
-              const SizedBox(height: 16),
-              const Text(Strings.changeEmailText2),
               const SizedBox(height: 40),
             ],
           ),
@@ -48,19 +46,45 @@ class _ChangeEmailFormState extends State<ChangeEmailForm> {
   final _formKey = GlobalKey<FormState>();
   final TextEditingController _emailController = TextEditingController();
   User? _currentUser = FirebaseAuth.instance.currentUser;
-  String? currentEmail;
+  String? _currentEmail;
   StreamSubscription? _userChangesListener;
+
+  bool _isEmailSent = false;
 
   @override
   void initState() {
     super.initState();
-    currentEmail = _currentUser?.email;
+    _currentEmail = _currentUser?.email;
+
+    // Meant to listen for auth update after changing email to update displayed
+    // current email address. But it doesn't work, the email never updates
+    // except sometimes to null.
     _userChangesListener = FirebaseAuth.instance.userChanges().listen((user) {
       setState(() {
         _currentUser = user;
-        currentEmail = _currentUser?.email;
+        _currentEmail = _currentUser?.email;
       });
     });
+  }
+
+  Future<void> _submitEmailChange() async {
+    if (_formKey.currentState!.validate()) {
+      try {
+        String newEmail = _emailController.text.trim();
+        await _currentUser?.verifyBeforeUpdateEmail(newEmail);
+
+        setState(() {
+          _isEmailSent = true;
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text('Verification email sent successfully!')),
+          );
+        });
+      } catch (e) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Error changing email: $e')),
+        );
+      }
+    }
   }
 
   @override
@@ -68,23 +92,6 @@ class _ChangeEmailFormState extends State<ChangeEmailForm> {
     _emailController.dispose();
     _userChangesListener?.cancel();
     super.dispose();
-  }
-
-  Future<void> _submitForm() async {
-    if (_formKey.currentState!.validate()) {
-      try {
-        String newEmail = _emailController.text.trim();
-        await _currentUser?.verifyBeforeUpdateEmail(newEmail);
-
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Verification email sent successfully!')),
-        );
-      } catch (e) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Error changing email: $e')),
-        );
-      }
-    }
   }
 
   @override
@@ -99,7 +106,7 @@ class _ChangeEmailFormState extends State<ChangeEmailForm> {
               fontSize: 20,
               color: Colors.black87,
             ),
-            'Your current email address is: $currentEmail',
+            'Your current email address is:\n$_currentEmail',
           ),
           const SizedBox(height: 16),
           TextFormField(
@@ -111,13 +118,13 @@ class _ChangeEmailFormState extends State<ChangeEmailForm> {
             keyboardType: TextInputType.emailAddress,
             validator: (value) {
               if (value == null || value.isEmpty) {
-                return 'Please enter your email';
+                return 'Please enter your new email address';
               }
               if (!RegExp(r'^[^@]+@[^@]+\.[^@]+').hasMatch(value)) {
                 return 'Please enter a valid email address';
               }
-              if (value == _currentUser?.email) {
-                return 'This is your current email address.';
+              if (value == _currentEmail) {
+                return 'This is your current email address';
               }
               return null;
             },
@@ -131,7 +138,7 @@ class _ChangeEmailFormState extends State<ChangeEmailForm> {
                 borderRadius: BorderRadius.circular(10),
               ),
             ),
-            onPressed: _submitForm,
+            onPressed: _submitEmailChange,
             child: const Text(
               'Submit',
               style: TextStyle(
@@ -140,7 +147,30 @@ class _ChangeEmailFormState extends State<ChangeEmailForm> {
                 fontWeight: FontWeight.bold,
               ),
             ),
-          )
+          ),
+          if (_isEmailSent)
+            Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: <Widget>[
+                const SizedBox(height: 16),
+                Text(
+                  'The verification email sent successfully.',
+                  style: TextStyle(
+                    color: Colors.green[700],
+                    fontSize: 17,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+                const SizedBox(height: 16),
+                const Text(
+                  Strings.changeEmailText2,
+                  style: TextStyle(
+                    fontSize: 20,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+              ],
+            ),
         ],
       ),
     );

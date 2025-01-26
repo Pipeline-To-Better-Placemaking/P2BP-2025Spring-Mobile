@@ -12,7 +12,7 @@ class Strings {
   static const String changeEmailText1 =
       'Want to change the email address attached to your account? Just enter the new address below and press submit.\nThen, check your new email address for a verification email. Your email address will only be updated once the new address has been verified.';
   static const String changeEmailText2 =
-      'It is recommended that you log out and back in after changing your email.';
+      'It is highly recommended that you log out and back in once you have verified your new email address.';
   static const String changeNameText =
-      'To change the name attached to your account, simply enter the new name below and press the submit button.';
+      'To change the name attached to your account, just enter the new name and press submit.';
 }

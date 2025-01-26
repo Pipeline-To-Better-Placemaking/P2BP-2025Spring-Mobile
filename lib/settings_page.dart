@@ -78,7 +78,7 @@ class _SettingsPageState extends State<SettingsPage> {
                   ],
                 ),
                 const SizedBox(height: 20),
-                Text('Appearance'),
+                const Text('Appearance'),
                 const SizedBox(height: 10),
                 const DarkModeSwitchListTile(
                   shape: RoundedRectangleBorder(
@@ -100,7 +100,7 @@ class _SettingsPageState extends State<SettingsPage> {
                   ),
                 ),
                 const SizedBox(height: 20),
-                Text('Account'),
+                const Text('Account'),
                 const SizedBox(height: 10),
                 ListTile(
                   leading: Icon(Icons.gpp_maybe),
@@ -148,7 +148,7 @@ class _SettingsPageState extends State<SettingsPage> {
                   },
                 ),
                 const SizedBox(height: 20),
-                Text('Support'),
+                const Text('Support'),
                 const SizedBox(height: 10),
                 ListTile(
                   leading: Icon(Icons.help),
@@ -271,13 +271,17 @@ class _ProfileIconEditStackState extends State<ProfileIconEditStack> {
       for (var word in splitFullNameList) {
         result += word.substring(0, 1);
       }
+      return result;
     } catch (e) {
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('An error occurred: $e')),
+        SnackBar(
+          content: Text(
+            'An error occurred while trying to load your profile icon: $e',
+          ),
+        ),
       );
+      return 'Err';
     }
-
-    return result;
   }
 
   @override
