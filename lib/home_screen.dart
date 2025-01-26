@@ -7,6 +7,8 @@ import 'teams_and_invites_page.dart';
 import 'results_panel.dart';
 import 'edit_project_panel.dart';
 import 'main.dart';
+import 'package:firebase_auth/firebase_auth.dart';
+import 'firestore_functions.dart';
 
 List<String> navIcons2 = [
   'assets/Home_Icon.png',
@@ -19,11 +21,45 @@ class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
 
   @override
-  _HomeScreenState createState() => _HomeScreenState();
+  State<HomeScreen> createState() => _HomeScreenState();
 }
 
 class _HomeScreenState extends State<HomeScreen> {
+  final User? _currentUser = FirebaseAuth.instance.currentUser;
+
   int selectedIndex = 0;
+  String _firstName = 'User';
+
+  @override
+  void initState() {
+    super.initState();
+    _getUserFirstName();
+  }
+
+  // Gets name from DB, get the first word of that, then sets _firstName to it
+  Future<void> _getUserFirstName() async {
+    try {
+      String fullName =
+          await FirestoreFunctions.getUserFullName(_currentUser?.uid);
+
+      // Get first name from full name
+      String firstName = fullName.split(' ').first;
+
+      if (_firstName != firstName) {
+        setState(() {
+          _firstName = firstName;
+        });
+      }
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            'An error occurred while retrieving your name: $e',
+          ),
+        ),
+      );
+    }
+  }
 
   void onNavItemTapped(int index) {
     setState(() {
@@ -59,8 +95,7 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   Widget _buildHomeContent() {
-    return //Scrollable content
-        SingleChildScrollView(
+    return SingleChildScrollView(
       child: Padding(
         padding: const EdgeInsets.symmetric(horizontal: 20),
         child: Column(
@@ -91,11 +126,13 @@ class _HomeScreenState extends State<HomeScreen> {
                           onPressed: () {
                             // Handle notification button action
                             Navigator.push(
-                                context,
-                                MaterialPageRoute(
-                                    builder: (context) => const HomePage(
-                                          title: '/home',
-                                        )));
+                              context,
+                              MaterialPageRoute(
+                                builder: (context) => const HomePage(
+                                  title: '/home',
+                                ),
+                              ),
+                            );
                           },
                           iconSize: 24,
                         ),
@@ -106,11 +143,12 @@ class _HomeScreenState extends State<HomeScreen> {
                           onPressed: () {
                             // Navigate to Teams/Invites screen
                             Navigator.push(
-                                context,
-                                MaterialPageRoute(
-                                  builder: (context) =>
-                                      const TeamsAndInvitesPage(),
-                                ));
+                              context,
+                              MaterialPageRoute(
+                                builder: (context) =>
+                                    const TeamsAndInvitesPage(),
+                              ),
+                            );
                           },
                           iconSize: 24,
                         ),
@@ -127,14 +165,14 @@ class _HomeScreenState extends State<HomeScreen> {
                           shaderCallback: (bounds) {
                             return defaultGrad.createShader(bounds);
                           },
-                          child: const Text(
-                            'Hello,\nMichael',
+                          child: Text(
+                            'Hello, $_firstName',
                             style: TextStyle(
-                                fontSize: 36,
-                                fontWeight: FontWeight.bold,
-                                color: Colors.white,
-                                height: 1.2 // Masked text with gradient
-                                ),
+                              fontSize: 36,
+                              fontWeight: FontWeight.bold,
+                              color: Colors.white,
+                              height: 1.2, // Masked text with gradient
+                            ),
                           ),
                         ),
                       ],

@@ -4,6 +4,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'strings.dart';
+import 'firestore_functions.dart';
 
 class ChangeNamePage extends StatelessWidget {
   const ChangeNamePage({super.key});
@@ -46,7 +47,7 @@ class ChangeNameForm extends StatefulWidget {
 class _ChangeNameFormState extends State<ChangeNameForm> {
   final _formKey = GlobalKey<FormState>();
   final TextEditingController _fullNameController = TextEditingController();
-  User? _currentUser = FirebaseAuth.instance.currentUser;
+  final User? _currentUser = FirebaseAuth.instance.currentUser;
   String _currentFullName = 'Loading...';
   StreamSubscription? _userChangesListener;
 
@@ -56,29 +57,16 @@ class _ChangeNameFormState extends State<ChangeNameForm> {
   void initState() {
     super.initState();
     _getUserFullName();
-
-    // Meant to listen for auth update after changing email to update displayed
-    // current email address. But it doesn't work, the email never updates
-    // except sometimes to null.
-    _userChangesListener = FirebaseAuth.instance.userChanges().listen((user) {
-      _currentUser = user;
-      _getUserFullName();
-    });
   }
 
+  // Gets name from DB and then sets local field _currentFullName to that
   Future<void> _getUserFullName() async {
     try {
-      final userDoc = await FirebaseFirestore.instance
-          .collection('users')
-          .doc(_currentUser?.uid)
-          .get();
-      if (userDoc.exists) {
+      String name = await FirestoreFunctions.getUserFullName(_currentUser?.uid);
+
+      if (_currentFullName != name) {
         setState(() {
-          _currentFullName = userDoc['fullName'] ?? 'User';
-        });
-      } else {
-        setState(() {
-          _currentFullName = 'User';
+          _currentFullName = name;
         });
       }
     } catch (e) {
@@ -96,7 +84,6 @@ class _ChangeNameFormState extends State<ChangeNameForm> {
     if (_formKey.currentState!.validate()) {
       try {
         String newName = _fullNameController.text.trim();
-        print(newName);
         await FirebaseFirestore.instance
             .collection('users')
             .doc(_currentUser?.uid)

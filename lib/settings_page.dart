@@ -5,8 +5,7 @@ import 'package:url_launcher/url_launcher.dart';
 import 'change_password_page.dart';
 import 'submit_bug_report_page.dart';
 import 'edit_profile_page.dart';
-
-final FirebaseAuth _auth = FirebaseAuth.instance;
+import 'firestore_functions.dart';
 
 class SettingsPage extends StatefulWidget {
   const SettingsPage({super.key});
@@ -18,7 +17,7 @@ class SettingsPage extends StatefulWidget {
 class _SettingsPageState extends State<SettingsPage> {
   void _signOutUser() async {
     try {
-      await _auth.signOut();
+      await FirebaseAuth.instance.signOut();
       Navigator.pushReplacementNamed(context, '/');
     } catch (e) {
       print('Error signing out: $e');
@@ -245,6 +244,8 @@ class ProfileIconEditStack extends StatefulWidget {
 }
 
 class _ProfileIconEditStackState extends State<ProfileIconEditStack> {
+  final User? _currentUser = FirebaseAuth.instance.currentUser;
+
   late Future<String> _initials;
 
   @override
@@ -259,12 +260,8 @@ class _ProfileIconEditStackState extends State<ProfileIconEditStack> {
 
     try {
       // Get user's full name from firebase
-      final userId = _auth.currentUser?.uid;
-      final userDoc = await FirebaseFirestore.instance
-          .collection('users')
-          .doc(userId)
-          .get();
-      final String fullName = userDoc['fullName'];
+      final String fullName =
+          await FirestoreFunctions.getUserFullName(_currentUser?.uid);
 
       // Adds the first letter of each word of the full name to result string
       final splitFullNameList = fullName.split(' ');
