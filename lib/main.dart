@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_core/firebase_core.dart';
-import 'firebase_options.dart';
+// import 'firebase_options.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 
 import 'create_project_details.dart';
@@ -25,8 +25,8 @@ void main() async {
   try {
     // Ensure Firebase is initialized correctly
     await Firebase.initializeApp(
-      options: DefaultFirebaseOptions.currentPlatform,
-    );
+        // options: DefaultFirebaseOptions.currentPlatform,
+        );
     // Set Firebase persistence to SESSION to log out on tab/browser close
     await FirebaseAuth.instance.setPersistence(Persistence.SESSION);
   } catch (e) {
