@@ -1,5 +1,9 @@
 import 'package:flutter/material.dart';
 import 'teams_settings_screen.dart';
+import 'package:firebase_core/firebase_core.dart';
+import 'firebase_options.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 
 class TeamsAndInvitesPage extends StatefulWidget {
   const TeamsAndInvitesPage({super.key});
@@ -9,9 +13,46 @@ class TeamsAndInvitesPage extends StatefulWidget {
 }
 
 class _TeamsAndInvitesPageState extends State<TeamsAndInvitesPage> {
-  List<int> items = [123, 3, 51, 2, 531, 3, 5];
-  int itemCount = 7;
+  List teams = [];
+  List invites = [];
+  int itemCount = 0;
   int selectedIndex = 0;
+  final FirebaseFirestore _firestore = FirebaseFirestore.instance;
+  User? loggedInUser = FirebaseAuth.instance.currentUser;
+
+  List getTeamsIDs() {
+    try {
+      _firestore
+          .collection("users")
+          .doc(loggedInUser?.uid)
+          .snapshots()
+          .listen((result) {
+        teams = result.data()?["teams"];
+        print(teams);
+      });
+    } catch (e, stacktrace) {
+      print('Exception retrieving teams: $e');
+      print('Stacktrace: $stacktrace');
+    }
+    return teams;
+  }
+
+  List getInvites() {
+    try {
+      _firestore
+          .collection("users")
+          .doc(loggedInUser?.uid)
+          .snapshots()
+          .listen((result) {
+        invites = result.data()?['invites'];
+        print(invites);
+      });
+    } catch (e, stacktrace) {
+      print('Exception retrieving teams: $e');
+      print('Stacktrace: $stacktrace');
+    }
+    return invites;
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -42,56 +83,95 @@ class _TeamsAndInvitesPageState extends State<TeamsAndInvitesPage> {
           ),
           body: TabBarView(
             children: [
-              // TODO Backend: if list of projects is not empty
-              itemCount > 0
-                  // Iterate through list of projects, each being a card.
-                  // Update variables each time with: color, team name, num of
-                  // projects, and members list from database.
-                  ? ListView.separated(
-                      padding: const EdgeInsets.only(
-                        left: 35,
-                        right: 35,
-                        top: 50,
-                        bottom: 20,
-                      ),
-                      itemCount: itemCount,
-                      itemBuilder: (BuildContext context, int index) {
-                        return buildContainer(
-                            index: index,
-                            color: Colors.blue,
-                            numProjects: items[index],
-                            teamName: 'PlaceHolder');
-                      },
-                      separatorBuilder: (BuildContext context, int index) =>
-                          const SizedBox(
-                        height: 50,
-                      ),
-                    )
-                  : const Center(
-                      child: Text(
-                          'You have no teams! Join a team or create one first.')),
-              itemCount > 0
-                  ? ListView.separated(
-                      padding: const EdgeInsets.only(
-                        left: 35,
-                        right: 35,
-                        top: 25,
-                        bottom: 25,
-                      ),
-                      itemCount: itemCount,
-                      itemBuilder: (BuildContext context, int index) {
-                        return const InviteCard(
-                          color: Colors.blue,
-                          name: 'Placeholder',
-                          teamName: 'Placeholder',
-                        );
-                      },
-                      separatorBuilder: (BuildContext context, int index) =>
-                          const SizedBox(
-                        height: 25,
-                      ),
-                    )
-                  : const Center(child: Text('You have no invites!')),
+              // TODO: steam for teams and invites? or either or neither?
+              StreamBuilder<DocumentSnapshot>(
+                  stream: _firestore
+                      .collection("users")
+                      .doc(loggedInUser?.uid)
+                      .snapshots(),
+                  builder: (context, snapshot) {
+                    teams = getTeamsIDs();
+                    if (!snapshot.hasData || teams.isEmpty) {
+                      print("->${snapshot.data}");
+                      return const Center(
+                        child: Text(
+                            'You have no teams! Join a team or create one first.'),
+                      );
+                    }
+                    final userData = snapshot.data;
+                    itemCount = teams.length;
+
+                    return itemCount > 0
+                        ? ListView.separated(
+                            padding: const EdgeInsets.only(
+                              left: 35,
+                              right: 35,
+                              top: 50,
+                              bottom: 20,
+                            ),
+                            itemCount: itemCount,
+                            itemBuilder: (BuildContext context, int index) {
+                              return buildContainer(
+                                  index: index,
+                                  color: Colors.blue,
+                                  numProjects: 12, //<-- TODO: edit
+                                  teamName: 'PlaceHolder');
+                            },
+                            separatorBuilder:
+                                (BuildContext context, int index) =>
+                                    const SizedBox(
+                              height: 50,
+                            ),
+                          )
+                        : Center(
+                            child: Text(
+                                "You have no teams! Join a team or create one first."),
+                          );
+                  }),
+
+              // Iterate through list of projects, each being a card.
+              // Update variables each time with: color, team name, num of
+              // projects, and members list from database.
+              StreamBuilder<Object>(
+                  stream: _firestore
+                      .collection("users")
+                      .doc(loggedInUser?.uid)
+                      .snapshots(),
+                  builder: (context, snapshot) {
+                    invites = getInvites();
+                    if (!snapshot.hasData) {
+                      print("->${snapshot.data}");
+                      return const Center(
+                        child: Text('You have no invites!'),
+                      );
+                    }
+                    final userData = snapshot.data;
+                    itemCount = invites.length;
+
+                    return itemCount > 0
+                        ? ListView.separated(
+                            padding: const EdgeInsets.only(
+                              left: 35,
+                              right: 35,
+                              top: 25,
+                              bottom: 25,
+                            ),
+                            itemCount: itemCount,
+                            itemBuilder: (BuildContext context, int index) {
+                              return const InviteCard(
+                                color: Colors.blue,
+                                name: 'Placeholder',
+                                teamName: 'Placeholder',
+                              );
+                            },
+                            separatorBuilder:
+                                (BuildContext context, int index) =>
+                                    const SizedBox(
+                              height: 25,
+                            ),
+                          )
+                        : const Center(child: Text('You have no invites!'));
+                  })
             ],
           ),
         ),
@@ -208,35 +288,6 @@ class _TeamsAndInvitesPageState extends State<TeamsAndInvitesPage> {
     );
   }
 }
-
-// class TeamCard extends StatefulWidget {
-//   final Color color;
-//   final String teamName;
-//   final bool selected;
-//   final Function onTap;
-//   final int numProjects; // TODO: Variable class project, project.numProjects
-//   // TODO: final List<Members> members; (implement list of members to use for
-//   // members section with cover photos)
-//
-//   const TeamCard({
-//     super.key,
-//     required this.color,
-//     required this.teamName,
-//     required this.numProjects,
-//     required this.selected,
-//     required this.onTap,
-//   });
-//
-//   @override
-//   State<TeamCard> createState() => _TeamCardState();
-// }
-//
-// class _TeamCardState extends State<TeamCard> {
-//   @override
-//   Widget build(BuildContext context) {
-//     return
-//   }
-// }
 
 class InviteCard extends StatelessWidget {
   final Color color;

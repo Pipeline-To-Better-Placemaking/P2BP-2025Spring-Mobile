@@ -114,6 +114,7 @@ class CreationTextBox extends StatelessWidget {
   final String labelText;
   final ValueChanged? onChanged;
   final Icon? icon;
+  final String? errorMessage;
 
   const CreationTextBox({
     super.key,
@@ -123,6 +124,7 @@ class CreationTextBox extends StatelessWidget {
     required this.minLines,
     this.onChanged,
     this.icon,
+    this.errorMessage,
   });
   @override
   Widget build(BuildContext context) {
@@ -132,13 +134,22 @@ class CreationTextBox extends StatelessWidget {
           textSelectionTheme: const TextSelectionThemeData(
               selectionColor: Colors.blue, selectionHandleColor: Colors.blue),
         ),
-        child: TextField(
+        child: TextFormField(
           onChanged: onChanged,
           style: const TextStyle(color: Colors.black),
           maxLength: maxLength,
           maxLines: maxLines,
           minLines: minLines,
           cursorColor: const Color(0xFF585A6A),
+          validator: (value) {
+            // TODO: custom error check parameter?
+            if (errorMessage != null && (value == null || value.length <= 3)) {
+              // TODO: eventually require error message?
+              return errorMessage ??
+                  'Error, insufficient input (validator error message not set)';
+            }
+            return null;
+          },
           decoration: InputDecoration(
             prefixIcon: icon,
             alignLabelWithHint: true,

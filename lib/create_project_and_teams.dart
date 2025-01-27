@@ -1,4 +1,7 @@
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
+import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'widgets.dart';
 import 'theme.dart';
 import 'search_location_screen.dart';
@@ -14,7 +17,38 @@ class CreateProjectAndTeamsPage extends StatefulWidget {
       _CreateProjectAndTeamsPageState();
 }
 
-// TODO: Align labels, standardize colors. Create teams page.
+final FirebaseFirestore _firestore = FirebaseFirestore.instance;
+User? loggedInUser;
+String teamID = _firestore.collection('teams').doc().id;
+
+String saveTeam({required membersList, required String teamName}) {
+  if (teamName.length > 3) {
+    _firestore.collection("teams").doc(teamID).set({
+      'title': teamName,
+      'creationTime': FieldValue.serverTimestamp(),
+      // Saves document id as field _id
+      'id': teamID,
+      'teamMembers': FieldValue.arrayUnion([
+        {'role': 'owner', 'user': _firestore.doc('users/${loggedInUser?.uid}')}
+      ]),
+    }).then((documentSnapshot) => print("Data awith ID: $teamID"));
+    _firestore.collection("users").doc(loggedInUser?.uid).update({
+      'teams': FieldValue.arrayUnion([_firestore.doc('/teams/$teamID')])
+    });
+    // TODO: Currently: invites team members only once team is created.
+    for (Member members in membersList) {
+      _firestore.collection('users').doc(members.getUserID()).update({
+        'invites': FieldValue.arrayUnion([_firestore.doc('/teams/$teamID')])
+      });
+    }
+  } else {
+    print("Name too short"); // <-- TODO: change to field display error on app
+  }
+  print(_firestore.doc('/teams/$teamID'));
+
+  return teamID;
+}
+
 class _CreateProjectAndTeamsPageState extends State<CreateProjectAndTeamsPage> {
   PageView page = PageView.project;
   PageView pageSelection = PageView.project;
@@ -28,9 +62,7 @@ class _CreateProjectAndTeamsPageState extends State<CreateProjectAndTeamsPage> {
     return SafeArea(
       child: Scaffold(
         // Top switch between Projects/Teams
-        appBar: AppBar(
-          title: const Text('Placeholder'),
-        ),
+        appBar: AppBar(),
         // Creation screens
         body: SingleChildScrollView(
           child: Center(
@@ -40,7 +72,8 @@ class _CreateProjectAndTeamsPageState extends State<CreateProjectAndTeamsPage> {
                 SegmentedButton(
                   selectedIcon: const Icon(Icons.check_circle),
                   style: SegmentedButton.styleFrom(
-                    backgroundColor: const Color(0xFF3664B3),
+                    iconColor: Colors.white,
+                    backgroundColor: const Color(0xFF4871AE),
                     foregroundColor: Colors.white70,
                     selectedForegroundColor: Colors.white,
                     selectedBackgroundColor: const Color(0xFF2E5598),
@@ -125,7 +158,7 @@ class CreateProjectWidget extends StatelessWidget {
               icon: Icons.add_photo_alternate,
               circular: false,
               onTap: () {
-                // TODO: Actual function
+                // TODO: Actual function (Photo Upload)
                 print('Test');
                 return;
               },
@@ -192,165 +225,318 @@ class CreateProjectWidget extends StatelessWidget {
   }
 }
 
-class CreateTeamWidget extends StatelessWidget {
+class Member {
+  String _userID = '';
+  String _fullName = '';
+
+  Member({required String userID, required String fullName}) {
+    _userID = userID;
+    _fullName = fullName;
+  }
+  void setUserID(String userID) {
+    _userID = userID;
+  }
+
+  void setFullName(String fullName) {
+    _fullName = fullName;
+  }
+
+  String getUserID() {
+    return _userID;
+  }
+
+  String getFullName() {
+    return _fullName;
+  }
+}
+
+class CreateTeamWidget extends StatefulWidget {
   const CreateTeamWidget({
     super.key,
   });
 
   @override
+  State<CreateTeamWidget> createState() => _CreateTeamWidgetState();
+}
+
+class _CreateTeamWidgetState extends State<CreateTeamWidget> {
+  List<Member> membersList = [];
+  List<Member> membersSearch = [];
+  List<Member> invitedMembers = [];
+  int itemCount = 0;
+  List<bool> inviteList = List.generate(10, (index) => false);
+  final _formKey = GlobalKey<FormState>();
+
+  @override
+  initState() {
+    super.initState();
+    loggedInUser = FirebaseAuth.instance.currentUser;
+    _firestore.collection('users').where('createdAt', isNull: false).get().then(
+      (querySnapshot) {
+        Member tempMember;
+        for (var document in querySnapshot.docs) {
+          // TODO: Use ID to invite member with searched name (having some ID) to team in MemberInviteButton.
+          if (document.id != loggedInUser?.uid) {
+            tempMember = Member(
+                userID: document.id, fullName: document.data()['fullName']);
+            membersList.add(tempMember);
+          }
+        }
+        print("Successfully completed");
+      },
+      onError: (e) => print("Error completing: $e"),
+    );
+  }
+
+  List<Member> searchMembers(List<Member> membersList, String text) {
+    membersList = membersList
+        .where((member) =>
+            member.getFullName().toLowerCase().startsWith(text.toLowerCase()))
+        .toList();
+    print('membersList: $membersList');
+    return membersList.isNotEmpty ? membersList : [];
+  }
+
+  @override
   Widget build(BuildContext context) {
-    return Container(
-      width: 400,
-      height: 500,
-      decoration: const BoxDecoration(
-        color: Colors.white30,
-        borderRadius: BorderRadius.all(Radius.circular(10)),
-      ),
-      child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 10),
-        child: Column(
-          children: <Widget>[
-            Row(
-              children: <Widget>[
-                Padding(
-                  padding: const EdgeInsets.only(left: 75.0, bottom: 5),
-                  child: Text(
-                    'Team Photo',
-                    textAlign: TextAlign.left,
-                    style: TextStyle(
-                      fontWeight: FontWeight.bold,
-                      fontSize: 16.0,
-                      color: Colors.blue[900],
-                    ),
-                  ),
-                ),
-                Padding(
-                  padding: const EdgeInsets.only(left: 75.0, bottom: 5),
-                  child: Text(
-                    'Team Color',
-                    textAlign: TextAlign.left,
-                    style: TextStyle(
-                      fontWeight: FontWeight.bold,
-                      fontSize: 16.0,
-                      color: Colors.blue[900],
-                    ),
-                  ),
-                ),
-              ],
-            ),
-            Padding(
-              padding: const EdgeInsets.only(bottom: 15.0),
-              child: Row(
+    String teamName = '';
+    return Form(
+      key: _formKey,
+      child: Container(
+        width: 400,
+        height: 750,
+        decoration: const BoxDecoration(
+          color: Colors.white30,
+          borderRadius: BorderRadius.all(Radius.circular(10)),
+        ),
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 10),
+          child: Column(
+            children: <Widget>[
+              Row(
                 children: <Widget>[
                   Padding(
-                    padding: const EdgeInsets.only(left: 75.0),
-                    child: PhotoUpload(
-                      width: 75,
-                      height: 75,
-                      icon: Icons.add_photo_alternate,
-                      circular: true,
-                      onTap: () {
-                        // TODO: Actual function
-                        print('Test');
-                        return;
-                      },
+                    padding: const EdgeInsets.only(left: 75.0, bottom: 5),
+                    child: Text(
+                      'Team Photo',
+                      textAlign: TextAlign.left,
+                      style: TextStyle(
+                        fontWeight: FontWeight.bold,
+                        fontSize: 16.0,
+                        color: Colors.blue[900],
+                      ),
                     ),
                   ),
                   Padding(
-                    padding: const EdgeInsets.only(left: 75.0),
-                    child: Column(
-                      children: <Widget>[
-                        Row(
-                          children: <Widget>[
-                            ColorSelectCircle(
-                              gradient: defaultGrad,
-                            ),
-                            ColorSelectCircle(
-                              gradient: defaultGrad,
-                            ),
-                            ColorSelectCircle(
-                              gradient: defaultGrad,
-                            ),
-                          ],
-                        ),
-                        Row(
-                          children: <Widget>[
-                            ColorSelectCircle(
-                              gradient: defaultGrad,
-                            ),
-                            ColorSelectCircle(
-                              gradient: defaultGrad,
-                            ),
-                            ColorSelectCircle(
-                              gradient: defaultGrad,
-                            ),
-                          ],
-                        ),
-                      ],
+                    padding: const EdgeInsets.only(left: 75.0, bottom: 5),
+                    child: Text(
+                      'Team Color',
+                      textAlign: TextAlign.left,
+                      style: TextStyle(
+                        fontWeight: FontWeight.bold,
+                        fontSize: 16.0,
+                        color: Colors.blue[900],
+                      ),
                     ),
                   ),
                 ],
               ),
-            ),
-            Align(
-              alignment: Alignment.centerLeft,
-              child: Text(
-                'Team Name',
-                textAlign: TextAlign.left,
-                style: TextStyle(
-                  fontWeight: FontWeight.bold,
-                  fontSize: 16.0,
-                  color: Colors.blue[900],
+              Padding(
+                padding: const EdgeInsets.only(bottom: 15.0),
+                child: Row(
+                  children: <Widget>[
+                    Padding(
+                      padding: const EdgeInsets.only(left: 75.0),
+                      child: PhotoUpload(
+                        width: 75,
+                        height: 75,
+                        icon: Icons.add_photo_alternate,
+                        circular: true,
+                        onTap: () {
+                          // TODO: Actual function (Photo Upload)
+                          print('Test');
+                          return;
+                        },
+                      ),
+                    ),
+                    Padding(
+                      padding: const EdgeInsets.only(left: 75.0),
+                      child: Column(
+                        children: <Widget>[
+                          Row(
+                            children: <Widget>[
+                              ColorSelectCircle(
+                                gradient: defaultGrad,
+                              ),
+                              ColorSelectCircle(
+                                gradient: defaultGrad,
+                              ),
+                              ColorSelectCircle(
+                                gradient: defaultGrad,
+                              ),
+                            ],
+                          ),
+                          Row(
+                            children: <Widget>[
+                              ColorSelectCircle(
+                                gradient: defaultGrad,
+                              ),
+                              ColorSelectCircle(
+                                gradient: defaultGrad,
+                              ),
+                              ColorSelectCircle(
+                                gradient: defaultGrad,
+                              ),
+                            ],
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
                 ),
               ),
-            ),
-            const SizedBox(height: 5.0),
-            const CreationTextBox(
-              maxLength: 60,
-              labelText: 'Team Name',
-              maxLines: 1,
-              minLines: 1,
-            ),
-            const SizedBox(height: 10.0),
-            Align(
-              alignment: Alignment.centerLeft,
-              child: Text(
-                'Members',
-                textAlign: TextAlign.left,
-                style: TextStyle(
-                  fontWeight: FontWeight.bold,
-                  fontSize: 16.0,
-                  color: Colors.blue[900],
+              Align(
+                alignment: Alignment.centerLeft,
+                child: Text(
+                  'Team Name',
+                  textAlign: TextAlign.left,
+                  style: TextStyle(
+                    fontWeight: FontWeight.bold,
+                    fontSize: 16.0,
+                    color: Colors.blue[900],
+                  ),
                 ),
               ),
-            ),
-            const SizedBox(height: 5.0),
-            CreationTextBox(
-              maxLength: 60,
-              labelText: 'Members',
-              maxLines: 1,
-              minLines: 1,
-              icon: const Icon(Icons.search),
-              onChanged: (text) {
-                print('Members text field: $text');
-              },
-            ),
-            const SizedBox(height: 10.0),
-            Align(
-              alignment: Alignment.bottomRight,
-              child: EditButton(
-                text: 'Create',
-                foregroundColor: Colors.white,
-                backgroundColor: const Color(0xFF4871AE),
-                icon: const Icon(Icons.chevron_right),
-                onPressed: () {
-                  // function
+              const SizedBox(height: 5.0),
+              CreationTextBox(
+                maxLength: 60,
+                labelText: 'Team Name',
+                maxLines: 1,
+                minLines: 1,
+                errorMessage: 'Team names must be at least 3 characters long.',
+                onChanged: (text) {
+                  teamName = text;
                 },
               ),
-            )
+              const SizedBox(height: 10.0),
+              Align(
+                alignment: Alignment.centerLeft,
+                child: Text(
+                  'Members',
+                  textAlign: TextAlign.left,
+                  style: TextStyle(
+                    fontWeight: FontWeight.bold,
+                    fontSize: 16.0,
+                    color: Colors.blue[900],
+                  ),
+                ),
+              ),
+              const SizedBox(height: 5.0),
+              CreationTextBox(
+                maxLength: 60,
+                labelText: 'Members',
+                maxLines: 1,
+                minLines: 1,
+                icon: const Icon(Icons.search),
+                onChanged: (text) {
+                  setState(() {
+                    if (text.length > 2) {
+                      membersSearch = searchMembers(membersList, text);
+                      itemCount = membersSearch.length;
+                    } else {
+                      itemCount = 0;
+                    }
+                  });
+                  print('Members text field: $text');
+                },
+              ),
+              const SizedBox(height: 10.0),
+              Container(
+                height: 250,
+                width: 400,
+                child: itemCount > 0
+                    ? ListView.separated(
+                        itemCount: itemCount,
+                        padding: const EdgeInsets.only(
+                          left: 5,
+                          right: 5,
+                        ),
+                        itemBuilder: (BuildContext context, int index) {
+                          return buildInviteCard(
+                              member: membersSearch[index], index: index);
+                        },
+                        separatorBuilder: (BuildContext context, int index) =>
+                            const SizedBox(
+                          height: 10,
+                        ),
+                      )
+                    : const Center(
+                        child: Text(
+                            'No users matching criteria. Enter at least 3 characters to search.'),
+                      ),
+              ),
+              const SizedBox(height: 10.0),
+              Align(
+                alignment: Alignment.bottomRight,
+                child: EditButton(
+                  text: 'Create',
+                  foregroundColor: Colors.white,
+                  backgroundColor: const Color(0xFF4871AE),
+                  icon: const Icon(Icons.chevron_right),
+                  onPressed: () {
+                    if (_formKey.currentState!.validate()) {
+                      // TODO: If the form is valid, display a snackbar, await database
+                      // TODO: Fix bug, entering member text resets data on team name
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(content: Text('Processing Data')),
+                      );
+                    }
+                    saveTeam(membersList: invitedMembers, teamName: teamName);
+                  },
+                ),
+              )
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Card buildInviteCard({required Member member, required int index}) {
+    return Card(
+      child: Padding(
+        padding: const EdgeInsets.all(8.0),
+        child: Row(
+          children: <Widget>[
+            CircleAvatar(),
+            SizedBox(width: 15),
+            Expanded(
+              child: Text(member.getFullName()),
+            ),
+            Align(
+              alignment: Alignment.centerRight,
+              child: memberInviteButton(
+                  teamID: teamID, index: index, member: member),
+            ),
           ],
         ),
       ),
+    );
+  }
+
+  InkWell memberInviteButton(
+      {required int index, required String teamID, required Member member}) {
+    return InkWell(
+      child: Text(inviteList[index] == true ? "Invite sent!" : "Invite"),
+      onTap: () {
+        setState(() {
+          // TODO: Fix bug: invited text is based on position, so wrong people stay invited when query changes
+          if (inviteList[index] == false) {
+            invitedMembers.add(member);
+            inviteList[index] = true;
+          }
+        });
+      },
     );
   }
 }
