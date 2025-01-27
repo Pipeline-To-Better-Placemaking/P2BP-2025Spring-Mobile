@@ -84,7 +84,7 @@ class _TestSelectionScreenState extends State<TestSelectionScreen> {
   }
 }
 
-// Form containing row which just has two dropdown menus of projects
+// Form containing row which has single dropdown menu containing each test
 class _DropdownRowForm extends StatefulWidget {
   /// Required callback function from parent for passing page to since using
   /// setState() here would not update anything outside this Form.
@@ -134,7 +134,7 @@ class _DropdownRowFormState extends State<_DropdownRowForm> {
   }
 }
 
-/// Widget for dropdown menu of projects, displayed twice at top of this screen
+/// Widget for dropdown menu of tests
 class _ProjectDropdown extends StatefulWidget {
   final TextEditingController? controller;
 
@@ -153,15 +153,6 @@ class _ProjectDropdownState extends State<_ProjectDropdown> {
       mainAxisSize: MainAxisSize.min,
       crossAxisAlignment: CrossAxisAlignment.center,
       children: [
-        Text(
-          _dropdownDefault,
-          style: TextStyle(
-            fontSize: 18,
-            fontWeight: FontWeight.bold,
-            color: Colors.blue,
-          ),
-          textAlign: TextAlign.center,
-        ),
         const SizedBox(height: 10),
         Center(
           child: Padding(
@@ -176,7 +167,7 @@ class _ProjectDropdownState extends State<_ProjectDropdown> {
               ),
               child: DropdownMenu<String>(
                 controller: widget.controller,
-                initialSelection: 'Jesus',
+                initialSelection: _dropdownDefault,
                 menuStyle: MenuStyle(
                   alignment: Alignment.bottomLeft,
                   backgroundColor:
@@ -193,26 +184,20 @@ class _ProjectDropdownState extends State<_ProjectDropdown> {
                 ),
                 inputDecorationTheme: InputDecorationTheme(
                   isDense: true,
-                  contentPadding: EdgeInsets.symmetric(horizontal: 16),
+                  contentPadding: EdgeInsets.symmetric(horizontal: 30),
                   constraints: BoxConstraints(maxHeight: 55),
                   border: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(10),
                     borderSide: BorderSide.none,
                   ),
                 ),
-                trailingIcon: Align(
-                  alignment: Alignment.centerRight,
-                  child: Icon(
-                    Icons.arrow_drop_down,
-                    color: Colors.white60,
-                  ),
+                trailingIcon: Icon(
+                  Icons.arrow_drop_down,
+                  color: Colors.white60,
                 ),
-                selectedTrailingIcon: Align(
-                  alignment: Alignment.centerRight,
-                  child: Icon(
-                    Icons.arrow_drop_up,
-                    color: Colors.white60,
-                  ),
+                selectedTrailingIcon: Icon(
+                  Icons.arrow_drop_up,
+                  color: Colors.white60,
                 ),
                 dropdownMenuEntries: dropdownMenuEntries,
               ),
@@ -242,7 +227,7 @@ class _ProjectDropdownState extends State<_ProjectDropdown> {
       ),
     );
 
-    // Loops through all projects
+    // Loops through all tests
     for (var project in _testNames) {
       result.add(
         DropdownMenuEntry(
@@ -274,7 +259,7 @@ class _TextScreen extends StatelessWidget {
   }
 }
 
-/// Page displaying data from tests common to both selected projects.
+/// Display the test type selected by the user
 class _SelectedTestScreen extends StatefulWidget {
   const _SelectedTestScreen({super.key});
 
