@@ -66,9 +66,10 @@ class _TestSelectionScreenState extends State<TestSelectionScreen> {
           ),
           child: Center(
             child: Padding(
-              padding: EdgeInsets.all(18),
+              padding: EdgeInsets.all(20),
               child: Column(
                 children: <Widget>[
+                  const SizedBox(height: 20),
                   // Permanent row with dropdowns at top
                   _dropdownRowForm,
                   const SizedBox(height: 25),
@@ -118,13 +119,16 @@ class _DropdownRowFormState extends State<_DropdownRowForm> {
 
   @override
   Widget build(BuildContext context) {
-    return Center(
-        child: SizedBox(
-      width: double.infinity,
-      child: _ProjectDropdown(
-        controller: _dropdownController,
+    return Form(
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          _ProjectDropdown(
+            controller: _dropdownController,
+          ),
+        ],
       ),
-    ));
+    );
   }
 
   @override
@@ -149,62 +153,48 @@ class _ProjectDropdownState extends State<_ProjectDropdown> {
   Widget build(BuildContext context) {
     final dropdownMenuEntries = _buildDropdownEntryList();
 
-    return Column(
-      mainAxisSize: MainAxisSize.min,
-      crossAxisAlignment: CrossAxisAlignment.center,
-      children: [
-        const SizedBox(height: 10),
-        Center(
-          child: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 20),
-            child: Container(
-              width: double.infinity,
-              decoration: ShapeDecoration(
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(20),
-                ),
-                gradient: verticalBlueGrad,
-              ),
-              child: DropdownMenu<String>(
-                controller: widget.controller,
-                initialSelection: _dropdownDefault,
-                menuStyle: MenuStyle(
-                  alignment: Alignment.bottomLeft,
-                  backgroundColor:
-                      WidgetStatePropertyAll<Color>(Color(0xFF2F6DCF)),
-                  shape: WidgetStatePropertyAll<OutlinedBorder>(
-                    RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(18),
-                    ),
-                  ),
-                ),
-                textStyle: TextStyle(
-                  fontSize: 14,
-                  color: Colors.white,
-                ),
-                inputDecorationTheme: InputDecorationTheme(
-                  isDense: true,
-                  contentPadding: EdgeInsets.symmetric(horizontal: 30),
-                  constraints: BoxConstraints(maxHeight: 55),
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(10),
-                    borderSide: BorderSide.none,
-                  ),
-                ),
-                trailingIcon: Icon(
-                  Icons.arrow_drop_down,
-                  color: Colors.white60,
-                ),
-                selectedTrailingIcon: Icon(
-                  Icons.arrow_drop_up,
-                  color: Colors.white60,
-                ),
-                dropdownMenuEntries: dropdownMenuEntries,
-              ),
+    return Container(
+      decoration: ShapeDecoration(
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(20),
+        ),
+        gradient: verticalBlueGrad,
+      ),
+      child: DropdownMenu<String>(
+        controller: widget.controller,
+        initialSelection: _dropdownDefault,
+        menuStyle: MenuStyle(
+          alignment: Alignment.bottomLeft,
+          backgroundColor: WidgetStatePropertyAll<Color>(Color(0xFF2F6DCF)),
+          shape: WidgetStatePropertyAll<OutlinedBorder>(
+            RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(18),
             ),
           ),
         ),
-      ],
+        textStyle: TextStyle(
+          fontSize: 14,
+          color: Colors.white,
+        ),
+        inputDecorationTheme: InputDecorationTheme(
+          isDense: true,
+          contentPadding: EdgeInsets.symmetric(horizontal: 20),
+          constraints: BoxConstraints(maxHeight: 55),
+          border: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(10),
+            borderSide: BorderSide.none,
+          ),
+        ),
+        trailingIcon: Icon(
+          Icons.arrow_drop_down,
+          color: Colors.white60,
+        ),
+        selectedTrailingIcon: Icon(
+          Icons.arrow_drop_up,
+          color: Colors.white60,
+        ),
+        dropdownMenuEntries: dropdownMenuEntries,
+      ),
     );
   }
 
