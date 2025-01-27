@@ -19,6 +19,7 @@ import 'new_home_page.dart';
 import 'project_comparison_page.dart';
 import 'teams_settings_screen.dart';
 import 'search_location_screen.dart';
+import 'test_selection_screen.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -68,6 +69,7 @@ class MyApp extends StatelessWidget {
         '/compare_projects': (context) => const ProjectComparisonPage(),
         '/search': (context) => const SearchScreen(),
         '/teams_settings': (context) => TeamSettingsScreen(),
+        '/test_selection': (context) => TestSelectionScreen(),
       },
     );
   }
@@ -189,6 +191,13 @@ class _HomePageStates extends State<HomePage> {
                 route: '/search',
                 name: 'Search',
                 version: 1,
+              ),
+              // Button 15: Test Selection
+              buildTempButton(
+                context: context,
+                route: '/test_selection',
+                name: 'Test Selection',
+                version: 0,
               ),
             ],
           ),
