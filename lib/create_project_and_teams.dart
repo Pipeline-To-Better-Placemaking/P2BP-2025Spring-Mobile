@@ -2,9 +2,11 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
+import 'package:p2bp_2025spring_mobile/teams_and_invites_page.dart';
 import 'widgets.dart';
 import 'theme.dart';
 import 'search_location_screen.dart';
+import 'db_schema_classes.dart';
 
 // For page selection switch. 0 = project, 1 = team.
 enum PageView { project, team }
@@ -19,6 +21,7 @@ class CreateProjectAndTeamsPage extends StatefulWidget {
 
 final FirebaseFirestore _firestore = FirebaseFirestore.instance;
 User? loggedInUser;
+// TODO: should we create teams id now? how would other options work with invites?
 String teamID = _firestore.collection('teams').doc().id;
 
 String saveTeam({required membersList, required String teamName}) {
@@ -35,7 +38,7 @@ String saveTeam({required membersList, required String teamName}) {
     _firestore.collection("users").doc(loggedInUser?.uid).update({
       'teams': FieldValue.arrayUnion([_firestore.doc('/teams/$teamID')])
     });
-    // TODO: Currently: invites team members only once team is created.
+    // TODO Currently: invites team members only once team is created.
     for (Member members in membersList) {
       _firestore.collection('users').doc(members.getUserID()).update({
         'invites': FieldValue.arrayUnion([_firestore.doc('/teams/$teamID')])
@@ -129,7 +132,7 @@ class CreateProjectWidget extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      width: 400,
+      width: MediaQuery.of(context).size.width * .8,
       height: 500,
       decoration: const BoxDecoration(
         color: Colors.white30,
@@ -225,31 +228,6 @@ class CreateProjectWidget extends StatelessWidget {
   }
 }
 
-class Member {
-  String _userID = '';
-  String _fullName = '';
-
-  Member({required String userID, required String fullName}) {
-    _userID = userID;
-    _fullName = fullName;
-  }
-  void setUserID(String userID) {
-    _userID = userID;
-  }
-
-  void setFullName(String fullName) {
-    _fullName = fullName;
-  }
-
-  String getUserID() {
-    return _userID;
-  }
-
-  String getFullName() {
-    return _fullName;
-  }
-}
-
 class CreateTeamWidget extends StatefulWidget {
   const CreateTeamWidget({
     super.key,
@@ -259,12 +237,21 @@ class CreateTeamWidget extends StatefulWidget {
   State<CreateTeamWidget> createState() => _CreateTeamWidgetState();
 }
 
+List<Member> searchMembers(List<Member> membersList, String text) {
+  membersList = membersList
+      .where((member) =>
+          member.getFullName().toLowerCase().startsWith(text.toLowerCase()))
+      .toList();
+  print('membersList: $membersList');
+  return membersList.isNotEmpty ? membersList : [];
+}
+
 class _CreateTeamWidgetState extends State<CreateTeamWidget> {
   List<Member> membersList = [];
   List<Member> membersSearch = [];
   List<Member> invitedMembers = [];
+  String teamName = '';
   int itemCount = 0;
-  List<bool> inviteList = List.generate(10, (index) => false);
   final _formKey = GlobalKey<FormState>();
 
   @override
@@ -275,7 +262,6 @@ class _CreateTeamWidgetState extends State<CreateTeamWidget> {
       (querySnapshot) {
         Member tempMember;
         for (var document in querySnapshot.docs) {
-          // TODO: Use ID to invite member with searched name (having some ID) to team in MemberInviteButton.
           if (document.id != loggedInUser?.uid) {
             tempMember = Member(
                 userID: document.id, fullName: document.data()['fullName']);
@@ -288,22 +274,12 @@ class _CreateTeamWidgetState extends State<CreateTeamWidget> {
     );
   }
 
-  List<Member> searchMembers(List<Member> membersList, String text) {
-    membersList = membersList
-        .where((member) =>
-            member.getFullName().toLowerCase().startsWith(text.toLowerCase()))
-        .toList();
-    print('membersList: $membersList');
-    return membersList.isNotEmpty ? membersList : [];
-  }
-
   @override
   Widget build(BuildContext context) {
-    String teamName = '';
     return Form(
       key: _formKey,
       child: Container(
-        width: 400,
+        width: MediaQuery.of(context).size.width * .8,
         height: 750,
         decoration: const BoxDecoration(
           color: Colors.white30,
@@ -414,8 +390,8 @@ class _CreateTeamWidgetState extends State<CreateTeamWidget> {
                 maxLines: 1,
                 minLines: 1,
                 errorMessage: 'Team names must be at least 3 characters long.',
-                onChanged: (text) {
-                  teamName = text;
+                onChanged: (teamText) {
+                  teamName = teamText;
                 },
               ),
               const SizedBox(height: 10.0),
@@ -438,16 +414,16 @@ class _CreateTeamWidgetState extends State<CreateTeamWidget> {
                 maxLines: 1,
                 minLines: 1,
                 icon: const Icon(Icons.search),
-                onChanged: (text) {
+                onChanged: (memberText) {
                   setState(() {
-                    if (text.length > 2) {
-                      membersSearch = searchMembers(membersList, text);
+                    if (memberText.length > 2) {
+                      membersSearch = searchMembers(membersList, memberText);
                       itemCount = membersSearch.length;
                     } else {
                       itemCount = 0;
                     }
                   });
-                  print('Members text field: $text');
+                  print('Members text field: $memberText');
                 },
               ),
               const SizedBox(height: 10.0),
@@ -486,9 +462,14 @@ class _CreateTeamWidgetState extends State<CreateTeamWidget> {
                   onPressed: () {
                     if (_formKey.currentState!.validate()) {
                       // TODO: If the form is valid, display a snackbar, await database
-                      // TODO: Fix bug, entering member text resets data on team name
                       ScaffoldMessenger.of(context).showSnackBar(
                         const SnackBar(content: Text('Processing Data')),
+                      );
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) => TeamsAndInvitesPage(),
+                        ),
                       );
                     }
                     saveTeam(membersList: invitedMembers, teamName: teamName);
@@ -527,13 +508,12 @@ class _CreateTeamWidgetState extends State<CreateTeamWidget> {
   InkWell memberInviteButton(
       {required int index, required String teamID, required Member member}) {
     return InkWell(
-      child: Text(inviteList[index] == true ? "Invite sent!" : "Invite"),
+      child: Text(member.getInvited() == true ? "Invite sent!" : "Invite"),
       onTap: () {
         setState(() {
-          // TODO: Fix bug: invited text is based on position, so wrong people stay invited when query changes
-          if (inviteList[index] == false) {
+          if (member.getInvited() == false) {
+            member.setInvited(true);
             invitedMembers.add(member);
-            inviteList[index] = true;
           }
         });
       },

@@ -4,6 +4,7 @@ import 'package:firebase_core/firebase_core.dart';
 import 'firebase_options.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'db_schema_classes.dart';
 
 class TeamsAndInvitesPage extends StatefulWidget {
   const TeamsAndInvitesPage({super.key});
@@ -12,46 +13,69 @@ class TeamsAndInvitesPage extends StatefulWidget {
   State<TeamsAndInvitesPage> createState() => _TeamsAndInvitesPageState();
 }
 
-class _TeamsAndInvitesPageState extends State<TeamsAndInvitesPage> {
-  List teams = [];
-  List invites = [];
-  int itemCount = 0;
-  int selectedIndex = 0;
-  final FirebaseFirestore _firestore = FirebaseFirestore.instance;
-  User? loggedInUser = FirebaseAuth.instance.currentUser;
+final FirebaseFirestore _firestore = FirebaseFirestore.instance;
+User? loggedInUser = FirebaseAuth.instance.currentUser;
 
-  List getTeamsIDs() {
+class _TeamsAndInvitesPageState extends State<TeamsAndInvitesPage> {
+  List<Team> teams = [];
+  List invites = [];
+  int teamsCount = 0;
+  int invitesCount = 0;
+  int selectedIndex = 0;
+
+  void getTeamsIDs() {
     try {
-      _firestore
-          .collection("users")
-          .doc(loggedInUser?.uid)
-          .snapshots()
-          .listen((result) {
-        teams = result.data()?["teams"];
-        print(teams);
-      });
+      _firestore.collection("users").doc(loggedInUser?.uid).get().then(
+        (querySnapshot) {
+          Team tempTeam;
+          for (var reference in querySnapshot.data()?['teams']) {
+            _firestore.doc(reference.path).get().then((teamQuerySnapshot) {
+              // TODO: Add num projects, members list instead of adminName
+              tempTeam = Team(
+                  teamID: teamQuerySnapshot['id'],
+                  title: teamQuerySnapshot['title'],
+                  adminName: 'Temp');
+              teams.add(tempTeam);
+              setState(() {
+                teamsCount = teams.length;
+              });
+            });
+          }
+        },
+        onError: (e) => print("Error completing: $e"),
+      );
     } catch (e, stacktrace) {
       print('Exception retrieving teams: $e');
       print('Stacktrace: $stacktrace');
     }
-    return teams;
   }
 
-  List getInvites() {
+  void getInvites() {
     try {
-      _firestore
-          .collection("users")
-          .doc(loggedInUser?.uid)
-          .snapshots()
-          .listen((result) {
-        invites = result.data()?['invites'];
-        print(invites);
-      });
+      _firestore.collection("users").doc(loggedInUser?.uid).get().then(
+        (querySnapshot) {
+          setState(() {
+            invites = (querySnapshot.data()?['invites']);
+            invitesCount = invites.length;
+            print(
+                "PATH TEST: \n\n\n\n${_firestore.doc(invites[0].path).get().then((querySnapshot) {
+              print("QUeru: ${querySnapshot.data()?['creationTime']}");
+            })}");
+          });
+        },
+        onError: (e) => print("Error completing: $e"),
+      );
     } catch (e, stacktrace) {
       print('Exception retrieving teams: $e');
       print('Stacktrace: $stacktrace');
     }
-    return invites;
+  }
+
+  @override
+  void initState() {
+    super.initState();
+    getTeamsIDs();
+    getInvites();
   }
 
   @override
@@ -83,95 +107,57 @@ class _TeamsAndInvitesPageState extends State<TeamsAndInvitesPage> {
           ),
           body: TabBarView(
             children: [
-              // TODO: steam for teams and invites? or either or neither?
-              StreamBuilder<DocumentSnapshot>(
-                  stream: _firestore
-                      .collection("users")
-                      .doc(loggedInUser?.uid)
-                      .snapshots(),
-                  builder: (context, snapshot) {
-                    teams = getTeamsIDs();
-                    if (!snapshot.hasData || teams.isEmpty) {
-                      print("->${snapshot.data}");
-                      return const Center(
-                        child: Text(
-                            'You have no teams! Join a team or create one first.'),
-                      );
-                    }
-                    final userData = snapshot.data;
-                    itemCount = teams.length;
-
-                    return itemCount > 0
-                        ? ListView.separated(
-                            padding: const EdgeInsets.only(
-                              left: 35,
-                              right: 35,
-                              top: 50,
-                              bottom: 20,
-                            ),
-                            itemCount: itemCount,
-                            itemBuilder: (BuildContext context, int index) {
-                              return buildContainer(
-                                  index: index,
-                                  color: Colors.blue,
-                                  numProjects: 12, //<-- TODO: edit
-                                  teamName: 'PlaceHolder');
-                            },
-                            separatorBuilder:
-                                (BuildContext context, int index) =>
-                                    const SizedBox(
-                              height: 50,
-                            ),
-                          )
-                        : Center(
-                            child: Text(
-                                "You have no teams! Join a team or create one first."),
-                          );
-                  }),
+              teamsCount > 0
+                  ? ListView.separated(
+                      padding: const EdgeInsets.only(
+                        left: 35,
+                        right: 35,
+                        top: 50,
+                        bottom: 20,
+                      ),
+                      itemCount: teamsCount,
+                      itemBuilder: (BuildContext context, int index) {
+                        return buildContainer(
+                            index: index,
+                            color: Colors.blue,
+                            numProjects: 12, //<-- TODO: edit
+                            teamName: teams[index].title);
+                      },
+                      separatorBuilder: (BuildContext context, int index) =>
+                          const SizedBox(
+                        height: 50,
+                      ),
+                    )
+                  : Center(
+                      child: Text(
+                          "You have no teams! Join a team or create one first."),
+                    ),
 
               // Iterate through list of projects, each being a card.
               // Update variables each time with: color, team name, num of
               // projects, and members list from database.
-              StreamBuilder<Object>(
-                  stream: _firestore
-                      .collection("users")
-                      .doc(loggedInUser?.uid)
-                      .snapshots(),
-                  builder: (context, snapshot) {
-                    invites = getInvites();
-                    if (!snapshot.hasData) {
-                      print("->${snapshot.data}");
-                      return const Center(
-                        child: Text('You have no invites!'),
-                      );
-                    }
-                    final userData = snapshot.data;
-                    itemCount = invites.length;
-
-                    return itemCount > 0
-                        ? ListView.separated(
-                            padding: const EdgeInsets.only(
-                              left: 35,
-                              right: 35,
-                              top: 25,
-                              bottom: 25,
-                            ),
-                            itemCount: itemCount,
-                            itemBuilder: (BuildContext context, int index) {
-                              return const InviteCard(
-                                color: Colors.blue,
-                                name: 'Placeholder',
-                                teamName: 'Placeholder',
-                              );
-                            },
-                            separatorBuilder:
-                                (BuildContext context, int index) =>
-                                    const SizedBox(
-                              height: 25,
-                            ),
-                          )
-                        : const Center(child: Text('You have no invites!'));
-                  })
+              invitesCount > 0
+                  ? ListView.separated(
+                      padding: const EdgeInsets.only(
+                        left: 35,
+                        right: 35,
+                        top: 25,
+                        bottom: 25,
+                      ),
+                      itemCount: invitesCount,
+                      itemBuilder: (BuildContext context, int index) {
+                        return const InviteCard(
+                          color: Colors.blue,
+                          name: 'Placeholder',
+                          teamName: 'Placeholder',
+                        );
+                      },
+                      separatorBuilder: (BuildContext context, int index) =>
+                          const SizedBox(
+                        height: 25,
+                      ),
+                    )
+                  : const Center(child: Text('You have no invites!')),
             ],
           ),
         ),
