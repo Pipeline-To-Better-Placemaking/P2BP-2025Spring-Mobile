@@ -54,14 +54,20 @@ class _TeamsAndInvitesPageState extends State<TeamsAndInvitesPage> {
     try {
       _firestore.collection("users").doc(loggedInUser?.uid).get().then(
         (querySnapshot) {
-          setState(() {
-            invites = (querySnapshot.data()?['invites']);
-            invitesCount = invites.length;
-            print(
-                "PATH TEST: \n\n\n\n${_firestore.doc(invites[0].path).get().then((querySnapshot) {
-              print("QUeru: ${querySnapshot.data()?['creationTime']}");
-            })}");
-          });
+          Team tempTeam;
+          for (var reference in querySnapshot.data()?['invites']) {
+            _firestore.doc(reference.path).get().then((teamQuerySnapshot) {
+              // TODO: Add admin name.
+              tempTeam = Team(
+                  teamID: teamQuerySnapshot['id'],
+                  title: teamQuerySnapshot['title'],
+                  adminName: 'Temp');
+              invites.add(tempTeam);
+              setState(() {
+                invitesCount = invites.length;
+              });
+            });
+          }
         },
         onError: (e) => print("Error completing: $e"),
       );
@@ -146,10 +152,10 @@ class _TeamsAndInvitesPageState extends State<TeamsAndInvitesPage> {
                       ),
                       itemCount: invitesCount,
                       itemBuilder: (BuildContext context, int index) {
-                        return const InviteCard(
+                        return InviteCard(
                           color: Colors.blue,
-                          name: 'Placeholder',
-                          teamName: 'Placeholder',
+                          name: invites[index].adminName,
+                          teamName: invites[index].title,
                         );
                       },
                       separatorBuilder: (BuildContext context, int index) =>
