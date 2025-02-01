@@ -82,15 +82,10 @@ class _HomeScreenState extends State<HomeScreen> {
               SettingsPage(),
             ],
           ),
-          // Bottom Navigation Bar
-          Positioned(
-            bottom: 50,
-            left: 20,
-            right: 20,
-            child: _navBar(),
-          ),
         ],
       ),
+      extendBody: true,
+      bottomNavigationBar: _navBar(),
     );
   }
 

@@ -64,7 +64,8 @@ class MyApp extends StatelessWidget {
         '/home': (context) => const HomeScreen(),
         '/new_home': (context) => const BottomFloatingNavBar(),
         '/compare_projects': (context) => const ProjectComparisonPage(),
-        '/search': (context) => const SearchScreen(),
+        // Commented out since you need project data to create page.
+        // '/search': (context) => const SearchScreen(),
         '/teams_settings': (context) => TeamSettingsScreen(),
       },
     );

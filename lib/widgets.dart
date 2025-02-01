@@ -78,6 +78,7 @@ class EditButton extends StatelessWidget {
   final Color backgroundColor;
   final Icon icon;
   final Function onPressed;
+  final Color iconColor;
 
   const EditButton({
     super.key,
@@ -86,6 +87,7 @@ class EditButton extends StatelessWidget {
     required this.backgroundColor,
     required this.icon,
     required this.onPressed,
+    this.iconColor = Colors.white,
   });
 
   @override
@@ -98,6 +100,7 @@ class EditButton extends StatelessWidget {
         ),
         foregroundColor: foregroundColor,
         backgroundColor: backgroundColor,
+        iconColor: iconColor,
       ),
       onPressed: () => onPressed(),
       label: Text(text),
@@ -143,7 +146,7 @@ class CreationTextBox extends StatelessWidget {
           cursorColor: const Color(0xFF585A6A),
           validator: (value) {
             // TODO: custom error check parameter?
-            if (errorMessage != null && (value == null || value.length <= 3)) {
+            if (errorMessage != null && (value == null || value.length < 3)) {
               // TODO: eventually require error message?
               return errorMessage ??
                   'Error, insufficient input (validator error message not set)';
@@ -154,6 +157,20 @@ class CreationTextBox extends StatelessWidget {
             prefixIcon: icon,
             alignLabelWithHint: true,
             counterStyle: const TextStyle(color: Colors.black),
+            errorBorder: const OutlineInputBorder(
+              borderRadius: BorderRadius.all(Radius.circular(10)),
+              borderSide: BorderSide(
+                color: Color(0xFFD32F2F),
+                width: 1.5,
+              ),
+            ),
+            focusedErrorBorder: const OutlineInputBorder(
+              borderRadius: BorderRadius.all(Radius.circular(10)),
+              borderSide: BorderSide(
+                color: Color(0xFFD32F2F),
+                width: 2,
+              ),
+            ),
             enabledBorder: const OutlineInputBorder(
               borderRadius: BorderRadius.all(Radius.circular(10)),
               borderSide: BorderSide(

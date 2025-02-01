@@ -2,7 +2,9 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
+import 'package:p2bp_2025spring_mobile/settings_page.dart';
 import 'package:p2bp_2025spring_mobile/teams_and_invites_page.dart';
+import 'main.dart';
 import 'widgets.dart';
 import 'theme.dart';
 import 'search_location_screen.dart';
@@ -20,11 +22,10 @@ class CreateProjectAndTeamsPage extends StatefulWidget {
 }
 
 final FirebaseFirestore _firestore = FirebaseFirestore.instance;
-User? loggedInUser;
-// TODO: should we create teams id now? how would other options work with invites?
-String teamID = _firestore.collection('teams').doc().id;
+User? loggedInUser = FirebaseAuth.instance.currentUser;
 
 String saveTeam({required membersList, required String teamName}) {
+  String teamID = _firestore.collection('teams').doc().id;
   if (teamName.length > 3) {
     _firestore.collection("teams").doc(teamID).set({
       'title': teamName,
@@ -52,6 +53,24 @@ String saveTeam({required membersList, required String teamName}) {
   return teamID;
 }
 
+String saveProject({required membersList, required String projectTitle}) {
+  String projectID = _firestore.collection('projects').doc().id;
+  if (projectTitle.length > 3) {
+    _firestore.collection('projects').doc().set({
+      'title': projectTitle,
+      'creationTime': FieldValue.serverTimestamp(),
+      // Saves document id as field _id
+      'id': projectID,
+      //'team': getCurrentTeam(),
+    });
+  } else {
+    print("Name too short"); // <-- TODO: change to field display error on app
+  }
+  print(_firestore.doc('/projects/$projectID'));
+
+  return projectID;
+}
+
 class _CreateProjectAndTeamsPageState extends State<CreateProjectAndTeamsPage> {
   PageView page = PageView.project;
   PageView pageSelection = PageView.project;
@@ -63,6 +82,7 @@ class _CreateProjectAndTeamsPageState extends State<CreateProjectAndTeamsPage> {
   @override
   Widget build(BuildContext context) {
     return SafeArea(
+      maintainBottomViewPadding: true,
       child: Scaffold(
         // Top switch between Projects/Teams
         appBar: AppBar(),
@@ -110,11 +130,13 @@ class _CreateProjectAndTeamsPageState extends State<CreateProjectAndTeamsPage> {
                 ),
 
                 // Spacing between button and container w/ pages.
-                const SizedBox(height: 100),
+                SizedBox(height: MediaQuery.of(context).size.height * .025),
 
                 // Changes page between two widgets: The CreateProjectWidget and CreateTeamWidget.
                 // These widgets display their respective screens to create either a project or team.
                 pages[pageSelection.index],
+
+                SizedBox(height: 100),
               ],
             ),
           ),
@@ -124,104 +146,139 @@ class _CreateProjectAndTeamsPageState extends State<CreateProjectAndTeamsPage> {
   }
 }
 
-class CreateProjectWidget extends StatelessWidget {
+class CreateProjectWidget extends StatefulWidget {
   const CreateProjectWidget({
     super.key,
   });
 
   @override
+  State<CreateProjectWidget> createState() => _CreateProjectWidgetState();
+}
+
+class _CreateProjectWidgetState extends State<CreateProjectWidget> {
+  // TODO: add cover photo?
+  String projectDescription = '';
+  String projectTitle = '';
+  final _formKey = GlobalKey<FormState>();
+
+  @override
   Widget build(BuildContext context) {
-    return Container(
-      width: MediaQuery.of(context).size.width * .8,
-      height: 500,
-      decoration: const BoxDecoration(
-        color: Colors.white30,
-        borderRadius: BorderRadius.all(Radius.circular(10)),
-      ),
+    return Form(
+      key: _formKey,
       child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 10),
-        child: Column(
-          children: <Widget>[
-            Align(
-              alignment: Alignment.centerLeft,
-              child: Text(
-                'Cover Photo',
-                textAlign: TextAlign.left,
-                style: TextStyle(
-                  fontWeight: FontWeight.bold,
-                  fontSize: 16.0,
-                  color: Colors.blue[900],
+        padding: EdgeInsets.symmetric(horizontal: 20),
+        child: Container(
+          decoration: BoxDecoration(
+            color: Colors.grey[100],
+            borderRadius: BorderRadius.all(Radius.circular(10)),
+          ),
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 15, vertical: 25),
+            child: Column(
+              children: <Widget>[
+                Align(
+                  alignment: Alignment.centerLeft,
+                  child: Text(
+                    'Cover Photo',
+                    textAlign: TextAlign.left,
+                    style: TextStyle(
+                      fontWeight: FontWeight.bold,
+                      fontSize: 16.0,
+                      color: Colors.blue[900],
+                    ),
+                  ),
                 ),
-              ),
-            ),
-            const SizedBox(height: 5),
-            PhotoUpload(
-              width: 380,
-              height: 125,
-              icon: Icons.add_photo_alternate,
-              circular: false,
-              onTap: () {
-                // TODO: Actual function (Photo Upload)
-                print('Test');
-                return;
-              },
-            ),
-            const SizedBox(height: 15.0),
-            Align(
-              alignment: Alignment.centerLeft,
-              child: Text(
-                'Project Name',
-                textAlign: TextAlign.left,
-                style: TextStyle(
-                  fontWeight: FontWeight.bold,
-                  fontSize: 16.0,
-                  color: Colors.blue[900],
+                const SizedBox(height: 5),
+                PhotoUpload(
+                  width: 380,
+                  height: 130,
+                  icon: Icons.add_photo_alternate,
+                  circular: false,
+                  onTap: () {
+                    // TODO: Actual function (Photo Upload)
+                    print('Test');
+                    return;
+                  },
                 ),
-              ),
-            ),
-            const SizedBox(height: 5),
-            const CreationTextBox(
-              maxLength: 60,
-              labelText: 'Project Name',
-              maxLines: 1,
-              minLines: 1,
-            ),
-            const SizedBox(height: 10.0),
-            Align(
-              alignment: Alignment.centerLeft,
-              child: Text(
-                'Project Description',
-                textAlign: TextAlign.left,
-                style: TextStyle(
-                  fontWeight: FontWeight.bold,
-                  fontSize: 16.0,
-                  color: Colors.blue[900],
+                const SizedBox(height: 15.0),
+                Align(
+                  alignment: Alignment.centerLeft,
+                  child: Text(
+                    'Project Name',
+                    textAlign: TextAlign.left,
+                    style: TextStyle(
+                      fontWeight: FontWeight.bold,
+                      fontSize: 16.0,
+                      color: Colors.blue[900],
+                    ),
+                  ),
                 ),
-              ),
+                const SizedBox(height: 5),
+                CreationTextBox(
+                  maxLength: 60,
+                  labelText: 'Project Name',
+                  maxLines: 1,
+                  minLines: 1,
+                  errorMessage:
+                      'Project names must be at least 3 characters long.',
+                  onChanged: (titleText) {
+                    setState(() {
+                      projectTitle = titleText;
+                    });
+                  },
+                ),
+                const SizedBox(height: 10.0),
+                Align(
+                  alignment: Alignment.centerLeft,
+                  child: Text(
+                    'Project Description',
+                    textAlign: TextAlign.left,
+                    style: TextStyle(
+                      fontWeight: FontWeight.bold,
+                      fontSize: 16.0,
+                      color: Colors.blue[900],
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 5),
+                CreationTextBox(
+                  maxLength: 240,
+                  labelText: 'Project Description',
+                  maxLines: 3,
+                  minLines: 3,
+                  errorMessage:
+                      'Project descriptions must be at least 3 characters long.',
+                  onChanged: (descriptionText) {
+                    setState(() {
+                      projectDescription = descriptionText;
+                    });
+                  },
+                ),
+                const SizedBox(height: 10.0),
+                Align(
+                  alignment: Alignment.bottomRight,
+                  child: EditButton(
+                    text: 'Next',
+                    foregroundColor: Colors.white,
+                    backgroundColor: const Color(0xFF4871AE),
+                    icon: const Icon(Icons.chevron_right),
+                    onPressed: () {
+                      if (_formKey.currentState!.validate()) {
+                        Project partialProject = Project.partialProject(
+                            title: projectTitle,
+                            description: projectDescription);
+                        Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                                builder: (context) => SearchScreen(
+                                    partialProjectData: partialProject)));
+                      } // function
+                    },
+                  ),
+                )
+              ],
             ),
-            const SizedBox(height: 5),
-            const CreationTextBox(
-              maxLength: 240,
-              labelText: 'Project Description',
-              maxLines: 3,
-              minLines: 3,
-            ),
-            const SizedBox(height: 10.0),
-            Align(
-              alignment: Alignment.bottomRight,
-              child: EditButton(
-                text: 'Next',
-                foregroundColor: Colors.white,
-                backgroundColor: const Color(0xFF4871AE),
-                icon: const Icon(Icons.chevron_right),
-                onPressed: () {
-                  Navigator.push(context,
-                      MaterialPageRoute(builder: (context) => SearchScreen()));
-                  // function
-                },
-              ),
-            )
-          ],
+          ),
         ),
       ),
     );
@@ -253,11 +310,12 @@ class _CreateTeamWidgetState extends State<CreateTeamWidget> {
   String teamName = '';
   int itemCount = 0;
   final _formKey = GlobalKey<FormState>();
+  String teamID = '';
 
   @override
   initState() {
     super.initState();
-    loggedInUser = FirebaseAuth.instance.currentUser;
+    teamID = _firestore.collection('teams').doc().id;
     _firestore.collection('users').where('createdAt', isNull: false).get().then(
       (querySnapshot) {
         Member tempMember;
@@ -278,205 +336,206 @@ class _CreateTeamWidgetState extends State<CreateTeamWidget> {
   Widget build(BuildContext context) {
     return Form(
       key: _formKey,
-      child: Container(
-        width: MediaQuery.of(context).size.width * .8,
-        height: 750,
-        decoration: const BoxDecoration(
-          color: Colors.white30,
-          borderRadius: BorderRadius.all(Radius.circular(10)),
-        ),
-        child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 10),
-          child: Column(
-            children: <Widget>[
-              Row(
-                children: <Widget>[
-                  Padding(
-                    padding: const EdgeInsets.only(left: 75.0, bottom: 5),
-                    child: Text(
-                      'Team Photo',
-                      textAlign: TextAlign.left,
-                      style: TextStyle(
-                        fontWeight: FontWeight.bold,
-                        fontSize: 16.0,
-                        color: Colors.blue[900],
-                      ),
-                    ),
-                  ),
-                  Padding(
-                    padding: const EdgeInsets.only(left: 75.0, bottom: 5),
-                    child: Text(
-                      'Team Color',
-                      textAlign: TextAlign.left,
-                      style: TextStyle(
-                        fontWeight: FontWeight.bold,
-                        fontSize: 16.0,
-                        color: Colors.blue[900],
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-              Padding(
-                padding: const EdgeInsets.only(bottom: 15.0),
-                child: Row(
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 20.0),
+        child: Container(
+          decoration: BoxDecoration(
+            color: Colors.grey[100],
+            borderRadius: const BorderRadius.all(Radius.circular(10)),
+          ),
+          child: Padding(
+            padding:
+                const EdgeInsets.symmetric(horizontal: 15.0, vertical: 25.0),
+            child: Column(
+              children: <Widget>[
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceAround,
                   children: <Widget>[
-                    Padding(
-                      padding: const EdgeInsets.only(left: 75.0),
-                      child: PhotoUpload(
-                        width: 75,
-                        height: 75,
-                        icon: Icons.add_photo_alternate,
-                        circular: true,
-                        onTap: () {
-                          // TODO: Actual function (Photo Upload)
-                          print('Test');
-                          return;
-                        },
-                      ),
+                    Column(
+                      children: <Widget>[
+                        Text(
+                          'Team Photo',
+                          textAlign: TextAlign.left,
+                          style: TextStyle(
+                            fontWeight: FontWeight.bold,
+                            fontSize: 16.0,
+                            color: Colors.blue[900],
+                          ),
+                        ),
+                        SizedBox(height: 5),
+                        PhotoUpload(
+                          width: 75,
+                          height: 75,
+                          icon: Icons.add_photo_alternate,
+                          circular: true,
+                          onTap: () {
+                            // TODO: Actual function (Photo Upload)
+                            print('Test');
+                            return;
+                          },
+                        ),
+                      ],
                     ),
-                    Padding(
-                      padding: const EdgeInsets.only(left: 75.0),
-                      child: Column(
-                        children: <Widget>[
-                          Row(
-                            children: <Widget>[
-                              ColorSelectCircle(
-                                gradient: defaultGrad,
-                              ),
-                              ColorSelectCircle(
-                                gradient: defaultGrad,
-                              ),
-                              ColorSelectCircle(
-                                gradient: defaultGrad,
-                              ),
-                            ],
+                    Column(
+                      children: <Widget>[
+                        Text(
+                          'Team Color',
+                          textAlign: TextAlign.left,
+                          style: TextStyle(
+                            fontWeight: FontWeight.bold,
+                            fontSize: 16.0,
+                            color: Colors.blue[900],
                           ),
-                          Row(
-                            children: <Widget>[
-                              ColorSelectCircle(
-                                gradient: defaultGrad,
-                              ),
-                              ColorSelectCircle(
-                                gradient: defaultGrad,
-                              ),
-                              ColorSelectCircle(
-                                gradient: defaultGrad,
-                              ),
-                            ],
-                          ),
-                        ],
-                      ),
+                        ),
+                        SizedBox(height: 5),
+                        Column(
+                          children: <Widget>[
+                            Row(
+                              children: <Widget>[
+                                ColorSelectCircle(
+                                  gradient: defaultGrad,
+                                ),
+                                ColorSelectCircle(
+                                  gradient: defaultGrad,
+                                ),
+                                ColorSelectCircle(
+                                  gradient: defaultGrad,
+                                ),
+                              ],
+                            ),
+                            Row(
+                              children: <Widget>[
+                                ColorSelectCircle(
+                                  gradient: defaultGrad,
+                                ),
+                                ColorSelectCircle(
+                                  gradient: defaultGrad,
+                                ),
+                                ColorSelectCircle(
+                                  gradient: defaultGrad,
+                                ),
+                              ],
+                            ),
+                          ],
+                        ),
+                      ],
                     ),
                   ],
                 ),
-              ),
-              Align(
-                alignment: Alignment.centerLeft,
-                child: Text(
-                  'Team Name',
-                  textAlign: TextAlign.left,
-                  style: TextStyle(
-                    fontWeight: FontWeight.bold,
-                    fontSize: 16.0,
-                    color: Colors.blue[900],
+                SizedBox(height: 10),
+                Align(
+                  alignment: Alignment.centerLeft,
+                  child: Text(
+                    'Team Name',
+                    textAlign: TextAlign.left,
+                    style: TextStyle(
+                      fontWeight: FontWeight.bold,
+                      fontSize: 16.0,
+                      color: Colors.blue[900],
+                    ),
                   ),
                 ),
-              ),
-              const SizedBox(height: 5.0),
-              CreationTextBox(
-                maxLength: 60,
-                labelText: 'Team Name',
-                maxLines: 1,
-                minLines: 1,
-                errorMessage: 'Team names must be at least 3 characters long.',
-                onChanged: (teamText) {
-                  teamName = teamText;
-                },
-              ),
-              const SizedBox(height: 10.0),
-              Align(
-                alignment: Alignment.centerLeft,
-                child: Text(
-                  'Members',
-                  textAlign: TextAlign.left,
-                  style: TextStyle(
-                    fontWeight: FontWeight.bold,
-                    fontSize: 16.0,
-                    color: Colors.blue[900],
-                  ),
-                ),
-              ),
-              const SizedBox(height: 5.0),
-              CreationTextBox(
-                maxLength: 60,
-                labelText: 'Members',
-                maxLines: 1,
-                minLines: 1,
-                icon: const Icon(Icons.search),
-                onChanged: (memberText) {
-                  setState(() {
-                    if (memberText.length > 2) {
-                      membersSearch = searchMembers(membersList, memberText);
-                      itemCount = membersSearch.length;
-                    } else {
-                      itemCount = 0;
-                    }
-                  });
-                  print('Members text field: $memberText');
-                },
-              ),
-              const SizedBox(height: 10.0),
-              Container(
-                height: 250,
-                width: 400,
-                child: itemCount > 0
-                    ? ListView.separated(
-                        itemCount: itemCount,
-                        padding: const EdgeInsets.only(
-                          left: 5,
-                          right: 5,
-                        ),
-                        itemBuilder: (BuildContext context, int index) {
-                          return buildInviteCard(
-                              member: membersSearch[index], index: index);
-                        },
-                        separatorBuilder: (BuildContext context, int index) =>
-                            const SizedBox(
-                          height: 10,
-                        ),
-                      )
-                    : const Center(
-                        child: Text(
-                            'No users matching criteria. Enter at least 3 characters to search.'),
-                      ),
-              ),
-              const SizedBox(height: 10.0),
-              Align(
-                alignment: Alignment.bottomRight,
-                child: EditButton(
-                  text: 'Create',
-                  foregroundColor: Colors.white,
-                  backgroundColor: const Color(0xFF4871AE),
-                  icon: const Icon(Icons.chevron_right),
-                  onPressed: () {
-                    if (_formKey.currentState!.validate()) {
-                      // TODO: If the form is valid, display a snackbar, await database
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        const SnackBar(content: Text('Processing Data')),
-                      );
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                          builder: (context) => TeamsAndInvitesPage(),
-                        ),
-                      );
-                    }
-                    saveTeam(membersList: invitedMembers, teamName: teamName);
+                const SizedBox(height: 5.0),
+                CreationTextBox(
+                  maxLength: 60,
+                  labelText: 'Team Name',
+                  maxLines: 1,
+                  minLines: 1,
+                  errorMessage:
+                      'Team names must be at least 3 characters long.',
+                  onChanged: (teamText) {
+                    teamName = teamText;
                   },
                 ),
-              )
-            ],
+                const SizedBox(height: 10.0),
+                Align(
+                  alignment: Alignment.centerLeft,
+                  child: Text(
+                    'Members',
+                    textAlign: TextAlign.left,
+                    style: TextStyle(
+                      fontWeight: FontWeight.bold,
+                      fontSize: 16.0,
+                      color: Colors.blue[900],
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 5.0),
+                CreationTextBox(
+                  maxLength: 60,
+                  labelText: 'Members',
+                  maxLines: 1,
+                  minLines: 1,
+                  icon: const Icon(Icons.search),
+                  onChanged: (memberText) {
+                    setState(() {
+                      if (memberText.length > 2) {
+                        membersSearch = searchMembers(membersList, memberText);
+                        itemCount = membersSearch.length;
+                      } else {
+                        itemCount = 0;
+                      }
+                    });
+                    print('Members text field: $memberText');
+                  },
+                ),
+                const SizedBox(height: 10.0),
+                SizedBox(
+                  height: 250,
+                  child: itemCount > 0
+                      ? ListView.separated(
+                          itemCount: itemCount,
+                          padding: const EdgeInsets.only(
+                            left: 5,
+                            right: 5,
+                          ),
+                          itemBuilder: (BuildContext context, int index) {
+                            return buildInviteCard(
+                                member: membersSearch[index], index: index);
+                          },
+                          separatorBuilder: (BuildContext context, int index) =>
+                              const SizedBox(
+                            height: 10,
+                          ),
+                        )
+                      : const Center(
+                          child: Text(
+                              'No users matching criteria. Enter at least 3 characters to search.'),
+                        ),
+                ),
+                const SizedBox(height: 10.0),
+                Align(
+                  alignment: Alignment.bottomRight,
+                  child: EditButton(
+                    text: 'Create',
+                    foregroundColor: Colors.white,
+                    backgroundColor: const Color(0xFF4871AE),
+                    icon: const Icon(Icons.chevron_right),
+                    onPressed: () {
+                      if (_formKey.currentState!.validate()) {
+                        // TODO: If the form is valid, display a snackbar, await database
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          const SnackBar(content: Text('Processing Data')),
+                        );
+                        Navigator.pushReplacement(
+                          context,
+                          MaterialPageRoute(
+                            builder: (context) => const SettingsPage(),
+                          ),
+                        );
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (context) => TeamsAndInvitesPage(),
+                          ),
+                        );
+                      }
+                      saveTeam(membersList: invitedMembers, teamName: teamName);
+                    },
+                  ),
+                )
+              ],
+            ),
           ),
         ),
       ),

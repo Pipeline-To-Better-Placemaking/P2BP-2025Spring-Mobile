@@ -45,7 +45,32 @@ class Team {
   String adminName = '';
   String teamID = '';
   String title = '';
+  // TODO: Change to contain user id and role.
   List teamMembers = [];
 
   Team({required this.teamID, required this.title, required this.adminName});
+}
+
+class Project {
+  Timestamp? creationTime;
+  String teamID = '';
+  String projectID = '';
+  String title = '';
+  String description = '';
+  // TODO: Change depending on how polygon is handled by google maps api.
+  String areaID = '';
+  // TODO: Change depending on implementation of tests.
+  List tests = [];
+
+  Project(
+      {this.creationTime,
+      required this.teamID,
+      required this.projectID,
+      required this.title,
+      required this.description,
+      required this.areaID,
+      required this.tests});
+
+  // TODO: Eventually add Team Photo and Team Color
+  Project.partialProject({required this.title, required this.description});
 }

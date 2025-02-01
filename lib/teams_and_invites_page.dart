@@ -111,6 +111,7 @@ class _TeamsAndInvitesPageState extends State<TeamsAndInvitesPage> {
               ],
             ),
           ),
+          // TODO: make pull down refresh?
           body: TabBarView(
             children: [
               teamsCount > 0
@@ -127,7 +128,8 @@ class _TeamsAndInvitesPageState extends State<TeamsAndInvitesPage> {
                             index: index,
                             color: Colors.blue,
                             numProjects: 12, //<-- TODO: edit
-                            teamName: teams[index].title);
+                            teamName: teams[index].title,
+                            teamID: teams[index].teamID);
                       },
                       separatorBuilder: (BuildContext context, int index) =>
                           const SizedBox(
@@ -175,7 +177,8 @@ class _TeamsAndInvitesPageState extends State<TeamsAndInvitesPage> {
       {required int index,
       required Color color,
       required int numProjects,
-      required String teamName}) {
+      required String teamName,
+      required String teamID}) {
     return Container(
       decoration: BoxDecoration(
         color: color,
@@ -196,6 +199,12 @@ class _TeamsAndInvitesPageState extends State<TeamsAndInvitesPage> {
                       ? const Icon(Icons.radio_button_on)
                       : const Icon(Icons.radio_button_off),
                   onTap: () {
+                    _firestore
+                        .collection('users')
+                        .doc(loggedInUser?.uid)
+                        .update({
+                      'selectedTeam': _firestore.doc('/teams/$teamID'),
+                    });
                     setState(() {
                       selectedIndex = index;
                     });
