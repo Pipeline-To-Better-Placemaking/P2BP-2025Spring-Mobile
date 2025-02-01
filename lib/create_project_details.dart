@@ -87,41 +87,6 @@ class _CreateProjectDetailsState extends State<CreateProjectDetails> {
             child: Text('data'),
           ),
           SizedBox(height: 30),
-          Container(
-            width: 300,
-            height: 200,
-            decoration: BoxDecoration(
-              color: Color(0x699F9F9F),
-              borderRadius: BorderRadius.circular(10),
-              boxShadow: [
-                BoxShadow(
-                  color: Color(0x98474747),
-                  spreadRadius: 3,
-                  blurRadius: 3,
-                  offset: Offset(0, 3), // changes position of shadow
-                ),
-              ],
-            ),
-            child: Padding(
-              padding: EdgeInsets.symmetric(horizontal: 80, vertical: 77.5),
-              child: FilledButton.icon(
-                style: FilledButton.styleFrom(
-                  padding: const EdgeInsets.only(left: 15, right: 15),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(10.0),
-                  ),
-                  // foregroundColor: foregroundColor,
-                  backgroundColor: Colors.black,
-                ),
-                onPressed: () => {
-                  // TODO: Function
-                },
-                label: Text('Update Map'),
-                icon: Icon(Icons.location_on),
-                iconAlignment: IconAlignment.start,
-              ),
-            ),
-          ),
           SizedBox(height: 30),
           Padding(
             padding:

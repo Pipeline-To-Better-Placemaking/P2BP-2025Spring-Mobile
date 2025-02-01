@@ -19,6 +19,7 @@ User? loggedInUser = FirebaseAuth.instance.currentUser;
 class _TeamsAndInvitesPageState extends State<TeamsAndInvitesPage> {
   List<Team> teams = [];
   List invites = [];
+  bool _isLoading = true;
   int teamsCount = 0;
   int invitesCount = 0;
   int selectedIndex = 0;
@@ -41,6 +42,7 @@ class _TeamsAndInvitesPageState extends State<TeamsAndInvitesPage> {
               });
             });
           }
+          _isLoading = false;
         },
         onError: (e) => print("Error completing: $e"),
       );
@@ -136,10 +138,12 @@ class _TeamsAndInvitesPageState extends State<TeamsAndInvitesPage> {
                         height: 50,
                       ),
                     )
-                  : Center(
-                      child: Text(
-                          "You have no teams! Join a team or create one first."),
-                    ),
+                  : _isLoading == true
+                      ? const Center(child: CircularProgressIndicator())
+                      : Center(
+                          child: Text(
+                              "You have no teams! Join a team or create one first."),
+                        ),
 
               // Iterate through list of projects, each being a card.
               // Update variables each time with: color, team name, num of
@@ -165,7 +169,9 @@ class _TeamsAndInvitesPageState extends State<TeamsAndInvitesPage> {
                         height: 25,
                       ),
                     )
-                  : const Center(child: Text('You have no invites!')),
+                  : _isLoading == true
+                      ? const Center(child: CircularProgressIndicator())
+                      : const Center(child: Text('You have no invites!')),
             ],
           ),
         ),
@@ -276,7 +282,7 @@ class _TeamsAndInvitesPageState extends State<TeamsAndInvitesPage> {
               ),
               tooltip: 'Open team settings',
               onPressed: () {
-                // TODO: Actual function
+                // TODO: Actual function (chevron right, team settings)
                 Navigator.push(
                     context,
                     MaterialPageRoute(
@@ -355,15 +361,15 @@ class InviteCard extends StatelessWidget {
                         tooltip: 'Accept invitation',
                         color: Colors.white,
                         onPressed: () {
-                          // TODO: Actual function
+                          // TODO: Actual function (accept invite)
                         },
                       ),
                       IconButton(
                         icon: const Icon(Icons.clear),
-                        tooltip: 'Deny invitation',
+                        tooltip: 'Decline invitation',
                         color: Colors.white,
                         onPressed: () {
-                          // TODO: Actual function
+                          // TODO: Actual function (decline invite)
                         },
                       ),
                     ],

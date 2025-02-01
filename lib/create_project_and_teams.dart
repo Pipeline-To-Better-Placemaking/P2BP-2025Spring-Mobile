@@ -1,7 +1,7 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
-import 'package:google_maps_flutter/google_maps_flutter.dart';
+import 'package:p2bp_2025spring_mobile/project_map_creation.dart';
 import 'package:p2bp_2025spring_mobile/settings_page.dart';
 import 'package:p2bp_2025spring_mobile/teams_and_invites_page.dart';
 import 'main.dart';
@@ -51,24 +51,6 @@ String saveTeam({required membersList, required String teamName}) {
   print(_firestore.doc('/teams/$teamID'));
 
   return teamID;
-}
-
-String saveProject({required membersList, required String projectTitle}) {
-  String projectID = _firestore.collection('projects').doc().id;
-  if (projectTitle.length > 3) {
-    _firestore.collection('projects').doc().set({
-      'title': projectTitle,
-      'creationTime': FieldValue.serverTimestamp(),
-      // Saves document id as field _id
-      'id': projectID,
-      //'team': getCurrentTeam(),
-    });
-  } else {
-    print("Name too short"); // <-- TODO: change to field display error on app
-  }
-  print(_firestore.doc('/projects/$projectID'));
-
-  return projectID;
 }
 
 class _CreateProjectAndTeamsPageState extends State<CreateProjectAndTeamsPage> {
@@ -270,7 +252,7 @@ class _CreateProjectWidgetState extends State<CreateProjectWidget> {
                         Navigator.push(
                             context,
                             MaterialPageRoute(
-                                builder: (context) => SearchScreen(
+                                builder: (context) => ProjectMapCreation(
                                     partialProjectData: partialProject)));
                       } // function
                     },
@@ -294,19 +276,11 @@ class CreateTeamWidget extends StatefulWidget {
   State<CreateTeamWidget> createState() => _CreateTeamWidgetState();
 }
 
-List<Member> searchMembers(List<Member> membersList, String text) {
-  membersList = membersList
-      .where((member) =>
-          member.getFullName().toLowerCase().startsWith(text.toLowerCase()))
-      .toList();
-  print('membersList: $membersList');
-  return membersList.isNotEmpty ? membersList : [];
-}
-
 class _CreateTeamWidgetState extends State<CreateTeamWidget> {
   List<Member> membersList = [];
   List<Member> membersSearch = [];
   List<Member> invitedMembers = [];
+  bool _isLoading = false;
   String teamName = '';
   int itemCount = 0;
   final _formKey = GlobalKey<FormState>();
@@ -315,7 +289,6 @@ class _CreateTeamWidgetState extends State<CreateTeamWidget> {
   @override
   initState() {
     super.initState();
-    teamID = _firestore.collection('teams').doc().id;
     _firestore.collection('users').where('createdAt', isNull: false).get().then(
       (querySnapshot) {
         Member tempMember;
@@ -330,6 +303,21 @@ class _CreateTeamWidgetState extends State<CreateTeamWidget> {
       },
       onError: (e) => print("Error completing: $e"),
     );
+  }
+
+  List<Member> searchMembers(List<Member> membersList, String text) {
+    setState(() {
+      _isLoading = true;
+
+      membersList = membersList
+          .where((member) =>
+              member.getFullName().toLowerCase().startsWith(text.toLowerCase()))
+          .toList();
+
+      _isLoading = false;
+    });
+    print('membersList: $membersList');
+    return membersList.isNotEmpty ? membersList : [];
   }
 
   @override
@@ -498,10 +486,12 @@ class _CreateTeamWidgetState extends State<CreateTeamWidget> {
                             height: 10,
                           ),
                         )
-                      : const Center(
-                          child: Text(
-                              'No users matching criteria. Enter at least 3 characters to search.'),
-                        ),
+                      : _isLoading == true
+                          ? const Center(child: CircularProgressIndicator())
+                          : const Center(
+                              child: Text(
+                                  'No users matching criteria. Enter at least 3 characters to search.'),
+                            ),
                 ),
                 const SizedBox(height: 10.0),
                 Align(

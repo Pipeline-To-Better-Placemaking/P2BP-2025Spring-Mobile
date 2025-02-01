@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'theme.dart';
 import 'widgets.dart';
 
-// TODO: Change text pick color from purple
 class EditProjectPanel extends StatefulWidget {
   const EditProjectPanel({super.key});
 
@@ -146,12 +145,11 @@ Padding buildEditSheet(BuildContext context) {
                             backgroundColor: const Color(0xFFFFCC00),
                             icon: const Icon(Icons.save),
                             iconColor: Colors.black,
-                            // TODO: edit w/ actual function
+                            // TODO: edit w/ actual function (save changes)
                             onPressed: () {},
                           ),
                         ),
 
-                        // TODO: should be on same level as save button?
                         // Delete project button
                         Container(
                           alignment: Alignment.topLeft,
@@ -161,7 +159,7 @@ Padding buildEditSheet(BuildContext context) {
                             foregroundColor: Colors.white,
                             backgroundColor: Colors.black,
                             icon: const Icon(Icons.delete),
-                            // TODO: edit w/ actual function
+                            // TODO: edit w/ actual function (delete project)
                             onPressed: () {},
                           ),
                         ),
