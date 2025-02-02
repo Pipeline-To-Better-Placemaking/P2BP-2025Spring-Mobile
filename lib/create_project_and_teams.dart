@@ -2,12 +2,10 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:p2bp_2025spring_mobile/project_map_creation.dart';
-import 'package:p2bp_2025spring_mobile/settings_page.dart';
 import 'package:p2bp_2025spring_mobile/teams_and_invites_page.dart';
-import 'main.dart';
+import 'home_screen.dart';
 import 'widgets.dart';
 import 'theme.dart';
-import 'search_location_screen.dart';
 import 'db_schema_classes.dart';
 
 // For page selection switch. 0 = project, 1 = team.
@@ -510,7 +508,7 @@ class _CreateTeamWidgetState extends State<CreateTeamWidget> {
                         Navigator.pushReplacement(
                           context,
                           MaterialPageRoute(
-                            builder: (context) => const SettingsPage(),
+                            builder: (context) => const HomeScreen(),
                           ),
                         );
                         Navigator.push(
