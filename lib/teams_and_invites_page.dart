@@ -325,10 +325,12 @@ class InviteCard extends StatelessWidget {
           const CircleAvatar(
             radius: 25,
           ),
+          const SizedBox(width: 15),
           Flexible(
             child: Stack(
               children: <Widget>[
-                Center(
+                Align(
+                  alignment: Alignment.centerLeft,
                   child: Text.rich(
                     overflow: TextOverflow.ellipsis,
                     maxLines: 2,
