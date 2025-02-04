@@ -287,7 +287,11 @@ class _CreateTeamWidgetState extends State<CreateTeamWidget> {
   @override
   initState() {
     super.initState();
-    _firestore.collection('users').where('createdAt', isNull: false).get().then(
+    _firestore
+        .collection('users')
+        .where('creationTime', isNull: false)
+        .get()
+        .then(
       (querySnapshot) {
         Member tempMember;
         for (var document in querySnapshot.docs) {

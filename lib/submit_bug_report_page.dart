@@ -75,7 +75,7 @@ class _SubmitBugReportFormState extends State<SubmitBugReportForm> {
           'uid': uid,
           'title': titleText,
           'description': descText,
-          'createdAt': FieldValue.serverTimestamp(),
+          'creationTime': FieldValue.serverTimestamp(),
         });
 
         ScaffoldMessenger.of(context).showSnackBar(
