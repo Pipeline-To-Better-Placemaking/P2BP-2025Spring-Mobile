@@ -19,60 +19,72 @@ User? loggedInUser = FirebaseAuth.instance.currentUser;
 class _TeamsAndInvitesPageState extends State<TeamsAndInvitesPage> {
   List<Team> teams = [];
   List invites = [];
-  bool _isLoading = true;
+  bool _isLoadingTeams = true;
+  bool _isLoadingInvites = true;
   int teamsCount = 0;
   int invitesCount = 0;
   int selectedIndex = 0;
+  late DocumentSnapshot<Map<String, dynamic>> _userSnapshot;
 
-  void getTeamsIDs() {
+  // Gets user info and once that is done gets teams and invites
+  void getTeamAndInviteInfo() async {
     try {
-      _firestore.collection("users").doc(loggedInUser?.uid).get().then(
-        (querySnapshot) {
-          Team tempTeam;
-          for (var reference in querySnapshot.data()?['teams']) {
-            _firestore.doc(reference.path).get().then((teamQuerySnapshot) {
-              // TODO: Add num projects, members list instead of adminName
-              tempTeam = Team(
-                  teamID: teamQuerySnapshot['id'],
-                  title: teamQuerySnapshot['title'],
-                  adminName: 'Temp');
-              teams.add(tempTeam);
-              setState(() {
-                teamsCount = teams.length;
-              });
-            });
-          }
-          _isLoading = false;
-        },
-        onError: (e) => print("Error completing: $e"),
-      );
+      _userSnapshot =
+          await _firestore.collection("users").doc(loggedInUser?.uid).get();
+      getTeamsIDs();
+      getInvites();
     } catch (e, stacktrace) {
       print('Exception retrieving teams: $e');
       print('Stacktrace: $stacktrace');
     }
   }
 
-  void getInvites() {
+  void getTeamsIDs() async {
     try {
-      _firestore.collection("users").doc(loggedInUser?.uid).get().then(
-        (querySnapshot) {
-          Team tempTeam;
-          for (var reference in querySnapshot.data()?['invites']) {
-            _firestore.doc(reference.path).get().then((teamQuerySnapshot) {
-              // TODO: Add admin name.
-              tempTeam = Team(
-                  teamID: teamQuerySnapshot['id'],
-                  title: teamQuerySnapshot['title'],
-                  adminName: 'Temp');
-              invites.add(tempTeam);
-              setState(() {
-                invitesCount = invites.length;
-              });
-            });
-          }
-        },
-        onError: (e) => print("Error completing: $e"),
-      );
+      if (_userSnapshot.data()!['teams'] != null &&
+          _userSnapshot.data()!['teams'][0] != null) {
+        Team tempTeam;
+        for (var reference in _userSnapshot.data()?['teams']) {
+          final teamQuerySnapshot = await _firestore.doc(reference.path).get();
+
+          // TODO: Add num projects, members list instead of adminName
+          tempTeam = Team(
+              teamID: teamQuerySnapshot['id'],
+              title: teamQuerySnapshot['title'],
+              adminName: 'Temp');
+          teams.add(tempTeam);
+          setState(() {
+            teamsCount = teams.length;
+          });
+        }
+      }
+      _isLoadingTeams = false;
+    } catch (e, stacktrace) {
+      print('Exception retrieving teams: $e');
+      print('Stacktrace: $stacktrace');
+    }
+  }
+
+  void getInvites() async {
+    try {
+      if (_userSnapshot.data()!['invites'] != null &&
+          _userSnapshot.data()!['invites'][0] != null) {
+        Team tempTeam;
+        for (var reference in _userSnapshot.data()?['invites']) {
+          final inviteQuerySnapshot =
+              await _firestore.doc(reference.path).get();
+          // TODO: Add admin name.
+          tempTeam = Team(
+              teamID: inviteQuerySnapshot['id'],
+              title: inviteQuerySnapshot['title'],
+              adminName: 'Temp');
+          invites.add(tempTeam);
+          setState(() {
+            invitesCount = invites.length;
+          });
+        }
+      }
+      _isLoadingInvites = false;
     } catch (e, stacktrace) {
       print('Exception retrieving teams: $e');
       print('Stacktrace: $stacktrace');
@@ -82,8 +94,7 @@ class _TeamsAndInvitesPageState extends State<TeamsAndInvitesPage> {
   @override
   void initState() {
     super.initState();
-    getTeamsIDs();
-    getInvites();
+    getTeamAndInviteInfo();
   }
 
   @override
@@ -138,7 +149,7 @@ class _TeamsAndInvitesPageState extends State<TeamsAndInvitesPage> {
                         height: 50,
                       ),
                     )
-                  : _isLoading == true
+                  : _isLoadingTeams
                       ? const Center(child: CircularProgressIndicator())
                       : Center(
                           child: Text(
@@ -169,7 +180,7 @@ class _TeamsAndInvitesPageState extends State<TeamsAndInvitesPage> {
                         height: 25,
                       ),
                     )
-                  : _isLoading == true
+                  : _isLoadingInvites
                       ? const Center(child: CircularProgressIndicator())
                       : const Center(child: Text('You have no invites!')),
             ],
