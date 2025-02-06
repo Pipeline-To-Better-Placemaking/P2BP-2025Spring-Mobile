@@ -53,11 +53,11 @@ class _HomeScreenState extends State<HomeScreen> {
             "Error populating projects in home_screen.dart. No selected team available.");
       } else {
         _projectList = await getTeamProjects(teamRef);
-        setState(() {
-          _projectsCount = _projectList.length;
-          _isLoading = false;
-        });
       }
+      setState(() {
+        _projectsCount = _projectList.length;
+        _isLoading = false;
+      });
     } catch (e) {
       print("Error in _populateProjects(): $e");
     }
