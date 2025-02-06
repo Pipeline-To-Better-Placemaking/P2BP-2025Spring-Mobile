@@ -1,9 +1,8 @@
 import 'package:flutter/material.dart';
 import 'teams_settings_screen.dart';
-import 'package:firebase_core/firebase_core.dart';
-import 'firebase_options.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'firestore_functions.dart';
 import 'db_schema_classes.dart';
 
 class TeamsAndInvitesPage extends StatefulWidget {
@@ -18,73 +17,26 @@ User? loggedInUser = FirebaseAuth.instance.currentUser;
 
 class _TeamsAndInvitesPageState extends State<TeamsAndInvitesPage> {
   List<Team> teams = [];
-  List invites = [];
+  List teamInvites = [];
   bool _isLoadingTeams = true;
   bool _isLoadingInvites = true;
   int teamsCount = 0;
   int invitesCount = 0;
   int selectedIndex = 0;
-  late DocumentSnapshot<Map<String, dynamic>> _userSnapshot;
 
   // Gets user info and once that is done gets teams and invites
-  void getTeamAndInviteInfo() async {
+  Future<void> _getTeamAndInvite() async {
     try {
-      _userSnapshot =
-          await _firestore.collection("users").doc(loggedInUser?.uid).get();
-      getTeamsIDs();
-      getInvites();
-    } catch (e, stacktrace) {
-      print('Exception retrieving teams: $e');
-      print('Stacktrace: $stacktrace');
-    }
-  }
-
-  void getTeamsIDs() async {
-    try {
-      if (_userSnapshot.data()!['teams'] != null &&
-          _userSnapshot.data()!['teams'][0] != null) {
-        Team tempTeam;
-        for (var reference in _userSnapshot.data()?['teams']) {
-          final teamQuerySnapshot = await _firestore.doc(reference.path).get();
-
-          // TODO: Add num projects, members list instead of adminName
-          tempTeam = Team(
-              teamID: teamQuerySnapshot['id'],
-              title: teamQuerySnapshot['title'],
-              adminName: 'Temp');
-          teams.add(tempTeam);
-          setState(() {
-            teamsCount = teams.length;
-          });
-        }
-      }
-      _isLoadingTeams = false;
-    } catch (e, stacktrace) {
-      print('Exception retrieving teams: $e');
-      print('Stacktrace: $stacktrace');
-    }
-  }
-
-  void getInvites() async {
-    try {
-      if (_userSnapshot.data()!['invites'] != null &&
-          _userSnapshot.data()!['invites'][0] != null) {
-        Team tempTeam;
-        for (var reference in _userSnapshot.data()?['invites']) {
-          final inviteQuerySnapshot =
-              await _firestore.doc(reference.path).get();
-          // TODO: Add admin name.
-          tempTeam = Team(
-              teamID: inviteQuerySnapshot['id'],
-              title: inviteQuerySnapshot['title'],
-              adminName: 'Temp');
-          invites.add(tempTeam);
-          setState(() {
-            invitesCount = invites.length;
-          });
-        }
-      }
-      _isLoadingInvites = false;
+      teams = await getTeamsIDs();
+      setState(() {
+        _isLoadingTeams = false;
+        teamsCount = teams.length;
+      });
+      teamInvites = await getInvites();
+      setState(() {
+        _isLoadingInvites = false;
+        invitesCount = teamInvites.length;
+      });
     } catch (e, stacktrace) {
       print('Exception retrieving teams: $e');
       print('Stacktrace: $stacktrace');
@@ -94,7 +46,7 @@ class _TeamsAndInvitesPageState extends State<TeamsAndInvitesPage> {
   @override
   void initState() {
     super.initState();
-    getTeamAndInviteInfo();
+    _getTeamAndInvite();
   }
 
   @override
@@ -124,7 +76,7 @@ class _TeamsAndInvitesPageState extends State<TeamsAndInvitesPage> {
               ],
             ),
           ),
-          // TODO: make pull down refresh?
+          // TODO: make pull down refresh
           body: TabBarView(
             children: [
               teamsCount > 0
@@ -156,7 +108,7 @@ class _TeamsAndInvitesPageState extends State<TeamsAndInvitesPage> {
                               "You have no teams! Join a team or create one first."),
                         ),
 
-              // Iterate through list of projects, each being a card.
+              // Iterate through list of invites, each being a card.
               // Update variables each time with: color, team name, num of
               // projects, and members list from database.
               invitesCount > 0
@@ -171,8 +123,8 @@ class _TeamsAndInvitesPageState extends State<TeamsAndInvitesPage> {
                       itemBuilder: (BuildContext context, int index) {
                         return InviteCard(
                           color: Colors.blue,
-                          name: invites[index].adminName,
-                          teamName: invites[index].title,
+                          name: teamInvites[index].adminName,
+                          teamName: teamInvites[index].title,
                         );
                       },
                       separatorBuilder: (BuildContext context, int index) =>

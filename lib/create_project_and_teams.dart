@@ -3,6 +3,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:p2bp_2025spring_mobile/project_map_creation.dart';
 import 'package:p2bp_2025spring_mobile/teams_and_invites_page.dart';
+import 'firestore_functions.dart';
 import 'home_screen.dart';
 import 'widgets.dart';
 import 'theme.dart';
@@ -21,35 +22,6 @@ class CreateProjectAndTeamsPage extends StatefulWidget {
 
 final FirebaseFirestore _firestore = FirebaseFirestore.instance;
 User? loggedInUser = FirebaseAuth.instance.currentUser;
-
-String saveTeam({required membersList, required String teamName}) {
-  String teamID = _firestore.collection('teams').doc().id;
-  if (teamName.length > 3) {
-    _firestore.collection("teams").doc(teamID).set({
-      'title': teamName,
-      'creationTime': FieldValue.serverTimestamp(),
-      // Saves document id as field _id
-      'id': teamID,
-      'teamMembers': FieldValue.arrayUnion([
-        {'role': 'owner', 'user': _firestore.doc('users/${loggedInUser?.uid}')}
-      ]),
-    }).then((documentSnapshot) => print("Data awith ID: $teamID"));
-    _firestore.collection("users").doc(loggedInUser?.uid).update({
-      'teams': FieldValue.arrayUnion([_firestore.doc('/teams/$teamID')])
-    });
-    // TODO Currently: invites team members only once team is created.
-    for (Member members in membersList) {
-      _firestore.collection('users').doc(members.getUserID()).update({
-        'invites': FieldValue.arrayUnion([_firestore.doc('/teams/$teamID')])
-      });
-    }
-  } else {
-    print("Name too short"); // <-- TODO: change to field display error on app
-  }
-  print(_firestore.doc('/teams/$teamID'));
-
-  return teamID;
-}
 
 class _CreateProjectAndTeamsPageState extends State<CreateProjectAndTeamsPage> {
   PageView page = PageView.project;
@@ -199,6 +171,7 @@ class _CreateProjectWidgetState extends State<CreateProjectWidget> {
                   labelText: 'Project Name',
                   maxLines: 1,
                   minLines: 1,
+                  // Error mesasge field includes validation (3 characters min)
                   errorMessage:
                       'Project names must be at least 3 characters long.',
                   onChanged: (titleText) {
@@ -226,6 +199,7 @@ class _CreateProjectWidgetState extends State<CreateProjectWidget> {
                   labelText: 'Project Description',
                   maxLines: 3,
                   minLines: 3,
+                  // Error mesasge field includes validation (3 characters min)
                   errorMessage:
                       'Project descriptions must be at least 3 characters long.',
                   onChanged: (descriptionText) {
@@ -431,6 +405,7 @@ class _CreateTeamWidgetState extends State<CreateTeamWidget> {
                   labelText: 'Team Name',
                   maxLines: 1,
                   minLines: 1,
+                  // Error mesasge field includes validation (3 characters min)
                   errorMessage:
                       'Team names must be at least 3 characters long.',
                   onChanged: (teamText) {
@@ -474,6 +449,7 @@ class _CreateTeamWidgetState extends State<CreateTeamWidget> {
                   height: 250,
                   child: itemCount > 0
                       ? ListView.separated(
+                          shrinkWrap: true,
                           itemCount: itemCount,
                           padding: const EdgeInsets.only(
                             left: 5,

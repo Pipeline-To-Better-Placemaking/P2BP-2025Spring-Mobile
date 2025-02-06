@@ -1,6 +1,5 @@
 // User class for create_project_and_teams.dart
 import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:google_maps_flutter/google_maps_flutter.dart';
 
 class Member {
   String _userID = '';
@@ -52,23 +51,24 @@ class Team {
   Team({required this.teamID, required this.title, required this.adminName});
 }
 
+// Project class for project creation (create project + map)
 class Project {
   Timestamp? creationTime;
-  String teamID = '';
+  DocumentReference? teamRef;
   String projectID = '';
   String title = '';
   String description = '';
-  List<GeoPoint> projectArea = [];
+  List polygonPoints = [];
   // TODO: Change depending on implementation of tests.
   List<Test>? tests = [];
 
   Project(
       {this.creationTime,
-      required this.teamID,
+      required this.teamRef,
       required this.projectID,
       required this.title,
       required this.description,
-      required this.projectArea,
+      required this.polygonPoints,
       this.tests});
 
   // TODO: Eventually add Team Photo and Team Color

@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:firebase_core/firebase_core.dart';
 // import 'firebase_options.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:p2bp_2025spring_mobile/db_schema_classes.dart';
 import 'create_project_details.dart';
 import 'results_panel.dart';
 import 'edit_project_panel.dart';
@@ -58,7 +59,11 @@ class MyApp extends StatelessWidget {
             const CreateProjectAndTeamsPage(),
         '/settings': (context) => const SettingsPage(),
         '/teams_and_invites': (context) => const TeamsAndInvitesPage(),
-        '/create_project_details': (context) => const CreateProjectDetails(),
+        '/create_project_details': (context) => CreateProjectDetails(
+              projectData: Project.partialProject(
+                  title: 'No data sent',
+                  description: 'Accessed without project data'),
+            ),
         '/login': (context) => const LoginScreen(),
         '/signup': (context) => const SignUpScreen(),
         '/home': (context) => const HomeScreen(),
@@ -182,11 +187,11 @@ class _HomePageStates extends State<HomePage> {
                 name: 'Team Settings',
                 version: 0,
               ),
-              // Button 14: Search
+              // Button 14: Project Details
               buildTempButton(
                 context: context,
-                route: '/search',
-                name: 'Search',
+                route: '/create_project_details',
+                name: 'Create Project Details',
                 version: 1,
               ),
             ],
