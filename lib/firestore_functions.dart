@@ -6,6 +6,11 @@ import 'db_schema_classes.dart';
 final FirebaseFirestore _firestore = FirebaseFirestore.instance;
 final User? _loggedInUser = FirebaseAuth.instance.currentUser;
 
+// NOTE: When creating delete functionality, delete ALL instances of object.
+// Make sure to delete references in other objects (i.e. deleting a team should
+// delete it in the user's data). For simplicity, any objects that may be
+// deleted should contain references to the objects which contain it.
+
 class FirestoreFunctions {
   /// Gets the value of fullName from 'users' the document for the given uid.
   /// Contains error handling for every case starting from uid being null.
@@ -250,4 +255,83 @@ Future<List<Team>> getTeamsIDs() async {
   }
 
   return teams;
+}
+
+/// Removes the invite from the user. Checks if the user exists and has invites
+/// field (*always* should). Makes sure that the invites field contains the
+/// invite being deleted. If so removes it from database.
+Future<void> removeInviteFromUser(String teamID) async {
+  final DocumentReference<Map<String, dynamic>> userRef;
+  final DocumentSnapshot<Map<String, dynamic>> userDoc;
+  final DocumentReference<Map<String, dynamic>> teamRef;
+
+  try {
+    userRef = _firestore.collection('users').doc('${_loggedInUser?.uid}');
+    userDoc = await userRef.get();
+    teamRef = _firestore.doc('teams/$teamID');
+
+    if (userDoc.exists && userDoc.data()!.containsKey('invites')) {
+      if (userDoc.data()!['invites'].contains(teamRef)) {
+        // Remove invite from invites field
+        userRef.update({
+          'invites': FieldValue.arrayRemove([teamRef]),
+        });
+      } else {
+        // TODO: Display a message to user:
+        print("Error in addUserToTeam()! No invite matching that id.");
+      }
+    }
+  } catch (e, stacktrace) {
+    print('Exception accepting team invite: $e');
+    print('Stacktrace: $stacktrace');
+  }
+}
+
+/// Adds user to team when they accept the invite. Checks if the user exists,
+/// has invites field (*always* should), and the team still exists. If so, adds
+/// user to teams collection and remove invite from the user's database. If
+/// team no longer exists, removes invite from user's account without joining.
+Future<void> addUserToTeam(String teamID) async {
+  final DocumentReference<Map<String, dynamic>> userRef;
+  final DocumentSnapshot<Map<String, dynamic>> userDoc;
+  final DocumentReference<Map<String, dynamic>> teamRef;
+  final DocumentSnapshot<Map<String, dynamic>> teamDoc;
+
+  try {
+    userRef = _firestore.collection('users').doc('${_loggedInUser?.uid}');
+    userDoc = await userRef.get();
+    teamRef = _firestore.doc('teams/$teamID');
+    teamDoc = await teamRef.get();
+
+    if (userDoc.exists && userDoc.data()!.containsKey('invites')) {
+      if (userDoc.data()!['invites'].contains(teamRef)) {
+        if (teamDoc.exists) {
+          // Add team to teams field, remove from invites field
+          userRef.update({
+            'teams': FieldValue.arrayUnion([teamRef]),
+            'invites': FieldValue.arrayRemove([teamRef]),
+          });
+          teamRef.update({
+            'teamMembers': FieldValue.arrayUnion([
+              {
+                'role': 'user',
+                'user': _firestore.doc('users/${_loggedInUser?.uid}')
+              }
+            ]),
+          });
+        } else {
+          // TODO: Display a message to user:
+          print("Team no longer exists. Deleting invite.");
+          userRef.update({
+            'invites': FieldValue.arrayRemove([teamRef]),
+          });
+        }
+      } else {
+        print("Error in addUserToTeam()! No invite matching that id.");
+      }
+    }
+  } catch (e, stacktrace) {
+    print('Exception accepting team invite: $e');
+    print('Stacktrace: $stacktrace');
+  }
 }

@@ -123,8 +123,7 @@ class _TeamsAndInvitesPageState extends State<TeamsAndInvitesPage> {
                       itemBuilder: (BuildContext context, int index) {
                         return InviteCard(
                           color: Colors.blue,
-                          name: teamInvites[index].adminName,
-                          teamName: teamInvites[index].title,
+                          team: teamInvites[index],
                         );
                       },
                       separatorBuilder: (BuildContext context, int index) =>
@@ -261,16 +260,10 @@ class _TeamsAndInvitesPageState extends State<TeamsAndInvitesPage> {
 
 class InviteCard extends StatelessWidget {
   final Color color;
-  final String name;
-  final String teamName;
+  final Team team;
   // TODO: final List<Members> members; (for cover photo, not implemented yet)
 
-  const InviteCard({
-    super.key,
-    required this.color,
-    required this.name,
-    required this.teamName,
-  });
+  const InviteCard({super.key, required this.color, required this.team});
 
   @override
   Widget build(BuildContext context) {
@@ -303,12 +296,12 @@ class InviteCard extends StatelessWidget {
                     TextSpan(
                       children: [
                         TextSpan(
-                          text: name,
+                          text: team.adminName,
                           style: const TextStyle(fontWeight: FontWeight.bold),
                         ),
                         const TextSpan(text: ' has invited you to join: '),
                         TextSpan(
-                          text: teamName,
+                          text: team.title,
                           style: const TextStyle(fontWeight: FontWeight.bold),
                         ),
                       ],
@@ -327,6 +320,7 @@ class InviteCard extends StatelessWidget {
                         color: Colors.white,
                         onPressed: () {
                           // TODO: Actual function (accept invite)
+                          addUserToTeam(team.teamID);
                         },
                       ),
                       IconButton(
@@ -335,6 +329,7 @@ class InviteCard extends StatelessWidget {
                         color: Colors.white,
                         onPressed: () {
                           // TODO: Actual function (decline invite)
+                          removeInviteFromUser(team.teamID);
                         },
                       ),
                     ],
