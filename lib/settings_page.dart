@@ -260,8 +260,7 @@ class _ProfileIconEditStackState extends State<ProfileIconEditStack> {
 
     try {
       // Get user's full name from firebase
-      final String fullName =
-          await FirestoreFunctions.getUserFullName(_currentUser?.uid);
+      final String fullName = await getUserFullName(_currentUser?.uid);
 
       // Adds the first letter of each word of the full name to result string
       final splitFullNameList = fullName.split(' ');

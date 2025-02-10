@@ -66,8 +66,7 @@ class _HomeScreenState extends State<HomeScreen> {
   // Gets name from DB, get the first word of that, then sets _firstName to it
   Future<void> _getUserFirstName() async {
     try {
-      String fullName =
-          await FirestoreFunctions.getUserFullName(_currentUser?.uid);
+      String fullName = await getUserFullName(_currentUser?.uid);
 
       // Get first name from full name
       String firstName = fullName.split(' ').first;

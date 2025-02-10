@@ -26,8 +26,6 @@ void main() async {
     await Firebase.initializeApp(
         // options: DefaultFirebaseOptions.currentPlatform,
         );
-    // Set Firebase persistence to SESSION to log out on tab/browser close
-    await FirebaseAuth.instance.setPersistence(Persistence.SESSION);
   } catch (e) {
     print("Firebase initialization failed: $e");
     // Handle the error here, maybe show an error screen or fallback UI

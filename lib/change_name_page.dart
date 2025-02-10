@@ -62,7 +62,7 @@ class _ChangeNameFormState extends State<ChangeNameForm> {
   // Gets name from DB and then sets local field _currentFullName to that
   Future<void> _getUserFullName() async {
     try {
-      String name = await FirestoreFunctions.getUserFullName(_currentUser?.uid);
+      String name = await getUserFullName(_currentUser?.uid);
 
       if (_currentFullName != name) {
         setState(() {

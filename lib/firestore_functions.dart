@@ -11,33 +11,27 @@ final User? _loggedInUser = FirebaseAuth.instance.currentUser;
 // delete it in the user's data). For simplicity, any objects that may be
 // deleted should contain references to the objects which contain it.
 
-class FirestoreFunctions {
-  /// Gets the value of fullName from 'users' the document for the given uid.
-  /// Contains error handling for every case starting from uid being null.
-  /// This will always either return the successfully found name or throw
-  /// an exception, so running this in a try-catch is strongly encouraged.
-  static Future<String> getUserFullName(String? uid) async {
-    try {
-      if (uid == null) {
-        throw Exception('no-user-id-found');
-      }
+/// Gets the value of fullName from the 'users' document for the given uid.
+/// Contains error handling for every case starting from uid being null.
+/// This will always either return the successfully found name or throw
+/// an exception, so running this in a try-catch is strongly encouraged.
+Future<String> getUserFullName(String? uid) async {
+  if (uid == null) {
+    throw Exception('no-user-id-found');
+  }
 
-      final userDoc =
-          await FirebaseFirestore.instance.collection('users').doc(uid).get();
+  final userDoc =
+      await FirebaseFirestore.instance.collection('users').doc(uid).get();
 
-      if (userDoc.exists) {
-        String? fullName = userDoc['fullName'];
-        if (fullName == null || fullName.isEmpty) {
-          throw Exception('user-has-no-name');
-        } else {
-          return fullName;
-        }
-      } else {
-        throw Exception('user-document-does-not-exist');
-      }
-    } catch (e) {
-      throw Exception(e);
+  if (userDoc.exists) {
+    String? fullName = userDoc['fullName'];
+    if (fullName == null || fullName.isEmpty) {
+      throw Exception('user-has-no-name');
+    } else {
+      return fullName;
     }
+  } else {
+    throw Exception('user-document-does-not-exist');
   }
 }
 
