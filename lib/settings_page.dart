@@ -1,11 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
-import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'change_password_page.dart';
 import 'submit_bug_report_page.dart';
 import 'edit_profile_page.dart';
 import 'firestore_functions.dart';
+import 'strings.dart';
 
 class SettingsPage extends StatefulWidget {
   const SettingsPage({super.key});
@@ -15,16 +15,116 @@ class SettingsPage extends StatefulWidget {
 }
 
 class _SettingsPageState extends State<SettingsPage> {
-  void _signOutUser() async {
+  /// Signs out of this account and returns to login screen.
+  void _signOutUser(BuildContext context) async {
     try {
       await FirebaseAuth.instance.signOut();
-      Navigator.pushReplacementNamed(context, '/');
+      if (context.mounted) {
+        // Sends to login screen and removes everything else from nav stack
+        Navigator.pushNamedAndRemoveUntil(
+            context, '/login', (Route route) => false);
+      } else {
+        throw Exception('context-unmounted');
+      }
     } catch (e) {
       print('Error signing out: $e');
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Sign out failed. Try again.')),
+        SnackBar(content: Text('Log out failed. Try again.')),
       );
     }
+  }
+
+  /// Builds and displays confirmation dialog for signing out of account.
+  Future<void> _signOutConfirmDialogBuilder(BuildContext context) async {
+    return showDialog<void>(
+      context: context,
+      builder: (BuildContext context) => AlertDialog(
+        title: const Text('Are you sure?'),
+        titlePadding: EdgeInsets.only(
+          left: 20,
+          right: 20,
+          top: 20,
+        ),
+        content: const Text(Strings.signOutConfirmText),
+        contentPadding: EdgeInsets.only(
+          left: 20,
+          right: 20,
+          top: 16,
+          bottom: 10,
+        ),
+        actions: <Widget>[
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(),
+            child: const Text('No, go back'),
+          ),
+          TextButton(
+            onPressed: () => _signOutUser(context),
+            child: const Text('Yes, log me out'),
+          ),
+        ],
+        actionsPadding: EdgeInsets.only(left: 20, right: 20, bottom: 20),
+        actionsAlignment: MainAxisAlignment.end,
+      ),
+    );
+  }
+
+  /// Currently does same as _signOutUser, need to implement deletion.
+  ///
+  /// Deletes the account being used along with all references to it from DB.
+  ///
+  /// Sends user back to login screen after deletion.
+  void _deleteAccount(BuildContext context) async {
+    try {
+      // TODO: actually delete account and all references to it.
+      await FirebaseAuth.instance.signOut();
+      if (context.mounted) {
+        // Sends to login screen and removes everything else from nav stack
+        Navigator.pushNamedAndRemoveUntil(
+            context, '/login', (Route route) => false);
+      } else {
+        throw Exception('context-unmounted');
+      }
+    } catch (e) {
+      print('Error signing out: $e');
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Log out failed. Try again.')),
+      );
+    }
+  }
+
+  /// Builds and displays confirmation dialog for deleting account.
+  Future<void> _deleteAccountConfirmDialogBuilder(BuildContext context) async {
+    // TODO: better confirmation like user has to type their email or something
+    return showDialog<void>(
+      context: context,
+      builder: (BuildContext context) => AlertDialog(
+        title: const Text('Are you sure?'),
+        titlePadding: EdgeInsets.only(
+          left: 20,
+          right: 20,
+          top: 20,
+        ),
+        content: const Text(Strings.deleteAccountConfirmText),
+        contentPadding: EdgeInsets.only(
+          left: 20,
+          right: 20,
+          top: 16,
+          bottom: 10,
+        ),
+        actions: <Widget>[
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(),
+            child: const Text('No, go back'),
+          ),
+          TextButton(
+            onPressed: () => _deleteAccount(context),
+            child: const Text('Yes, delete my account'),
+          ),
+        ],
+        actionsPadding: EdgeInsets.only(left: 20, right: 20, bottom: 20),
+        actionsAlignment: MainAxisAlignment.end,
+      ),
+    );
   }
 
   @override
@@ -51,6 +151,7 @@ class _SettingsPageState extends State<SettingsPage> {
                 Column(
                   children: <Widget>[
                     ProfileIconEditStack(),
+                    const SizedBox(height: 8),
                     ElevatedButton(
                       style: ElevatedButton.styleFrom(
                         backgroundColor: Colors.blue,
@@ -76,7 +177,7 @@ class _SettingsPageState extends State<SettingsPage> {
                     ),
                   ],
                 ),
-                const SizedBox(height: 20),
+                const SizedBox(height: 18),
                 const Text('Appearance'),
                 const SizedBox(height: 10),
                 const DarkModeSwitchListTile(
@@ -133,18 +234,15 @@ class _SettingsPageState extends State<SettingsPage> {
                 ListTile(
                   leading: Icon(Icons.lock_outline),
                   title: Text('Delete Account'),
-                  iconColor: Colors.redAccent,
-                  textColor: Colors.redAccent,
+                  iconColor: Colors.redAccent[700],
+                  textColor: Colors.redAccent[700],
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.only(
                       bottomLeft: Radius.circular(10),
                       bottomRight: Radius.circular(10),
                     ),
                   ),
-                  onTap: () {
-                    // TODO: confirmation page or popup, then
-                    // TODO: actual backend functionality to delete account
-                  },
+                  onTap: () => _deleteAccountConfirmDialogBuilder(context),
                 ),
                 const SizedBox(height: 20),
                 const Text('Support'),
@@ -186,12 +284,12 @@ class _SettingsPageState extends State<SettingsPage> {
                 ListTile(
                   leading: const Icon(Icons.logout),
                   title: const Text('Log Out'),
-                  iconColor: Colors.redAccent,
-                  textColor: Colors.redAccent,
+                  iconColor: Colors.redAccent[700],
+                  textColor: Colors.redAccent[700],
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(10),
                   ),
-                  onTap: _signOutUser,
+                  onTap: () => _signOutConfirmDialogBuilder(context),
                 ),
                 const SizedBox(height: 150),
               ],
@@ -248,12 +346,6 @@ class _ProfileIconEditStackState extends State<ProfileIconEditStack> {
 
   late Future<String> _initials;
 
-  @override
-  void initState() {
-    super.initState();
-    _initials = _getUserInitials();
-  }
-
   // Gets the user's initials via their full name from firebase
   Future<String> _getUserInitials() async {
     String result = '';
@@ -265,7 +357,7 @@ class _ProfileIconEditStackState extends State<ProfileIconEditStack> {
       // Adds the first letter of each word of the full name to result string
       final splitFullNameList = fullName.split(' ');
       for (var word in splitFullNameList) {
-        result += word.substring(0, 1);
+        result += word.substring(0, 1).toUpperCase();
       }
       return result;
     } catch (e) {
@@ -278,6 +370,12 @@ class _ProfileIconEditStackState extends State<ProfileIconEditStack> {
       );
       return 'Err';
     }
+  }
+
+  @override
+  void initState() {
+    super.initState();
+    _initials = _getUserInitials();
   }
 
   @override
