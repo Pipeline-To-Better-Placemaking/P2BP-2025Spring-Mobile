@@ -3,8 +3,11 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:geolocator/geolocator.dart';
+import 'package:p2bp_2025spring_mobile/create_project_and_teams.dart';
 import 'package:p2bp_2025spring_mobile/home_screen.dart';
 import 'package:p2bp_2025spring_mobile/widgets.dart';
+import 'create_project_details.dart';
+import 'package:maps_toolkit/maps_toolkit.dart' as mp;
 import 'db_schema_classes.dart';
 import 'dart:math';
 
@@ -18,16 +21,18 @@ class ProjectMapCreation extends StatefulWidget {
   State<ProjectMapCreation> createState() => _ProjectMapCreationState();
 }
 
+final FirebaseFirestore _firestore = FirebaseFirestore.instance;
 final User? loggedInUser = FirebaseAuth.instance.currentUser;
 
 class _ProjectMapCreationState extends State<ProjectMapCreation> {
-  DocumentReference? teamRef;
+  late DocumentReference teamRef;
   late GoogleMapController mapController;
   LatLng _currentPosition =
       const LatLng(45.521563, -122.677433); // Default location
   bool _isLoading = true;
 
   List<LatLng> _polygonPoints = []; // Points for the polygon
+  List<mp.LatLng> _mapToolsPolygonPoints = [];
   Set<Polygon> _polygon = {}; // Set of polygons
   List<GeoPoint> _polygonAsPoints =
       []; // The current polygon represented as points (for Firestore).
@@ -47,20 +52,6 @@ class _ProjectMapCreationState extends State<ProjectMapCreation> {
   void initState() {
     super.initState();
     _checkAndFetchLocation();
-    _getCurrentTeam();
-  }
-
-  // Function to set teamRef to current team.
-  Future<void> _getCurrentTeam() async {
-    try {
-      teamRef = await getCurrentTeam();
-      if (teamRef == null) {
-        throw Exception(
-            "Error populating projects in home_screen.dart. No selected team available.");
-      }
-    } catch (e) {
-      print("Error in project_map_creation.dart, _getCurrentTeam(): $e");
-    }
   }
 
   void _onMapCreated(GoogleMapController controller) {
@@ -96,6 +87,7 @@ class _ProjectMapCreationState extends State<ProjectMapCreation> {
           distanceFilter: 10,
         ),
       ).listen((Position position) {
+        // TODO: setState error here- Unhandled Exception: setState() called after dispose(): _ProjectMapCreationState#065db(lifecycle state: defunct, not mounted)
         setState(() {
           _currentPosition = LatLng(position.latitude, position.longitude);
         });
@@ -176,6 +168,7 @@ class _ProjectMapCreationState extends State<ProjectMapCreation> {
 
     // Empty current polygon as points representation.
     _polygonAsPoints = [];
+    _mapToolsPolygonPoints = [];
 
     final String polygonId = DateTime.now().millisecondsSinceEpoch.toString();
     setState(() {
@@ -194,9 +187,12 @@ class _ProjectMapCreationState extends State<ProjectMapCreation> {
           },
         ),
       };
+      // Creating points representations for Firestore storage and area calculation
       for (LatLng coordinate in _polygonPoints) {
         _polygonAsPoints
             .add(GeoPoint(coordinate.latitude, coordinate.longitude));
+        _mapToolsPolygonPoints
+            .add(mp.LatLng(coordinate.latitude, coordinate.longitude));
       }
       _polygonPoints = [];
       _markers.clear();
@@ -329,16 +325,19 @@ class _ProjectMapCreationState extends State<ProjectMapCreation> {
                         foregroundColor: Colors.white,
                         backgroundColor: const Color(0xFF4871AE),
                         icon: const Icon(Icons.chevron_right),
-                        onPressed: () {
+                        onPressed: () async {
                           if (_polygon.isNotEmpty) {
-                            saveProject(
+                            await saveProject(
                               projectTitle: widget.partialProjectData.title,
                               description:
                                   widget.partialProjectData.description,
-                              teamRef: teamRef,
+                              teamRef: await getCurrentTeam(),
                               polygonPoints: _polygonAsPoints,
+                              // Polygon area is square meters
+                              // (miles *= 0.00062137 * 0.00062137)
+                              polygonArea: mp.SphericalUtil.computeArea(
+                                  _mapToolsPolygonPoints),
                             );
-                            print("Successfully created project");
                             Navigator.pushReplacement(
                                 context,
                                 MaterialPageRoute(
