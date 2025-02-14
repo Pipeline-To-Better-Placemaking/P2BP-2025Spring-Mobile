@@ -31,10 +31,11 @@ dependencies:
   flutter:
     sdk: flutter
   google_maps_flutter: ^2.0.10 # Check for the latest version
-  firebase_core: ^3.10.0
+  firebase_core: ^3.11.0
   cloud_firestore: ^5.6.1
   firebase_auth: ^5.4.0
   firebase_database: ^11.3.0
+  dropdown_button2: ^2.0.0
 
   # The following adds the Cupertino Icons font to your application.
   # Use with the CupertinoIcons class for iOS style icons.
@@ -66,23 +67,23 @@ flutter:
   assets:
     - assets/ForgotPasswordBanner.png
     - assets/ResetPasswordBanner.png
-    - assets/logo_coin.png
-    - assets/google_icon.png
+    - assets/custom_icons/logo_coin.png
+    - assets/custom_icons/google_icon.png
     - assets/landscape_weather.png
-    - assets/User_box.png
-    - assets/mail_icon.png
-    - assets/Unlock.png
-    - assets/Lock.png
-    - assets/P2BP_Logo.png
+    - assets/custom_icons/User_box.png
+    - assets/custom_icons/mail_icon.png
+    - assets/custom_icons/Unlock.png
+    - assets/custom_icons/Lock.png
+    - assets/custom_icons/P2BP_Logo.png
     - assets/RedHouse.png
     - assets/PinkHouse.png
-    - assets/bell-03.png
-    - assets/custom_bell.png
-    - assets/Home_Icon.png
-    - assets/Add_Icon.png
-    - assets/Compare_Icon.png
-    - assets/Profile_Icon.png
-    - assets/Filter_Icon.png
+    - assets/custom_icons/bell-03.png
+    - assets/custom_icons/custom_bell.png
+    - assets/custom_icons/Home_Icon.png
+    - assets/custom_icons/Add_Icon.png
+    - assets/custom_icons/Compare_Icon.png
+    - assets/custom_icons/Profile_Icon.png
+    - assets/custom_icons/Filter_Icon.png
 
   # An image asset can refer to one or more resolution-specific "variants", see
   # https://flutter.dev/to/resolution-aware-images

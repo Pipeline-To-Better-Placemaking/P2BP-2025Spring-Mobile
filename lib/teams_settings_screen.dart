@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
+import 'dart:ui';
 import 'create_project_details.dart';
+import 'db_schema_classes.dart';
 
 class TeamSettingsScreen extends StatelessWidget {
   @override
@@ -42,93 +44,251 @@ class TeamSettingsScreen extends StatelessWidget {
                       Spacer(), // Push settings icon to the right edge of the screen
 
                       // Settings button with quick action menu
-                      Theme(
-                        data: Theme.of(context).copyWith(
-                          popupMenuTheme: PopupMenuThemeData(
-                            color: Color(0xFF2F6DCF),
-                            textStyle: TextStyle(color: Colors.white),
-                          ),
-                        ),
-                        child: PopupMenuButton<int>(
-                          icon: Image.asset('assets/Filter_Icon.png'),
-                          onSelected: (int value) {
-                            if (value == 0) {
-                              // Edit team action
-                              print("Edit Team");
-                            } else if (value == 1) {
-                              // Change color action
-                              print("Change Team Color");
-                            } else if (value == 2) {
-                              print("Select Projects");
-                            } else if (value == 3) {
-                              // Delete team action
-                              print("Delete Team");
+                      Builder(builder: (context) {
+                        return IconButton(
+                          icon: Image.asset(
+                              'assets/custom_icons/Filter_Icon.png'),
+                          onPressed: () {
+                            // Calculate button position and menu placement.
+                            final RenderBox button =
+                                context.findRenderObject() as RenderBox;
+                            final Offset buttonPosition =
+                                button.localToGlobal(Offset.zero);
+                            final double buttonWidth = button.size.width;
+                            final double buttonHeight = button.size.height;
+
+                            // Define your desired menu width.
+                            const double menuWidth = 250;
+
+                            // Get the screen width.
+                            final double screenWidth =
+                                MediaQuery.of(context).size.width;
+
+                            // Calculate left offset so the menu is centered below the button.
+                            double left = buttonPosition.dx +
+                                (buttonWidth / 2) -
+                                (menuWidth / 2);
+
+                            // Right-edge padding
+                            const double rightPadding = 16.0;
+
+                            // Clamp the left offset so that the menu doesn't go offscreen (with right padding).
+                            if (left < 0) {
+                              left = 0;
+                            } else if (left + menuWidth >
+                                screenWidth - rightPadding) {
+                              left = screenWidth - rightPadding - menuWidth;
                             }
-                          },
-                          itemBuilder: (BuildContext context) => [
-                            PopupMenuItem(
-                              value: 0,
-                              child: Row(
-                                children: [
-                                  Expanded(
-                                    child: Text(
-                                      "Edit Team",
-                                      style: TextStyle(color: Colors.white),
-                                    ),
-                                  ),
-                                  Icon(Icons.edit_note_rounded,
-                                      color: Colors.white),
-                                ],
-                              ),
-                            ),
-                            PopupMenuDivider(),
-                            PopupMenuItem(
-                              value: 1,
-                              child: Row(
-                                children: [
-                                  Expanded(
-                                    child: Text("Change Team Color",
-                                        style: TextStyle(color: Colors.white)),
-                                  ),
-                                  Icon(Icons.palette_outlined,
-                                      color: Colors.white),
-                                ],
-                              ),
-                            ),
-                            PopupMenuDivider(),
-                            PopupMenuItem(
-                                value: 2,
-                                child: Row(
+
+                            // Top offset so that pop up menu hovers slightly below button
+                            final double top =
+                                buttonPosition.dy + buttonHeight - 2;
+                            // Custom pop up menu with frosted glass style design
+                            showGeneralDialog<int>(
+                              context: context,
+                              barrierDismissible: true,
+                              barrierLabel: 'Menu',
+                              barrierColor: Colors.transparent, // No dimming.
+                              transitionDuration: Duration(milliseconds: 300),
+                              pageBuilder:
+                                  (context, animation, secondaryAnimation) {
+                                return Stack(
                                   children: [
-                                    Expanded(
-                                      child: Text(
-                                        "Select Projects",
-                                        style: TextStyle(color: Colors.white),
+                                    // Position the menu using the computed left and top.
+                                    Positioned(
+                                      left: left,
+                                      top: top,
+                                      child: Material(
+                                        type: MaterialType.transparency,
+                                        child: SizedBox(
+                                          width: menuWidth,
+                                          child: ClipRRect(
+                                            borderRadius:
+                                                BorderRadius.circular(15),
+                                            child: BackdropFilter(
+                                              filter: ImageFilter.blur(
+                                                  sigmaX: 10, sigmaY: 10),
+                                              child: Container(
+                                                // #2F6DCF converted to RGB values
+                                                color: Color.fromRGBO(
+                                                    47, 109, 207, 0.85),
+                                                child: IntrinsicWidth(
+                                                  child: Column(
+                                                    mainAxisSize:
+                                                        MainAxisSize.min,
+                                                    children: [
+                                                      // 'Change Project' button
+                                                      InkWell(
+                                                        onTap: () =>
+                                                            Navigator.of(
+                                                                    context)
+                                                                .pop(0),
+                                                        child: Padding(
+                                                          padding:
+                                                              const EdgeInsets
+                                                                  .symmetric(
+                                                                  horizontal:
+                                                                      16,
+                                                                  vertical: 12),
+                                                          child: Row(
+                                                            children: [
+                                                              Expanded(
+                                                                child: Text(
+                                                                  "Edit Team Name",
+                                                                  style: TextStyle(
+                                                                      color: Colors
+                                                                          .white),
+                                                                ),
+                                                              ),
+                                                              Icon(Icons.edit,
+                                                                  color: Colors
+                                                                      .white),
+                                                            ],
+                                                          ),
+                                                        ),
+                                                      ),
+                                                      Divider(
+                                                          color: Colors.white54,
+                                                          height: 1),
+                                                      // 'Edit Project Name' button
+                                                      InkWell(
+                                                        onTap: () =>
+                                                            Navigator.of(
+                                                                    context)
+                                                                .pop(1),
+                                                        child: Padding(
+                                                          padding:
+                                                              const EdgeInsets
+                                                                  .symmetric(
+                                                                  horizontal:
+                                                                      16,
+                                                                  vertical: 12),
+                                                          child: Row(
+                                                            children: [
+                                                              Expanded(
+                                                                child: Text(
+                                                                  "Change Team Color",
+                                                                  style: TextStyle(
+                                                                      color: Colors
+                                                                          .white),
+                                                                ),
+                                                              ),
+                                                              Icon(
+                                                                  Icons
+                                                                      .palette_outlined,
+                                                                  color: Colors
+                                                                      .white),
+                                                            ],
+                                                          ),
+                                                        ),
+                                                      ),
+                                                      Divider(
+                                                          color: Colors.white54,
+                                                          height: 1),
+                                                      // 'Edit Project Description' button
+                                                      InkWell(
+                                                        onTap: () =>
+                                                            Navigator.of(
+                                                                    context)
+                                                                .pop(2),
+                                                        child: Padding(
+                                                          padding:
+                                                              const EdgeInsets
+                                                                  .symmetric(
+                                                                  horizontal:
+                                                                      16,
+                                                                  vertical: 12),
+                                                          child: Row(
+                                                            children: [
+                                                              Expanded(
+                                                                child: Text(
+                                                                  "Select Projects",
+                                                                  style: TextStyle(
+                                                                      color: Colors
+                                                                          .white),
+                                                                ),
+                                                              ),
+                                                              Icon(
+                                                                  Icons
+                                                                      .check_circle_outline,
+                                                                  color: Colors
+                                                                      .white),
+                                                            ],
+                                                          ),
+                                                        ),
+                                                      ),
+                                                      Divider(
+                                                          color: Colors.white54,
+                                                          height: 1),
+                                                      // 'Delete Project' button
+                                                      InkWell(
+                                                        onTap: () =>
+                                                            Navigator.of(
+                                                                    context)
+                                                                .pop(3),
+                                                        child: Padding(
+                                                          padding:
+                                                              const EdgeInsets
+                                                                  .symmetric(
+                                                                  horizontal:
+                                                                      16,
+                                                                  vertical: 12),
+                                                          child: Row(
+                                                            children: [
+                                                              Expanded(
+                                                                child: Text(
+                                                                  "Delete Team",
+                                                                  style: TextStyle(
+                                                                      color: Color(
+                                                                          0xFFFD6265),
+                                                                      fontWeight:
+                                                                          FontWeight
+                                                                              .bold),
+                                                                ),
+                                                              ),
+                                                              Icon(Icons.delete,
+                                                                  color: Color(
+                                                                      0xFFFD6265)),
+                                                            ],
+                                                          ),
+                                                        ),
+                                                      ),
+                                                    ],
+                                                  ),
+                                                ),
+                                              ),
+                                            ),
+                                          ),
+                                        ),
                                       ),
                                     ),
-                                    Icon(Icons.check_circle_outline,
-                                        color: Colors.white),
                                   ],
-                                )),
-                            PopupMenuDivider(),
-                            PopupMenuItem(
-                              value: 3,
-                              child: Row(
-                                children: [
-                                  Expanded(
-                                    child: Text("Delete Team",
-                                        style: TextStyle(color: Colors.red)),
-                                  ),
-                                  Icon(Icons.delete, color: Colors.red),
-                                ],
-                              ),
-                            ),
-                          ],
-                          // Adjust the offset to position the menu directly below the settings button
-                          offset:
-                              Offset(0, 40), // Horizontal and vertical offset
-                        ),
-                      ),
+                                );
+                              },
+                              transitionBuilder: (context, animation,
+                                  secondaryAnimation, child) {
+                                return FadeTransition(
+                                  opacity: animation,
+                                  child: child,
+                                );
+                              },
+                            ).then((value) {
+                              if (value != null) {
+                                // Handle menu selection.
+                                if (value == 0) {
+                                  print("Change Cover Photo");
+                                } else if (value == 1) {
+                                  print("Edit Project Name");
+                                } else if (value == 2) {
+                                  print("Edit Project Description");
+                                } else if (value == 3) {
+                                  print("Delete Project");
+                                }
+                              }
+                            });
+                          },
+                        );
+                      }),
                     ],
                   ),
                 ),
@@ -333,8 +493,12 @@ class TeamSettingsScreen extends StatelessWidget {
                               Navigator.push(
                                   context,
                                   MaterialPageRoute(
-                                    builder: (context) =>
-                                        CreateProjectDetails(),
+                                    builder: (context) => CreateProjectDetails(
+                                      projectData: Project.partialProject(
+                                          title: 'No data sent',
+                                          description:
+                                              'Accessed without project data'),
+                                    ),
                                   ));
                             }, // Replace with project title
                           ),

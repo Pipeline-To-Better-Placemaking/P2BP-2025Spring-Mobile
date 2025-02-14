@@ -28,9 +28,6 @@ class _CreateProjectAndTeamsPageState extends State<CreateProjectAndTeamsPage> {
     return SafeArea(
       child: Scaffold(
         // Top switch between Projects/Teams
-        appBar: AppBar(
-          title: const Text('Placeholder'),
-        ),
         // Creation screens
         body: SingleChildScrollView(
           child: Center(
@@ -46,7 +43,7 @@ class _CreateProjectAndTeamsPageState extends State<CreateProjectAndTeamsPage> {
                     selectedBackgroundColor: const Color(0xFF2E5598),
                     side: const BorderSide(
                       width: 0,
-                      color: Color(0xFF2180EA),
+                      color: Color(0xFF2F6DCF),
                     ),
                     elevation: 100,
                     visualDensity:
@@ -114,7 +111,7 @@ class CreateProjectWidget extends StatelessWidget {
                 style: TextStyle(
                   fontWeight: FontWeight.bold,
                   fontSize: 16.0,
-                  color: Colors.blue[900],
+                  color: Color(0xFF1A3C70),
                 ),
               ),
             ),
@@ -176,7 +173,7 @@ class CreateProjectWidget extends StatelessWidget {
               child: EditButton(
                 text: 'Next',
                 foregroundColor: Colors.white,
-                backgroundColor: const Color(0xFF4871AE),
+                backgroundColor: const Color(0xFF2F6DCF),
                 icon: const Icon(Icons.chevron_right),
                 onPressed: () {
                   Navigator.push(context,

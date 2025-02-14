@@ -220,6 +220,7 @@ class PasswordTextFormField extends StatelessWidget {
   final TextEditingController? _controller;
   final String? _forceErrorText;
   final bool _obscureText;
+  final void Function(String)? _onChanged;
 
   PasswordTextFormField({
     super.key,
@@ -227,11 +228,13 @@ class PasswordTextFormField extends StatelessWidget {
     controller,
     forceErrorText,
     obscureText,
+    onChanged,
   })  : _decoration = decoration ??
             InputDecoration().applyDefaults(ThemeData().inputDecorationTheme),
         _controller = controller,
         _forceErrorText = forceErrorText,
-        _obscureText = obscureText ?? true;
+        _obscureText = obscureText ?? true,
+        _onChanged = onChanged;
 
   @override
   Widget build(BuildContext context) {
@@ -243,6 +246,7 @@ class PasswordTextFormField extends StatelessWidget {
       decoration: _decoration,
       controller: _controller,
       forceErrorText: _forceErrorText,
+      onChanged: _onChanged,
     );
   }
 }

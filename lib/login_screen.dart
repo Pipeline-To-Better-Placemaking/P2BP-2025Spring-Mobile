@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:firebase_auth/firebase_auth.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'widgets.dart';
 import 'theme.dart';
 import 'home_screen.dart';
@@ -11,6 +13,7 @@ class LoginScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      resizeToAvoidBottomInset: true,
       body: Container(
         decoration: const BoxDecoration(
           gradient: defaultGrad,
@@ -21,7 +24,7 @@ class LoginScreen extends StatelessWidget {
             // Logo
             Center(
               child: Image.asset(
-                'assets/logo_coin.png',
+                'assets/custom_icons/logo_coin.png',
                 height: 198.07,
               ),
             ),
@@ -74,7 +77,7 @@ class LoginScreen extends StatelessWidget {
                   mainAxisSize: MainAxisSize.min,
                   children: [
                     Image.asset(
-                      'assets/google_icon.png',
+                      'assets/custom_icons/google_icon.png',
                       height: 24,
                     ),
                     const SizedBox(width: 8),
@@ -137,13 +140,125 @@ class _LoginFormState extends State<LoginForm> {
   final _formKey = GlobalKey<FormState>();
   final TextEditingController _emailController = TextEditingController(),
       _passwordController = TextEditingController();
+  final FirebaseFirestore _firestore = FirebaseFirestore.instance;
   bool _obscureText = true;
+  String _fullName = '';
 
   @override
   void dispose() {
     _emailController.dispose();
     _passwordController.dispose();
     super.dispose();
+  }
+
+  Future<void> _loginUser() async {
+    try {
+      String? emailText = _emailController.text.trim();
+
+      // Sign in using Firebase Auth
+      UserCredential userCredential = await FirebaseAuth.instance
+          .signInWithEmailAndPassword(
+              email: emailText, password: _passwordController.text);
+
+      // Check if the email is verified
+      User? user = userCredential.user;
+      if (user != null && !user.emailVerified) {
+        // Log the user out immmediately
+        await FirebaseAuth.instance.signOut();
+
+        ScaffoldMessenger.of(context).clearSnackBars();
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(
+              'Please verify your email before logging in.',
+            ),
+          ),
+        );
+
+        return;
+      }
+
+      // Add/Update last login time in Firestore
+      await _firestore.collection('users').doc(userCredential.user?.uid).set({
+        'lastLogin': FieldValue.serverTimestamp(), // Add last login timestamp
+      }, SetOptions(merge: true)); // Merge data to avoid overwriting
+
+      // Fetch the user's full name from Firestore
+      String userId = userCredential.user!.uid;
+      var userDoc = await FirebaseFirestore.instance
+          .collection('users')
+          .doc(userId)
+          .get();
+
+      // Update email in Firestore to new email in Auth if they are different
+      /* This is done on login because there does not seem to be a way to listen
+          for when the user has verified their new email address after changing
+          it in order to only change email in Firestore after verification
+       */
+      if (emailText != userDoc['email']) {
+        print(userDoc['email']);
+        await _firestore
+            .collection('users')
+            .doc(userCredential.user?.uid)
+            .update({'email': emailText});
+      }
+
+      if (userDoc.exists) {
+        // Retrieve full name from Firestore if available
+        String fullName = userDoc['fullName'] ?? 'User';
+        setState(() {
+          _fullName = fullName;
+        });
+
+        // Successfully logged in, navigate to the home screen
+        ScaffoldMessenger.of(context).clearSnackBars();
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Welcome, $_fullName!')),
+        );
+
+        Navigator.pushReplacement(
+          context,
+          MaterialPageRoute(
+              builder: (context) =>
+                  HomeScreen()), // Replace with your home page
+        );
+      } else {
+        // Handle case where user data does not exist in Firestore (shouldn't happen if user data is properly saved)
+        ScaffoldMessenger.of(context).clearSnackBars();
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('User data not found in Firestore')),
+        );
+      }
+    } on FirebaseAuthException catch (e) {
+      String errorMessage;
+
+      // Provide user-friendly error messages
+      switch (e.code) {
+        case 'user-not-found':
+          errorMessage = 'No user found with this email.';
+          break;
+        case 'wrong-password':
+          errorMessage = 'Incorrect password. Please try again.';
+          break;
+        case 'invalid-email':
+          errorMessage = 'Invalid email address.';
+          break;
+        default:
+          errorMessage = 'Login failed. Please try again.';
+      }
+
+      // Clear any existing snackbars and show new one
+      ScaffoldMessenger.of(context).clearSnackBars();
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(errorMessage)),
+      );
+    } catch (e) {
+      // General error handling
+      ScaffoldMessenger.of(context).clearSnackBars();
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('An error occurred: $e')),
+      );
+    }
   }
 
   @override
@@ -254,9 +369,9 @@ class _LoginFormState extends State<LoginForm> {
           // Login Button
           ElevatedButton(
             onPressed: () {
-              // Handle login logic
-              Navigator.push(context,
-                  MaterialPageRoute(builder: (context) => const HomeScreen()));
+              if (_formKey.currentState!.validate()) {
+                _loginUser();
+              }
             },
             style: ElevatedButton.styleFrom(
               backgroundColor: const Color(0xFFFFCC00),

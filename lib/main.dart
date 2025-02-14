@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_core/firebase_core.dart';
-// import 'firebase_options.dart';
+import 'firebase_options.dart';
 import 'package:firebase_auth/firebase_auth.dart';
-
+import 'package:p2bp_2025spring_mobile/db_schema_classes.dart';
 import 'create_project_details.dart';
 import 'package:p2bp_2025spring_mobile/search_location_screen.dart';
 import 'results_panel.dart';
@@ -19,7 +19,7 @@ import 'new_home_page.dart';
 import 'project_comparison_page.dart';
 import 'teams_settings_screen.dart';
 import 'search_location_screen.dart';
-import 'test_selection_screen.dart';
+import 'package:flutter/foundation.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -28,8 +28,11 @@ void main() async {
     await Firebase.initializeApp(
         // options: DefaultFirebaseOptions.currentPlatform,
         );
-    // Set Firebase persistence to SESSION to log out on tab/browser close
-    await FirebaseAuth.instance.setPersistence(Persistence.SESSION);
+    // Only set persistence if we're on web.
+    if (kIsWeb) {
+      // Set Firebase persistence to SESSION to log out on tab/browser close
+      await FirebaseAuth.instance.setPersistence(Persistence.SESSION);
+    }
   } catch (e) {
     print("Firebase initialization failed: $e");
     // Handle the error here, maybe show an error screen or fallback UI
@@ -61,15 +64,19 @@ class MyApp extends StatelessWidget {
             const CreateProjectAndTeamsPage(),
         '/settings': (context) => const SettingsPage(),
         '/teams_and_invites': (context) => const TeamsAndInvitesPage(),
-        '/create_project_details': (context) => const CreateProjectDetails(),
+        '/create_project_details': (context) => CreateProjectDetails(
+              projectData: Project.partialProject(
+                  title: 'No data sent',
+                  description: 'Accessed without project data'),
+            ),
         '/login': (context) => const LoginScreen(),
         '/signup': (context) => const SignUpScreen(),
         '/home': (context) => const HomeScreen(),
         '/new_home': (context) => const BottomFloatingNavBar(),
         '/compare_projects': (context) => const ProjectComparisonPage(),
-        '/search': (context) => const SearchScreen(),
+        // Commented out since you need project data to create page
+        // '/search': (context) => const SearchScreen(),
         '/teams_settings': (context) => TeamSettingsScreen(),
-        '/test_selection': (context) => TestSelectionScreen(),
       },
     );
   }
