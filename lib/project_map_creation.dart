@@ -61,6 +61,8 @@ class _ProjectMapCreationState extends State<ProjectMapCreation> {
 
   Future<void> _checkAndFetchLocation() async {
     try {
+      Position tempPosition;
+
       LocationPermission permission = await Geolocator.checkPermission();
       if (permission == LocationPermission.denied ||
           permission == LocationPermission.deniedForever) {
@@ -69,8 +71,7 @@ class _ProjectMapCreationState extends State<ProjectMapCreation> {
             permission == LocationPermission.deniedForever) {
           ScaffoldMessenger.of(context).showSnackBar(
             const SnackBar(
-                content: Text(
-                    'Location permission is required to use this feature.')),
+                content: Text('Location denied. Default position displayed.')),
           );
           setState(() {
             _isLoading = false;
@@ -79,18 +80,16 @@ class _ProjectMapCreationState extends State<ProjectMapCreation> {
         }
       }
 
-      await _getCurrentLocation();
-
-      Geolocator.getPositionStream(
+      tempPosition = await Geolocator.getCurrentPosition(
         locationSettings: const LocationSettings(
           accuracy: LocationAccuracy.high,
-          distanceFilter: 10,
         ),
-      ).listen((Position position) {
-        // TODO: setState error here- Unhandled Exception: setState() called after dispose(): _ProjectMapCreationState#065db(lifecycle state: defunct, not mounted)
-        setState(() {
-          _currentPosition = LatLng(position.latitude, position.longitude);
-        });
+      );
+
+      setState(() {
+        _currentPosition =
+            LatLng(tempPosition.latitude, tempPosition.longitude);
+        _isLoading = false;
       });
     } catch (e) {
       print('Error checking location permissions: $e');
@@ -99,28 +98,8 @@ class _ProjectMapCreationState extends State<ProjectMapCreation> {
             content: Text(
                 'Unable to retrieve location. Please check your GPS settings.')),
       );
-      setState(() {
-        _isLoading = false;
-      });
-    }
-  }
-
-  Future<void> _getCurrentLocation() async {
-    try {
-      LocationSettings locationSettings = const LocationSettings(
-        accuracy: LocationAccuracy.high, // Specify the desired accuracy
-      );
-
-      Position position = await Geolocator.getCurrentPosition(
-        locationSettings: locationSettings,
-      );
-
-      setState(() {
-        _currentPosition = LatLng(position.latitude, position.longitude);
-        _isLoading = false;
-      });
-    } catch (e) {
-      print('Error getting location: $e');
+      // Return to previous page.
+      Navigator.pop(context);
     }
   }
 
@@ -171,6 +150,7 @@ class _ProjectMapCreationState extends State<ProjectMapCreation> {
     _mapToolsPolygonPoints = [];
 
     final String polygonId = DateTime.now().millisecondsSinceEpoch.toString();
+
     setState(() {
       _polygon = {
         Polygon(
@@ -187,6 +167,7 @@ class _ProjectMapCreationState extends State<ProjectMapCreation> {
           },
         ),
       };
+
       // Creating points representations for Firestore storage and area calculation
       for (LatLng coordinate in _polygonPoints) {
         _polygonAsPoints
@@ -194,6 +175,8 @@ class _ProjectMapCreationState extends State<ProjectMapCreation> {
         _mapToolsPolygonPoints
             .add(mp.LatLng(coordinate.latitude, coordinate.longitude));
       }
+
+      // Clean up variables and enter add points mode.
       _polygonPoints = [];
       _markers.clear();
       _addPointsMode =
@@ -237,9 +220,9 @@ class _ProjectMapCreationState extends State<ProjectMapCreation> {
 
   void _toggleMapType() {
     setState(() {
-      _currentMapType = _currentMapType == MapType.normal
+      _currentMapType = (_currentMapType == MapType.normal
           ? MapType.satellite
-          : MapType.normal;
+          : MapType.normal);
     });
   }
 
