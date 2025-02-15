@@ -1,13 +1,11 @@
 import 'package:flutter/material.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'theme.dart';
 import 'strings.dart';
-import 'reset_password_page.dart';
 
 class ForgotPasswordPage extends StatelessWidget {
   const ForgotPasswordPage({super.key});
 
-  // TODO extract so many things to a handful of custom widgets or something
-  // because this seems like a nightmare to maintain already
   @override
   Widget build(BuildContext context) {
     AssetBundle bundle = DefaultAssetBundle.of(context);
@@ -89,6 +87,50 @@ class ForgotPasswordForm extends StatefulWidget {
 
 class _ForgotPasswordFormState extends State<ForgotPasswordForm> {
   final _formKey = GlobalKey<FormState>();
+  final TextEditingController _emailController = TextEditingController();
+  String _message = '';
+  bool _isEmailValid = true;
+  bool _isRequestSent = false;
+
+  @override
+  void dispose() {
+    _emailController.dispose();
+    super.dispose();
+  }
+
+  Future<void> sendForgotEmail() async {
+    final email = _emailController.text.trim(); // Trim to avoid trailing spaces
+
+    try {
+      await FirebaseAuth.instance.sendPasswordResetEmail(email: email);
+      setState(() {
+        _isRequestSent = true;
+        _message = 'A reset email has been sent to $email.';
+      });
+    } catch (error) {
+      setState(() {
+        _isRequestSent = false;
+        _message = error.toString(); // Provide error details
+      });
+    }
+  }
+
+  void handleSubmit() {
+    final email = _emailController.text.trim();
+
+    if (!RegExp(r"^[^@]+@[^@]+\.[^@]+").hasMatch(email)) {
+      setState(() {
+        _isEmailValid = false;
+        _message = 'Please provide a valid email address.';
+      });
+    } else {
+      setState(() {
+        _isEmailValid = true;
+        _message = '';
+      });
+      sendForgotEmail();
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -96,7 +138,15 @@ class _ForgotPasswordFormState extends State<ForgotPasswordForm> {
       key: _formKey,
       child: Column(
         children: <Widget>[
+          if (_message.isNotEmpty)
+            Text(
+              _message,
+              style: TextStyle(
+                  color: !_isEmailValid ? Colors.red : Colors.green,
+                  fontWeight: FontWeight.normal),
+            ),
           TextFormField(
+            controller: _emailController,
             decoration: InputDecoration(
               enabledBorder: UnderlineInputBorder(
                 borderSide: BorderSide(
@@ -116,19 +166,12 @@ class _ForgotPasswordFormState extends State<ForgotPasswordForm> {
                 color: Color(0xD8C3C3C3),
               ),
               hintText: 'Email Address',
+              errorText: _isEmailValid ? null : 'Invalid email format',
             ),
           ),
-          SizedBox(height: 10),
+          const SizedBox(height: 10),
           TextButton(
-            onPressed: () {
-              // TODO: actually send a reset link
-              Navigator.push(
-                context,
-                MaterialPageRoute(
-                  builder: (context) => const ResetPasswordPage(),
-                ),
-              );
-            },
+            onPressed: handleSubmit,
             style: const ButtonStyle(
               backgroundColor: WidgetStatePropertyAll(
                 Color(0xFFFFCC00),

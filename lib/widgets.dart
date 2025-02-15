@@ -78,6 +78,7 @@ class EditButton extends StatelessWidget {
   final Color backgroundColor;
   final Icon icon;
   final Function onPressed;
+  final Color iconColor;
 
   const EditButton({
     super.key,
@@ -86,6 +87,7 @@ class EditButton extends StatelessWidget {
     required this.backgroundColor,
     required this.icon,
     required this.onPressed,
+    this.iconColor = Colors.white,
   });
 
   @override
@@ -98,6 +100,7 @@ class EditButton extends StatelessWidget {
         ),
         foregroundColor: foregroundColor,
         backgroundColor: backgroundColor,
+        iconColor: iconColor,
       ),
       onPressed: () => onPressed(),
       label: Text(text),
@@ -114,6 +117,7 @@ class CreationTextBox extends StatelessWidget {
   final String labelText;
   final ValueChanged? onChanged;
   final Icon? icon;
+  final String? errorMessage;
 
   const CreationTextBox({
     super.key,
@@ -123,6 +127,7 @@ class CreationTextBox extends StatelessWidget {
     required this.minLines,
     this.onChanged,
     this.icon,
+    this.errorMessage,
   });
   @override
   Widget build(BuildContext context) {
@@ -132,17 +137,40 @@ class CreationTextBox extends StatelessWidget {
           textSelectionTheme: const TextSelectionThemeData(
               selectionColor: Colors.blue, selectionHandleColor: Colors.blue),
         ),
-        child: TextField(
+        child: TextFormField(
           onChanged: onChanged,
           style: const TextStyle(color: Colors.black),
           maxLength: maxLength,
           maxLines: maxLines,
           minLines: minLines,
           cursorColor: const Color(0xFF585A6A),
+          validator: (value) {
+            // TODO: custom error check parameter?
+            if (errorMessage != null && (value == null || value.length < 3)) {
+              // TODO: eventually require error message?
+              return errorMessage ??
+                  'Error, insufficient input (validator error message not set)';
+            }
+            return null;
+          },
           decoration: InputDecoration(
             prefixIcon: icon,
             alignLabelWithHint: true,
             counterStyle: const TextStyle(color: Colors.black),
+            errorBorder: const OutlineInputBorder(
+              borderRadius: BorderRadius.all(Radius.circular(10)),
+              borderSide: BorderSide(
+                color: Color(0xFFD32F2F),
+                width: 1.5,
+              ),
+            ),
+            focusedErrorBorder: const OutlineInputBorder(
+              borderRadius: BorderRadius.all(Radius.circular(10)),
+              borderSide: BorderSide(
+                color: Color(0xFFD32F2F),
+                width: 2,
+              ),
+            ),
             enabledBorder: const OutlineInputBorder(
               borderRadius: BorderRadius.all(Radius.circular(10)),
               borderSide: BorderSide(
@@ -220,6 +248,7 @@ class PasswordTextFormField extends StatelessWidget {
   final TextEditingController? _controller;
   final String? _forceErrorText;
   final bool _obscureText;
+  final void Function(String)? _onChanged;
 
   PasswordTextFormField({
     super.key,
@@ -227,11 +256,13 @@ class PasswordTextFormField extends StatelessWidget {
     controller,
     forceErrorText,
     obscureText,
+    onChanged,
   })  : _decoration = decoration ??
             InputDecoration().applyDefaults(ThemeData().inputDecorationTheme),
         _controller = controller,
         _forceErrorText = forceErrorText,
-        _obscureText = obscureText ?? true;
+        _obscureText = obscureText ?? true,
+        _onChanged = onChanged;
 
   @override
   Widget build(BuildContext context) {
@@ -243,6 +274,7 @@ class PasswordTextFormField extends StatelessWidget {
       decoration: _decoration,
       controller: _controller,
       forceErrorText: _forceErrorText,
+      onChanged: _onChanged,
     );
   }
 }

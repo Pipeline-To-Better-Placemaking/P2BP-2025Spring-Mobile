@@ -1,9 +1,10 @@
 import 'package:flutter/material.dart';
+import 'package:p2bp_2025spring_mobile/db_schema_classes.dart';
 import 'theme.dart';
 import 'create_project_details.dart';
 
 class SearchScreen extends StatefulWidget {
-  const SearchScreen({super.key});
+  const SearchScreen({super.key, required Project partialProjectData});
 
   @override
   State<SearchScreen> createState() => _SearchScreenState();
@@ -347,7 +348,12 @@ class _SearchScreenState extends State<SearchScreen> {
                         Navigator.push(
                             context,
                             MaterialPageRoute(
-                              builder: (context) => CreateProjectDetails(),
+                              builder: (context) => CreateProjectDetails(
+                                projectData: Project.partialProject(
+                                    title: 'No data sent',
+                                    description:
+                                        'Accessed without project data'),
+                              ),
                             ));
                       },
                       child: const Text("Select"),
@@ -434,10 +440,9 @@ class _SearchScreenState extends State<SearchScreen> {
   }
 }
 
-
 //  // Hint Text
 //                       Flexible(
-//                         child: 
+//                         child:
 //                       if (isSearching) ...[
 //                         // Cancel button for when search bar has been tapped
 //                         IconButton(
@@ -467,16 +472,12 @@ class _SearchScreenState extends State<SearchScreen> {
 //                 ),
 //               ],
 //               )
-              
 
+//           const SizedBox(height: 16),
 
-  //           const SizedBox(height: 16),
+//           if(!hasSearched)
+//           Center(
 
-  //           if(!hasSearched)
-  //           Center(
+//           )
 
-  //           )
-
-  //           
-
-  
+//
