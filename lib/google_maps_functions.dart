@@ -5,7 +5,7 @@ import 'package:google_maps_flutter/google_maps_flutter.dart';
 
 // Conversion used for length and area to convert from meters to feet.
 // Make sure to multiply twice (or square) for use in area,
-const double metersToFeet = 3.280839895;
+const double feetPerMeter = 3.280839895;
 
 // Default position (UCF) if location is denied.
 const LatLng defaultLocation = LatLng(28.6024, -81.2001);
