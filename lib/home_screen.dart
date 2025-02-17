@@ -40,7 +40,6 @@ class _HomeScreenState extends State<HomeScreen> {
   void initState() {
     super.initState();
     _getUserFirstName();
-    _populateProjects();
   }
 
   Future<void> _populateProjects() async {
@@ -254,124 +253,125 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   Widget _buildHomeContent() {
-    return SingleChildScrollView(
-      child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 20),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          mainAxisSize: MainAxisSize.min,
-          children: <Widget>[
-            // P2BP Logo centered at the top
-            Padding(
-              padding: const EdgeInsets.only(top: 50),
-              child: Stack(
-                children: [
-                  Align(
-                    alignment: Alignment.topCenter,
-                    child: Image.asset(
-                      'assets/P2BP_Logo.png',
-                      width: 40,
-                      height: 40,
-                    ),
-                  ),
-                  Align(
-                    alignment: Alignment.topRight,
-                    child: Row(
-                      mainAxisAlignment: MainAxisAlignment.end,
-                      children: [
-                        // Notification button
-                        IconButton(
-                          icon: Image.asset('assets/bell-03.png'),
-                          onPressed: () {
-                            // Handle notification button action
-                            Navigator.push(
-                              context,
-                              MaterialPageRoute(
-                                builder: (context) => const HomePage(
-                                  title: '/home',
-                                ),
-                              ),
-                            );
-                          },
-                          iconSize: 24,
-                        ),
-                        // Teams Button
-                        IconButton(
-                          icon: const Icon(Icons.group),
-                          color: const Color(0xFF0A2A88),
-                          onPressed: () {
-                            // Navigate to Teams/Invites screen
-                            Navigator.push(
-                              context,
-                              MaterialPageRoute(
-                                builder: (context) =>
-                                    const TeamsAndInvitesPage(),
-                              ),
-                            );
-                          },
-                          iconSize: 24,
-                        ),
-                      ],
-                    ),
-                  ),
-                  // "Hello, [user]" greeting, aligned to the left below the logo
-                  Padding(
-                    padding: const EdgeInsets.only(top: 40),
-                    child: Row(
-                      mainAxisAlignment: MainAxisAlignment.start,
-                      children: [
-                        ShaderMask(
-                          shaderCallback: (bounds) {
-                            return defaultGrad.createShader(bounds);
-                          },
-                          child: Text(
-                            'Hello, $_firstName',
-                            style: TextStyle(
-                              fontSize: 36,
-                              fontWeight: FontWeight.bold,
-                              color: Colors.white,
-                              height: 1.2, // Masked text with gradient
-                            ),
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                ],
-              ),
-            ),
-            // "Your Projects" label, aligned to the right of the screen"
-            Padding(
-              padding: const EdgeInsets.only(right: 5),
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.end,
-                children: [
-                  ShaderMask(
-                    shaderCallback: (bounds) {
-                      return defaultGrad.createShader(bounds);
-                    },
-                    child: const Text(
-                      'Your Projects',
-                      style: TextStyle(
-                        fontSize: 24,
-                        fontWeight: FontWeight.bold,
-                        color: Colors.white,
-                        height: 1.2,
+    _populateProjects();
+    return RefreshIndicator(
+      onRefresh: () async {
+        await _populateProjects();
+      },
+      child: SingleChildScrollView(
+        physics: AlwaysScrollableScrollPhysics(),
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 20),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            mainAxisSize: MainAxisSize.min,
+            children: <Widget>[
+              // P2BP Logo centered at the top
+              Padding(
+                padding: const EdgeInsets.only(top: 50),
+                child: Stack(
+                  children: [
+                    Align(
+                      alignment: Alignment.topCenter,
+                      child: Image.asset(
+                        'assets/P2BP_Logo.png',
+                        width: 40,
+                        height: 40,
                       ),
                     ),
-                  ),
-                ],
+                    Align(
+                      alignment: Alignment.topRight,
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.end,
+                        children: [
+                          // Notification button
+                          IconButton(
+                            icon: Image.asset('assets/bell-03.png'),
+                            onPressed: () {
+                              // Handle notification button action
+                              Navigator.push(
+                                context,
+                                MaterialPageRoute(
+                                  builder: (context) => const HomePage(
+                                    title: '/home',
+                                  ),
+                                ),
+                              );
+                            },
+                            iconSize: 24,
+                          ),
+                          // Teams Button
+                          IconButton(
+                            icon: const Icon(Icons.group),
+                            color: const Color(0xFF0A2A88),
+                            onPressed: () {
+                              // Navigate to Teams/Invites screen
+                              Navigator.push(
+                                context,
+                                MaterialPageRoute(
+                                  builder: (context) =>
+                                      const TeamsAndInvitesPage(),
+                                ),
+                              );
+                            },
+                            iconSize: 24,
+                          ),
+                        ],
+                      ),
+                    ),
+                    // "Hello, [user]" greeting, aligned to the left below the logo
+                    Padding(
+                      padding: const EdgeInsets.only(top: 40),
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.start,
+                        children: [
+                          ShaderMask(
+                            shaderCallback: (bounds) {
+                              return defaultGrad.createShader(bounds);
+                            },
+                            child: Text(
+                              'Hello, $_firstName',
+                              style: TextStyle(
+                                fontSize: 36,
+                                fontWeight: FontWeight.bold,
+                                color: Colors.white,
+                                height: 1.2, // Masked text with gradient
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
               ),
-            ),
-            // Project Cards
-            _projectsCount > 0
-                // If there are projects populate ListView
-                ? RefreshIndicator(
-                    onRefresh: () async {
-                      await _populateProjects();
-                    },
-                    // TODO: Make listView scrolling separated from home scrolling
-                    child: ListView.separated(
+              // "Your Projects" label, aligned to the right of the screen"
+              Padding(
+                padding: const EdgeInsets.only(right: 5),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.end,
+                  children: [
+                    ShaderMask(
+                      shaderCallback: (bounds) {
+                        return defaultGrad.createShader(bounds);
+                      },
+                      child: const Text(
+                        'Your Projects',
+                        style: TextStyle(
+                          fontSize: 24,
+                          fontWeight: FontWeight.bold,
+                          color: Colors.white,
+                          height: 1.2,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              // Project Cards
+              _projectsCount > 0
+                  // If there are projects populate ListView
+                  ? ListView.separated(
                       physics: NeverScrollableScrollPhysics(),
                       shrinkWrap: true,
                       padding: const EdgeInsets.only(
@@ -394,30 +394,31 @@ class _HomeScreenState extends State<HomeScreen> {
                           const SizedBox(
                         height: 50,
                       ),
-                    ),
-                  )
-                // Else if there are no projects
-                : _isLoading == true
-                    // If loading display loading indicator
-                    ? const Center(child: CircularProgressIndicator())
-                    // Else display text to create new project
-                    : RefreshIndicator(
-                        onRefresh: () async {
-                          await _populateProjects();
-                        },
-                        child: SingleChildScrollView(
-                          physics: AlwaysScrollableScrollPhysics(),
-                          child: SizedBox(
-                            height: MediaQuery.of(context).size.height * 2 / 3,
-                            child: Center(
-                              child: Text(
-                                  "You have no projects! Join a team or create a project first."),
+                    )
+                  // Else if there are no projects
+                  : _isLoading == true
+                      // If loading display loading indicator
+                      ? const Center(child: CircularProgressIndicator())
+                      // Else display text to create new project
+                      : RefreshIndicator(
+                          onRefresh: () async {
+                            await _populateProjects();
+                          },
+                          child: SingleChildScrollView(
+                            physics: AlwaysScrollableScrollPhysics(),
+                            child: SizedBox(
+                              height:
+                                  MediaQuery.of(context).size.height * 2 / 3,
+                              child: Center(
+                                child: Text(
+                                    "You have no projects! Join a team or create a project first."),
+                              ),
                             ),
                           ),
                         ),
-                      ),
-            SizedBox(height: 100),
-          ],
+              SizedBox(height: 100),
+            ],
+          ),
         ),
       ),
     );

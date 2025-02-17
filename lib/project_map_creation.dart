@@ -238,7 +238,7 @@ class _ProjectMapCreationState extends State<ProjectMapCreation> {
                               // (meters)^2, multiplied by (feet/meter)^2
                               polygonArea: mp.SphericalUtil.computeArea(
                                       _mapToolsPolygonPoints) *
-                                  pow(metersToFeet, 2),
+                                  pow(feetPerMeter, 2),
                             );
                             if (!context.mounted) return;
                             Navigator.pushReplacement(
