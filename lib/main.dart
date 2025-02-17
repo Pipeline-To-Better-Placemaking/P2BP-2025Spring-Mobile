@@ -18,6 +18,7 @@ import 'new_home_page.dart';
 import 'project_comparison_page.dart';
 import 'teams_settings_screen.dart';
 import 'search_location_screen.dart';
+import 'lighting_profile_test.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -70,6 +71,7 @@ class MyApp extends StatelessWidget {
         // Commented out since you need project data to create page.
         // '/search': (context) => const SearchScreen(),
         '/teams_settings': (context) => TeamSettingsScreen(),
+        '/lighting_profile_test': (context) => LightingProfileTestPage(),
       },
     );
   }
@@ -191,6 +193,12 @@ class _HomePageStates extends State<HomePage> {
                 route: '/create_project_details',
                 name: 'Create Project Details',
                 version: 1,
+              ),
+              buildTempButton(
+                context: context,
+                route: '/lighting_profile_test',
+                name: 'Lighting Profile Test',
+                version: 0,
               ),
             ],
           ),
