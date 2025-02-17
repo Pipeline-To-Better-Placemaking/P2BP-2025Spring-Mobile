@@ -259,6 +259,7 @@ class _HomeScreenState extends State<HomeScreen> {
         await _populateProjects();
       },
       child: SingleChildScrollView(
+        physics: AlwaysScrollableScrollPhysics(),
         child: Padding(
           padding: const EdgeInsets.symmetric(horizontal: 20),
           child: Column(
