@@ -142,7 +142,7 @@ class _CreateProjectDetailsState extends State<CreateProjectDetails> {
                       // foregroundColor: foregroundColor,
                       // backgroundColor: backgroundColor,
                     ),
-                    onPressed: () => {
+                    onPressed: () {
                       // TODO: Function (research activity)
                     },
                     label: Text('Create'),
