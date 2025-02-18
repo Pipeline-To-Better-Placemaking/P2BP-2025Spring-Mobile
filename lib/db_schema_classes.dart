@@ -1,4 +1,5 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:google_maps_flutter/google_maps_flutter.dart';
 
 // User class for create_project_and_teams.dart
 class Member {
@@ -91,7 +92,65 @@ class Project {
   Project.partialProject({required this.title, required this.description});
 }
 
-class Test {
-  // TODO: Temporary until test is worked out
-  String type = '';
+/// Superclass (or interface, not sure which makes more sense yet)
+/// for each specific test
+abstract interface class Test<A, B> {
+  Timestamp? creationTime;
+  String title = '';
+  String testID = '';
+  Timestamp? scheduledTime;
+  DocumentReference? projectRef;
+  int maxResearchers = 0;
+  Map<A, B> data = {};
+
+  Test.create({
+    required this.creationTime,
+    required this.title,
+    required this.testID,
+    required this.scheduledTime,
+    required this.projectRef,
+    required this.maxResearchers,
+  });
+
+  /// Used on completion of a test and passed all data collected throughout
+  /// the duration of the test. Updates this test instance in Firestore with
+  /// this new data.
+  void submitData(Map<A, B> data);
+}
+
+/// Types of light for lighting profile test.
+enum LightType { rhythmic, building, task }
+
+/// Schema for lighting profile test.
+class LightingProfileTest extends Test<LightType, List<LatLng>> {
+  LightingProfileTest.create({
+    required super.creationTime,
+    required super.title,
+    required super.testID,
+    required super.scheduledTime,
+    required super.projectRef,
+    required super.maxResearchers,
+  }) : super.create() {
+    data = {
+      LightType.rhythmic: [],
+      LightType.building: [],
+      LightType.task: [],
+    };
+  }
+
+  @override
+  void submitData(Map<LightType, List<LatLng>> data) {
+    // Adds all points of each type from submitted data to overall data
+    for (final point in data[LightType.rhythmic]!) {
+      this.data[LightType.rhythmic]?.add(point);
+    }
+    for (final point in data[LightType.building]!) {
+      this.data[LightType.building]?.add(point);
+    }
+    for (final point in data[LightType.task]!) {
+      this.data[LightType.task]?.add(point);
+    }
+
+    // TODO: Insert to/update in firestore
+  }
 }
