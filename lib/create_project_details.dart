@@ -1,6 +1,7 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
+import 'package:p2bp_2025spring_mobile/nature_prevalence.dart';
 import 'db_schema_classes.dart';
 
 // IMPORTANT: When navigating to this page, pass in project details. Use
@@ -144,6 +145,12 @@ class _CreateProjectDetailsState extends State<CreateProjectDetails> {
                     ),
                     onPressed: () {
                       // TODO: Function (research activity)
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) => const NaturePrevalence(),
+                        ),
+                      );
                     },
                     label: Text('Create'),
                     icon: Icon(Icons.add),

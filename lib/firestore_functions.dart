@@ -68,8 +68,8 @@ Future<String> saveTeam(
 }
 
 /// Saves project after project creation in create_project_and_teams.dart. Takes
-/// fields for project: String projectTitle, String description,
-/// DocumentReference teamRef, and List`<GeoPoint>` polygonPoints. Saves it in
+/// fields for project: `String` projectTitle, `String` description,
+/// `DocumentReference` teamRef, and `List<GeoPoint>` polygonPoints. Saves it in
 /// teams collection too.
 Future<Project> saveProject({
   required String projectTitle,
@@ -116,7 +116,7 @@ Future<Project> saveProject({
   return tempProject;
 }
 
-/// Retrieves project info from Firestore. Returns a Future`<Project>`. Takes
+/// Retrieves project info from Firestore. Returns a `Future<Project>`. Takes
 /// projectID. Uses projectID to retrieve info, then saves it into a Project
 /// object for future use.
 Future<Project> getProjectInfo(String projectID) async {
@@ -147,8 +147,8 @@ Future<Project> getProjectInfo(String projectID) async {
 }
 
 /// Calling this function returns a future reference to the currently selected
-/// team. If retrieval throws an exception, then returns null. When implementing
-/// this function, check for null before using value.
+/// team. If retrieval throws an exception, then returns `null`. When
+/// implementing this function, check for `null` before using value.
 Future<DocumentReference?> getCurrentTeam() async {
   DocumentReference? teamRef;
   final DocumentSnapshot<Map<String, dynamic>> userDoc;
@@ -192,8 +192,8 @@ Future<List<Project>> getTeamProjects(DocumentReference teamRef) async {
 }
 
 /// Fetches the current user's list of invites (team references). Extracts the
-/// data from them and puts them into a Team object. Returns them as a future
-/// of a list of Team objects. Checks to make sure document exists
+/// data from them and puts them into a `Team` object. Returns them as a future
+/// of a list of `Team` objects. Checks to make sure document exists
 /// and invites field properly created (should *always* be created, failsafe).
 Future<List<Team>> getInvites() async {
   List<Team> teamInvites = [];
@@ -233,8 +233,8 @@ Future<List<Team>> getInvites() async {
 }
 
 /// Fetches the current user's list of teams (team references). Extracts the
-/// data from them and puts them into a Team object. Returns them as a future
-/// of a list of Team objects. Checks to make sure document exists
+/// data from them and puts them into a `Team` object. Returns them as a future
+/// of a list of `Team` objects. Checks to make sure document exists
 /// and teams field properly created (should *always* be created, failsafe).
 Future<List<Team>> getTeamsIDs() async {
   List<Team> teams = [];
@@ -353,7 +353,7 @@ Future<void> addUserToTeam(String teamID) async {
 
 /// Fetches the list of all users in database. Used for inviting members to
 /// to teams. Extracts the name and ID from them and puts them into a list of
-/// Member objects. Returns them as a future of a list of Member objects.
+/// `Member` objects. Returns them as a future of a list of Member objects.
 /// Excludes current, logged in user. List can then be queried accordingly.
 Future<List<Member>> getMembersList() async {
   List<Member> membersList = [];
