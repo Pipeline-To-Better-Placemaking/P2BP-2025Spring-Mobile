@@ -23,6 +23,7 @@ class _ActivityFormBottomSheetState extends State<ActivityFormBottomSheet> {
     return SingleChildScrollView(
       child: Column(
         children: [
+          // Pill notch
           Padding(
             padding: const EdgeInsets.symmetric(vertical: 5.0),
             child: Container(

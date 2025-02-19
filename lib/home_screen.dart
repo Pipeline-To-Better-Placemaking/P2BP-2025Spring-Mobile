@@ -12,6 +12,7 @@ import 'edit_project_panel.dart';
 import 'main.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'firestore_functions.dart';
+import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 
 List<String> navIcons2 = [
   'assets/custom_icons/Home_Icon.png',
@@ -30,6 +31,7 @@ class HomeScreen extends StatefulWidget {
 class _HomeScreenState extends State<HomeScreen> {
   final User? _currentUser = FirebaseAuth.instance.currentUser;
   List<Project> _projectList = [];
+  DocumentReference? teamRef;
   int _projectsCount = 0;
   bool _isLoading = true;
 
@@ -40,19 +42,16 @@ class _HomeScreenState extends State<HomeScreen> {
   void initState() {
     super.initState();
     _getUserFirstName();
-    _populateProjects();
   }
 
   Future<void> _populateProjects() async {
-    DocumentReference? teamRef;
-
     try {
       teamRef = await getCurrentTeam();
       if (teamRef == null) {
         print(
             "Error populating projects in home_screen.dart. No selected team available.");
       } else {
-        _projectList = await getTeamProjects(teamRef);
+        _projectList = await getTeamProjects(teamRef!);
       }
       setState(() {
         _projectsCount = _projectList.length;
@@ -256,146 +255,167 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   Widget _buildHomeContent() {
-    return //Scrollable content
-        SingleChildScrollView(
-      child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 20),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          mainAxisSize: MainAxisSize.min,
-          children: <Widget>[
-            // P2BP Logo centered at the top
-            Padding(
-              padding: const EdgeInsets.only(top: 60),
-              child: Stack(
-                children: [
-                  Align(
-                    alignment: Alignment.topCenter,
-                    child: Image.asset(
-                      'assets/custom_icons/P2BP_Logo.png',
-                      width: 40,
-                      height: 40,
+    _populateProjects();
+    return RefreshIndicator(
+      onRefresh: () async {
+        await _populateProjects();
+      },
+      child: SingleChildScrollView(
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 20),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            mainAxisSize: MainAxisSize.min,
+            children: <Widget>[
+              // P2BP Logo centered at the top
+              Padding(
+                padding: const EdgeInsets.only(top: 60),
+                child: Stack(
+                  children: [
+                    Align(
+                      alignment: Alignment.topCenter,
+                      child: Image.asset(
+                        'assets/custom_icons/P2BP_Logo.png',
+                        width: 40,
+                        height: 40,
+                      ),
                     ),
-                  ),
-                  Align(
-                    alignment: Alignment.topRight,
-                    child: Row(
-                      mainAxisAlignment: MainAxisAlignment.end,
-                      children: [
-                        // Notification button
-                        IconButton(
-                          icon: Image.asset('assets/custom_icons/bell-03.png'),
-                          onPressed: () {
-                            // Handle notification button action
-                            Navigator.push(
-                                context,
-                                MaterialPageRoute(
-                                    builder: (context) => const HomePage(
-                                          title: '/home',
-                                        )));
-                          },
-                          iconSize: 24,
-                        ),
-                        // Teams Button
-                        IconButton(
-                          icon: const Icon(Icons.group),
-                          color: const Color(0xFF0A2A88),
-                          onPressed: () {
-                            // Navigate to Teams/Invites screen
-                            Navigator.push(
-                                context,
-                                MaterialPageRoute(
-                                  builder: (context) =>
-                                      const TeamsAndInvitesPage(),
-                                ));
-                          },
-                          iconSize: 24,
-                        ),
-                      ],
-                    ),
-                  ),
-                  // "Hello, [user]" greeting, aligned to the left below the logo
-                  Padding(
-                    padding: const EdgeInsets.only(top: 40),
-                    child: Row(
-                      mainAxisAlignment: MainAxisAlignment.start,
-                      children: [
-                        ShaderMask(
-                          shaderCallback: (bounds) {
-                            return defaultGrad.createShader(bounds);
-                          },
-                          child: Text(
-                            'Hello, \n$_firstName',
-                            style: TextStyle(
-                                fontSize: 36,
-                                fontWeight: FontWeight.bold,
-                                color: Colors.white,
-                                height: 1.2 // Masked text with gradient
-                                ),
+                    Align(
+                      alignment: Alignment.topRight,
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.end,
+                        children: [
+                          // Notification button
+                          IconButton(
+                            icon:
+                                Image.asset('assets/custom_icons/bell-03.png'),
+                            onPressed: () {
+                              // Handle notification button action
+                              Navigator.push(
+                                  context,
+                                  MaterialPageRoute(
+                                      builder: (context) => const HomePage(
+                                            title: '/home',
+                                          )));
+                            },
+                            iconSize: 24,
                           ),
+                          // Teams Button
+                          Container(
+                            width: 36,
+                            height: 36,
+                            decoration: BoxDecoration(
+                                shape: BoxShape.circle,
+                                color: Color(0xFF2F6DCF),
+                                border: Border.all(
+                                    color: Color(0xFF0A2A88), width: 3)),
+                            child: Center(
+                              child: Transform.translate(
+                                offset: Offset(-1, 0),
+                                child: IconButton(
+                                  padding: EdgeInsets.zero,
+                                  icon: const Icon(FontAwesomeIcons.users),
+                                  color: const Color(0xFFFFCC00),
+                                  onPressed: () {
+                                    // Navigate to Teams/Invites screen
+                                    Navigator.push(
+                                        context,
+                                        MaterialPageRoute(
+                                          builder: (context) =>
+                                              const TeamsAndInvitesPage(),
+                                        ));
+                                  },
+                                  iconSize: 16,
+                                ),
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    // "Hello, [user]" greeting, aligned to the left below the logo
+                    Padding(
+                      padding: const EdgeInsets.only(top: 40),
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.start,
+                        children: [
+                          ShaderMask(
+                            shaderCallback: (bounds) {
+                              return defaultGrad.createShader(bounds);
+                            },
+                            child: Text(
+                              'Hello, \n$_firstName',
+                              style: TextStyle(
+                                  fontSize: 36,
+                                  fontWeight: FontWeight.bold,
+                                  color: Colors.white,
+                                  height: 1.2 // Masked text with gradient
+                                  ),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              // "Your Projects" label, aligned to the right of the screen"
+              Padding(
+                padding: const EdgeInsets.only(right: 5),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.end,
+                  children: [
+                    ShaderMask(
+                      shaderCallback: (bounds) {
+                        return defaultGrad.createShader(bounds);
+                      },
+                      child: const Text(
+                        'Your Projects',
+                        style: TextStyle(
+                          fontSize: 24,
+                          fontWeight: FontWeight.bold,
+                          color: Colors.white,
+                          height: 1.2,
                         ),
-                      ],
-                    ),
-                  ),
-                ],
-              ),
-            ),
-            // "Your Projects" label, aligned to the right of the screen"
-            Padding(
-              padding: const EdgeInsets.only(right: 5),
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.end,
-                children: [
-                  ShaderMask(
-                    shaderCallback: (bounds) {
-                      return defaultGrad.createShader(bounds);
-                    },
-                    child: const Text(
-                      'Your Projects',
-                      style: TextStyle(
-                        fontSize: 24,
-                        fontWeight: FontWeight.bold,
-                        color: Colors.white,
-                        height: 1.2,
                       ),
                     ),
-                  ),
-                ],
+                  ],
+                ),
               ),
-            ),
-            // Project Cards
-            _projectsCount > 0
-                ? ListView.separated(
-                    shrinkWrap: true,
-                    padding: const EdgeInsets.only(
-                      left: 15,
-                      right: 15,
-                      top: 25,
-                      bottom: 25,
-                    ),
-                    itemCount: _projectsCount,
-                    itemBuilder: (BuildContext context, int index) {
-                      return buildProjectCard(
-                        context: context,
-                        bannerImage: 'assets/RedHouse.png',
-                        project: _projectList[index],
-                        teamName: 'Team: Eola Design Group',
-                        index: index,
-                      );
-                    },
-                    separatorBuilder: (BuildContext context, int index) =>
-                        const SizedBox(
-                      height: 50,
-                    ),
-                  )
-                : _isLoading == true
-                    ? const Center(child: CircularProgressIndicator())
-                    : Align(
-                        alignment: Alignment.center,
-                        child: Text(
-                            "You have no projects! Join or create a team first."),
+              // Project Cards
+              _projectsCount > 0
+                  ? ListView.separated(
+                      shrinkWrap: true,
+                      padding: const EdgeInsets.only(
+                        left: 15,
+                        right: 15,
+                        top: 25,
+                        bottom: 25,
                       ),
-          ],
+                      itemCount: _projectsCount,
+                      itemBuilder: (BuildContext context, int index) {
+                        return buildProjectCard(
+                          context: context,
+                          bannerImage: 'assets/RedHouse.png',
+                          project: _projectList[index],
+                          teamName: 'Team: Eola Design Group',
+                          index: index,
+                        );
+                      },
+                      separatorBuilder: (BuildContext context, int index) =>
+                          const SizedBox(
+                        height: 50,
+                      ),
+                    )
+                  : _isLoading == true
+                      ? const Center(child: CircularProgressIndicator())
+                      : Align(
+                          alignment: Alignment.center,
+                          child: Text(
+                              "You have no projects! Join or create a team first."),
+                        ),
+            ],
+          ),
         ),
       ),
     );

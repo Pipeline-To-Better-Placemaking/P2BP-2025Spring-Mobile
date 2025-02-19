@@ -1,4 +1,7 @@
+import 'dart:io';
+
 import 'package:flutter/material.dart';
+import 'package:image_picker/image_picker.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'change_password_page.dart';
 import 'submit_bug_report_page.dart';
@@ -241,11 +244,16 @@ class _ProfileIconEditStackState extends State<ProfileIconEditStack> {
           right: 1,
           child: InkResponse(
             highlightShape: BoxShape.circle,
-            onTap: () {
-              /* TODO: Functionality to pick a photo, and then send that to firebase
-                  to be saved as new profile icon and then get it from there to
-                  display updated icon in this widget immediately
-               */
+            onTap: () async {
+              final XFile? pickedFile =
+                  await ImagePicker().pickImage(source: ImageSource.gallery);
+              if (pickedFile != null) {
+                final File imageFile = File(pickedFile.path);
+                // Now you have the image file, and you can submit or process it.
+                print("Image selected: ${imageFile.path}");
+              } else {
+                print("No image selected.");
+              }
             },
             child: Container(
               padding: EdgeInsets.all(1),

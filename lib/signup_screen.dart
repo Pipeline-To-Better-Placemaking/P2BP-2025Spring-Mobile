@@ -247,6 +247,8 @@ class _SignUpFormState extends State<SignUpForm> {
           // Full Name Input
           TextFormField(
             controller: _fullNameController,
+            cursorColor: Colors.white,
+            style: TextStyle(color: Colors.white),
             decoration: InputDecoration(
               prefixIcon: Padding(
                 padding: EdgeInsets.only(left: 10, right: 30),
@@ -273,6 +275,8 @@ class _SignUpFormState extends State<SignUpForm> {
           // Email Address Input
           TextFormField(
             controller: _emailController,
+            cursorColor: Colors.white,
+            style: TextStyle(color: Colors.white),
             decoration: InputDecoration(
               prefixIcon: Padding(
                 padding: EdgeInsets.only(left: 10, right: 30),
@@ -313,6 +317,8 @@ class _SignUpFormState extends State<SignUpForm> {
           PasswordTextFormField(
             controller: _passwordController,
             obscureText: _obscureText,
+            cursorColor: Colors.white,
+            style: TextStyle(color: Colors.white),
             onChanged: _checkPasswordConditions,
             decoration: InputDecoration(
               prefixIcon: const Padding(
@@ -355,6 +361,8 @@ class _SignUpFormState extends State<SignUpForm> {
           // Confirm Password Input
           PasswordTextFormField(
             controller: _confirmPasswordController,
+            cursorColor: Colors.white,
+            style: TextStyle(color: Colors.white),
             obscureText: _obscureConfirmText,
             decoration: InputDecoration(
               prefixIcon: const Padding(

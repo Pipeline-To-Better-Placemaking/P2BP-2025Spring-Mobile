@@ -272,6 +272,8 @@ class _LoginFormState extends State<LoginForm> {
           // Email Input
           TextFormField(
             controller: _emailController,
+            cursorColor: Colors.white,
+            style: const TextStyle(color: Colors.white),
             decoration: InputDecoration(
               prefixIcon: Padding(
                 padding: EdgeInsets.only(left: 10, right: 30),
@@ -302,6 +304,8 @@ class _LoginFormState extends State<LoginForm> {
           PasswordTextFormField(
             controller: _passwordController,
             obscureText: _obscureText,
+            cursorColor: Colors.white,
+            style: TextStyle(color: Colors.white),
             decoration: InputDecoration(
               prefixIcon: const Padding(
                 padding: EdgeInsets.only(left: 10, right: 30),

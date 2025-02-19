@@ -1,12 +1,17 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
+import 'package:p2bp_2025spring_mobile/change_name_bottom_sheet.dart';
+import 'package:p2bp_2025spring_mobile/change_description_bottom_sheet.dart';
 import 'db_schema_classes.dart';
 import 'package:flutter/services.dart';
 import 'dart:ui';
 import 'package:p2bp_2025spring_mobile/create_activity_bottom_sheet.dart';
 import 'package:p2bp_2025spring_mobile/theme.dart';
 import 'package:dropdown_button2/dropdown_button2.dart';
+import 'package:image_picker/image_picker.dart';
+import 'package:font_awesome_flutter/font_awesome_flutter.dart';
+import 'dart:io';
 
 // IMPORTANT: When navigating to this page, pass in project details. Use
 // getProjectInfo() from firestore_functions.dart to retrieve project object w/ data.
@@ -39,7 +44,10 @@ class _CreateProjectDetailsState extends State<CreateProjectDetails> {
             leadingWidth: 48,
             systemOverlayStyle: SystemUiOverlayStyle(
                 statusBarColor: Colors.white,
-                statusBarBrightness: Brightness.dark),
+                statusBarIconBrightness:
+                    Brightness.dark, // Changes Android status bar to white
+                statusBarBrightness:
+                    Brightness.dark), // Changes iOS status bar to white
             // Custom back arrow button
             leading: Padding(
               padding: const EdgeInsets.only(left: 16),
@@ -252,11 +260,46 @@ class _CreateProjectDetailsState extends State<CreateProjectDetails> {
                                                     Divider(
                                                         color: Colors.white54,
                                                         height: 1),
-                                                    // 'Delete Project' button
+                                                    // 'Archive Project' button
                                                     InkWell(
                                                       onTap: () =>
                                                           Navigator.of(context)
                                                               .pop(3),
+                                                      child: Padding(
+                                                        padding:
+                                                            const EdgeInsets
+                                                                .symmetric(
+                                                                horizontal: 16,
+                                                                vertical: 12),
+                                                        child: Row(
+                                                          children: [
+                                                            Expanded(
+                                                              child: Text(
+                                                                "Archive Project",
+                                                                style:
+                                                                    TextStyle(
+                                                                  color: Colors
+                                                                      .white,
+                                                                ),
+                                                              ),
+                                                            ),
+                                                            Icon(
+                                                                FontAwesomeIcons
+                                                                    .boxArchive,
+                                                                color: Colors
+                                                                    .white),
+                                                          ],
+                                                        ),
+                                                      ),
+                                                    ),
+                                                    Divider(
+                                                        color: Colors.white54,
+                                                        height: 1),
+                                                    // 'Delete Project' button
+                                                    InkWell(
+                                                      onTap: () =>
+                                                          Navigator.of(context)
+                                                              .pop(4),
                                                       child: Padding(
                                                         padding:
                                                             const EdgeInsets
@@ -302,17 +345,181 @@ class _CreateProjectDetailsState extends State<CreateProjectDetails> {
                                 child: child,
                               );
                             },
-                          ).then((value) {
+                          ).then((value) async {
                             if (value != null) {
                               // Handle menu selection.
                               if (value == 0) {
                                 print("Change Cover Photo");
+                                // Prompt the image picker
+                                final XFile? pickedFile = await ImagePicker()
+                                    .pickImage(source: ImageSource.gallery);
+                                if (pickedFile != null) {
+                                  final File imageFile = File(pickedFile.path);
+                                  // Now you have the image file, and you can submit or process it.
+                                  print("Image selected: ${imageFile.path}");
+                                } else {
+                                  print("No image selected.");
+                                }
                               } else if (value == 1) {
                                 print("Edit Project Name");
+                                showModalBottomSheet(
+                                  context: context,
+                                  isScrollControlled:
+                                      true, // allows the sheet to be fully draggable
+                                  backgroundColor: Colors
+                                      .transparent, // makes the sheet's corners rounded if desired
+                                  builder: (BuildContext context) {
+                                    return DraggableScrollableSheet(
+                                      initialChildSize:
+                                          0.7, // initial height as 50% of screen height
+                                      minChildSize:
+                                          0.3, // minimum height when dragged down
+                                      maxChildSize:
+                                          0.9, // maximum height when dragged up
+                                      builder: (BuildContext context,
+                                          ScrollController scrollController) {
+                                        return Container(
+                                          decoration: BoxDecoration(
+                                            gradient: defaultGrad,
+                                            borderRadius: BorderRadius.only(
+                                              topLeft: Radius.circular(16.0),
+                                              topRight: Radius.circular(16.0),
+                                            ),
+                                          ),
+                                          child: ChangeNameBottomSheet(),
+
+                                          // Replace this ListView with your desired content
+                                        );
+                                      },
+                                    );
+                                  },
+                                );
                               } else if (value == 2) {
                                 print("Edit Project Description");
+                                showModalBottomSheet(
+                                  context: context,
+                                  isScrollControlled:
+                                      true, // allows the sheet to be fully draggable
+                                  backgroundColor: Colors
+                                      .transparent, // makes the sheet's corners rounded if desired
+                                  builder: (BuildContext context) {
+                                    return DraggableScrollableSheet(
+                                      initialChildSize:
+                                          0.7, // initial height as 50% of screen height
+                                      minChildSize:
+                                          0.3, // minimum height when dragged down
+                                      maxChildSize:
+                                          0.9, // maximum height when dragged up
+                                      builder: (BuildContext context,
+                                          ScrollController scrollController) {
+                                        return Container(
+                                          decoration: BoxDecoration(
+                                            gradient: defaultGrad,
+                                            borderRadius: BorderRadius.only(
+                                              topLeft: Radius.circular(16.0),
+                                              topRight: Radius.circular(16.0),
+                                            ),
+                                          ),
+                                          child: ChangeDescriptionBottomSheet(),
+                                        );
+                                      },
+                                    );
+                                  },
+                                );
                               } else if (value == 3) {
+                                print("Archive Project");
+                                // TODO: Add archive functionality here
+                              } else if (value == 4) {
                                 print("Delete Project");
+                                showDialog(
+                                  context: context,
+                                  barrierColor: Colors.black.withValues(
+                                      alpha: 0.5), // Optional overlay
+                                  builder: (BuildContext context) {
+                                    return Dialog(
+                                      insetPadding: EdgeInsets.symmetric(
+                                          horizontal: 40.0,
+                                          vertical:
+                                              24.0), // mimics native AlertDialog margin
+                                      backgroundColor: Colors.transparent,
+                                      elevation: 0,
+                                      child: ClipRRect(
+                                        borderRadius: BorderRadius.circular(
+                                            18.0), // default AlertDialog uses a small radius
+                                        child: BackdropFilter(
+                                          filter: ImageFilter.blur(
+                                              sigmaX: 10, sigmaY: 10),
+                                          child: Container(
+                                            padding: EdgeInsets.fromLTRB(
+                                                24.0,
+                                                20.0,
+                                                24.0,
+                                                14.0), // similar to AlertDialog's content padding
+                                            decoration: BoxDecoration(
+                                              color: Color(0xFF2F6DCF).withValues(
+                                                  alpha:
+                                                      0.55), // frosted glass effect
+                                              borderRadius:
+                                                  BorderRadius.circular(18.0),
+                                            ),
+                                            child: Column(
+                                              mainAxisSize: MainAxisSize.min,
+                                              crossAxisAlignment:
+                                                  CrossAxisAlignment.start,
+                                              children: [
+                                                Text(
+                                                  "Confirm Deletion",
+                                                  style: Theme.of(context)
+                                                      .textTheme
+                                                      .headlineMedium
+                                                      ?.copyWith(
+                                                          color: Colors.white),
+                                                ),
+                                                SizedBox(height: 20),
+                                                Text(
+                                                  "Are you sure you want to delete this project?",
+                                                  style: Theme.of(context)
+                                                      .textTheme
+                                                      .bodyMedium
+                                                      ?.copyWith(
+                                                          color:
+                                                              Colors.white70),
+                                                ),
+                                                SizedBox(height: 10),
+                                                Row(
+                                                  mainAxisAlignment:
+                                                      MainAxisAlignment.end,
+                                                  children: [
+                                                    TextButton(
+                                                      onPressed: () =>
+                                                          Navigator.of(context)
+                                                              .pop(),
+                                                      child: Text("Cancel",
+                                                          style: TextStyle(
+                                                              color: Colors
+                                                                  .white)),
+                                                    ),
+                                                    TextButton(
+                                                      onPressed: () {
+                                                        // Execute deletion logic here
+                                                        Navigator.of(context)
+                                                            .pop();
+                                                      },
+                                                      child: Text("Delete",
+                                                          style: TextStyle(
+                                                              color:
+                                                                  Colors.red)),
+                                                    ),
+                                                  ],
+                                                ),
+                                              ],
+                                            ),
+                                          ),
+                                        ),
+                                      ),
+                                    );
+                                  },
+                                );
                               }
                             }
                           });

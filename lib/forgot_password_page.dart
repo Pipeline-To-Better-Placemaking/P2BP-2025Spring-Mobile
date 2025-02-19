@@ -145,6 +145,8 @@ class _ForgotPasswordFormState extends State<ForgotPasswordForm> {
             ),
           TextFormField(
             controller: _emailController,
+            cursorColor: Colors.white,
+            style: TextStyle(color: Colors.white),
             decoration: InputDecoration(
               enabledBorder: UnderlineInputBorder(
                 borderSide: BorderSide(
