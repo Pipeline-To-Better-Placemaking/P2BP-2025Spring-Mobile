@@ -382,32 +382,24 @@ Future<List<Member>> getMembersList() async {
   return membersList;
 }
 
-/// Retrieves test info from Firestore. Returns a [Future] of the test type
-/// used.
+/// Retrieves test info from Firestore. When successful, this returns a
+/// [Future] of a [DocumentSnapshot] containing all info
+/// from the desired test.
 ///
 /// Returns null if there is an error.
-Future<T?> getTestInfo<T extends Test>(
+Future<DocumentSnapshot<Map<String, dynamic>>?> getTestInfo(
     String testID, String collectionID) async {
-  Test test;
   final DocumentSnapshot<Map<String, dynamic>> testDoc;
 
   try {
     testDoc = await _firestore.collection(collectionID).doc(testID).get();
     if (testDoc.exists && testDoc.data()!.containsKey('scheduledTime')) {
-      test = T(
-        title: testDoc['title'],
-        testID: testDoc['id'],
-        scheduledTime: testDoc['scheduledTime'],
-        projectRef: testDoc['project'],
-        maxResearchers: testDoc['maxResearchers'],
-        creationTime: testDoc['creationTime'],
-        data: LightingProfileTest.convertDataFromFirestore(testDoc['data']),
-      );
+      return testDoc;
     } else {
       if (!testDoc.exists) {
         throw Exception('test-does-not-exist');
       } else {
-        throw Exception('test-improperly-initialized');
+        throw Exception('retrieved-test-is-invalid');
       }
     }
   } catch (e, stacktrace) {
@@ -415,14 +407,16 @@ Future<T?> getTestInfo<T extends Test>(
     print('Stacktrace: $stacktrace');
     return null;
   }
-  return test;
 }
 
-/// Returns [LatLng] equivalent to given [GeoPoint].
-LatLng convertGeoPointToLatLng(GeoPoint geopoint) {
-  return LatLng(geopoint.latitude, geopoint.longitude);
+extension GeoPointConversion on GeoPoint {
+  LatLng toLatLng() {
+    return LatLng(this.latitude, this.longitude);
+  }
 }
 
-GeoPoint convertLatLngToGeoPoint(LatLng latlng) {
-  return GeoPoint(latlng.latitude, latlng.longitude);
+extension LatLngConversion on LatLng {
+  GeoPoint toGeoPoint() {
+    return GeoPoint(this.latitude, this.longitude);
+  }
 }

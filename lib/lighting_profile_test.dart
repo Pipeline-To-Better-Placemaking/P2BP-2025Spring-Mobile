@@ -25,14 +25,12 @@ class _LightingProfileTestPageState extends State<LightingProfileTestPage> {
   LatLng _currentPosition = defaultLocation;
   MapType _currentMapType = MapType.satellite; // Default map type
   Set<Marker> _markers = {}; // Set of markers visible on map
-  List<LatLng> _currentPoints = []; // Point(s) for current selection, max 1
-  LightingProfileDataType _confirmedPoints = {
+  Set<LatLng> _currentPoints = {}; // Point(s) for current selection, max 1
+  LightToLatLngMap _confirmedPoints = {
     LightType.rhythmic: {},
     LightType.building: {},
     LightType.task: {},
   };
-
-  LightingProfileTest
 
   ButtonStyle _typeButtonStyle = FilledButton.styleFrom();
 
@@ -45,37 +43,6 @@ class _LightingProfileTestPageState extends State<LightingProfileTestPage> {
 
   // Temp static fetch stuff until this is connected to other pages with test backend
   static const String _testID = 'WBZQb2ZhnjV1CJBx10t1';
-  void fetchTestRef() async {
-    LightingProfileTest test;
-    final DocumentSnapshot<Map<String, dynamic>> testDoc;
-
-    try {
-      testDoc = await _firestore
-          .collection('lighting_profile_test')
-          .doc(_testID)
-          .get();
-      if (testDoc.exists && testDoc.data()!.containsKey('scheduledTime')) {
-        test = LightingProfileTest(
-          title: testDoc['title'],
-          testID: testDoc['id'],
-          scheduledTime: testDoc['scheduledTime'],
-          projectRef: testDoc['project'],
-          maxResearchers: testDoc['maxResearchers'],
-          creationTime: testDoc['creationTime'],
-          data:
-        );
-      } else {
-        if (!testDoc.exists) {
-          throw Exception('test-does-not-exist');
-        } else {
-          throw Exception('test-improperly-initialized');
-        }
-      }
-    } catch (e, stacktrace) {
-      print('Exception retrieving teams: $e');
-      print('Stacktrace: $stacktrace');
-    }
-  }
 
   void _onMapCreated(GoogleMapController controller) {
     mapController = controller;
@@ -103,7 +70,7 @@ class _LightingProfileTestPageState extends State<LightingProfileTestPage> {
     // Makes sure there is no more than 1 point marked at any time
     if (_currentPoints.isNotEmpty) {
       setState(() {
-        _currentPoints = [];
+        _currentPoints = {};
         _markers = {};
       });
     }
@@ -160,17 +127,16 @@ class _LightingProfileTestPageState extends State<LightingProfileTestPage> {
   /// Locks in placed point(s), saving them with all other confirmed points
   /// to be submitted once test is complete.
   void _confirmPoints() {
-    if (_isTypeSelected && _selectedType != null && _currentPoints.isNotEmpty) {
-      _confirmedPoints.updateAll(update);
-      _confirmedPoints.update();
-    }
+    if (_isTypeSelected &&
+        _selectedType != null &&
+        _currentPoints.isNotEmpty) {}
   }
 
   /// Cancels placement of point(s), removing any points and markers in
   /// [_currentPoints] and [_markers]
   void _cancelPoints() {
     setState(() {
-      _currentPoints = [];
+      _currentPoints = {};
       _markers = {};
     });
   }

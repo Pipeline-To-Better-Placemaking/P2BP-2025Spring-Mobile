@@ -1,5 +1,6 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
+import 'package:p2bp_2025spring_mobile/firestore_functions.dart';
 
 import 'db_schema_classes.dart';
 
@@ -83,26 +84,30 @@ class LightingProfileTest extends Test<LightToLatLngMap> {
     // Adds all data from parameter to output one type at a time
     for (final type in types) {
       if (data.containsKey(type.name) && data[type.name] is List) {
-        output[type]!.addAll(data[type.name]);
+        for (final geopoint in data[type.name]!) {
+          output[type]?.add(geopoint.toLatLng());
+        }
       }
     }
-
-    // if (data.containsKey('rhythmic') && data['rhythmic'] is List) {
-    //   output[LightType.rhythmic]!.addAll(data['rhythmic']);
-    // }
-    // if (data.containsKey('building') && data['building'] is List) {
-    //   output[LightType.building]!.addAll(data['building']);
-    // }
-    // if (data.containsKey('task') && data['task'] is List) {
-    //   output[LightType.task]!.addAll(data['task']);
-    // }
 
     return output;
   }
 
   /// Transforms data stored locally as [LightToLatLngMap] to
-  /// Firestore format with String keys and any other needed changes.
+  /// Firestore format (represented by [LightToGeoPointMap])
+  /// with String keys and any other needed changes.
   static LightToGeoPointMap convertDataToFirestore(LightToLatLngMap data) {
-    throw UnimplementedError();
+    LightToGeoPointMap output = {};
+    List<LightType> types = LightType.values;
+
+    for (final type in types) {
+      if (data.containsKey(type) && data[type] is Set) {
+        for (final latlng in data[type]!) {
+          output[type.name]?.add(latlng.toGeoPoint());
+        }
+      }
+    }
+
+    return output;
   }
 }
