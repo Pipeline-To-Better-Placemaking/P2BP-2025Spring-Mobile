@@ -1,8 +1,7 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
-import 'package:p2bp_2025spring_mobile/firestore_functions.dart';
-import 'package:p2bp_2025spring_mobile/lighting_profile_test.dart';
+import 'package:p2bp_2025spring_mobile/nature_prevalence.dart';
 import 'db_schema_classes.dart';
 
 // IMPORTANT: When navigating to this page, pass in project details. Use
@@ -144,19 +143,13 @@ class _CreateProjectDetailsState extends State<CreateProjectDetails> {
                       // foregroundColor: foregroundColor,
                       // backgroundColor: backgroundColor,
                     ),
-                    onPressed: () async {
+                    onPressed: () {
                       // TODO: Function (research activity)
-                      final LightingProfileTest test = await getTestInfo(
-                              FirebaseFirestore.instance
-                                  .collection(
-                                      LightingProfileTest.collectionIDStatic)
-                                  .doc('WBZQb2ZhnjV1CJBx10t1'))
-                          as LightingProfileTest;
                       Navigator.push(
                         context,
-                        MaterialPageRoute(builder: (context) {
-                          return LightingProfileTestPage(thisTest: test);
-                        }),
+                        MaterialPageRoute(
+                          builder: (context) => const NaturePrevalence(),
+                        ),
                       );
                     },
                     label: Text('Create'),
@@ -186,10 +179,13 @@ class _CreateProjectDetailsState extends State<CreateProjectDetails> {
                           top: 25,
                           bottom: 30,
                         ),
-                        itemBuilder: (BuildContext context, int index) =>
-                            TestCard(),
+                        itemBuilder: (BuildContext context, int index) {
+                          return TestCard();
+                        },
                         separatorBuilder: (BuildContext context, int index) =>
-                            const SizedBox(height: 10),
+                            const SizedBox(
+                          height: 10,
+                        ),
                       )
                     : _isLoading == true
                         ? const Center(child: CircularProgressIndicator())
