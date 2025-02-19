@@ -1,33 +1,80 @@
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'google_maps_functions.dart';
+import 'db_schema_classes.dart';
+import 'test_class_implementations.dart';
 
 class LightingProfileTestPage extends StatefulWidget {
+  // final LightingProfileTest testToBeCompleted;
+  // const LightingProfileTestPage({super.key, required this.testToBeCompleted});
+
   @override
   State<StatefulWidget> createState() => _LightingProfileTestPageState();
 }
 
-enum LightType { rhythmic, building, task }
+final FirebaseFirestore _firestore = FirebaseFirestore.instance;
 
 class _LightingProfileTestPageState extends State<LightingProfileTestPage> {
   bool _isLoading = true;
   bool _isTypeSelected = false;
-
   LightType? _selectedType;
 
   late GoogleMapController mapController;
   LatLng _currentPosition = defaultLocation;
-  Set<Marker> _markers = {}; // Set of markers for points
   MapType _currentMapType = MapType.satellite; // Default map type
-  List<LatLng> _currentPoints = []; // Point(s) for current selection
+  Set<Marker> _markers = {}; // Set of markers visible on map
+  List<LatLng> _currentPoints = []; // Point(s) for current selection, max 1
+  LightingProfileDataType _confirmedPoints = {
+    LightType.rhythmic: {},
+    LightType.building: {},
+    LightType.task: {},
+  };
+
+  LightingProfileTest
 
   ButtonStyle _typeButtonStyle = FilledButton.styleFrom();
 
   @override
   void initState() {
     super.initState();
+
     _checkAndFetchLocation();
+  }
+
+  // Temp static fetch stuff until this is connected to other pages with test backend
+  static const String _testID = 'WBZQb2ZhnjV1CJBx10t1';
+  void fetchTestRef() async {
+    LightingProfileTest test;
+    final DocumentSnapshot<Map<String, dynamic>> testDoc;
+
+    try {
+      testDoc = await _firestore
+          .collection('lighting_profile_test')
+          .doc(_testID)
+          .get();
+      if (testDoc.exists && testDoc.data()!.containsKey('scheduledTime')) {
+        test = LightingProfileTest(
+          title: testDoc['title'],
+          testID: testDoc['id'],
+          scheduledTime: testDoc['scheduledTime'],
+          projectRef: testDoc['project'],
+          maxResearchers: testDoc['maxResearchers'],
+          creationTime: testDoc['creationTime'],
+          data:
+        );
+      } else {
+        if (!testDoc.exists) {
+          throw Exception('test-does-not-exist');
+        } else {
+          throw Exception('test-improperly-initialized');
+        }
+      }
+    } catch (e, stacktrace) {
+      print('Exception retrieving teams: $e');
+      print('Stacktrace: $stacktrace');
+    }
   }
 
   void _onMapCreated(GoogleMapController controller) {
@@ -53,6 +100,14 @@ class _LightingProfileTestPageState extends State<LightingProfileTestPage> {
   }
 
   void _togglePoint(LatLng point) {
+    // Makes sure there is no more than 1 point marked at any time
+    if (_currentPoints.isNotEmpty) {
+      setState(() {
+        _currentPoints = [];
+        _markers = {};
+      });
+    }
+
     final markerId = MarkerId(point.toString());
     _currentPoints.add(point);
     setState(() {
@@ -83,6 +138,7 @@ class _LightingProfileTestPageState extends State<LightingProfileTestPage> {
     });
   }
 
+  // Sets button style on each build based on width of context
   void _setButtonStyle() {
     _typeButtonStyle = FilledButton.styleFrom(
       backgroundColor: Colors.blue,
@@ -94,26 +150,37 @@ class _LightingProfileTestPageState extends State<LightingProfileTestPage> {
     );
   }
 
-  void _selectRhythmic() {
+  void _selectType(LightType type) {
     setState(() {
-      _selectedType = LightType.rhythmic;
+      _selectedType = type;
       _isTypeSelected = true;
     });
   }
 
-  void _selectBuilding() {
+  /// Locks in placed point(s), saving them with all other confirmed points
+  /// to be submitted once test is complete.
+  void _confirmPoints() {
+    if (_isTypeSelected && _selectedType != null && _currentPoints.isNotEmpty) {
+      _confirmedPoints.updateAll(update);
+      _confirmedPoints.update();
+    }
+  }
+
+  /// Cancels placement of point(s), removing any points and markers in
+  /// [_currentPoints] and [_markers]
+  void _cancelPoints() {
     setState(() {
-      _selectedType = LightType.building;
-      _isTypeSelected = true;
+      _currentPoints = [];
+      _markers = {};
     });
   }
 
-  void _selectTask() {
-    setState(() {
-      _selectedType = LightType.task;
-      _isTypeSelected = true;
-    });
-  }
+  // saving results in DB:
+  // document has misc fields like date completed and maybe user id
+  // data saved in array 'results' or just 'data'
+  // has a sub-array for each light type: rhythmic, building, task
+  // each of those is a list of points (individual maps with lat and lng or
+  // some better data type)
 
   @override
   Widget build(BuildContext context) {
@@ -125,9 +192,11 @@ class _LightingProfileTestPageState extends State<LightingProfileTestPage> {
             : Column(
                 children: <Widget>[
                   Text(
-                    _isTypeSelected
-                        ? 'Drop a pin where the light is.'
-                        : 'Select a type of light.',
+                    !_isTypeSelected
+                        ? 'Select a type of light.'
+                        : _currentPoints.isEmpty
+                            ? 'Drop a pin where the light is.'
+                            : 'Confirm or cancel your selection.',
                     style: TextStyle(fontSize: 24),
                   ),
                   Center(
@@ -147,34 +216,12 @@ class _LightingProfileTestPageState extends State<LightingProfileTestPage> {
                             alignment: Alignment.bottomRight,
                             child: Padding(
                               padding: const EdgeInsets.symmetric(
-                                  horizontal: 60.0, vertical: 90.0),
+                                  horizontal: 60.0, vertical: 15.0),
                               child: FloatingActionButton(
                                 heroTag: null,
                                 onPressed: _toggleMapType,
                                 backgroundColor: Colors.green,
                                 child: const Icon(Icons.map),
-                              ),
-                            ),
-                          ),
-                          Align(
-                            alignment: Alignment.bottomRight,
-                            child: Padding(
-                              padding: const EdgeInsets.symmetric(
-                                  horizontal: 60.0, vertical: 20.0),
-                              child: FloatingActionButton(
-                                heroTag: null,
-                                onPressed: () {
-                                  setState(() {
-                                    if (_currentPoints.isNotEmpty) {
-                                      // TODO: confirm selection
-                                    }
-                                  });
-                                },
-                                backgroundColor: Colors.blue,
-                                child: const Icon(
-                                  Icons.check,
-                                  size: 35,
-                                ),
                               ),
                             ),
                           ),
@@ -195,26 +242,45 @@ class _LightingProfileTestPageState extends State<LightingProfileTestPage> {
                               decoration: TextDecoration.underline,
                             ),
                           ),
-                          Row(
-                            mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                            children: <Widget>[
-                              FilledButton(
-                                style: _typeButtonStyle,
-                                onPressed: _selectRhythmic,
-                                child: Text('Rhythmic'),
-                              ),
-                              FilledButton(
-                                style: _typeButtonStyle,
-                                onPressed: _selectBuilding,
-                                child: Text('Building'),
-                              ),
-                              FilledButton(
-                                style: _typeButtonStyle,
-                                onPressed: _selectTask,
-                                child: Text('Task'),
-                              ),
-                            ],
-                          ),
+                          if (!_isTypeSelected)
+                            Row(
+                              mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                              children: <Widget>[
+                                FilledButton(
+                                  style: _typeButtonStyle,
+                                  onPressed: () =>
+                                      _selectType(LightType.rhythmic),
+                                  child: Text('Rhythmic'),
+                                ),
+                                FilledButton(
+                                  style: _typeButtonStyle,
+                                  onPressed: () =>
+                                      _selectType(LightType.building),
+                                  child: Text('Building'),
+                                ),
+                                FilledButton(
+                                  style: _typeButtonStyle,
+                                  onPressed: () => _selectType(LightType.task),
+                                  child: Text('Task'),
+                                ),
+                              ],
+                            ),
+                          if (_currentPoints.isNotEmpty)
+                            Row(
+                              mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                              children: <Widget>[
+                                FilledButton(
+                                  style: _typeButtonStyle,
+                                  onPressed: _confirmPoints,
+                                  child: Text('Confirm'),
+                                ),
+                                FilledButton(
+                                  style: _typeButtonStyle,
+                                  onPressed: _cancelPoints,
+                                  child: Text('Cancel'),
+                                ),
+                              ],
+                            ),
                           FilledButton(
                             style: FilledButton.styleFrom(
                               backgroundColor: Colors.blue[400],

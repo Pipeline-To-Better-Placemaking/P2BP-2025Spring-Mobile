@@ -1,5 +1,8 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:flutter/foundation.dart';
+import 'package:google_maps_flutter/google_maps_flutter.dart';
+import 'test_class_implementations.dart';
 import 'db_schema_classes.dart';
 
 final FirebaseFirestore _firestore = FirebaseFirestore.instance;
@@ -140,7 +143,7 @@ Future<Project> getProjectInfo(String projectID) async {
       print('Project exists? ${projectDoc.exists}.');
     }
   } catch (e, stacktrace) {
-    print('Exception retrieving teams: $e');
+    print('Exception retrieving project: $e');
     print('Stacktrace: $stacktrace');
   }
   return project;
@@ -377,4 +380,49 @@ Future<List<Member>> getMembersList() async {
     print('Stacktrace: $stacktrace');
   }
   return membersList;
+}
+
+/// Retrieves test info from Firestore. Returns a [Future] of the test type
+/// used.
+///
+/// Returns null if there is an error.
+Future<T?> getTestInfo<T extends Test>(
+    String testID, String collectionID) async {
+  Test test;
+  final DocumentSnapshot<Map<String, dynamic>> testDoc;
+
+  try {
+    testDoc = await _firestore.collection(collectionID).doc(testID).get();
+    if (testDoc.exists && testDoc.data()!.containsKey('scheduledTime')) {
+      test = T(
+        title: testDoc['title'],
+        testID: testDoc['id'],
+        scheduledTime: testDoc['scheduledTime'],
+        projectRef: testDoc['project'],
+        maxResearchers: testDoc['maxResearchers'],
+        creationTime: testDoc['creationTime'],
+        data: LightingProfileTest.convertDataFromFirestore(testDoc['data']),
+      );
+    } else {
+      if (!testDoc.exists) {
+        throw Exception('test-does-not-exist');
+      } else {
+        throw Exception('test-improperly-initialized');
+      }
+    }
+  } catch (e, stacktrace) {
+    print('Exception retrieving : $e');
+    print('Stacktrace: $stacktrace');
+    return null;
+  }
+  return test;
+}
+
+/// Returns [LatLng] equivalent to given [GeoPoint].
+LatLng convertGeoPointToLatLng(GeoPoint geopoint) {
+  return LatLng(geopoint.latitude, geopoint.longitude);
+}
+
+GeoPoint convertLatLngToGeoPoint(LatLng latlng) {
+  return GeoPoint(latlng.latitude, latlng.longitude);
 }

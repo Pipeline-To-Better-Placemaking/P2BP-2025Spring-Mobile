@@ -92,65 +92,93 @@ class Project {
   Project.partialProject({required this.title, required this.description});
 }
 
-/// Superclass (or interface, not sure which makes more sense yet)
-/// for each specific test
-abstract interface class Test<A, B> {
+/// Abstract superclass for all tests to be extended by each specific
+/// test class.
+///
+/// Each specific test will most likely have a different format for data
+/// which needs to be specified around the implementation and used in place
+/// of generic type [A].
+abstract class Test<A> {
   Timestamp? creationTime;
   String title = '';
   String testID = '';
   Timestamp? scheduledTime;
   DocumentReference? projectRef;
   int maxResearchers = 0;
-  Map<A, B> data = {};
 
-  Test.create({
-    required this.creationTime,
+  /// Instance member using custom data type for each specific test
+  /// implementation for storing test data.
+  ///
+  /// Initial framework for storing data for each test should be defined in
+  /// each implementation as the value returned from
+  /// [_getInitialDataStructure()].
+  /// This is then used to initialize data when it is not given, as this
+  /// indicates creation of a new test as opposed to retrieval of an
+  /// existing test.
+  late A data;
+
+  /// The collection ID used in Firestore for this specific test.
+  ///
+  /// Each implementation should initialize this at some point during
+  /// construction, as well as duplicated to a static member ideally.
+  late final String collectionID;
+
+  /// Creates a new test instance. Private constructor as it is only intended
+  /// to be called from subclass constructors. Each subclass internally
+  /// provides argument for initialDataStructure.
+  ///
+  /// When creating a new test to be stored in the DB for the first time,
+  /// include only the required parameters. [creationTime] and [data]
+  /// are automatically initialized correctly for a new test when not given.
+  /// This usage is primarily intended for when an admin
+  /// is creating a new test and manually specified all relevant parameters.
+  ///
+  /// When retrieving an existing test from the DB, include arguments for every
+  /// parameter. This should be trivial once the proper document has been
+  /// retrieved.
+  /// This usage is primarily intended for adding data from surveyor completing
+  /// the test.
+  Test({
     required this.title,
     required this.testID,
     required this.scheduledTime,
     required this.projectRef,
     required this.maxResearchers,
-  });
+    this.creationTime,
+    A? data,
+  }) {
+    this.creationTime ??= Timestamp.now();
+    this.data = data ?? getInitialDataStructure();
+  }
+
+  /// Creates a new test instance from existing info from Firestore
+  /// in the required [DocumentSnapshot].
+  Test.makeFromDoc(DocumentSnapshot<Map<String, dynamic>> testDoc)
+      : this(
+          title: testDoc['title'],
+          testID: testDoc['id'],
+          scheduledTime: testDoc['scheduledTime'],
+          projectRef: testDoc['project'],
+          maxResearchers: testDoc['maxResearchers'],
+          creationTime: testDoc['creationTime'],
+        );
+
+  /// Returns the initial state for [data] specific to each test
+  /// implementation.
+  ///
+  /// Used in the constructor to define [data] when no value is provided.
+  ///
+  /// This must be setup in each implementation and likely will just
+  /// return a static constant value hard-coded for each test.
+  A getInitialDataStructure();
 
   /// Used on completion of a test and passed all data collected throughout
   /// the duration of the test. Updates this test instance in Firestore with
   /// this new data.
-  void submitData(Map<A, B> data);
-}
+  void submitData(A data);
 
-/// Types of light for lighting profile test.
-enum LightType { rhythmic, building, task }
-
-/// Schema for lighting profile test.
-class LightingProfileTest extends Test<LightType, List<LatLng>> {
-  LightingProfileTest.create({
-    required super.creationTime,
-    required super.title,
-    required super.testID,
-    required super.scheduledTime,
-    required super.projectRef,
-    required super.maxResearchers,
-  }) : super.create() {
-    data = {
-      LightType.rhythmic: [],
-      LightType.building: [],
-      LightType.task: [],
-    };
-  }
-
-  @override
-  void submitData(Map<LightType, List<LatLng>> data) {
-    // Adds all points of each type from submitted data to overall data
-    for (final point in data[LightType.rhythmic]!) {
-      this.data[LightType.rhythmic]?.add(point);
-    }
-    for (final point in data[LightType.building]!) {
-      this.data[LightType.building]?.add(point);
-    }
-    for (final point in data[LightType.task]!) {
-      this.data[LightType.task]?.add(point);
-    }
-
-    // TODO: Insert to/update in firestore
+  Future<T?> getTestInfo<T extends Test>(
+      String testID, String collectionID, Type testType) async {
+    return null;
   }
 }
