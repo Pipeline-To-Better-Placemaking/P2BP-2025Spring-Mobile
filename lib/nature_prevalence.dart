@@ -48,6 +48,677 @@ class _NaturePrevalenceState extends State<NaturePrevalence> {
     _checkAndFetchLocation();
   }
 
+  void showModalWaterBody(BuildContext context) {
+    showModalBottomSheet<void>(
+      sheetAnimationStyle:
+          AnimationStyle(reverseDuration: Duration(milliseconds: 100)),
+      context: context,
+      isScrollControlled: true,
+      useSafeArea: true,
+      builder: (context) {
+        return SingleChildScrollView(
+          child: Padding(
+            padding: MediaQuery.of(context).viewInsets,
+            child: Container(
+              // Container decoration- rounded corners and gradient
+              decoration: BoxDecoration(
+                gradient: defaultGrad,
+                borderRadius: const BorderRadius.only(
+                  topLeft: Radius.circular(24.0),
+                  topRight: Radius.circular(24.0),
+                ),
+              ),
+              child: Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 10.0),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: <Widget>[
+                    const BarIndicator(),
+                    Center(
+                      child: Text(
+                        'Select the Body of Water',
+                        style: TextStyle(
+                          fontSize: 20,
+                          fontWeight: FontWeight.bold,
+                          color: Colors.yellow[600],
+                        ),
+                      ),
+                    ),
+                    SizedBox(height: 5),
+                    Center(
+                      child: Text(
+                        'Then mark the boundaries on the map.',
+                        style: TextStyle(
+                          fontSize: 16,
+                          fontStyle: FontStyle.italic,
+                          color: Colors.grey[400],
+                        ),
+                      ),
+                    ),
+                    SizedBox(height: 10),
+                    Text(
+                      'Body of Waster Type',
+                      style: TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.bold,
+                        color: Colors.white,
+                      ),
+                    ),
+                    SizedBox(height: 5),
+                    Row(
+                      spacing: 20,
+                      children: <Widget>[
+                        Expanded(
+                          flex: 1,
+                          child: FilledButton(
+                            style: FilledButton.styleFrom(
+                              backgroundColor: Colors.white,
+                              foregroundColor: Colors.black,
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(10.0),
+                              ),
+                            ),
+                            onPressed: () {
+                              setState(() {
+                                _type = WaterBody.ocean.name;
+                                _polygonMode = true;
+                              });
+                              Navigator.pop(context);
+                            },
+                            child: Text('Ocean'),
+                          ),
+                        ),
+                        Expanded(
+                          flex: 1,
+                          child: FilledButton(
+                            style: FilledButton.styleFrom(
+                              backgroundColor: Colors.white,
+                              foregroundColor: Colors.black,
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(10.0),
+                              ),
+                            ),
+                            onPressed: () {
+                              setState(() {
+                                _type = WaterBody.lake.name;
+                                _polygonMode = true;
+                              });
+                              Navigator.pop(context);
+                            },
+                            child: Text('Lake'),
+                          ),
+                        ),
+                        Expanded(
+                          flex: 1,
+                          child: FilledButton(
+                            style: FilledButton.styleFrom(
+                              backgroundColor: Colors.white,
+                              foregroundColor: Colors.black,
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(10.0),
+                              ),
+                            ),
+                            onPressed: () {
+                              setState(() {
+                                _type = WaterBody.river.name;
+                                _polygonMode = true;
+                              });
+                              Navigator.pop(context);
+                            },
+                            child: Text('River', textAlign: TextAlign.center),
+                          ),
+                        ),
+                      ],
+                    ),
+                    SizedBox(height: 5),
+                    Row(
+                      spacing: 20,
+                      children: <Widget>[
+                        Expanded(
+                          flex: 1,
+                          child: FilledButton(
+                            style: FilledButton.styleFrom(
+                              backgroundColor: Colors.white,
+                              foregroundColor: Colors.black,
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(10.0),
+                              ),
+                            ),
+                            onPressed: () {
+                              setState(() {
+                                _type = WaterBody.swamp.name;
+                                _polygonMode = true;
+                              });
+                              Navigator.pop(context);
+                            },
+                            child: Text('Swamp'),
+                          ),
+                        ),
+                        Flexible(
+                          flex: 1,
+                          child: SizedBox(),
+                        ),
+                        Flexible(
+                          flex: 1,
+                          child: SizedBox(),
+                        ),
+                      ],
+                    ),
+                    SizedBox(height: 25),
+                    Align(
+                      alignment: Alignment.bottomRight,
+                      child: InkWell(
+                        child: const Padding(
+                          padding: EdgeInsets.only(right: 20, bottom: 0),
+                          child: Text(
+                            'Cancel',
+                            style: TextStyle(
+                                fontSize: 16,
+                                fontWeight: FontWeight.w500,
+                                color: Color(0xFFFFD700)),
+                          ),
+                        ),
+                        onTap: () {
+                          Navigator.pop(context);
+                        },
+                      ),
+                    ),
+                    SizedBox(height: 50),
+                  ],
+                ),
+              ),
+            ),
+          ),
+        );
+      },
+    );
+  }
+
+  void showModalVegetation(BuildContext context) {
+    showModalBottomSheet<void>(
+      sheetAnimationStyle:
+          AnimationStyle(reverseDuration: Duration(milliseconds: 100)),
+      context: context,
+      isScrollControlled: true,
+      useSafeArea: true,
+      builder: (context) {
+        return SingleChildScrollView(
+          child: Padding(
+            padding: MediaQuery.of(context).viewInsets,
+            child: Container(
+              // Container decoration- rounded corners and gradient
+              decoration: BoxDecoration(
+                gradient: defaultGrad,
+                borderRadius: const BorderRadius.only(
+                  topLeft: Radius.circular(24.0),
+                  topRight: Radius.circular(24.0),
+                ),
+              ),
+              child: Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 10.0),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: <Widget>[
+                    const BarIndicator(),
+                    Center(
+                      child: Text(
+                        'Select the Type of the Vegetation',
+                        style: TextStyle(
+                          fontSize: 20,
+                          fontWeight: FontWeight.bold,
+                          color: Colors.yellow[600],
+                        ),
+                      ),
+                    ),
+                    Center(
+                      child: Text(
+                        'Then mark the boundaries on the map.',
+                        style: TextStyle(
+                          fontSize: 16,
+                          fontStyle: FontStyle.italic,
+                          color: Colors.grey[400],
+                        ),
+                      ),
+                    ),
+                    SizedBox(height: 10),
+                    Text(
+                      'Vegetation Type',
+                      style: TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.bold,
+                        color: Colors.white,
+                      ),
+                    ),
+                    SizedBox(height: 5),
+                    Row(
+                      spacing: 20,
+                      children: <Widget>[
+                        Expanded(
+                          flex: 1,
+                          child: FilledButton(
+                            style: FilledButton.styleFrom(
+                              backgroundColor: Colors.white,
+                              foregroundColor: Colors.black,
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(10.0),
+                              ),
+                            ),
+                            onPressed: () {
+                              setState(() {
+                                _type = Vegetation.canopy.name;
+                                _polygonMode = true;
+                              });
+                              Navigator.pop(context);
+                            },
+                            child: Text('Canopy'),
+                          ),
+                        ),
+                        Expanded(
+                          flex: 1,
+                          child: FilledButton(
+                            style: FilledButton.styleFrom(
+                              backgroundColor: Colors.white,
+                              foregroundColor: Colors.black,
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(10.0),
+                              ),
+                            ),
+                            onPressed: () {
+                              setState(() {
+                                _type = Vegetation.trees.name;
+                                _polygonMode = true;
+                              });
+                              Navigator.pop(context);
+                            },
+                            child: Text('Trees'),
+                          ),
+                        ),
+                        Expanded(
+                          flex: 1,
+                          child: FilledButton(
+                            style: FilledButton.styleFrom(
+                              backgroundColor: Colors.white,
+                              foregroundColor: Colors.black,
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(10.0),
+                              ),
+                            ),
+                            onPressed: () {
+                              setState(() {
+                                _type = Vegetation.umbrellaDining.name;
+                                _polygonMode = true;
+                              });
+
+                              Navigator.pop(context);
+                            },
+                            child: Text('Umbrella Dining',
+                                textAlign: TextAlign.center),
+                          ),
+                        ),
+                      ],
+                    ),
+                    Row(
+                      spacing: 20,
+                      children: <Widget>[
+                        Expanded(
+                          flex: 1,
+                          child: FilledButton(
+                            style: FilledButton.styleFrom(
+                              backgroundColor: Colors.white,
+                              foregroundColor: Colors.black,
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(10.0),
+                              ),
+                            ),
+                            onPressed: () {
+                              setState(() {
+                                _type = Vegetation.temporary.name;
+                                _polygonMode = true;
+                              });
+                              Navigator.pop(context);
+                            },
+                            child: Text('Temporary'),
+                          ),
+                        ),
+                        Expanded(
+                          flex: 1,
+                          child: FilledButton(
+                            style: FilledButton.styleFrom(
+                              backgroundColor: Colors.white,
+                              foregroundColor: Colors.black,
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(10.0),
+                              ),
+                            ),
+                            onPressed: () {
+                              setState(() {
+                                _type = Vegetation.constructedCeiling.name;
+                                _polygonMode = true;
+                              });
+                              Navigator.pop(context);
+                            },
+                            child: Text('Constructed Ceiling'),
+                          ),
+                        ),
+                        Flexible(flex: 1, child: SizedBox())
+                      ],
+                    ),
+                    SizedBox(height: 25),
+                    Align(
+                      alignment: Alignment.bottomRight,
+                      child: InkWell(
+                        child: const Padding(
+                          padding: EdgeInsets.only(right: 20, bottom: 0),
+                          child: Text(
+                            'Cancel',
+                            style: TextStyle(
+                                fontSize: 16,
+                                fontWeight: FontWeight.w500,
+                                color: Color(0xFFFFD700)),
+                          ),
+                        ),
+                        onTap: () {
+                          Navigator.pop(context);
+                        },
+                      ),
+                    ),
+                    SizedBox(height: 50),
+                  ],
+                ),
+              ),
+            ),
+          ),
+        );
+      },
+    );
+  }
+
+  void showModalAnimal(BuildContext context) {
+    showModalBottomSheet<void>(
+      sheetAnimationStyle:
+          AnimationStyle(reverseDuration: Duration(milliseconds: 100)),
+      context: context,
+      isScrollControlled: true,
+      useSafeArea: true,
+      builder: (context) {
+        return SingleChildScrollView(
+          child: Padding(
+            padding: MediaQuery.of(context).viewInsets,
+            child: Container(
+              // Container decoration- rounded corners and gradient
+              decoration: BoxDecoration(
+                gradient: defaultGrad,
+                borderRadius: const BorderRadius.only(
+                  topLeft: Radius.circular(24.0),
+                  topRight: Radius.circular(24.0),
+                ),
+              ),
+              child: Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 10.0),
+                child: Column(
+                  spacing: 5,
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: <Widget>[
+                    const BarIndicator(),
+                    Center(
+                      child: Text(
+                        'What Animal Do You See?',
+                        style: TextStyle(
+                          fontSize: 20,
+                          fontWeight: FontWeight.bold,
+                          color: Colors.yellow[600],
+                        ),
+                      ),
+                    ),
+                    Text(
+                      'Domesticated',
+                      style: TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.bold,
+                        color: Colors.white,
+                      ),
+                    ),
+                    Row(
+                      spacing: 20,
+                      children: <Widget>[
+                        Expanded(
+                          flex: 1,
+                          child: FilledButton(
+                            style: FilledButton.styleFrom(
+                              backgroundColor: Colors.white,
+                              foregroundColor: Colors.black,
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(10.0),
+                              ),
+                            ),
+                            onPressed: () {
+                              setState(() {
+                                _type = 'cat';
+                                _pointMode = true;
+                              });
+                              Navigator.pop(context);
+                            },
+                            child: Text('Cat'),
+                          ),
+                        ),
+                        Expanded(
+                          flex: 1,
+                          child: FilledButton(
+                            style: FilledButton.styleFrom(
+                              backgroundColor: Colors.white,
+                              foregroundColor: Colors.black,
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(10.0),
+                              ),
+                            ),
+                            child: Text('Dog'),
+                            onPressed: () {
+                              setState(() {
+                                _type = 'dog';
+                                _pointMode = true;
+                              });
+                              Navigator.pop(context);
+                            },
+                          ),
+                        ),
+                        Flexible(flex: 1, child: SizedBox()),
+                      ],
+                    ),
+                    SizedBox(height: 20),
+                    Text(
+                      'Wild',
+                      style: TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.bold,
+                        color: Colors.white,
+                      ),
+                    ),
+                    Row(
+                      spacing: 20,
+                      children: <Widget>[
+                        Expanded(
+                          flex: 1,
+                          child: FilledButton(
+                            style: FilledButton.styleFrom(
+                              backgroundColor: Colors.white,
+                              foregroundColor: Colors.black,
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(10.0),
+                              ),
+                            ),
+                            onPressed: () {
+                              setState(() {
+                                _type = 'squirrel';
+                                _pointMode = true;
+                              });
+                              Navigator.pop(context);
+                            },
+                            child: Text('Squirrel'),
+                          ),
+                        ),
+                        Expanded(
+                          flex: 1,
+                          child: FilledButton(
+                            style: FilledButton.styleFrom(
+                              backgroundColor: Colors.white,
+                              foregroundColor: Colors.black,
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(10.0),
+                              ),
+                            ),
+                            onPressed: () {
+                              setState(() {
+                                _type = 'bird';
+                                _pointMode = true;
+                              });
+
+                              Navigator.pop(context);
+                            },
+                            child: Text('Bird'),
+                          ),
+                        ),
+                        Expanded(
+                          flex: 1,
+                          child: FilledButton(
+                            style: FilledButton.styleFrom(
+                              backgroundColor: Colors.white,
+                              foregroundColor: Colors.black,
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(10.0),
+                              ),
+                            ),
+                            onPressed: () {
+                              setState(() {
+                                _type = 'rabbit';
+                                _pointMode = true;
+                              });
+                              Navigator.pop(context);
+                            },
+                            child: Text('Rabbit'),
+                          ),
+                        ),
+                      ],
+                    ),
+                    Row(
+                      spacing: 20,
+                      children: <Widget>[
+                        Expanded(
+                          flex: 1,
+                          child: FilledButton(
+                            style: FilledButton.styleFrom(
+                              backgroundColor: Colors.white,
+                              foregroundColor: Colors.black,
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(10.0),
+                              ),
+                            ),
+                            onPressed: () {
+                              setState(() {
+                                _type = 'turtle';
+                                _pointMode = true;
+                              });
+                              Navigator.pop(context);
+                            },
+                            child: Text('Turtle'),
+                          ),
+                        ),
+                        Expanded(
+                          flex: 1,
+                          child: FilledButton(
+                            style: FilledButton.styleFrom(
+                              backgroundColor: Colors.white,
+                              foregroundColor: Colors.black,
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(10.0),
+                              ),
+                            ),
+                            onPressed: () {
+                              setState(() {
+                                _type = 'duck';
+                                _pointMode = true;
+                              });
+                              Navigator.pop(context);
+                            },
+                            child: Text('Duck'),
+                          ),
+                        ),
+                        Flexible(flex: 1, child: SizedBox())
+                      ],
+                    ),
+                    SizedBox(height: 20),
+                    Text(
+                      'Other',
+                      style: TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.bold,
+                        color: Colors.white,
+                      ),
+                    ),
+                    Row(
+                      children: <Widget>[
+                        Flexible(
+                          flex: 3,
+                          child: TextField(
+                            onChanged: (otherText) {
+                              // TODO: use value
+                            },
+                            decoration: InputDecoration(
+                                filled: true,
+                                fillColor: Colors.white,
+                                border: OutlineInputBorder(),
+                                floatingLabelBehavior:
+                                    FloatingLabelBehavior.never,
+                                labelText: 'Enter animal name'),
+                          ),
+                        ),
+                        SizedBox(width: 10),
+                        Flexible(
+                          flex: 2,
+                          child: FilledButton(
+                            onPressed: () {},
+                            style: FilledButton.styleFrom(
+                              backgroundColor: Colors.white,
+                              foregroundColor: Colors.black,
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(2.0),
+                              ),
+                            ),
+                            child: Text('Submit other'),
+                          ),
+                        ),
+                        Flexible(flex: 1, child: SizedBox())
+                      ],
+                    ),
+                    SizedBox(height: 15),
+                    Align(
+                      alignment: Alignment.bottomRight,
+                      child: InkWell(
+                        child: const Padding(
+                          padding: EdgeInsets.only(right: 20, bottom: 0),
+                          child: Text(
+                            'Cancel',
+                            style: TextStyle(
+                                fontSize: 16,
+                                fontWeight: FontWeight.w500,
+                                color: Color(0xFFFFD700)),
+                          ),
+                        ),
+                        onTap: () {
+                          Navigator.pop(context);
+                        },
+                      ),
+                    ),
+                    SizedBox(height: 50),
+                  ],
+                ),
+              ),
+            ),
+          ),
+        );
+      },
+    );
+  }
+
   void _onMapCreated(GoogleMapController controller) {
     mapController = controller;
     _moveToCurrentLocation(); // Ensure the map is centered on the current location
@@ -276,480 +947,19 @@ class _NaturePrevalenceState extends State<NaturePrevalence> {
                       Row(
                         spacing: 10,
                         children: [
-                          EditButton(
-                            text: 'Body of Water',
-                            foregroundColor: Colors.black,
-                            backgroundColor: Colors.white,
-                            icon: Icon(
-                              Icons.water,
-                              color: Colors.black,
-                            ),
-                            onPressed: () {
-                              showModalBottomSheet<void>(
-                                sheetAnimationStyle: AnimationStyle(
-                                    reverseDuration:
-                                        Duration(milliseconds: 100)),
-                                context: context,
-                                isScrollControlled: true,
-                                useSafeArea: true,
-                                builder: (context) {
-                                  return SingleChildScrollView(
-                                    child: Padding(
-                                      padding:
-                                          MediaQuery.of(context).viewInsets,
-                                      child: Container(
-                                        // Container decoration- rounded corners and gradient
-                                        decoration: BoxDecoration(
-                                          gradient: defaultGrad,
-                                          borderRadius: const BorderRadius.only(
-                                            topLeft: Radius.circular(24.0),
-                                            topRight: Radius.circular(24.0),
-                                          ),
-                                        ),
-                                        child: Padding(
-                                          padding: const EdgeInsets.symmetric(
-                                              horizontal: 10.0),
-                                          child: Column(
-                                            crossAxisAlignment:
-                                                CrossAxisAlignment.start,
-                                            children: <Widget>[
-                                              const BarIndicator(),
-                                              Center(
-                                                child: Text(
-                                                  'Select the Body of Water',
-                                                  style: TextStyle(
-                                                    fontSize: 20,
-                                                    fontWeight: FontWeight.bold,
-                                                    color: Colors.yellow[600],
-                                                  ),
-                                                ),
-                                              ),
-                                              SizedBox(height: 5),
-                                              Center(
-                                                child: Text(
-                                                  'Then mark the boundaries on the map.',
-                                                  style: TextStyle(
-                                                    fontSize: 16,
-                                                    fontStyle: FontStyle.italic,
-                                                    color: Colors.grey[400],
-                                                  ),
-                                                ),
-                                              ),
-                                              SizedBox(height: 10),
-                                              Text(
-                                                'Body of Waster Type',
-                                                style: TextStyle(
-                                                  fontSize: 16,
-                                                  fontWeight: FontWeight.bold,
-                                                  color: Colors.white,
-                                                ),
-                                              ),
-                                              SizedBox(height: 5),
-                                              Row(
-                                                spacing: 20,
-                                                children: <Widget>[
-                                                  Expanded(
-                                                    flex: 1,
-                                                    child: FilledButton(
-                                                      style: FilledButton
-                                                          .styleFrom(
-                                                        backgroundColor:
-                                                            Colors.white,
-                                                        foregroundColor:
-                                                            Colors.black,
-                                                        shape:
-                                                            RoundedRectangleBorder(
-                                                          borderRadius:
-                                                              BorderRadius
-                                                                  .circular(
-                                                                      10.0),
-                                                        ),
-                                                      ),
-                                                      onPressed: () {
-                                                        _type = WaterBody
-                                                            .ocean.name;
-                                                        _polygonMode = true;
-                                                        Navigator.pop(context);
-                                                      },
-                                                      child: Text('Ocean'),
-                                                    ),
-                                                  ),
-                                                  Expanded(
-                                                    flex: 1,
-                                                    child: FilledButton(
-                                                      style: FilledButton
-                                                          .styleFrom(
-                                                        backgroundColor:
-                                                            Colors.white,
-                                                        foregroundColor:
-                                                            Colors.black,
-                                                        shape:
-                                                            RoundedRectangleBorder(
-                                                          borderRadius:
-                                                              BorderRadius
-                                                                  .circular(
-                                                                      10.0),
-                                                        ),
-                                                      ),
-                                                      onPressed: () {
-                                                        _type =
-                                                            WaterBody.lake.name;
-                                                        _polygonMode = true;
-                                                        Navigator.pop(context);
-                                                      },
-                                                      child: Text('Lake'),
-                                                    ),
-                                                  ),
-                                                  Expanded(
-                                                    flex: 1,
-                                                    child: FilledButton(
-                                                      style: FilledButton
-                                                          .styleFrom(
-                                                        backgroundColor:
-                                                            Colors.white,
-                                                        foregroundColor:
-                                                            Colors.black,
-                                                        shape:
-                                                            RoundedRectangleBorder(
-                                                          borderRadius:
-                                                              BorderRadius
-                                                                  .circular(
-                                                                      10.0),
-                                                        ),
-                                                      ),
-                                                      onPressed: () {
-                                                        _type = WaterBody
-                                                            .river.name;
-                                                        _polygonMode = true;
-                                                        Navigator.pop(context);
-                                                      },
-                                                      child: Text('River',
-                                                          textAlign:
-                                                              TextAlign.center),
-                                                    ),
-                                                  ),
-                                                ],
-                                              ),
-                                              SizedBox(height: 5),
-                                              Row(
-                                                spacing: 20,
-                                                children: <Widget>[
-                                                  Expanded(
-                                                    flex: 1,
-                                                    child: FilledButton(
-                                                      style: FilledButton
-                                                          .styleFrom(
-                                                        backgroundColor:
-                                                            Colors.white,
-                                                        foregroundColor:
-                                                            Colors.black,
-                                                        shape:
-                                                            RoundedRectangleBorder(
-                                                          borderRadius:
-                                                              BorderRadius
-                                                                  .circular(
-                                                                      10.0),
-                                                        ),
-                                                      ),
-                                                      onPressed: () {
-                                                        _type = WaterBody
-                                                            .swamp.name;
-                                                        _polygonMode = true;
-                                                        Navigator.pop(context);
-                                                      },
-                                                      child: Text('Swamp'),
-                                                    ),
-                                                  ),
-                                                  Flexible(
-                                                    flex: 1,
-                                                    child: SizedBox(),
-                                                  ),
-                                                  Flexible(
-                                                    flex: 1,
-                                                    child: SizedBox(),
-                                                  ),
-                                                ],
-                                              ),
-                                              SizedBox(height: 25),
-                                              Align(
-                                                alignment:
-                                                    Alignment.bottomRight,
-                                                child: InkWell(
-                                                  child: const Padding(
-                                                    padding: EdgeInsets.only(
-                                                        right: 20, bottom: 0),
-                                                    child: Text(
-                                                      'Cancel',
-                                                      style: TextStyle(
-                                                          fontSize: 16,
-                                                          fontWeight:
-                                                              FontWeight.w500,
-                                                          color: Color(
-                                                              0xFFFFD700)),
-                                                    ),
-                                                  ),
-                                                  onTap: () {
-                                                    Navigator.pop(context);
-                                                  },
-                                                ),
-                                              ),
-                                              SizedBox(height: 50),
-                                            ],
-                                          ),
-                                        ),
-                                      ),
-                                    ),
-                                  );
-                                },
-                              );
-                            },
-                          ),
-                          EditButton(
+                          buildTestButton(
+                              onPressed: (BuildContext context) {
+                                showModalWaterBody(context);
+                              },
+                              context: context,
+                              text: 'Body of Water',
+                              icon: Icon(Icons.water)),
+                          buildTestButton(
                             text: 'Vegetation',
-                            foregroundColor: Colors.black,
-                            backgroundColor: Colors.white,
                             icon: Icon(Icons.grass, color: Colors.black),
-                            onPressed: () {
-                              showModalBottomSheet<void>(
-                                sheetAnimationStyle: AnimationStyle(
-                                    reverseDuration:
-                                        Duration(milliseconds: 100)),
-                                context: context,
-                                isScrollControlled: true,
-                                useSafeArea: true,
-                                builder: (context) {
-                                  return SingleChildScrollView(
-                                    child: Padding(
-                                      padding:
-                                          MediaQuery.of(context).viewInsets,
-                                      child: Container(
-                                        // Container decoration- rounded corners and gradient
-                                        decoration: BoxDecoration(
-                                          gradient: defaultGrad,
-                                          borderRadius: const BorderRadius.only(
-                                            topLeft: Radius.circular(24.0),
-                                            topRight: Radius.circular(24.0),
-                                          ),
-                                        ),
-                                        child: Padding(
-                                          padding: const EdgeInsets.symmetric(
-                                              horizontal: 10.0),
-                                          child: Column(
-                                            crossAxisAlignment:
-                                                CrossAxisAlignment.start,
-                                            children: <Widget>[
-                                              const BarIndicator(),
-                                              Center(
-                                                child: Text(
-                                                  'Select the Type of the Vegetation',
-                                                  style: TextStyle(
-                                                    fontSize: 20,
-                                                    fontWeight: FontWeight.bold,
-                                                    color: Colors.yellow[600],
-                                                  ),
-                                                ),
-                                              ),
-                                              Center(
-                                                child: Text(
-                                                  'Then mark the boundaries on the map.',
-                                                  style: TextStyle(
-                                                    fontSize: 16,
-                                                    fontStyle: FontStyle.italic,
-                                                    color: Colors.grey[400],
-                                                  ),
-                                                ),
-                                              ),
-                                              SizedBox(height: 10),
-                                              Text(
-                                                'Vegetation Type',
-                                                style: TextStyle(
-                                                  fontSize: 16,
-                                                  fontWeight: FontWeight.bold,
-                                                  color: Colors.white,
-                                                ),
-                                              ),
-                                              SizedBox(height: 5),
-                                              Row(
-                                                spacing: 20,
-                                                children: <Widget>[
-                                                  Expanded(
-                                                    flex: 1,
-                                                    child: FilledButton(
-                                                      style: FilledButton
-                                                          .styleFrom(
-                                                        backgroundColor:
-                                                            Colors.white,
-                                                        foregroundColor:
-                                                            Colors.black,
-                                                        shape:
-                                                            RoundedRectangleBorder(
-                                                          borderRadius:
-                                                              BorderRadius
-                                                                  .circular(
-                                                                      10.0),
-                                                        ),
-                                                      ),
-                                                      onPressed: () {
-                                                        _type = Vegetation
-                                                            .canopy.name;
-                                                        _polygonMode = true;
-                                                        Navigator.pop(context);
-                                                      },
-                                                      child: Text('Canopy'),
-                                                    ),
-                                                  ),
-                                                  Expanded(
-                                                    flex: 1,
-                                                    child: FilledButton(
-                                                      style: FilledButton
-                                                          .styleFrom(
-                                                        backgroundColor:
-                                                            Colors.white,
-                                                        foregroundColor:
-                                                            Colors.black,
-                                                        shape:
-                                                            RoundedRectangleBorder(
-                                                          borderRadius:
-                                                              BorderRadius
-                                                                  .circular(
-                                                                      10.0),
-                                                        ),
-                                                      ),
-                                                      onPressed: () {
-                                                        _type = Vegetation
-                                                            .trees.name;
-                                                        _polygonMode = true;
-                                                        Navigator.pop(context);
-                                                      },
-                                                      child: Text('Trees'),
-                                                    ),
-                                                  ),
-                                                  Expanded(
-                                                    flex: 1,
-                                                    child: FilledButton(
-                                                      style: FilledButton
-                                                          .styleFrom(
-                                                        backgroundColor:
-                                                            Colors.white,
-                                                        foregroundColor:
-                                                            Colors.black,
-                                                        shape:
-                                                            RoundedRectangleBorder(
-                                                          borderRadius:
-                                                              BorderRadius
-                                                                  .circular(
-                                                                      10.0),
-                                                        ),
-                                                      ),
-                                                      onPressed: () {
-                                                        _type = Vegetation
-                                                            .umbrellaDining
-                                                            .name;
-                                                        _polygonMode = true;
-                                                        Navigator.pop(context);
-                                                      },
-                                                      child: Text(
-                                                          'Umbrella Dining',
-                                                          textAlign:
-                                                              TextAlign.center),
-                                                    ),
-                                                  ),
-                                                ],
-                                              ),
-                                              Row(
-                                                spacing: 20,
-                                                children: <Widget>[
-                                                  Expanded(
-                                                    flex: 1,
-                                                    child: FilledButton(
-                                                      style: FilledButton
-                                                          .styleFrom(
-                                                        backgroundColor:
-                                                            Colors.white,
-                                                        foregroundColor:
-                                                            Colors.black,
-                                                        shape:
-                                                            RoundedRectangleBorder(
-                                                          borderRadius:
-                                                              BorderRadius
-                                                                  .circular(
-                                                                      10.0),
-                                                        ),
-                                                      ),
-                                                      onPressed: () {
-                                                        _type = Vegetation
-                                                            .temporary.name;
-                                                        _polygonMode = true;
-                                                        Navigator.pop(context);
-                                                      },
-                                                      child: Text('Temporary'),
-                                                    ),
-                                                  ),
-                                                  Expanded(
-                                                    flex: 1,
-                                                    child: FilledButton(
-                                                      style: FilledButton
-                                                          .styleFrom(
-                                                        backgroundColor:
-                                                            Colors.white,
-                                                        foregroundColor:
-                                                            Colors.black,
-                                                        shape:
-                                                            RoundedRectangleBorder(
-                                                          borderRadius:
-                                                              BorderRadius
-                                                                  .circular(
-                                                                      10.0),
-                                                        ),
-                                                      ),
-                                                      onPressed: () {
-                                                        _type = Vegetation
-                                                            .constructedCeiling
-                                                            .name;
-                                                        _polygonMode = true;
-                                                        Navigator.pop(context);
-                                                      },
-                                                      child: Text(
-                                                          'Constructed Ceiling'),
-                                                    ),
-                                                  ),
-                                                  Flexible(
-                                                      flex: 1,
-                                                      child: SizedBox())
-                                                ],
-                                              ),
-                                              SizedBox(height: 25),
-                                              Align(
-                                                alignment:
-                                                    Alignment.bottomRight,
-                                                child: InkWell(
-                                                  child: const Padding(
-                                                    padding: EdgeInsets.only(
-                                                        right: 20, bottom: 0),
-                                                    child: Text(
-                                                      'Cancel',
-                                                      style: TextStyle(
-                                                          fontSize: 16,
-                                                          fontWeight:
-                                                              FontWeight.w500,
-                                                          color: Color(
-                                                              0xFFFFD700)),
-                                                    ),
-                                                  ),
-                                                  onTap: () {
-                                                    Navigator.pop(context);
-                                                  },
-                                                ),
-                                              ),
-                                              SizedBox(height: 50),
-                                            ],
-                                          ),
-                                        ),
-                                      ),
-                                    ),
-                                  );
-                                },
-                              );
+                            context: context,
+                            onPressed: (BuildContext context) {
+                              showModalVegetation(context);
                             },
                           ),
                           _polygonMode
@@ -763,7 +973,9 @@ class _NaturePrevalenceState extends State<NaturePrevalence> {
                                         color: Colors.black),
                                     onPressed: () async {
                                       _finalizePolygon();
-                                      _polygonMode = false;
+                                      setState(() {
+                                        _polygonMode = false;
+                                      });
                                       // if (_polygon.isNotEmpty) {
                                       //   await saveProject(
                                       //     projectTitle: widget.partialProjectData.title,
@@ -816,355 +1028,12 @@ class _NaturePrevalenceState extends State<NaturePrevalence> {
                         mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         spacing: 10,
                         children: [
-                          EditButton(
+                          buildTestButton(
                             text: 'Animal',
-                            foregroundColor: Colors.black,
-                            backgroundColor: Colors.white,
                             icon: Icon(Icons.pets, color: Colors.black),
-                            onPressed: () {
-                              showModalBottomSheet<void>(
-                                sheetAnimationStyle: AnimationStyle(
-                                    reverseDuration:
-                                        Duration(milliseconds: 100)),
-                                context: context,
-                                isScrollControlled: true,
-                                useSafeArea: true,
-                                builder: (context) {
-                                  return SingleChildScrollView(
-                                    child: Padding(
-                                      padding:
-                                          MediaQuery.of(context).viewInsets,
-                                      child: Container(
-                                        // Container decoration- rounded corners and gradient
-                                        decoration: BoxDecoration(
-                                          gradient: defaultGrad,
-                                          borderRadius: const BorderRadius.only(
-                                            topLeft: Radius.circular(24.0),
-                                            topRight: Radius.circular(24.0),
-                                          ),
-                                        ),
-                                        child: Padding(
-                                          padding: const EdgeInsets.symmetric(
-                                              horizontal: 10.0),
-                                          child: Column(
-                                            spacing: 5,
-                                            crossAxisAlignment:
-                                                CrossAxisAlignment.start,
-                                            children: <Widget>[
-                                              const BarIndicator(),
-                                              Center(
-                                                child: Text(
-                                                  'What Animal Do You See?',
-                                                  style: TextStyle(
-                                                    fontSize: 20,
-                                                    fontWeight: FontWeight.bold,
-                                                    color: Colors.yellow[600],
-                                                  ),
-                                                ),
-                                              ),
-                                              Text(
-                                                'Domesticated',
-                                                style: TextStyle(
-                                                  fontSize: 16,
-                                                  fontWeight: FontWeight.bold,
-                                                  color: Colors.white,
-                                                ),
-                                              ),
-                                              Row(
-                                                spacing: 20,
-                                                children: <Widget>[
-                                                  Expanded(
-                                                    flex: 1,
-                                                    child: FilledButton(
-                                                      style: FilledButton
-                                                          .styleFrom(
-                                                        backgroundColor:
-                                                            Colors.white,
-                                                        foregroundColor:
-                                                            Colors.black,
-                                                        shape:
-                                                            RoundedRectangleBorder(
-                                                          borderRadius:
-                                                              BorderRadius
-                                                                  .circular(
-                                                                      10.0),
-                                                        ),
-                                                      ),
-                                                      onPressed: () {
-                                                        _type = 'cat';
-                                                        _pointMode = true;
-                                                        Navigator.pop(context);
-                                                      },
-                                                      child: Text('Cat'),
-                                                    ),
-                                                  ),
-                                                  Expanded(
-                                                    flex: 1,
-                                                    child: FilledButton(
-                                                      style: FilledButton
-                                                          .styleFrom(
-                                                        backgroundColor:
-                                                            Colors.white,
-                                                        foregroundColor:
-                                                            Colors.black,
-                                                        shape:
-                                                            RoundedRectangleBorder(
-                                                          borderRadius:
-                                                              BorderRadius
-                                                                  .circular(
-                                                                      10.0),
-                                                        ),
-                                                      ),
-                                                      child: Text('Dog'),
-                                                      onPressed: () {
-                                                        _type = 'dog';
-                                                        _pointMode = true;
-                                                        Navigator.pop(context);
-                                                      },
-                                                    ),
-                                                  ),
-                                                  Flexible(
-                                                      flex: 1,
-                                                      child: SizedBox()),
-                                                ],
-                                              ),
-                                              SizedBox(height: 20),
-                                              Text(
-                                                'Wild',
-                                                style: TextStyle(
-                                                  fontSize: 16,
-                                                  fontWeight: FontWeight.bold,
-                                                  color: Colors.white,
-                                                ),
-                                              ),
-                                              Row(
-                                                spacing: 20,
-                                                children: <Widget>[
-                                                  Expanded(
-                                                    flex: 1,
-                                                    child: FilledButton(
-                                                      style: FilledButton
-                                                          .styleFrom(
-                                                        backgroundColor:
-                                                            Colors.white,
-                                                        foregroundColor:
-                                                            Colors.black,
-                                                        shape:
-                                                            RoundedRectangleBorder(
-                                                          borderRadius:
-                                                              BorderRadius
-                                                                  .circular(
-                                                                      10.0),
-                                                        ),
-                                                      ),
-                                                      onPressed: () {
-                                                        _type = 'squirrel';
-                                                        _pointMode = true;
-                                                        Navigator.pop(context);
-                                                      },
-                                                      child: Text('Squirrel'),
-                                                    ),
-                                                  ),
-                                                  Expanded(
-                                                    flex: 1,
-                                                    child: FilledButton(
-                                                      style: FilledButton
-                                                          .styleFrom(
-                                                        backgroundColor:
-                                                            Colors.white,
-                                                        foregroundColor:
-                                                            Colors.black,
-                                                        shape:
-                                                            RoundedRectangleBorder(
-                                                          borderRadius:
-                                                              BorderRadius
-                                                                  .circular(
-                                                                      10.0),
-                                                        ),
-                                                      ),
-                                                      onPressed: () {
-                                                        _type = 'bird';
-                                                        _pointMode = true;
-                                                        Navigator.pop(context);
-                                                      },
-                                                      child: Text('Bird'),
-                                                    ),
-                                                  ),
-                                                  Expanded(
-                                                    flex: 1,
-                                                    child: FilledButton(
-                                                      style: FilledButton
-                                                          .styleFrom(
-                                                        backgroundColor:
-                                                            Colors.white,
-                                                        foregroundColor:
-                                                            Colors.black,
-                                                        shape:
-                                                            RoundedRectangleBorder(
-                                                          borderRadius:
-                                                              BorderRadius
-                                                                  .circular(
-                                                                      10.0),
-                                                        ),
-                                                      ),
-                                                      onPressed: () {
-                                                        _type = 'rabbit';
-                                                        _pointMode = true;
-                                                        Navigator.pop(context);
-                                                      },
-                                                      child: Text('Rabbit'),
-                                                    ),
-                                                  ),
-                                                ],
-                                              ),
-                                              Row(
-                                                spacing: 20,
-                                                children: <Widget>[
-                                                  Expanded(
-                                                    flex: 1,
-                                                    child: FilledButton(
-                                                      style: FilledButton
-                                                          .styleFrom(
-                                                        backgroundColor:
-                                                            Colors.white,
-                                                        foregroundColor:
-                                                            Colors.black,
-                                                        shape:
-                                                            RoundedRectangleBorder(
-                                                          borderRadius:
-                                                              BorderRadius
-                                                                  .circular(
-                                                                      10.0),
-                                                        ),
-                                                      ),
-                                                      onPressed: () {
-                                                        _type = 'turtle';
-                                                        _pointMode = true;
-                                                        Navigator.pop(context);
-                                                      },
-                                                      child: Text('Turtle'),
-                                                    ),
-                                                  ),
-                                                  Expanded(
-                                                    flex: 1,
-                                                    child: FilledButton(
-                                                      style: FilledButton
-                                                          .styleFrom(
-                                                        backgroundColor:
-                                                            Colors.white,
-                                                        foregroundColor:
-                                                            Colors.black,
-                                                        shape:
-                                                            RoundedRectangleBorder(
-                                                          borderRadius:
-                                                              BorderRadius
-                                                                  .circular(
-                                                                      10.0),
-                                                        ),
-                                                      ),
-                                                      onPressed: () {
-                                                        _type = 'duck';
-                                                        _pointMode = true;
-                                                        Navigator.pop(context);
-                                                      },
-                                                      child: Text('Duck'),
-                                                    ),
-                                                  ),
-                                                  Flexible(
-                                                      flex: 1,
-                                                      child: SizedBox())
-                                                ],
-                                              ),
-                                              SizedBox(height: 20),
-                                              Text(
-                                                'Other',
-                                                style: TextStyle(
-                                                  fontSize: 16,
-                                                  fontWeight: FontWeight.bold,
-                                                  color: Colors.white,
-                                                ),
-                                              ),
-                                              Row(
-                                                children: <Widget>[
-                                                  Flexible(
-                                                    flex: 3,
-                                                    child: TextField(
-                                                      onChanged: (otherText) {
-                                                        // TODO: use value
-                                                      },
-                                                      decoration: InputDecoration(
-                                                          filled: true,
-                                                          fillColor:
-                                                              Colors.white,
-                                                          border:
-                                                              OutlineInputBorder(),
-                                                          floatingLabelBehavior:
-                                                              FloatingLabelBehavior
-                                                                  .never,
-                                                          labelText:
-                                                              'Enter animal name'),
-                                                    ),
-                                                  ),
-                                                  SizedBox(width: 10),
-                                                  Flexible(
-                                                    flex: 2,
-                                                    child: FilledButton(
-                                                      onPressed: () {},
-                                                      style: FilledButton
-                                                          .styleFrom(
-                                                        backgroundColor:
-                                                            Colors.white,
-                                                        foregroundColor:
-                                                            Colors.black,
-                                                        shape:
-                                                            RoundedRectangleBorder(
-                                                          borderRadius:
-                                                              BorderRadius
-                                                                  .circular(
-                                                                      2.0),
-                                                        ),
-                                                      ),
-                                                      child:
-                                                          Text('Submit other'),
-                                                    ),
-                                                  ),
-                                                  Flexible(
-                                                      flex: 1,
-                                                      child: SizedBox())
-                                                ],
-                                              ),
-                                              SizedBox(height: 15),
-                                              Align(
-                                                alignment:
-                                                    Alignment.bottomRight,
-                                                child: InkWell(
-                                                  child: const Padding(
-                                                    padding: EdgeInsets.only(
-                                                        right: 20, bottom: 0),
-                                                    child: Text(
-                                                      'Cancel',
-                                                      style: TextStyle(
-                                                          fontSize: 16,
-                                                          fontWeight:
-                                                              FontWeight.w500,
-                                                          color: Color(
-                                                              0xFFFFD700)),
-                                                    ),
-                                                  ),
-                                                  onTap: () {
-                                                    Navigator.pop(context);
-                                                  },
-                                                ),
-                                              ),
-                                              SizedBox(height: 50),
-                                            ],
-                                          ),
-                                        ),
-                                      ),
-                                    ),
-                                  );
-                                },
-                              );
+                            context: context,
+                            onPressed: (BuildContext context) {
+                              showModalAnimal(context);
                             },
                           ),
                           Align(
@@ -1208,6 +1077,29 @@ class _NaturePrevalenceState extends State<NaturePrevalence> {
                 ),
               ),
       ),
+    );
+  }
+
+  FilledButton buildTestButton(
+      {required BuildContext context,
+      required String text,
+      required Function(BuildContext) onPressed,
+      required Icon icon}) {
+    return FilledButton.icon(
+      style: FilledButton.styleFrom(
+        padding: const EdgeInsets.only(left: 15, right: 15),
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(10.0),
+        ),
+        foregroundColor: Colors.black,
+        backgroundColor: Colors.white,
+        iconColor: Colors.black,
+        disabledBackgroundColor: Color(0xCD6C6C6C),
+      ),
+      onPressed: (_pointMode || _polygonMode) ? null : () => onPressed(context),
+      label: Text(text),
+      icon: icon,
+      iconAlignment: IconAlignment.end,
     );
   }
 }
