@@ -92,17 +92,16 @@ class Project {
   Project.partialProject({required this.title, required this.description});
 }
 
-/// Abstract superclass for all tests to be extended by each specific
-/// test class.
+/// Parent class extended by every specific test class.
 ///
 /// Each specific test will most likely have a different format for data
 /// which needs to be specified around the implementation and used in place
-/// of generic type [A].
+/// of generic type `A` in each implementation.
 abstract class Test<A> {
   Timestamp? creationTime;
   String title = '';
   String testID = '';
-  Timestamp? scheduledTime;
+  Timestamp scheduledTime;
   DocumentReference? projectRef;
   int maxResearchers = 0;
 
@@ -111,34 +110,29 @@ abstract class Test<A> {
   ///
   /// Initial framework for storing data for each test should be defined in
   /// each implementation as the value returned from
-  /// [_getInitialDataStructure()].
-  /// This is then used to initialize data when it is not given, as this
-  /// indicates creation of a new test as opposed to retrieval of an
-  /// existing test.
+  /// `getInitialDataStructure()`, as this is used for initializing `data`
+  /// when it is not defined in the constructor.
   late A data;
 
   /// The collection ID used in Firestore for this specific test.
   ///
   /// Each implementation should initialize this at some point during
-  /// construction, as well as duplicated to a static member ideally.
+  /// construction, typically from a `static const String` in the
+  /// implementation with this value hard-coded.
   late final String collectionID;
 
-  /// Creates a new test instance. Private constructor as it is only intended
-  /// to be called from subclass constructors. Each subclass internally
-  /// provides argument for initialDataStructure.
+  /// Creates a new test instance from scratch.
   ///
-  /// When creating a new test to be stored in the DB for the first time,
-  /// include only the required parameters. [creationTime] and [data]
-  /// are automatically initialized correctly for a new test when not given.
+  /// Used when creating a brand new test
+  /// which then needs to be inserted in Firestore.
+  ///
+  /// `creationTime` and `data` are automatically initialized
+  /// correctly for a new test when not specified.
+  ///
   /// This usage is primarily intended for when an admin
-  /// is creating a new test and manually specified all relevant parameters.
-  ///
-  /// When retrieving an existing test from the DB, include arguments for every
-  /// parameter. This should be trivial once the proper document has been
-  /// retrieved.
-  /// This usage is primarily intended for adding data from surveyor completing
-  /// the test.
-  Test({
+  /// is creating a new test and has manually specified all required
+  /// parameters.
+  Test.createNew({
     required this.title,
     required this.testID,
     required this.scheduledTime,
@@ -149,36 +143,56 @@ abstract class Test<A> {
   }) {
     this.creationTime ??= Timestamp.now();
     this.data = data ?? getInitialDataStructure();
+    this.collectionID = getCollectionID();
   }
 
-  /// Creates a new test instance from existing info from Firestore
-  /// in the required [DocumentSnapshot].
-  Test.makeFromDoc(DocumentSnapshot<Map<String, dynamic>> testDoc)
-      : this(
-          title: testDoc['title'],
-          testID: testDoc['id'],
-          scheduledTime: testDoc['scheduledTime'],
-          projectRef: testDoc['project'],
-          maxResearchers: testDoc['maxResearchers'],
-          creationTime: testDoc['creationTime'],
-        );
+  /// Recreates a test instance based on the given `DocumentSnapshot`.
+  ///
+  /// This is intended to be used when surveyor chooses to complete a test.
+  /// Once user has selected the option to complete test, the
+  /// `DocumentSnapshot` is retrieved with `getTestInfo` from
+  /// `firestore_functions.dart`. Then this constructor is used to create
+  /// a test instance which is passed to `LightingProfileTestPage` when
+  /// navigating there.
+  Test.recreateFromDoc(DocumentSnapshot<Map<String, dynamic>> testDoc)
+      : title = testDoc['title'],
+        testID = testDoc['id'],
+        scheduledTime = testDoc['scheduledTime'],
+        projectRef = testDoc['project'],
+        maxResearchers = testDoc['maxResearchers'],
+        creationTime = testDoc['creationTime'] {
+    data = convertDataFromDoc(testDoc['data']);
+    collectionID = getCollectionID();
+  }
 
-  /// Returns the initial state for [data] specific to each test
-  /// implementation.
+  /// Returns the initial state for `data`.
   ///
-  /// Used in the constructor to define [data] when no value is provided.
+  /// Used to initialize `data` when no value is provided.
   ///
-  /// This must be setup in each implementation and likely will just
-  /// return a static constant value hard-coded for each test.
+  /// This must be defined in each implementation and likely will just
+  /// return a static constant value hard-coded for each test in real
+  /// implementations.
   A getInitialDataStructure();
+
+  /// Returns the value for `collectionID`.
+  ///
+  /// Used to initialize collectionID, which is constant for each
+  /// specific test type but needs to be defined statically in every
+  /// implementation.
+  String getCollectionID() {
+    return '';
+  }
+
+  /// Returns value for `data` field after converting from type used in
+  /// Firestore document.
+  ///
+  /// This will need to be different for each test and likely will just
+  /// call a static method in the implementing class which contains the real
+  /// functionality.
+  A convertDataFromDoc(dynamic data);
 
   /// Used on completion of a test and passed all data collected throughout
   /// the duration of the test. Updates this test instance in Firestore with
   /// this new data.
   void submitData(A data);
-
-  Future<T?> getTestInfo<T extends Test>(
-      String testID, String collectionID, Type testType) async {
-    return null;
-  }
 }

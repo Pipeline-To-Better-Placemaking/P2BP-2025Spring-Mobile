@@ -1,23 +1,25 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:p2bp_2025spring_mobile/firestore_functions.dart';
-
 import 'db_schema_classes.dart';
 
 /// Types of light for lighting profile test.
 enum LightType { rhythmic, building, task }
 
-/// Convenience alias for [LightingProfileTest] [data] format used locally
-/// (in Flutter/Dart).
+// Author's note: I hate the names I used for both of these typedefs but I've
+// already changed it/them so many times and I still cannot think of a better
+// or shorter naming scheme for them so it is what it is.
+/// Convenience alias for `LightingProfileTest` format used for `data`
+/// locally (in Flutter/Dart).
 typedef LightToLatLngMap = Map<LightType, Set<LatLng>>;
 
-/// Convenience alias for [LightingProfileTest] [data] format when
+/// Convenience alias for `LightingProfileTest` format used for `data`
 /// retrieved from Firestore.
 typedef LightToGeoPointMap = Map<String, List<GeoPoint>>;
 
-/// Class for lighting profile test.
+/// Class for lighting profile test info and methods.
 class LightingProfileTest extends Test<LightToLatLngMap> {
-  /// Hard-coded definition of basic structure for [data]
+  /// Hard-coded definition of basic structure for `data`
   /// used for initialization of new lighting tests.
   static const LightToLatLngMap initialDataStructure = {
     LightType.rhythmic: {},
@@ -28,7 +30,7 @@ class LightingProfileTest extends Test<LightToLatLngMap> {
   /// Static constant definition of collection ID for this test type.
   static const String collectionIDStatic = 'lighting_profile_test';
 
-  LightingProfileTest({
+  LightingProfileTest.createNew({
     required super.title,
     required super.testID,
     required super.scheduledTime,
@@ -36,25 +38,25 @@ class LightingProfileTest extends Test<LightToLatLngMap> {
     required super.maxResearchers,
     super.creationTime,
     super.data,
-  }) {
-    super.collectionID = collectionIDStatic;
-  }
+  }) : super.createNew();
 
-  LightingProfileTest.makeFromDoc(
-    DocumentSnapshot<Map<String, dynamic>> testDoc,
-  ) : this(
-          title: testDoc['title'],
-          testID: testDoc['id'],
-          scheduledTime: testDoc['scheduledTime'],
-          projectRef: testDoc['project'],
-          maxResearchers: testDoc['maxResearchers'],
-          creationTime: testDoc['creationTime'],
-          data: LightingProfileTest.convertDataFromFirestore(testDoc['data']),
-        );
+  LightingProfileTest.recreateFromDoc(
+      DocumentSnapshot<Map<String, dynamic>> testDoc)
+      : super.recreateFromDoc(testDoc);
 
   @override
   LightToLatLngMap getInitialDataStructure() {
     return initialDataStructure;
+  }
+
+  @override
+  String getCollectionID() {
+    return collectionIDStatic;
+  }
+
+  @override
+  LightToLatLngMap convertDataFromDoc(dynamic data) {
+    return convertDataFromFirestore(data);
   }
 
   @override

@@ -25,8 +25,7 @@ class _LightingProfileTestPageState extends State<LightingProfileTestPage> {
   LatLng _currentPosition = defaultLocation;
   MapType _currentMapType = MapType.satellite; // Default map type
   Set<Marker> _markers = {}; // Set of markers visible on map
-  Set<LatLng> _currentPoints = {}; // Point(s) for current selection, max 1
-  LightToLatLngMap _confirmedPoints = {
+  LightToLatLngMap _allPointsMap = {
     LightType.rhythmic: {},
     LightType.building: {},
     LightType.task: {},
@@ -37,7 +36,6 @@ class _LightingProfileTestPageState extends State<LightingProfileTestPage> {
   @override
   void initState() {
     super.initState();
-
     _checkAndFetchLocation();
   }
 
@@ -66,18 +64,17 @@ class _LightingProfileTestPageState extends State<LightingProfileTestPage> {
     }
   }
 
+  /// Adds a `Marker` to the map and stores that same point in
+  /// `_allPointsMap` to be submitted as test data later.
+  ///
+  /// This also resets the fields for selecting type so another can be
+  /// selected after this point is placed.
   void _togglePoint(LatLng point) {
-    // Makes sure there is no more than 1 point marked at any time
-    if (_currentPoints.isNotEmpty) {
-      setState(() {
-        _currentPoints = {};
-        _markers = {};
-      });
-    }
-
+    _allPointsMap[_selectedType]?.add(point);
     final markerId = MarkerId(point.toString());
-    _currentPoints.add(point);
+
     setState(() {
+      // Create marker
       _markers.add(
         Marker(
           markerId: markerId,
@@ -85,18 +82,34 @@ class _LightingProfileTestPageState extends State<LightingProfileTestPage> {
           consumeTapEvents: true,
           onTap: () {
             // If the marker is tapped again, it will be removed
+            _allPointsMap.updateAll((key, value) {
+              value.remove(point);
+              return value;
+            });
             setState(() {
               _markers.removeWhere((marker) => marker.markerId == markerId);
-              _currentPoints.remove(point);
             });
           },
         ),
       );
+
+      // Reset selected light type
+      _setLightType(null);
     });
-    print(_currentPoints);
+
+    print(_allPointsMap); // debug
   }
 
-  // Toggles map type between satellite and normal
+  /// Sets [_selectedType] to parameter `type` and [_isTypeSelected] to
+  /// true if [type] is non-null and false otherwise.
+  void _setLightType(LightType? type) {
+    setState(() {
+      _selectedType = type;
+      _isTypeSelected = _selectedType != null;
+    });
+  }
+
+  /// Toggles map type between satellite and normal
   void _toggleMapType() {
     setState(() {
       _currentMapType = (_currentMapType == MapType.normal
@@ -105,7 +118,7 @@ class _LightingProfileTestPageState extends State<LightingProfileTestPage> {
     });
   }
 
-  // Sets button style on each build based on width of context
+  /// Sets button style on each build based on width of context
   void _setButtonStyle() {
     _typeButtonStyle = FilledButton.styleFrom(
       backgroundColor: Colors.blue,
@@ -116,37 +129,6 @@ class _LightingProfileTestPageState extends State<LightingProfileTestPage> {
       fixedSize: Size.fromWidth(MediaQuery.of(context).size.width * .3),
     );
   }
-
-  void _selectType(LightType type) {
-    setState(() {
-      _selectedType = type;
-      _isTypeSelected = true;
-    });
-  }
-
-  /// Locks in placed point(s), saving them with all other confirmed points
-  /// to be submitted once test is complete.
-  void _confirmPoints() {
-    if (_isTypeSelected &&
-        _selectedType != null &&
-        _currentPoints.isNotEmpty) {}
-  }
-
-  /// Cancels placement of point(s), removing any points and markers in
-  /// [_currentPoints] and [_markers]
-  void _cancelPoints() {
-    setState(() {
-      _currentPoints = {};
-      _markers = {};
-    });
-  }
-
-  // saving results in DB:
-  // document has misc fields like date completed and maybe user id
-  // data saved in array 'results' or just 'data'
-  // has a sub-array for each light type: rhythmic, building, task
-  // each of those is a list of points (individual maps with lat and lng or
-  // some better data type)
 
   @override
   Widget build(BuildContext context) {
@@ -160,9 +142,7 @@ class _LightingProfileTestPageState extends State<LightingProfileTestPage> {
                   Text(
                     !_isTypeSelected
                         ? 'Select a type of light.'
-                        : _currentPoints.isEmpty
-                            ? 'Drop a pin where the light is.'
-                            : 'Confirm or cancel your selection.',
+                        : 'Drop a pin where the light is.',
                     style: TextStyle(fontSize: 24),
                   ),
                   Center(
@@ -215,35 +195,20 @@ class _LightingProfileTestPageState extends State<LightingProfileTestPage> {
                                 FilledButton(
                                   style: _typeButtonStyle,
                                   onPressed: () =>
-                                      _selectType(LightType.rhythmic),
+                                      _setLightType(LightType.rhythmic),
                                   child: Text('Rhythmic'),
                                 ),
                                 FilledButton(
                                   style: _typeButtonStyle,
                                   onPressed: () =>
-                                      _selectType(LightType.building),
+                                      _setLightType(LightType.building),
                                   child: Text('Building'),
                                 ),
                                 FilledButton(
                                   style: _typeButtonStyle,
-                                  onPressed: () => _selectType(LightType.task),
+                                  onPressed: () =>
+                                      _setLightType(LightType.task),
                                   child: Text('Task'),
-                                ),
-                              ],
-                            ),
-                          if (_currentPoints.isNotEmpty)
-                            Row(
-                              mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                              children: <Widget>[
-                                FilledButton(
-                                  style: _typeButtonStyle,
-                                  onPressed: _confirmPoints,
-                                  child: Text('Confirm'),
-                                ),
-                                FilledButton(
-                                  style: _typeButtonStyle,
-                                  onPressed: _cancelPoints,
-                                  child: Text('Cancel'),
                                 ),
                               ],
                             ),
