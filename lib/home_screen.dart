@@ -42,6 +42,7 @@ class _HomeScreenState extends State<HomeScreen> {
   void initState() {
     super.initState();
     _getUserFirstName();
+    _populateProjects();
   }
 
   Future<void> _populateProjects() async {
@@ -255,7 +256,13 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   Widget _buildHomeContent() {
-    _populateProjects();
+    if (_isLoading) {
+      return const Center(child: CircularProgressIndicator());
+    }
+    if (teamRef == null) {
+      // No selected team; show a placeholder or message once
+      return const Center(child: Text("No team selected."));
+    }
     return RefreshIndicator(
       onRefresh: () async {
         await _populateProjects();

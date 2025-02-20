@@ -1,11 +1,17 @@
-import 'dart:io';
-
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
-import 'package:image_picker/image_picker.dart';
-import 'package:p2bp_2025spring_mobile/newscreen.dart';
+import 'package:p2bp_2025spring_mobile/project_map_creation.dart';
+import 'package:p2bp_2025spring_mobile/teams_and_invites_page.dart';
+import 'firestore_functions.dart';
+import 'home_screen.dart';
 import 'widgets.dart';
 import 'theme.dart';
+import 'package:p2bp_2025spring_mobile/db_schema_classes.dart';
+import 'package:image_picker/image_picker.dart';
+import 'package:p2bp_2025spring_mobile/newscreen.dart';
 import 'search_location_screen.dart';
+import 'dart:io';
 
 class CreateProjectAndTeamsPage extends StatefulWidget {
   const CreateProjectAndTeamsPage({super.key});
@@ -14,6 +20,9 @@ class CreateProjectAndTeamsPage extends StatefulWidget {
   State<CreateProjectAndTeamsPage> createState() =>
       _CreateProjectAndTeamsPageState();
 }
+
+final FirebaseFirestore _firestore = FirebaseFirestore.instance;
+User? loggedInUser = FirebaseAuth.instance.currentUser;
 
 class _CreateProjectAndTeamsPageState extends State<CreateProjectAndTeamsPage> {
   // Track the currently selected tab
@@ -58,303 +67,413 @@ class _CreateProjectAndTeamsPageState extends State<CreateProjectAndTeamsPage> {
 class CreateProjectWidget extends StatelessWidget {
   CreateProjectWidget({super.key});
 
-  @override
-  Widget build(BuildContext context) {
-    return Stack(children: [
-      // Gray-blue background
-      Container(
-        decoration: BoxDecoration(color: Color(0xFFDDE6F2)),
-      ),
-
-      // Content
-      SafeArea(
-        child: Padding(
-          padding: EdgeInsets.only(top: 10),
-          child: Column(
-            children: [
-              Container(
-                // width: 400,
-                // height: 500,
-                margin: EdgeInsets.symmetric(horizontal: 16.0),
-                decoration: BoxDecoration(
-                  color: Color(0xFFDDE6F2),
-                  borderRadius: BorderRadius.all(Radius.circular(10)),
-                  boxShadow: [
-                    BoxShadow(
-                      color: Colors.black.withValues(alpha: 0.1),
-                      blurRadius: 6,
-                      offset: Offset(0, 2),
-                    ),
-                  ],
-                ),
-                child: Padding(
-                  padding:
-                      const EdgeInsets.symmetric(horizontal: 20, vertical: 40),
-                  child: Column(
-                    children: <Widget>[
-                      Align(
-                        alignment: Alignment.centerLeft,
-                        child: Text(
-                          'Cover Photo',
-                          textAlign: TextAlign.left,
-                          style: TextStyle(
-                            fontWeight: FontWeight.bold,
-                            fontSize: 16.0,
-                            color: Color(0xFF2F6DCF),
-                          ),
-                        ),
-                      ),
-                      const SizedBox(height: 5),
-                      PhotoUpload(
-                        width: 380,
-                        height: 125,
-                        backgroundColor: Colors.grey,
-                        icon: Icons.add_photo_alternate,
-                        circular: false,
-                        onTap: () async {
-                          print('Test');
-                          final XFile? pickedFile = await ImagePicker()
-                              .pickImage(source: ImageSource.gallery);
-                          if (pickedFile != null) {
-                            final File imageFile = File(pickedFile.path);
-                            // Now you have the image file, and you can submit or process it.
-                            print("Image selected: ${imageFile.path}");
-                          } else {
-                            print("No image selected.");
-                          }
-                        },
-                      ),
-                      const SizedBox(height: 15.0),
-                      Align(
-                        alignment: Alignment.centerLeft,
-                        child: Text(
-                          'Project Name',
-                          textAlign: TextAlign.left,
-                          style: TextStyle(
-                            fontWeight: FontWeight.bold,
-                            fontSize: 16.0,
-                            color: Color(0xFF2F6DCF),
-                          ),
-                        ),
-                      ),
-                      const SizedBox(height: 5),
-                      const CreationTextBox(
-                        maxLength: 60,
-                        labelText: 'Project Name',
-                        maxLines: 1,
-                        minLines: 1,
-                      ),
-                      const SizedBox(height: 10.0),
-                      Align(
-                        alignment: Alignment.centerLeft,
-                        child: Text(
-                          'Project Description',
-                          textAlign: TextAlign.left,
-                          style: TextStyle(
-                            fontWeight: FontWeight.bold,
-                            fontSize: 16.0,
-                            color: Color(0xFF2F6DCF),
-                          ),
-                        ),
-                      ),
-                      const SizedBox(height: 5),
-                      const CreationTextBox(
-                        maxLength: 240,
-                        labelText: 'Project Description',
-                        maxLines: 3,
-                        minLines: 3,
-                      ),
-                      const SizedBox(height: 10.0),
-                      Align(
-                        alignment: Alignment.bottomRight,
-                        child: EditButton(
-                          text: 'Next',
-                          foregroundColor: Colors.white,
-                          backgroundColor: const Color(0xFF2F6DCF),
-                          icon: const Icon(Icons.chevron_right),
-                          onPressed: () {
-                            Navigator.push(
-                                context,
-                                MaterialPageRoute(
-                                    builder: (context) => MyScreen()));
-                            // function
-                          },
-                        ),
-                      )
-                    ],
-                  ),
-                ),
-              ),
-            ],
-          ),
-        ),
-      )
-    ]);
-  }
-}
-
-class CreateTeamWidget extends StatelessWidget {
-  const CreateTeamWidget({super.key});
+  String projectDescription = '';
+  String projectTitle = '';
+  final _formKey = GlobalKey<FormState>();
 
   @override
   Widget build(BuildContext context) {
-    return Stack(
-      children: [
+    return Form(
+      key: _formKey,
+      child: Stack(children: [
+        // Gray-blue background
         Container(
-          decoration: const BoxDecoration(color: Color(0xFFDDE6F2)),
+          decoration: BoxDecoration(color: Color(0xFFDDE6F2)),
         ),
 
         // Content
         SafeArea(
           child: Padding(
-              padding: const EdgeInsets.only(top: 10),
-              child: Column(
-                children: [
-                  Container(
-                    margin: const EdgeInsets.symmetric(horizontal: 16.0),
-                    decoration: BoxDecoration(
-                      color: const Color(0xFFDDE6F2),
-                      borderRadius: const BorderRadius.all(Radius.circular(10)),
-                      boxShadow: [
-                        BoxShadow(
-                          color: Colors.black.withValues(alpha: 0.1),
-                          blurRadius: 6,
-                          offset: const Offset(0, 2),
+            padding: EdgeInsets.only(top: 10),
+            child: Column(
+              children: [
+                Container(
+                  // width: 400,
+                  // height: 500,
+                  margin: EdgeInsets.symmetric(horizontal: 16.0),
+                  decoration: BoxDecoration(
+                    color: Color(0xFFDDE6F2),
+                    borderRadius: BorderRadius.all(Radius.circular(10)),
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.black.withValues(alpha: 0.1),
+                        blurRadius: 6,
+                        offset: Offset(0, 2),
+                      ),
+                    ],
+                  ),
+                  child: Padding(
+                    padding: const EdgeInsets.symmetric(
+                        horizontal: 20, vertical: 40),
+                    child: Column(
+                      children: <Widget>[
+                        Align(
+                          alignment: Alignment.centerLeft,
+                          child: Text(
+                            'Cover Photo',
+                            textAlign: TextAlign.left,
+                            style: TextStyle(
+                              fontWeight: FontWeight.bold,
+                              fontSize: 16.0,
+                              color: Color(0xFF2F6DCF),
+                            ),
+                          ),
+                        ),
+                        const SizedBox(height: 5),
+                        PhotoUpload(
+                          width: 380,
+                          height: 125,
+                          backgroundColor: Colors.grey,
+                          icon: Icons.add_photo_alternate,
+                          circular: false,
+                          onTap: () async {
+                            print('Test');
+                            final XFile? pickedFile = await ImagePicker()
+                                .pickImage(source: ImageSource.gallery);
+                            if (pickedFile != null) {
+                              final File imageFile = File(pickedFile.path);
+                              // Now you have the image file, and you can submit or process it.
+                              print("Image selected: ${imageFile.path}");
+                            } else {
+                              print("No image selected.");
+                            }
+                          },
+                        ),
+                        const SizedBox(height: 15.0),
+                        Align(
+                          alignment: Alignment.centerLeft,
+                          child: Text(
+                            'Project Name',
+                            textAlign: TextAlign.left,
+                            style: TextStyle(
+                              fontWeight: FontWeight.bold,
+                              fontSize: 16.0,
+                              color: Color(0xFF2F6DCF),
+                            ),
+                          ),
+                        ),
+                        const SizedBox(height: 5),
+                        const CreationTextBox(
+                          maxLength: 60,
+                          labelText: 'Project Name',
+                          maxLines: 1,
+                          minLines: 1,
+                        ),
+                        const SizedBox(height: 10.0),
+                        Align(
+                          alignment: Alignment.centerLeft,
+                          child: Text(
+                            'Project Description',
+                            textAlign: TextAlign.left,
+                            style: TextStyle(
+                              fontWeight: FontWeight.bold,
+                              fontSize: 16.0,
+                              color: Color(0xFF2F6DCF),
+                            ),
+                          ),
+                        ),
+                        const SizedBox(height: 5),
+                        const CreationTextBox(
+                          maxLength: 240,
+                          labelText: 'Project Description',
+                          maxLines: 3,
+                          minLines: 3,
+                        ),
+                        const SizedBox(height: 10.0),
+                        Align(
+                          alignment: Alignment.bottomRight,
+                          child: EditButton(
+                            text: 'Next',
+                            foregroundColor: Colors.white,
+                            backgroundColor: const Color(0xFF2F6DCF),
+                            icon: const Icon(Icons.chevron_right),
+                            onPressed: () async {
+                              if (await getCurrentTeam() == null) {
+                                // TODO: Display error for creating project before team
+                                ScaffoldMessenger.of(context).showSnackBar(
+                                  const SnackBar(
+                                      content: Text(
+                                          'You are not in a team! Join a team first.')),
+                                );
+                              } else if (_formKey.currentState!.validate()) {
+                                Project partialProject = Project.partialProject(
+                                    title: projectTitle,
+                                    description: projectDescription);
+                                Navigator.push(
+                                    context,
+                                    MaterialPageRoute(
+                                        builder: (context) =>
+                                            ProjectMapCreation(
+                                                partialProjectData:
+                                                    partialProject)));
+                              }
+                            },
+                          ),
                         ),
                       ],
                     ),
-                    child: Padding(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 20,
-                        vertical: 40,
-                      ),
-                      child: Column(
-                        children: <Widget>[
-                          Row(
-                            mainAxisAlignment: MainAxisAlignment.center,
-                            children: [
-                              // First column: Team Photo
-                              Column(
-                                mainAxisSize: MainAxisSize.min,
-                                children: [
-                                  Text(
-                                    'Team Photo',
-                                    style: TextStyle(
-                                      fontWeight: FontWeight.bold,
-                                      fontSize: 16.0,
-                                      color: Color(0xFF2F6DCF),
-                                    ),
-                                  ),
-                                  const SizedBox(height: 8),
-                                  PhotoUpload(
-                                    width: 75,
-                                    height: 75,
-                                    backgroundColor: Colors.grey,
-                                    icon: Icons.add_photo_alternate,
-                                    circular: true,
-                                    onTap: () {
-                                      print('Team photo tapped');
-                                    },
-                                  ),
-                                ],
-                              ),
-                              SizedBox(width: 60),
-                              // Second column: Team Color
-                              Column(
-                                mainAxisSize: MainAxisSize.min,
-                                children: [
-                                  Text(
-                                    'Team Color',
-                                    style: TextStyle(
-                                      fontWeight: FontWeight.bold,
-                                      fontSize: 16.0,
-                                      color: Color(0xFF2F6DCF),
-                                    ),
-                                  ),
-                                  const SizedBox(height: 8),
-                                  Row(
-                                    children: [
-                                      ColorSelectCircle(gradient: defaultGrad),
-                                      ColorSelectCircle(gradient: defaultGrad),
-                                      ColorSelectCircle(gradient: defaultGrad),
-                                    ],
-                                  ),
-                                  Row(
-                                    children: [
-                                      ColorSelectCircle(gradient: defaultGrad),
-                                      ColorSelectCircle(gradient: defaultGrad),
-                                      ColorSelectCircle(gradient: defaultGrad),
-                                    ],
-                                  ),
-                                ],
-                              ),
-                            ],
+                  ),
+                ),
+              ],
+            ),
+          ),
+        )
+      ]),
+    );
+  }
+}
+
+class CreateTeamWidget extends StatefulWidget {
+  const CreateTeamWidget({super.key});
+
+  @override
+  State<CreateTeamWidget> createState() => _CreateTeamWidgetState();
+}
+
+class _CreateTeamWidgetState extends State<CreateTeamWidget> {
+  List<Member> _membersList = [];
+
+  List<Member> membersSearch = [];
+
+  List<Member> invitedMembers = [];
+
+  bool _isLoading = false;
+
+  String teamName = '';
+
+  int itemCount = 0;
+
+  final _formKey = GlobalKey<FormState>();
+
+  String teamID = '';
+
+  @override
+  initState() {
+    super.initState();
+    _getMembersList();
+  }
+
+  // Retrieves membersList and puts it in variable
+  Future<void> _getMembersList() async {
+    try {
+      _membersList = await getMembersList();
+    } catch (e, stacktrace) {
+      print("Error in create_project_and_teams, _getMembersList(): $e");
+      print("Stacktrace: $stacktrace");
+    }
+  }
+
+  // Searches member list for given String
+  List<Member> searchMembers(List<Member> membersList, String text) {
+    setState(() {
+      _isLoading = true;
+
+      membersList = membersList
+          .where((member) =>
+              member.getFullName().toLowerCase().startsWith(text.toLowerCase()))
+          .toList();
+
+      _isLoading = false;
+    });
+
+    return membersList.isNotEmpty ? membersList : [];
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Form(
+      key: _formKey,
+      child: Stack(
+        children: [
+          Container(
+            decoration: const BoxDecoration(color: Color(0xFFDDE6F2)),
+          ),
+
+          // Content
+          SafeArea(
+            child: Padding(
+                padding: const EdgeInsets.only(top: 10),
+                child: Column(
+                  children: [
+                    Container(
+                      margin: const EdgeInsets.symmetric(horizontal: 16.0),
+                      decoration: BoxDecoration(
+                        color: const Color(0xFFDDE6F2),
+                        borderRadius:
+                            const BorderRadius.all(Radius.circular(10)),
+                        boxShadow: [
+                          BoxShadow(
+                            color: Colors.black.withValues(alpha: 0.1),
+                            blurRadius: 6,
+                            offset: const Offset(0, 2),
                           ),
-                          SizedBox(height: 20),
-                          Align(
-                            alignment: Alignment.centerLeft,
-                            child: Text(
-                              'Team Name',
-                              textAlign: TextAlign.left,
-                              style: TextStyle(
-                                fontWeight: FontWeight.bold,
-                                fontSize: 16.0,
-                                color: Colors.blue[900],
-                              ),
-                            ),
-                          ),
-                          const SizedBox(height: 5.0),
-                          const CreationTextBox(
-                            maxLength: 60,
-                            labelText: 'Team Name',
-                            maxLines: 1,
-                            minLines: 1,
-                          ),
-                          const SizedBox(height: 10.0),
-                          Align(
-                            alignment: Alignment.centerLeft,
-                            child: Text(
-                              'Members',
-                              textAlign: TextAlign.left,
-                              style: TextStyle(
-                                fontWeight: FontWeight.bold,
-                                fontSize: 16.0,
-                                color: Colors.blue[900],
-                              ),
-                            ),
-                          ),
-                          const SizedBox(height: 5.0),
-                          CreationTextBox(
-                            maxLength: 60,
-                            labelText: 'Members',
-                            maxLines: 1,
-                            minLines: 1,
-                            icon: const Icon(Icons.search),
-                            onChanged: (text) {
-                              print('Members text field: $text');
-                            },
-                          ),
-                          const SizedBox(height: 10.0),
-                          Align(
-                            alignment: Alignment.bottomRight,
-                            child: EditButton(
-                              text: 'Create',
-                              foregroundColor: Colors.white,
-                              backgroundColor: const Color(0xFF4871AE),
-                              icon: const Icon(Icons.chevron_right),
-                              onPressed: () {
-                                // function
-                              },
-                            ),
-                          )
                         ],
                       ),
-                    ),
-                  )
-                ],
-              )),
-        )
-      ],
+                      child: Padding(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 20,
+                          vertical: 40,
+                        ),
+                        child: Column(
+                          children: <Widget>[
+                            Row(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: [
+                                // First column: Team Photo
+                                Column(
+                                  mainAxisSize: MainAxisSize.min,
+                                  children: [
+                                    Text(
+                                      'Team Photo',
+                                      style: TextStyle(
+                                        fontWeight: FontWeight.bold,
+                                        fontSize: 16.0,
+                                        color: Color(0xFF2F6DCF),
+                                      ),
+                                    ),
+                                    const SizedBox(height: 8),
+                                    PhotoUpload(
+                                      width: 75,
+                                      height: 75,
+                                      backgroundColor: Colors.grey,
+                                      icon: Icons.add_photo_alternate,
+                                      circular: true,
+                                      onTap: () {
+                                        print('Team photo tapped');
+                                      },
+                                    ),
+                                  ],
+                                ),
+                                SizedBox(width: 60),
+                                // Second column: Team Color
+                                Column(
+                                  mainAxisSize: MainAxisSize.min,
+                                  children: [
+                                    Text(
+                                      'Team Color',
+                                      style: TextStyle(
+                                        fontWeight: FontWeight.bold,
+                                        fontSize: 16.0,
+                                        color: Color(0xFF2F6DCF),
+                                      ),
+                                    ),
+                                    const SizedBox(height: 8),
+                                    Row(
+                                      children: [
+                                        ColorSelectCircle(
+                                            gradient: defaultGrad),
+                                        ColorSelectCircle(
+                                            gradient: defaultGrad),
+                                        ColorSelectCircle(
+                                            gradient: defaultGrad),
+                                      ],
+                                    ),
+                                    Row(
+                                      children: [
+                                        ColorSelectCircle(
+                                            gradient: defaultGrad),
+                                        ColorSelectCircle(
+                                            gradient: defaultGrad),
+                                        ColorSelectCircle(
+                                            gradient: defaultGrad),
+                                      ],
+                                    ),
+                                  ],
+                                ),
+                              ],
+                            ),
+                            SizedBox(height: 20),
+                            Align(
+                              alignment: Alignment.centerLeft,
+                              child: Text(
+                                'Team Name',
+                                textAlign: TextAlign.left,
+                                style: TextStyle(
+                                  fontWeight: FontWeight.bold,
+                                  fontSize: 16.0,
+                                  color: Color(0xFF2F6DCF),
+                                ),
+                              ),
+                            ),
+                            const SizedBox(height: 5.0),
+                            const CreationTextBox(
+                              maxLength: 60,
+                              labelText: 'Team Name',
+                              maxLines: 1,
+                              minLines: 1,
+                            ),
+                            const SizedBox(height: 10.0),
+                            Align(
+                              alignment: Alignment.centerLeft,
+                              child: Text(
+                                'Members',
+                                textAlign: TextAlign.left,
+                                style: TextStyle(
+                                  fontWeight: FontWeight.bold,
+                                  fontSize: 16.0,
+                                  color: Color(0xFF2F6DCF),
+                                ),
+                              ),
+                            ),
+                            const SizedBox(height: 5.0),
+                            CreationTextBox(
+                              maxLength: 60,
+                              labelText: 'Members',
+                              maxLines: 1,
+                              minLines: 1,
+                              icon: const Icon(
+                                Icons.search,
+                                color: Color(0xFF757575),
+                              ),
+                              onChanged: (text) {
+                                print('Members text field: $text');
+                              },
+                            ),
+                            const SizedBox(height: 10.0),
+                            Align(
+                              alignment: Alignment.bottomRight,
+                              child: EditButton(
+                                text: 'Create',
+                                foregroundColor: Colors.white,
+                                backgroundColor: const Color(0xFF2F6DCF),
+                                icon: const Icon(Icons.chevron_right),
+                                onPressed: () async {
+                                  if (_formKey.currentState!.validate()) {
+                                    // TODO: If the form is valid, display a snackbar, await database
+                                    ScaffoldMessenger.of(context).showSnackBar(
+                                      const SnackBar(
+                                          content: Text('Processing Data')),
+                                    );
+                                    await saveTeam(
+                                        membersList: invitedMembers,
+                                        teamName: teamName);
+                                    Navigator.pushReplacement(
+                                      context,
+                                      MaterialPageRoute(
+                                        builder: (context) =>
+                                            const HomeScreen(),
+                                      ),
+                                    );
+                                    Navigator.push(
+                                      context,
+                                      MaterialPageRoute(
+                                        builder: (context) =>
+                                            TeamsAndInvitesPage(),
+                                      ),
+                                    );
+                                  }
+                                },
+                              ),
+                            )
+                          ],
+                        ),
+                      ),
+                    )
+                  ],
+                )),
+          )
+        ],
+      ),
     );
   }
 }

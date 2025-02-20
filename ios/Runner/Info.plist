@@ -49,8 +49,12 @@
 	</array>
 	<key>NSPhotoLibraryUsageDescription</key>
 	<string>This app requires access to the photo library to let you choose photos.</string>
+	<key>NSLocationWhenInUseUsageDescription</key>
+	<string>This app needs access to your location to show relevant data.</string>
 	<key>NSCameraUsageDescription</key>
 	<string>This app requires access to the camera to let you take photos.</string>
+	<key>MAPS_API_KEY</key>
+	<string>AIzaSyDwn6wqGymn4bYA_PB8TorQDelDuHZvyOc</string>
 	<key>UIViewControllerBasedStatusBarAppearance</key>
 <true/>
 </dict>

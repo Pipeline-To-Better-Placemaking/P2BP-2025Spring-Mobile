@@ -110,7 +110,7 @@ class EditButton extends StatelessWidget {
   }
 }
 
-class CreationTextBox extends StatelessWidget {
+class CreationTextBox extends StatefulWidget {
   final int maxLength;
   final int maxLines;
   final int minLines;
@@ -127,8 +127,44 @@ class CreationTextBox extends StatelessWidget {
     this.onChanged,
     this.icon,
   });
+
+  @override
+  State<CreationTextBox> createState() => _CreationTextBoxState();
+}
+
+class _CreationTextBoxState extends State<CreationTextBox> {
+  final FocusNode _focusNode = FocusNode();
+  bool _hasFocus = false;
+
+  @override
+  void initState() {
+    super.initState();
+    // Listen for focus changes
+    _focusNode.addListener(() {
+      setState(() {
+        _hasFocus = _focusNode.hasFocus;
+      });
+    });
+  }
+
+  @override
+  void dispose() {
+    _focusNode.dispose();
+    super.dispose();
+  }
+
   @override
   Widget build(BuildContext context) {
+    // Decide icon color based on focus
+    final Icon? focusedIcon = widget.icon != null
+        ? Icon(
+            widget.icon!.icon,
+            color: _hasFocus
+                ? const Color.fromARGB(255, 28, 91, 192) // Focused color
+                : widget.icon!.color ?? const Color(0xFF757575),
+          )
+        : null;
+
     return SizedBox(
       child: Theme(
         data: Theme.of(context).copyWith(
@@ -136,16 +172,19 @@ class CreationTextBox extends StatelessWidget {
               selectionColor: Colors.blue, selectionHandleColor: Colors.blue),
         ),
         child: TextField(
-          onChanged: onChanged,
-          style: const TextStyle(color: Colors.black),
-          maxLength: maxLength,
-          maxLines: maxLines,
-          minLines: minLines,
-          cursorColor: const Color(0xFF585A6A),
+          focusNode: _focusNode,
+          onChanged: widget.onChanged,
+          style: const TextStyle(
+              color: Color(0xFF2F6DCF), fontWeight: FontWeight.w600),
+          maxLength: widget.maxLength,
+          maxLines: widget.maxLines,
+          minLines: widget.minLines,
+          cursorColor: const Color(0xFF2F6DCF),
           decoration: InputDecoration(
-            prefixIcon: icon,
+            prefixIcon: focusedIcon,
             alignLabelWithHint: true,
-            counterStyle: const TextStyle(color: Colors.black),
+            counterStyle:
+                const TextStyle(color: Color.fromARGB(255, 28, 91, 192)),
             enabledBorder: const OutlineInputBorder(
               borderRadius: BorderRadius.all(Radius.circular(10)),
               borderSide: BorderSide(
@@ -157,13 +196,13 @@ class CreationTextBox extends StatelessWidget {
               borderRadius: BorderRadius.all(Radius.circular(10)),
               borderSide: BorderSide(
                 width: 2,
-                color: Color(0xFF5C78A1),
+                color: Color.fromARGB(255, 28, 91, 192),
               ),
             ),
-            hintText: labelText,
+            hintText: widget.labelText,
             hintStyle: const TextStyle(
               fontWeight: FontWeight.w300,
-              color: Color(0xA9000000),
+              color: Color(0xFF757575),
             ),
           ),
         ),

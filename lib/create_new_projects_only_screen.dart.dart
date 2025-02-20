@@ -1,14 +1,26 @@
+import 'dart:io';
 import 'dart:ui';
-
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
+import 'package:image_picker/image_picker.dart';
 import 'package:p2bp_2025spring_mobile/newscreen.dart';
 import 'widgets.dart';
 import 'theme.dart';
 import 'search_location_screen.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_auth/firebase_auth.dart';
+import 'package:p2bp_2025spring_mobile/project_map_creation.dart';
+import 'package:p2bp_2025spring_mobile/teams_and_invites_page.dart';
+import 'firestore_functions.dart';
+import 'home_screen.dart';
+import 'package:p2bp_2025spring_mobile/db_schema_classes.dart';
 
 class CreateNewProjectsOnlyScreen extends StatelessWidget {
+  String projectDescription = '';
+  String projectTitle = '';
+  final _formKey = GlobalKey<FormState>();
+
   @override
   Widget build(BuildContext context) {
     SystemChrome.setSystemUIOverlayStyle(SystemUiOverlayStyle.dark
@@ -83,13 +95,6 @@ class CreateNewProjectsOnlyScreen extends StatelessWidget {
                     decoration: BoxDecoration(
                       color: Colors.transparent,
                       borderRadius: BorderRadius.all(Radius.circular(10)),
-                      // boxShadow: [
-                      //   BoxShadow(
-                      //     color: Colors.black.withValues(alpha: 0.1),
-                      //     blurRadius: 6,
-                      //     offset: Offset(0, 2),
-                      //   ),
-                      // ],
                     ),
                     child: Padding(
                       padding: const EdgeInsets.symmetric(
@@ -115,10 +120,17 @@ class CreateNewProjectsOnlyScreen extends StatelessWidget {
                             backgroundColor: Colors.grey,
                             icon: Icons.add_photo_alternate,
                             circular: false,
-                            onTap: () {
-                              // TODO: Actual function
+                            onTap: () async {
                               print('Test');
-                              return;
+                              final XFile? pickedFile = await ImagePicker()
+                                  .pickImage(source: ImageSource.gallery);
+                              if (pickedFile != null) {
+                                final File imageFile = File(pickedFile.path);
+                                // Now you have the image file, and you can submit or process it.
+                                print("Image selected: ${imageFile.path}");
+                              } else {
+                                print("No image selected.");
+                              }
                             },
                           ),
                           const SizedBox(height: 15.0),
@@ -169,12 +181,27 @@ class CreateNewProjectsOnlyScreen extends StatelessWidget {
                               foregroundColor: Colors.white,
                               backgroundColor: const Color(0xFF2F6DCF),
                               icon: const Icon(Icons.chevron_right),
-                              onPressed: () {
-                                Navigator.push(
-                                    context,
-                                    MaterialPageRoute(
-                                        builder: (context) => MyScreen()));
-                                // function
+                              onPressed: () async {
+                                if (await getCurrentTeam() == null) {
+                                  // TODO: Display error for creating project before team
+                                  ScaffoldMessenger.of(context).showSnackBar(
+                                    const SnackBar(
+                                        content: Text(
+                                            'You are not in a team! Join a team first.')),
+                                  );
+                                } else if (_formKey.currentState!.validate()) {
+                                  Project partialProject =
+                                      Project.partialProject(
+                                          title: projectTitle,
+                                          description: projectDescription);
+                                  Navigator.push(
+                                      context,
+                                      MaterialPageRoute(
+                                          builder: (context) =>
+                                              ProjectMapCreation(
+                                                  partialProjectData:
+                                                      partialProject)));
+                                }
                               },
                             ),
                           )
