@@ -1,4 +1,6 @@
+import 'dart:io';
 import 'package:flutter/material.dart';
+import 'package:image_picker/image_picker.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'change_password_page.dart';
@@ -132,16 +134,21 @@ class _SettingsPageState extends State<SettingsPage> {
     return SafeArea(
       child: Scaffold(
         appBar: AppBar(
-          title: const Text('Settings'),
+          backgroundColor: Colors.white,
+          automaticallyImplyLeading: false,
+          title: const Text('Settings',
+              style: TextStyle(
+                  color: Color(0xFF2F6DCF), fontWeight: FontWeight.bold)),
         ),
+        backgroundColor: Colors.white,
         body: ListTileTheme(
-          tileColor: Colors.blue,
+          tileColor: Color(0xFF2F6DCF),
           contentPadding: const EdgeInsets.symmetric(horizontal: 8),
           iconColor: Colors.white,
           textColor: Colors.white,
           child: DefaultTextStyle(
             style: const TextStyle(
-              color: Colors.blue,
+              color: Color(0xFF2F6DCF),
               fontSize: 20,
               fontWeight: FontWeight.bold,
             ),
@@ -154,7 +161,7 @@ class _SettingsPageState extends State<SettingsPage> {
                     const SizedBox(height: 8),
                     ElevatedButton(
                       style: ElevatedButton.styleFrom(
-                        backgroundColor: Colors.blue,
+                        backgroundColor: Color(0xFF2F6DCF),
                         shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(10),
                         ),
@@ -234,8 +241,8 @@ class _SettingsPageState extends State<SettingsPage> {
                 ListTile(
                   leading: Icon(Icons.lock_outline),
                   title: Text('Delete Account'),
-                  iconColor: Colors.redAccent[700],
-                  textColor: Colors.redAccent[700],
+                  iconColor: Color(0xFFFF7474),
+                  textColor: Color(0xFFFF7474),
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.only(
                       bottomLeft: Radius.circular(10),
@@ -284,8 +291,9 @@ class _SettingsPageState extends State<SettingsPage> {
                 ListTile(
                   leading: const Icon(Icons.logout),
                   title: const Text('Log Out'),
-                  iconColor: Colors.redAccent[700],
-                  textColor: Colors.redAccent[700],
+                  iconColor: Color(0xFFFF7474),
+                  textColor: Color(0xFFFF7474),
+
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(10),
                   ),
@@ -321,7 +329,7 @@ class _DarkModeSwitchListTileState extends State<DarkModeSwitchListTile> {
   Widget build(BuildContext context) {
     return SwitchListTile(
       shape: widget.shape,
-      activeTrackColor: Colors.yellow[600],
+      activeTrackColor: Color(0xFFF2C413),
       secondary: const Icon(Icons.dark_mode_outlined),
       title: const Text('Dark Mode'),
       value: _isDarkMode,
@@ -411,11 +419,16 @@ class _ProfileIconEditStackState extends State<ProfileIconEditStack> {
           right: 1,
           child: InkResponse(
             highlightShape: BoxShape.circle,
-            onTap: () {
-              /* TODO: Functionality to pick a photo, and then send that to firebase
-                  to be saved as new profile icon and then get it from there to
-                  display updated icon in this widget immediately
-               */
+            onTap: () async {
+              final XFile? pickedFile =
+                  await ImagePicker().pickImage(source: ImageSource.gallery);
+              if (pickedFile != null) {
+                final File imageFile = File(pickedFile.path);
+                // Now you have the image file, and you can submit or process it.
+                print("Image selected: ${imageFile.path}");
+              } else {
+                print("No image selected.");
+              }
             },
             child: Container(
               padding: EdgeInsets.all(1),
@@ -423,7 +436,7 @@ class _ProfileIconEditStackState extends State<ProfileIconEditStack> {
                 borderRadius: BorderRadius.all(
                   Radius.circular(50),
                 ),
-                color: Colors.yellow[600],
+                color: Color(0xFFF2C413),
               ),
               child: Icon(
                 Icons.edit_outlined,

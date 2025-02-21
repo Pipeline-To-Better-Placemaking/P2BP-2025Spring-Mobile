@@ -154,11 +154,6 @@ class _ProjectMapCreationState extends State<ProjectMapCreation> {
             ? const Center(child: CircularProgressIndicator())
             : Column(
                 children: [
-                  SizedBox(height: 20),
-                  Text(
-                    "Define your project area.",
-                    style: TextStyle(fontSize: 24),
-                  ),
                   Center(
                     child: SizedBox(
                       // TODO: Explore alternative approaches. Maps widgets automatically sizes to infinity unless declared.

@@ -1,5 +1,6 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:p2bp_2025spring_mobile/create_project_details.dart';
 import 'db_schema_classes.dart';
 import 'theme.dart';
@@ -12,12 +13,13 @@ import 'edit_project_panel.dart';
 import 'main.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'firestore_functions.dart';
+import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 
 List<String> navIcons2 = [
-  'assets/Home_Icon.png',
-  'assets/Add_Icon.png',
-  'assets/Compare_Icon.png',
-  'assets/Profile_Icon.png',
+  'assets/custom_icons/Home_Icon.png',
+  'assets/custom_icons/Add_Icon.png',
+  'assets/custom_icons/Compare_Icon.png',
+  'assets/custom_icons/Profile_Icon.png',
 ];
 
 class HomeScreen extends StatefulWidget {
@@ -40,6 +42,7 @@ class _HomeScreenState extends State<HomeScreen> {
   void initState() {
     super.initState();
     _getUserFirstName();
+    _populateProjects();
   }
 
   Future<void> _populateProjects() async {
@@ -92,6 +95,8 @@ class _HomeScreenState extends State<HomeScreen> {
 
   @override
   Widget build(BuildContext context) {
+    SystemChrome.setSystemUIOverlayStyle(SystemUiOverlayStyle.dark
+        .copyWith(statusBarIconBrightness: Brightness.light));
     return Scaffold(
       body: Stack(
         children: [
@@ -105,6 +110,7 @@ class _HomeScreenState extends State<HomeScreen> {
               SettingsPage(),
             ],
           ),
+          // Bottom Navigation Bar
         ],
       ),
       extendBody: true,
@@ -115,8 +121,8 @@ class _HomeScreenState extends State<HomeScreen> {
   Widget buildProjectCard({
     required BuildContext context,
     required String bannerImage, // Image path for banner
-    required Project project, // Project name
-    required String teamName, // Team name
+    required Project project, // Project Name
+    required String teamName, // Team Name
     required int index,
   }) {
     return Card(
@@ -253,7 +259,13 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   Widget _buildHomeContent() {
-    _populateProjects();
+    if (_isLoading) {
+      return const Center(child: CircularProgressIndicator());
+    }
+    if (teamRef == null) {
+      // No selected team; show a placeholder or message once
+      return const Center(child: Text("No team selected."));
+    }
     return RefreshIndicator(
       onRefresh: () async {
         await _populateProjects();
@@ -268,13 +280,13 @@ class _HomeScreenState extends State<HomeScreen> {
             children: <Widget>[
               // P2BP Logo centered at the top
               Padding(
-                padding: const EdgeInsets.only(top: 50),
+                padding: const EdgeInsets.only(top: 60),
                 child: Stack(
                   children: [
                     Align(
                       alignment: Alignment.topCenter,
                       child: Image.asset(
-                        'assets/P2BP_Logo.png',
+                        'assets/custom_icons/P2BP_Logo.png',
                         width: 40,
                         height: 40,
                       ),
@@ -286,35 +298,48 @@ class _HomeScreenState extends State<HomeScreen> {
                         children: [
                           // Notification button
                           IconButton(
-                            icon: Image.asset('assets/bell-03.png'),
+                            icon:
+                                Image.asset('assets/custom_icons/bell-03.png'),
                             onPressed: () {
                               // Handle notification button action
                               Navigator.push(
-                                context,
-                                MaterialPageRoute(
-                                  builder: (context) => const HomePage(
-                                    title: '/home',
-                                  ),
-                                ),
-                              );
+                                  context,
+                                  MaterialPageRoute(
+                                      builder: (context) => const HomePage(
+                                            title: '/home',
+                                          )));
                             },
                             iconSize: 24,
                           ),
                           // Teams Button
-                          IconButton(
-                            icon: const Icon(Icons.group),
-                            color: const Color(0xFF0A2A88),
-                            onPressed: () {
-                              // Navigate to Teams/Invites screen
-                              Navigator.push(
-                                context,
-                                MaterialPageRoute(
-                                  builder: (context) =>
-                                      const TeamsAndInvitesPage(),
+                          Container(
+                            width: 36,
+                            height: 36,
+                            decoration: BoxDecoration(
+                                shape: BoxShape.circle,
+                                color: Color(0xFF2F6DCF),
+                                border: Border.all(
+                                    color: Color(0xFF0A2A88), width: 3)),
+                            child: Center(
+                              child: Transform.translate(
+                                offset: Offset(-1, 0),
+                                child: IconButton(
+                                  padding: EdgeInsets.zero,
+                                  icon: const Icon(FontAwesomeIcons.users),
+                                  color: const Color(0xFFFFCC00),
+                                  onPressed: () {
+                                    // Navigate to Teams/Invites screen
+                                    Navigator.push(
+                                        context,
+                                        MaterialPageRoute(
+                                          builder: (context) =>
+                                              const TeamsAndInvitesPage(),
+                                        ));
+                                  },
+                                  iconSize: 16,
                                 ),
-                              );
-                            },
-                            iconSize: 24,
+                              ),
+                            ),
                           ),
                         ],
                       ),
@@ -330,13 +355,13 @@ class _HomeScreenState extends State<HomeScreen> {
                               return defaultGrad.createShader(bounds);
                             },
                             child: Text(
-                              'Hello, $_firstName',
+                              'Hello, \n$_firstName',
                               style: TextStyle(
-                                fontSize: 36,
-                                fontWeight: FontWeight.bold,
-                                color: Colors.white,
-                                height: 1.2, // Masked text with gradient
-                              ),
+                                  fontSize: 36,
+                                  fontWeight: FontWeight.bold,
+                                  color: Colors.white,
+                                  height: 1.2 // Masked text with gradient
+                                  ),
                             ),
                           ),
                         ],
@@ -429,7 +454,7 @@ class _HomeScreenState extends State<HomeScreen> {
       height: 60,
       margin: const EdgeInsets.only(right: 24, left: 24, bottom: 24),
       decoration: BoxDecoration(
-        color: const Color(0xFF2F6DCF),
+        color: const Color(0xFF3874CB),
         borderRadius: BorderRadius.circular(120),
         boxShadow: [
           BoxShadow(
@@ -468,7 +493,7 @@ class _HomeScreenState extends State<HomeScreen> {
                     width: 30,
                     height: 30,
                     color: isSelected
-                        ? const Color(0xFF2F6DCF)
+                        ? const Color(0xFF3874CB)
                         : const Color(0xFFFFCC00),
                   ),
                 ),

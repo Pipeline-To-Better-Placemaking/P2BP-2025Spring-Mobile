@@ -9,21 +9,17 @@ class ForgotPasswordPage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     AssetBundle bundle = DefaultAssetBundle.of(context);
-    return SafeArea(
-      child: Scaffold(
-        appBar: AppBar(
-          title: const Text('Forgot Password?'),
-        ),
-        body: Center(
-          child: DefaultTextStyle(
-            style: const TextStyle(
-              color: Color(0xFFFFFFFF),
-              fontSize: 20,
+    return Scaffold(
+      body: Stack(
+        children: [
+          // Background gradient that covers the whole screen
+          Container(
+            decoration: BoxDecoration(
+              gradient: defaultGrad,
             ),
-            child: Container(
-              decoration: BoxDecoration(
-                gradient: defaultGrad,
-              ),
+          ),
+          SafeArea(
+            child: Padding(
               padding: const EdgeInsets.all(30),
               child: ListView(
                 children: <Widget>[
@@ -33,24 +29,26 @@ class ForgotPasswordPage extends StatelessWidget {
                       bundle: bundle,
                     ),
                   ),
-                  SizedBox(height: 10),
-                  Text(
-                    'Forgot Password?',
+                  const SizedBox(height: 30),
+                  const Text(
+                    'Forgot\nPassword?',
                     style: TextStyle(
                       fontWeight: FontWeight.bold,
                       fontSize: 32,
+                      color: Colors.white,
                     ),
                   ),
-                  SizedBox(height: 10),
-                  Text(
+                  const SizedBox(height: 10),
+                  const Text(
                     Strings.forgotPasswordText,
                     style: TextStyle(
                       fontSize: 18,
+                      color: Colors.white,
                     ),
                   ),
-                  SizedBox(height: 10),
-                  ForgotPasswordForm(),
-                  SizedBox(height: 10),
+                  const SizedBox(height: 20),
+                  const ForgotPasswordForm(),
+                  const SizedBox(height: 10),
                   TextButton(
                     onPressed: () {
                       Navigator.pop(context);
@@ -72,7 +70,7 @@ class ForgotPasswordPage extends StatelessWidget {
               ),
             ),
           ),
-        ),
+        ],
       ),
     );
   }
@@ -147,6 +145,8 @@ class _ForgotPasswordFormState extends State<ForgotPasswordForm> {
             ),
           TextFormField(
             controller: _emailController,
+            cursorColor: Colors.white,
+            style: TextStyle(color: Colors.white),
             decoration: InputDecoration(
               enabledBorder: UnderlineInputBorder(
                 borderSide: BorderSide(
@@ -169,7 +169,8 @@ class _ForgotPasswordFormState extends State<ForgotPasswordForm> {
               errorText: _isEmailValid ? null : 'Invalid email format',
             ),
           ),
-          const SizedBox(height: 10),
+          
+          const SizedBox(height: 30),
           TextButton(
             onPressed: handleSubmit,
             style: const ButtonStyle(

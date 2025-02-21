@@ -1,4 +1,7 @@
 import 'package:flutter/material.dart';
+import 'dart:ui';
+
+import 'package:p2bp_2025spring_mobile/theme.dart'; // for ImageFilter
 
 // Bar Indicator for the Sliding Up Panels (Edit Project, Results)
 class BarIndicator extends StatelessWidget {
@@ -110,7 +113,7 @@ class EditButton extends StatelessWidget {
   }
 }
 
-class CreationTextBox extends StatelessWidget {
+class CreationTextBox extends StatefulWidget {
   final int maxLength;
   final int maxLines;
   final int minLines;
@@ -129,34 +132,64 @@ class CreationTextBox extends StatelessWidget {
     this.icon,
     this.errorMessage,
   });
+
+  @override
+  State<CreationTextBox> createState() => _CreationTextBoxState();
+}
+
+class _CreationTextBoxState extends State<CreationTextBox> {
+  final FocusNode _focusNode = FocusNode();
+  bool _hasFocus = false;
+
+  @override
+  void initState() {
+    super.initState();
+    // Listen for focus changes
+    _focusNode.addListener(() {
+      setState(() {
+        _hasFocus = _focusNode.hasFocus;
+      });
+    });
+  }
+
+  @override
+  void dispose() {
+    _focusNode.dispose();
+    super.dispose();
+  }
+
   @override
   Widget build(BuildContext context) {
+    // Decide icon color based on focus
+    final Icon? focusedIcon = widget.icon != null
+        ? Icon(
+            widget.icon!.icon,
+            color: _hasFocus
+                ? const Color.fromARGB(255, 28, 91, 192) // Focused color
+                : widget.icon!.color ?? const Color(0xFF757575),
+          )
+        : null;
+
     return SizedBox(
       child: Theme(
         data: Theme.of(context).copyWith(
           textSelectionTheme: const TextSelectionThemeData(
               selectionColor: Colors.blue, selectionHandleColor: Colors.blue),
         ),
-        child: TextFormField(
-          onChanged: onChanged,
-          style: const TextStyle(color: Colors.black),
-          maxLength: maxLength,
-          maxLines: maxLines,
-          minLines: minLines,
-          cursorColor: const Color(0xFF585A6A),
-          validator: (value) {
-            // TODO: custom error check parameter?
-            if (errorMessage != null && (value == null || value.length < 3)) {
-              // TODO: eventually require error message?
-              return errorMessage ??
-                  'Error, insufficient input (validator error message not set)';
-            }
-            return null;
-          },
+        child: TextField(
+          focusNode: _focusNode,
+          onChanged: widget.onChanged,
+          style: const TextStyle(
+              color: Color(0xFF2F6DCF), fontWeight: FontWeight.w600),
+          maxLength: widget.maxLength,
+          maxLines: widget.maxLines,
+          minLines: widget.minLines,
+          cursorColor: const Color(0xFF2F6DCF),
           decoration: InputDecoration(
-            prefixIcon: icon,
+            prefixIcon: focusedIcon,
             alignLabelWithHint: true,
-            counterStyle: const TextStyle(color: Colors.black),
+            counterStyle:
+                const TextStyle(color: Color.fromARGB(255, 28, 91, 192)),
             errorBorder: const OutlineInputBorder(
               borderRadius: BorderRadius.all(Radius.circular(10)),
               borderSide: BorderSide(
@@ -175,20 +208,20 @@ class CreationTextBox extends StatelessWidget {
               borderRadius: BorderRadius.all(Radius.circular(10)),
               borderSide: BorderSide(
                 width: 1.5,
-                color: Color(0xFF6A89B8),
+                color: Color(0xFF2F6DCF),
               ),
             ),
             focusedBorder: const OutlineInputBorder(
               borderRadius: BorderRadius.all(Radius.circular(10)),
               borderSide: BorderSide(
                 width: 2,
-                color: Color(0xFF5C78A1),
+                color: Color.fromARGB(255, 28, 91, 192),
               ),
             ),
-            hintText: labelText,
+            hintText: widget.labelText,
             hintStyle: const TextStyle(
               fontWeight: FontWeight.w300,
-              color: Color(0xA9000000),
+              color: Color(0xFF757575),
             ),
           ),
         ),
@@ -202,6 +235,7 @@ class CreationTextBox extends StatelessWidget {
 class PhotoUpload extends StatelessWidget {
   final double width;
   final double height;
+  final Color backgroundColor;
   final IconData icon;
   final bool circular;
   final GestureTapCallback onTap;
@@ -210,6 +244,7 @@ class PhotoUpload extends StatelessWidget {
     super.key,
     required this.width,
     required this.height,
+    required this.backgroundColor,
     required this.icon,
     required this.onTap,
     required this.circular,
@@ -226,7 +261,7 @@ class PhotoUpload extends StatelessWidget {
             ? BoxDecoration(
                 color: const Color(0x2A000000),
                 shape: BoxShape.circle,
-                border: Border.all(color: const Color(0xFF6A89B8)),
+                border: Border.all(color: const Color(0xFF2F6DCF)),
               )
             : BoxDecoration(
                 color: const Color(0x2A000000),
@@ -249,6 +284,8 @@ class PasswordTextFormField extends StatelessWidget {
   final String? _forceErrorText;
   final bool _obscureText;
   final void Function(String)? _onChanged;
+  final TextStyle? style;
+  final Color? cursorColor;
 
   PasswordTextFormField({
     super.key,
@@ -257,6 +294,9 @@ class PasswordTextFormField extends StatelessWidget {
     forceErrorText,
     obscureText,
     onChanged,
+    this.style,
+    this.cursorColor,
+
   })  : _decoration = decoration ??
             InputDecoration().applyDefaults(ThemeData().inputDecorationTheme),
         _controller = controller,
@@ -275,6 +315,102 @@ class PasswordTextFormField extends StatelessWidget {
       controller: _controller,
       forceErrorText: _forceErrorText,
       onChanged: _onChanged,
+      style: style,
+      cursorColor: cursorColor,
+    );
+  }
+}
+
+enum CustomTab { projects, team }
+
+/// Segmented Tab for Projects and Teams View V2
+class CustomSegmentedTab extends StatefulWidget {
+  final CustomTab selectedTab;
+  final ValueChanged<CustomTab> onTabSelected;
+
+  const CustomSegmentedTab({
+    Key? key,
+    required this.selectedTab,
+    required this.onTabSelected,
+  }) : super(key: key);
+
+  @override
+  _CustomSegmentedTabState createState() => _CustomSegmentedTabState();
+}
+
+class _CustomSegmentedTabState extends State<CustomSegmentedTab> {
+  @override
+  Widget build(BuildContext context) {
+    return ClipRRect(
+      borderRadius: BorderRadius.circular(120),
+      child: BackdropFilter(
+        filter: ImageFilter.blur(sigmaX: 40, sigmaY: 40),
+        child: Container(
+          margin: const EdgeInsets.symmetric(horizontal: 64, vertical: 16),
+          constraints: const BoxConstraints(minHeight: 60),
+          padding: const EdgeInsets.all(8.0),
+          decoration: BoxDecoration(
+            // Use your existing gradient or color:
+            borderRadius: BorderRadius.circular(60),
+            gradient: verticalBlueGrad,
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withValues(alpha: 0.2),
+                offset: Offset(0, 4),
+                blurRadius: 12,
+              ),
+            ],
+          ),
+          // A row with two expanded segments: Projects and Team.
+          child: Row(
+            mainAxisSize: MainAxisSize.max,
+            mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+            children: [
+              _buildSegment(
+                tab: CustomTab.projects,
+                label: 'PROJECT',
+              ),
+              _buildSegment(
+                tab: CustomTab.team,
+                label: 'TEAM',
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildSegment({required CustomTab tab, required String label}) {
+    final bool isSelected = (widget.selectedTab == tab);
+
+    // Selected tab: white text
+    final TextStyle selectedStyle = const TextStyle(
+      color: Colors.white,
+      fontWeight: FontWeight.bold,
+      fontSize: 16,
+    );
+
+    // Unselected tab: B6D1EC
+    final TextStyle unselectedStyle = const TextStyle(
+      color: Color(0xFFB6D1EC),
+      fontWeight: FontWeight.bold,
+      fontSize: 16,
+    );
+
+    return GestureDetector(
+      onTap: () => widget.onTabSelected(tab),
+      child: Container(
+        padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 20),
+        decoration: BoxDecoration(
+          borderRadius: BorderRadius.circular(40),
+        ),
+        alignment: Alignment.center,
+        child: Text(
+          label,
+          style: isSelected ? selectedStyle : unselectedStyle,
+        ),
+      ),
     );
   }
 }

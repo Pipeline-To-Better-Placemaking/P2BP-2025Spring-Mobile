@@ -10,6 +10,7 @@ final User? _loggedInUser = FirebaseAuth.instance.currentUser;
 // delete it in the user's data). For simplicity, any objects that may be
 // deleted should contain references to the objects which contain it.
 
+
 /// Gets the value of fullName from the 'users' document for the given uid.
 /// Contains error handling for every case starting from uid being null.
 /// This will always either return the successfully found name or throw
@@ -61,7 +62,7 @@ Future<String> saveTeam(
     });
   }
 
-  // Debugging print statement:
+  // Debugging print statement.
   // print("Teams reference: ${_firestore.doc('/teams/$teamID')}");
 
   return teamID;
@@ -125,6 +126,7 @@ Future<Project> getProjectInfo(String projectID) async {
 
   try {
     projectDoc = await _firestore.collection("projects").doc(projectID).get();
+    
     if (projectDoc.exists && projectDoc.data()!.containsKey('polygonArea')) {
       project = Project(
         teamRef: projectDoc['team'],
@@ -179,6 +181,7 @@ Future<List<Project>> getTeamProjects(DocumentReference teamRef) async {
 
     if (teamDoc.exists && teamDoc.data()!.containsKey('projects')) {
       for (var projectRef in teamDoc['projects']) {
+        print("Project getting: $projectList");
         tempProject = await getProjectInfo(projectRef.id);
         projectList.add(tempProject);
       }

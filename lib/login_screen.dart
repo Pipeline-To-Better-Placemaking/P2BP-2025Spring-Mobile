@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
-import 'package:cloud_firestore/cloud_firestore.dart'; // Import Firestore package
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'widgets.dart';
 import 'theme.dart';
 import 'home_screen.dart';
@@ -13,6 +13,7 @@ class LoginScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      resizeToAvoidBottomInset: true,
       body: Container(
         decoration: const BoxDecoration(
           gradient: defaultGrad,
@@ -23,7 +24,7 @@ class LoginScreen extends StatelessWidget {
             // Logo
             Center(
               child: Image.asset(
-                'assets/logo_coin.png',
+                'assets/custom_icons/logo_coin.png',
                 height: 198.07,
               ),
             ),
@@ -76,7 +77,7 @@ class LoginScreen extends StatelessWidget {
                   mainAxisSize: MainAxisSize.min,
                   children: [
                     Image.asset(
-                      'assets/google_icon.png',
+                      'assets/custom_icons/google_icon.png',
                       height: 24,
                     ),
                     const SizedBox(width: 8),
@@ -155,11 +156,9 @@ class _LoginFormState extends State<LoginForm> {
       String? emailText = _emailController.text.trim();
 
       // Sign in using Firebase Auth
-      UserCredential userCredential =
-          await FirebaseAuth.instance.signInWithEmailAndPassword(
-        email: emailText,
-        password: _passwordController.text,
-      );
+      UserCredential userCredential = await FirebaseAuth.instance
+          .signInWithEmailAndPassword(
+              email: emailText, password: _passwordController.text);
 
       // Check if the email is verified
       User? user = userCredential.user;
@@ -273,6 +272,8 @@ class _LoginFormState extends State<LoginForm> {
           // Email Input
           TextFormField(
             controller: _emailController,
+            cursorColor: Colors.white,
+            style: const TextStyle(color: Colors.white),
             decoration: InputDecoration(
               prefixIcon: Padding(
                 padding: EdgeInsets.only(left: 10, right: 30),
@@ -304,6 +305,8 @@ class _LoginFormState extends State<LoginForm> {
           PasswordTextFormField(
             controller: _passwordController,
             obscureText: _obscureText,
+            cursorColor: Colors.white,
+            style: TextStyle(color: Colors.white),
             decoration: InputDecoration(
               prefixIcon: const Padding(
                 padding: EdgeInsets.only(left: 10, right: 30),
