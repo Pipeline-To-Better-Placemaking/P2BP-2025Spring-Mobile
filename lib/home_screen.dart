@@ -1,5 +1,6 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:p2bp_2025spring_mobile/create_project_details.dart';
 import 'db_schema_classes.dart';
 import 'theme.dart';
@@ -13,7 +14,6 @@ import 'main.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'firestore_functions.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
-
 
 List<String> navIcons2 = [
   'assets/custom_icons/Home_Icon.png',
@@ -95,6 +95,8 @@ class _HomeScreenState extends State<HomeScreen> {
 
   @override
   Widget build(BuildContext context) {
+    SystemChrome.setSystemUIOverlayStyle(SystemUiOverlayStyle.dark
+        .copyWith(statusBarIconBrightness: Brightness.light));
     return Scaffold(
       body: Stack(
         children: [

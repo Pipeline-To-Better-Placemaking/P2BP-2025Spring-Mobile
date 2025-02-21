@@ -19,7 +19,6 @@ import GoogleMaps
 
     GeneratedPluginRegistrant.register(with: self)
     // Use Firebase library to configure APIs
-    FirebaseApp.configure()
     if let envKey = ProcessInfo.processInfo.environment["MAPS_API_KEY"] {
     GMSServices.provideAPIKey(envKey)
     }
