@@ -163,7 +163,7 @@ class _LoginFormState extends State<LoginForm> {
       // Check if the email is verified
       User? user = userCredential.user;
       if (user != null && !user.emailVerified) {
-        // Log the user out immmediately
+        // Log the user out immediately
         await FirebaseAuth.instance.signOut();
 
         ScaffoldMessenger.of(context).clearSnackBars();

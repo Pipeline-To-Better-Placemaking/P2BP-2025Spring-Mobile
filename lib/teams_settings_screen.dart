@@ -13,7 +13,6 @@ import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:p2bp_2025spring_mobile/project_list_widget.dart';
 import 'package:p2bp_2025spring_mobile/create_new_projects_only_screen.dart.dart';
 
-
 class TeamSettingsScreen extends StatefulWidget {
   @override
   State<TeamSettingsScreen> createState() => _TeamSettingsScreenState();
@@ -127,7 +126,7 @@ class _TeamSettingsScreenState extends State<TeamSettingsScreen> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  // Top Row with Back Arrow and Settings butttons
+                  // Top Row with Back Arrow and Settings buttons
                   Padding(
                     padding: const EdgeInsets.symmetric(
                         horizontal: 16.0, vertical: 8.0),
@@ -573,55 +572,53 @@ class _TeamSettingsScreenState extends State<TeamSettingsScreen> {
                       ],
                     ),
                   ),
-
                   SizedBox(height: 12),
-
                   // Profile Avatar and Header Row
                   Padding(
                     padding: const EdgeInsets.symmetric(horizontal: 16.0),
                     child: Row(
                       crossAxisAlignment: CrossAxisAlignment.start,
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
                         // Profile Avatar on the left
-                        Stack(
-                          alignment: Alignment.bottomRight,
-                          children: [
-                            CircleAvatar(
-                              radius: 36,
-                              backgroundImage: AssetImage(
-                                  'assets/profile_image.jpg'), // Replace with actual image
-                            ),
-                            GestureDetector(
-                              onTap: () async {
-                                // Open image edit functionality
-                                final XFile? pickedFile = await ImagePicker()
-                                    .pickImage(source: ImageSource.gallery);
-                                if (pickedFile != null) {
-                                  final File imageFile = File(pickedFile.path);
-                                  // Now you have the image file, and you can submit or process it.
-                                  print("Image selected: ${imageFile.path}");
-                                } else {
-                                  print("No image selected.");
-                                }
-                              },
-                              child: CircleAvatar(
-                                radius: 16,
-                                backgroundColor: Colors.blue,
-                                child: Icon(
-                                  Icons.edit,
-                                  size: 16,
-                                  color: Colors.white,
+                        Flexible(
+                          child: Stack(
+                            alignment: Alignment.bottomRight,
+                            children: [
+                              CircleAvatar(
+                                radius: 36,
+                                backgroundImage: AssetImage(
+                                    'assets/profile_image.jpg'), // Replace with actual image
+                              ),
+                              GestureDetector(
+                                onTap: () async {
+                                  // Open image edit functionality
+                                  final XFile? pickedFile = await ImagePicker()
+                                      .pickImage(source: ImageSource.gallery);
+                                  if (pickedFile != null) {
+                                    final File imageFile =
+                                        File(pickedFile.path);
+                                    // Now you have the image file, and you can submit or process it.
+                                    print("Image selected: ${imageFile.path}");
+                                  } else {
+                                    print("No image selected.");
+                                  }
+                                },
+                                child: CircleAvatar(
+                                  radius: 16,
+                                  backgroundColor: Colors.blue,
+                                  child: Icon(
+                                    Icons.edit,
+                                    size: 16,
+                                    color: Colors.white,
+                                  ),
                                 ),
                               ),
-                            ),
-                          ],
+                            ],
+                          ),
                         ),
-
-                        SizedBox(
-                            width: 90), // Space between avatar and team name
-
                         // Column with Team Name and Team Members Row
-                        Expanded(
+                        Flexible(
                           child: Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
@@ -636,16 +633,14 @@ class _TeamSettingsScreenState extends State<TeamSettingsScreen> {
                                 overflow: TextOverflow.ellipsis,
                               ),
 
-                              SizedBox(
-                                  height:
-                                      8), // Space between team name and avatars
-
+                              // Space between team name and avatars
+                              SizedBox(height: 8),
                               // Team Members Row
                               SizedBox(
                                 height: 36,
                                 child: Stack(
                                     clipBehavior: Clip
-                                        .none, // Allows the edit button to overlfow slightly
+                                        .none, // Allows the edit button to overflow slightly
                                     children: [
                                       // Overlapping team members
                                       for (int index = 0; index < 6; index++)
@@ -756,6 +751,7 @@ class _TeamSettingsScreenState extends State<TeamSettingsScreen> {
                             ],
                           ),
                         ),
+                        Flexible(child: SizedBox(width: 30)),
                       ],
                     ),
                   ),
@@ -874,7 +870,6 @@ class _TeamSettingsScreenState extends State<TeamSettingsScreen> {
                       onToggleSelection: toggleProjectSelection,
                       onProjectTap: handleProjectTap,
                     ),
-
                   ),
                 ],
               ),
