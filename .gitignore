@@ -45,6 +45,3 @@ app.*.map.json
 /android/app/release
 .vscode/
 flutter_01.png
-
-# Android ndk update or something related
-**/.cxx

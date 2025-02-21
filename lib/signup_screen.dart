@@ -56,7 +56,7 @@ class SignUpScreen extends StatelessWidget {
                 mainAxisSize: MainAxisSize.min,
                 children: [
                   Image.asset(
-                    'assets/custom_icons/google_icon.png',
+                    'assets/google_icon.png',
                     width: 28,
                     height: 28,
                   ),
@@ -177,8 +177,6 @@ class _SignUpFormState extends State<SignUpForm> {
 
   // Register user with Firebase
   Future<void> _registerUser() async {
-    print(_auth.toString());
-
     if (_formKey.currentState!.validate()) {
       try {
         // Create user with email and password
@@ -246,13 +244,11 @@ class _SignUpFormState extends State<SignUpForm> {
           // Full Name Input
           TextFormField(
             controller: _fullNameController,
-            cursorColor: Colors.white,
-            style: TextStyle(color: Colors.white),
             decoration: InputDecoration(
               prefixIcon: Padding(
                 padding: EdgeInsets.only(left: 10, right: 30),
                 child: ImageIcon(
-                  AssetImage('assets/custom_icons/User_box.png'),
+                  AssetImage('assets/User_box.png'),
                   color: Colors.white,
                 ),
               ),
@@ -274,15 +270,13 @@ class _SignUpFormState extends State<SignUpForm> {
           // Email Address Input
           TextFormField(
             controller: _emailController,
-            cursorColor: Colors.white,
-            style: TextStyle(color: Colors.white),
             decoration: InputDecoration(
               prefixIcon: Padding(
                 padding: EdgeInsets.only(left: 10, right: 30),
                 child: Opacity(
                   opacity: 0.75,
                   child: ImageIcon(
-                    AssetImage('assets/custom_icons/mail_icon.png'),
+                    AssetImage('assets/mail_icon.png'),
                     color: Colors.white,
                   ),
                 ),
@@ -316,8 +310,6 @@ class _SignUpFormState extends State<SignUpForm> {
           PasswordTextFormField(
             controller: _passwordController,
             obscureText: _obscureText,
-            cursorColor: Colors.white,
-            style: TextStyle(color: Colors.white),
             onChanged: _checkPasswordConditions,
             decoration: InputDecoration(
               prefixIcon: const Padding(
@@ -326,7 +318,7 @@ class _SignUpFormState extends State<SignUpForm> {
                   right: 30,
                 ),
                 child: ImageIcon(
-                  AssetImage('assets/custom_icons/Unlock.png'),
+                  AssetImage('assets/Unlock.png'),
                   color: Colors.white,
                 ),
               ),
@@ -360,8 +352,6 @@ class _SignUpFormState extends State<SignUpForm> {
           // Confirm Password Input
           PasswordTextFormField(
             controller: _confirmPasswordController,
-            cursorColor: Colors.white,
-            style: TextStyle(color: Colors.white),
             obscureText: _obscureConfirmText,
             decoration: InputDecoration(
               prefixIcon: const Padding(
@@ -370,7 +360,7 @@ class _SignUpFormState extends State<SignUpForm> {
                   right: 30,
                 ),
                 child: ImageIcon(
-                  AssetImage('assets/custom_icons/Lock.png'),
+                  AssetImage('assets/Lock.png'),
                   color: Colors.white,
                 ),
               ),
