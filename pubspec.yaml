@@ -32,7 +32,6 @@ dependencies:
     sdk: flutter
   google_maps_flutter: ^2.0.10 # Check for the latest version
   firebase_core: ^3.11.0
-  maps_toolkit: ^3.0.0
   cloud_firestore: ^5.6.1
   firebase_auth: ^5.4.0
   firebase_database: ^11.3.0

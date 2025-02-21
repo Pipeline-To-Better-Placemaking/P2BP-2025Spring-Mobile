@@ -177,7 +177,6 @@ class _SignUpFormState extends State<SignUpForm> {
 
   // Register user with Firebase
   Future<void> _registerUser() async {
-feature/tests_selection_screen
     print(_auth.toString());
 
     if (_formKey.currentState!.validate()) {
