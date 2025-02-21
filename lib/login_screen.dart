@@ -298,6 +298,7 @@ class _LoginFormState extends State<LoginForm> {
               ),
               filled: false,
             ),
+            keyboardType: TextInputType.emailAddress,
           ),
           const SizedBox(height: 10),
           // Password Input
@@ -337,7 +338,7 @@ class _LoginFormState extends State<LoginForm> {
                 onPressed: () {
                   // Toggle password visibility
                   setState(() {
-                    _obscureText = _obscureText ? false : true;
+                    _obscureText = !_obscureText;
                   });
                 },
               ),

@@ -13,6 +13,7 @@ import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:p2bp_2025spring_mobile/project_list_widget.dart';
 import 'package:p2bp_2025spring_mobile/create_new_projects_only_screen.dart.dart';
 
+
 class TeamSettingsScreen extends StatefulWidget {
   @override
   State<TeamSettingsScreen> createState() => _TeamSettingsScreenState();
@@ -873,6 +874,7 @@ class _TeamSettingsScreenState extends State<TeamSettingsScreen> {
                       onToggleSelection: toggleProjectSelection,
                       onProjectTap: handleProjectTap,
                     ),
+
                   ),
                 ],
               ),

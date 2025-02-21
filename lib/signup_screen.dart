@@ -177,7 +177,9 @@ class _SignUpFormState extends State<SignUpForm> {
 
   // Register user with Firebase
   Future<void> _registerUser() async {
+feature/tests_selection_screen
     print(_auth.toString());
+
     if (_formKey.currentState!.validate()) {
       try {
         // Create user with email and password
@@ -215,12 +217,10 @@ class _SignUpFormState extends State<SignUpForm> {
         );
 
         Navigator.pop(context);
-      } catch (e, stacktrace) {
+      } catch (e) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(content: Text('Failed to register: $e')),
         );
-        print('Exception: $e');
-        print('Stacktrace: $stacktrace');
       }
     }
   }

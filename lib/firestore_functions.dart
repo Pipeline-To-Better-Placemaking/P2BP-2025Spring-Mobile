@@ -1,6 +1,5 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
-
 import 'db_schema_classes.dart';
 
 final FirebaseFirestore _firestore = FirebaseFirestore.instance;
@@ -11,33 +10,28 @@ final User? _loggedInUser = FirebaseAuth.instance.currentUser;
 // delete it in the user's data). For simplicity, any objects that may be
 // deleted should contain references to the objects which contain it.
 
-class FirestoreFunctions {
-  /// Gets the value of fullName from 'users' the document for the given uid.
-  /// Contains error handling for every case starting from uid being null.
-  /// This will always either return the successfully found name or throw
-  /// an exception, so running this in a try-catch is strongly encouraged.
-  static Future<String> getUserFullName(String? uid) async {
-    try {
-      if (uid == null) {
-        throw Exception('no-user-id-found');
-      }
 
-      final userDoc =
-          await FirebaseFirestore.instance.collection('users').doc(uid).get();
+/// Gets the value of fullName from the 'users' document for the given uid.
+/// Contains error handling for every case starting from uid being null.
+/// This will always either return the successfully found name or throw
+/// an exception, so running this in a try-catch is strongly encouraged.
+Future<String> getUserFullName(String? uid) async {
+  if (uid == null) {
+    throw Exception('no-user-id-found');
+  }
 
-      if (userDoc.exists) {
-        String? fullName = userDoc['fullName'];
-        if (fullName == null || fullName.isEmpty) {
-          throw Exception('user-has-no-name');
-        } else {
-          return fullName;
-        }
-      } else {
-        throw Exception('user-document-does-not-exist');
-      }
-    } catch (e) {
-      throw Exception(e);
+  final userDoc =
+      await FirebaseFirestore.instance.collection('users').doc(uid).get();
+
+  if (userDoc.exists) {
+    String? fullName = userDoc['fullName'];
+    if (fullName == null || fullName.isEmpty) {
+      throw Exception('user-has-no-name');
+    } else {
+      return fullName;
     }
+  } else {
+    throw Exception('user-document-does-not-exist');
   }
 }
 
@@ -132,14 +126,21 @@ Future<Project> getProjectInfo(String projectID) async {
 
   try {
     projectDoc = await _firestore.collection("projects").doc(projectID).get();
-    project = Project(
-      teamRef: projectDoc['team'],
-      projectID: projectDoc['id'],
-      title: projectDoc['title'],
-      description: projectDoc['description'],
-      polygonPoints: projectDoc['polygonPoints'],
-      polygonArea: projectDoc['polygonArea'],
-    );
+    
+    if (projectDoc.exists && projectDoc.data()!.containsKey('polygonArea')) {
+      project = Project(
+        teamRef: projectDoc['team'],
+        projectID: projectDoc['id'],
+        title: projectDoc['title'],
+        description: projectDoc['description'],
+        polygonPoints: projectDoc['polygonPoints'],
+        polygonArea: projectDoc['polygonArea'],
+      );
+    } else {
+      print(
+          'Error in firestore_functions: Either project does not exist in Firestore or polygonArea is not initialized');
+      print('Project exists? ${projectDoc.exists}.');
+    }
   } catch (e, stacktrace) {
     print('Exception retrieving teams: $e');
     print('Stacktrace: $stacktrace');

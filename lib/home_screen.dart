@@ -14,6 +14,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'firestore_functions.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 
+
 List<String> navIcons2 = [
   'assets/custom_icons/Home_Icon.png',
   'assets/custom_icons/Add_Icon.png',
@@ -25,7 +26,7 @@ class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
 
   @override
-  _HomeScreenState createState() => _HomeScreenState();
+  State<HomeScreen> createState() => _HomeScreenState();
 }
 
 class _HomeScreenState extends State<HomeScreen> {
@@ -34,9 +35,8 @@ class _HomeScreenState extends State<HomeScreen> {
   DocumentReference? teamRef;
   int _projectsCount = 0;
   bool _isLoading = true;
-
   int selectedIndex = 0;
-  String _firstName = 'Michael';
+  String _firstName = 'User';
 
   @override
   void initState() {
@@ -66,8 +66,7 @@ class _HomeScreenState extends State<HomeScreen> {
   // Gets name from DB, get the first word of that, then sets _firstName to it
   Future<void> _getUserFirstName() async {
     try {
-      String fullName =
-          await FirestoreFunctions.getUserFullName(_currentUser?.uid);
+      String fullName = await getUserFullName(_currentUser?.uid);
 
       // Get first name from full name
       String firstName = fullName.split(' ').first;
@@ -80,7 +79,9 @@ class _HomeScreenState extends State<HomeScreen> {
     } catch (e) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text('An error occurred while retrieving your name: $e'),
+          content: Text(
+            'An error occurred while retrieving your name: $e',
+          ),
         ),
       );
     }
@@ -119,7 +120,7 @@ class _HomeScreenState extends State<HomeScreen> {
     required BuildContext context,
     required String bannerImage, // Image path for banner
     required Project project, // Project Name
-    required String teamName, // Team name
+    required String teamName, // Team Name
     required int index,
   }) {
     return Card(
@@ -268,6 +269,7 @@ class _HomeScreenState extends State<HomeScreen> {
         await _populateProjects();
       },
       child: SingleChildScrollView(
+        physics: AlwaysScrollableScrollPhysics(),
         child: Padding(
           padding: const EdgeInsets.symmetric(horizontal: 20),
           child: Column(
@@ -391,7 +393,9 @@ class _HomeScreenState extends State<HomeScreen> {
               ),
               // Project Cards
               _projectsCount > 0
+                  // If there are projects populate ListView
                   ? ListView.separated(
+                      physics: NeverScrollableScrollPhysics(),
                       shrinkWrap: true,
                       padding: const EdgeInsets.only(
                         left: 15,
@@ -414,13 +418,28 @@ class _HomeScreenState extends State<HomeScreen> {
                         height: 50,
                       ),
                     )
+                  // Else if there are no projects
                   : _isLoading == true
+                      // If loading display loading indicator
                       ? const Center(child: CircularProgressIndicator())
-                      : Align(
-                          alignment: Alignment.center,
-                          child: Text(
-                              "You have no projects! Join or create a team first."),
+                      // Else display text to create new project
+                      : RefreshIndicator(
+                          onRefresh: () async {
+                            await _populateProjects();
+                          },
+                          child: SingleChildScrollView(
+                            physics: AlwaysScrollableScrollPhysics(),
+                            child: SizedBox(
+                              height:
+                                  MediaQuery.of(context).size.height * 2 / 3,
+                              child: Center(
+                                child: Text(
+                                    "You have no projects! Join a team or create a project first."),
+                              ),
+                            ),
+                          ),
                         ),
+              SizedBox(height: 100),
             ],
           ),
         ),

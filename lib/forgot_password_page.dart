@@ -169,6 +169,7 @@ class _ForgotPasswordFormState extends State<ForgotPasswordForm> {
               errorText: _isEmailValid ? null : 'Invalid email format',
             ),
           ),
+          
           const SizedBox(height: 30),
           TextButton(
             onPressed: handleSubmit,

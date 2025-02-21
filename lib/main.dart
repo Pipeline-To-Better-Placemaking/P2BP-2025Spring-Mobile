@@ -4,7 +4,6 @@ import 'firebase_options.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:p2bp_2025spring_mobile/db_schema_classes.dart';
 import 'create_project_details.dart';
-import 'package:p2bp_2025spring_mobile/search_location_screen.dart';
 import 'results_panel.dart';
 import 'edit_project_panel.dart';
 import 'forgot_password_page.dart';
@@ -28,6 +27,7 @@ void main() async {
     await Firebase.initializeApp(
         // options: DefaultFirebaseOptions.currentPlatform,
         );
+
     // Only set persistence if we're on web.
     if (kIsWeb) {
       // Set Firebase persistence to SESSION to log out on tab/browser close
@@ -192,11 +192,11 @@ class _HomePageStates extends State<HomePage> {
                 name: 'Team Settings',
                 version: 0,
               ),
-              // Button 14: Search
+              // Button 14: Project Details
               buildTempButton(
                 context: context,
-                route: '/search',
-                name: 'Search',
+                route: '/create_project_details',
+                name: 'Create Project Details',
                 version: 1,
               ),
               // Button 15: Test Selection

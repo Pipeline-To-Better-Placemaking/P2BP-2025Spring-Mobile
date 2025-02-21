@@ -41,7 +41,7 @@ class _CreateProjectAndTeamsPageState extends State<CreateProjectAndTeamsPage> {
           child: Center(
             child: Column(
               children: <Widget>[
-                // Replace the old SegmentedButton with your custom MySegmentedTab:
+                // Segmented tab to swap between teams/projects view
                 CustomSegmentedTab(
                   selectedTab: currentTab,
                   onTabSelected: (CustomTab newTab) {
@@ -501,7 +501,7 @@ class ColorSelectCircle extends StatelessWidget {
     );
   }
 }
-
+// Old Project Creation Code
 // // For page selection switch. 0 = project, 1 = team.
 // enum PageView { project, team }
 

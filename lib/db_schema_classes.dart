@@ -1,6 +1,6 @@
-// User class for create_project_and_teams.dart
 import 'package:cloud_firestore/cloud_firestore.dart';
 
+// User class for create_project_and_teams.dart
 class Member {
   String _userID = '';
   String _fullName = '';
@@ -45,7 +45,6 @@ class Team {
   String adminName = '';
   String teamID = '';
   String title = '';
-  // TODO: Change to contain user id and role.
   List teamMembers = [];
   List projects = [];
   int numProjects = 0;

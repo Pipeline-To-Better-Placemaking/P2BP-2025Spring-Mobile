@@ -81,6 +81,7 @@ class EditButton extends StatelessWidget {
   final Color backgroundColor;
   final Icon icon;
   final Function onPressed;
+  final Color iconColor;
 
   const EditButton({
     super.key,
@@ -89,6 +90,7 @@ class EditButton extends StatelessWidget {
     required this.backgroundColor,
     required this.icon,
     required this.onPressed,
+    this.iconColor = Colors.white,
   });
 
   @override
@@ -101,6 +103,7 @@ class EditButton extends StatelessWidget {
         ),
         foregroundColor: foregroundColor,
         backgroundColor: backgroundColor,
+        iconColor: iconColor,
       ),
       onPressed: () => onPressed(),
       label: Text(text),
@@ -117,6 +120,7 @@ class CreationTextBox extends StatefulWidget {
   final String labelText;
   final ValueChanged? onChanged;
   final Icon? icon;
+  final String? errorMessage;
 
   const CreationTextBox({
     super.key,
@@ -126,6 +130,7 @@ class CreationTextBox extends StatefulWidget {
     required this.minLines,
     this.onChanged,
     this.icon,
+    this.errorMessage,
   });
 
   @override
@@ -185,6 +190,20 @@ class _CreationTextBoxState extends State<CreationTextBox> {
             alignLabelWithHint: true,
             counterStyle:
                 const TextStyle(color: Color.fromARGB(255, 28, 91, 192)),
+            errorBorder: const OutlineInputBorder(
+              borderRadius: BorderRadius.all(Radius.circular(10)),
+              borderSide: BorderSide(
+                color: Color(0xFFD32F2F),
+                width: 1.5,
+              ),
+            ),
+            focusedErrorBorder: const OutlineInputBorder(
+              borderRadius: BorderRadius.all(Radius.circular(10)),
+              borderSide: BorderSide(
+                color: Color(0xFFD32F2F),
+                width: 2,
+              ),
+            ),
             enabledBorder: const OutlineInputBorder(
               borderRadius: BorderRadius.all(Radius.circular(10)),
               borderSide: BorderSide(
@@ -277,6 +296,7 @@ class PasswordTextFormField extends StatelessWidget {
     onChanged,
     this.style,
     this.cursorColor,
+
   })  : _decoration = decoration ??
             InputDecoration().applyDefaults(ThemeData().inputDecorationTheme),
         _controller = controller,
