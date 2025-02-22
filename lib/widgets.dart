@@ -77,7 +77,7 @@ class EditButton extends StatelessWidget {
   final Color foregroundColor;
   final Color backgroundColor;
   final Icon icon;
-  final Function onPressed;
+  final VoidCallback? onPressed;
   final Color iconColor;
 
   const EditButton({
@@ -101,8 +101,9 @@ class EditButton extends StatelessWidget {
         foregroundColor: foregroundColor,
         backgroundColor: backgroundColor,
         iconColor: iconColor,
+        disabledBackgroundColor: Color(0xCD6C6C6C),
       ),
-      onPressed: () => onPressed(),
+      onPressed: onPressed,
       label: Text(text),
       icon: icon,
       iconAlignment: IconAlignment.end,

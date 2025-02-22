@@ -15,7 +15,7 @@ class NaturePrevalence extends StatefulWidget {
   State<NaturePrevalence> createState() => _NaturePrevalenceState();
 }
 
-enum Vegetation { canopy, trees, umbrellaDining, temporary, constructedCeiling }
+enum Vegetation { native, design, openField }
 
 enum WaterBody { ocean, lake, river, swamp }
 
@@ -32,7 +32,7 @@ class _NaturePrevalenceState extends State<NaturePrevalence> {
 
   List<LatLng> _polygonPoints = []; // Points for the polygon
   List<mp.LatLng> _mapToolsPolygonPoints = [];
-  Set<Polygon> _polygon = {}; // Set of polygons
+  Set<Polygon> _polygons = {}; // Set of polygons
   List<GeoPoint> _polygonAsGeoPoints =
       []; // The current polygon represented as points (for Firestore).
   Set<Marker> _markers = {}; // Set of markers for points
@@ -46,6 +46,8 @@ class _NaturePrevalenceState extends State<NaturePrevalence> {
   void initState() {
     super.initState();
     _checkAndFetchLocation();
+    //project = getProjectInfo(projectID);
+    // createProjectArea()
   }
 
   void showModalWaterBody(BuildContext context) {
@@ -305,12 +307,12 @@ class _NaturePrevalenceState extends State<NaturePrevalence> {
                             ),
                             onPressed: () {
                               setState(() {
-                                _type = Vegetation.canopy.name;
+                                _type = Vegetation.native.name;
                                 _polygonMode = true;
                               });
                               Navigator.pop(context);
                             },
-                            child: Text('Canopy'),
+                            child: Text('Native'),
                           ),
                         ),
                         Expanded(
@@ -325,12 +327,12 @@ class _NaturePrevalenceState extends State<NaturePrevalence> {
                             ),
                             onPressed: () {
                               setState(() {
-                                _type = Vegetation.trees.name;
+                                _type = Vegetation.design.name;
                                 _polygonMode = true;
                               });
                               Navigator.pop(context);
                             },
-                            child: Text('Trees'),
+                            child: Text('Design'),
                           ),
                         ),
                         Expanded(
@@ -345,62 +347,16 @@ class _NaturePrevalenceState extends State<NaturePrevalence> {
                             ),
                             onPressed: () {
                               setState(() {
-                                _type = Vegetation.umbrellaDining.name;
+                                _type = Vegetation.openField.name;
                                 _polygonMode = true;
                               });
 
                               Navigator.pop(context);
                             },
-                            child: Text('Umbrella Dining',
-                                textAlign: TextAlign.center),
+                            child:
+                                Text('Open Field', textAlign: TextAlign.center),
                           ),
                         ),
-                      ],
-                    ),
-                    Row(
-                      spacing: 20,
-                      children: <Widget>[
-                        Expanded(
-                          flex: 1,
-                          child: FilledButton(
-                            style: FilledButton.styleFrom(
-                              backgroundColor: Colors.white,
-                              foregroundColor: Colors.black,
-                              shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(10.0),
-                              ),
-                            ),
-                            onPressed: () {
-                              setState(() {
-                                _type = Vegetation.temporary.name;
-                                _polygonMode = true;
-                              });
-                              Navigator.pop(context);
-                            },
-                            child: Text('Temporary'),
-                          ),
-                        ),
-                        Expanded(
-                          flex: 1,
-                          child: FilledButton(
-                            style: FilledButton.styleFrom(
-                              backgroundColor: Colors.white,
-                              foregroundColor: Colors.black,
-                              shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(10.0),
-                              ),
-                            ),
-                            onPressed: () {
-                              setState(() {
-                                _type = Vegetation.constructedCeiling.name;
-                                _polygonMode = true;
-                              });
-                              Navigator.pop(context);
-                            },
-                            child: Text('Constructed Ceiling'),
-                          ),
-                        ),
-                        Flexible(flex: 1, child: SizedBox())
                       ],
                     ),
                     SizedBox(height: 25),
@@ -801,6 +757,8 @@ class _NaturePrevalenceState extends State<NaturePrevalence> {
             consumeTapEvents: true,
             icon: AssetMapBitmap('assets/${_type}_marker.png'),
             onTap: () {
+              // If placing a point or polygon, don't remove point.
+              if (_pointMode || _polygonMode) return;
               // If the marker is tapped again, it will be removed
               setState(() {
                 _markers.removeWhere((marker) => marker.markerId == markerId);
@@ -818,8 +776,8 @@ class _NaturePrevalenceState extends State<NaturePrevalence> {
   void _finalizePolygon() {
     try {
       // Create polygon.
-      _polygon = {..._polygon, ...finalizePolygon(_polygonPoints)};
-      print(_polygon);
+      _polygons = {..._polygons, ...finalizePolygon(_polygonPoints)};
+      print(_polygons);
 
       // Cleans up current polygon representations.
       _polygonAsGeoPoints = [];
@@ -839,6 +797,7 @@ class _NaturePrevalenceState extends State<NaturePrevalence> {
       // Clear markers from screen.
       setState(() {
         _polygonMarkers.clear();
+        _polygonMode = false;
       });
     } catch (e, stacktrace) {
       print('Excpetion in _finalize_polygon(): $e');
@@ -873,12 +832,12 @@ class _NaturePrevalenceState extends State<NaturePrevalence> {
                     child: Stack(
                       children: [
                         SizedBox(
-                          height: MediaQuery.of(context).size.height - 130,
+                          height: MediaQuery.of(context).size.height - 126,
                           child: GoogleMap(
                             onMapCreated: _onMapCreated,
                             initialCameraPosition: CameraPosition(
                                 target: _currentLocation, zoom: 14.0),
-                            polygons: _polygon,
+                            polygons: _polygons,
                             markers: {..._markers, ..._polygonMarkers},
                             onTap: _togglePoint,
                             mapType: _currentMapType, // Use current map type
@@ -909,52 +868,61 @@ class _NaturePrevalenceState extends State<NaturePrevalence> {
         bottomSheet: _isLoading
             ? SizedBox()
             : Container(
-                height: 250,
+                height: 300,
+                padding: const EdgeInsets.symmetric(
+                    horizontal: 12.0, vertical: 10.0),
                 decoration: BoxDecoration(
                   gradient: defaultGrad,
                   borderRadius: const BorderRadius.only(
                     topLeft: Radius.circular(24.0),
                     topRight: Radius.circular(24.0),
                   ),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black,
+                      offset: Offset(0.0, 1.0), //(x,y)
+                      blurRadius: 6.0,
+                    ),
+                  ],
                 ),
-                child: Padding(
-                  padding: const EdgeInsets.symmetric(
-                      horizontal: 12.0, vertical: 10.0),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      SizedBox(height: 5),
-                      Center(
-                        child: Text(
-                          'Nature Prevalence',
-                          style: TextStyle(
-                            fontSize: 20,
-                            fontWeight: FontWeight.bold,
-                            color: Colors.yellow[600],
-                          ),
-                        ),
-                      ),
-                      SizedBox(height: 10),
-                      Text(
-                        'Natural Boundaries',
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    SizedBox(height: 5),
+                    Center(
+                      child: Text(
+                        'Nature Prevalence',
                         style: TextStyle(
-                          fontSize: 16,
+                          fontSize: 20,
                           fontWeight: FontWeight.bold,
-                          color: Colors.white,
+                          color: Colors.yellow[600],
                         ),
                       ),
-                      SizedBox(height: 5),
-                      Row(
-                        spacing: 10,
-                        children: [
-                          buildTestButton(
+                    ),
+                    SizedBox(height: 10),
+                    Text(
+                      'Natural Boundaries',
+                      style: TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.bold,
+                        color: Colors.white,
+                      ),
+                    ),
+                    SizedBox(height: 5),
+                    Row(
+                      spacing: 10,
+                      children: [
+                        Flexible(
+                          child: buildTestButton(
                               onPressed: (BuildContext context) {
                                 showModalWaterBody(context);
                               },
                               context: context,
                               text: 'Body of Water',
                               icon: Icon(Icons.water)),
-                          buildTestButton(
+                        ),
+                        Flexible(
+                          child: buildTestButton(
                             text: 'Vegetation',
                             icon: Icon(Icons.grass, color: Colors.black),
                             context: context,
@@ -962,73 +930,27 @@ class _NaturePrevalenceState extends State<NaturePrevalence> {
                               showModalVegetation(context);
                             },
                           ),
-                          _polygonMode
-                              ? Align(
-                                  alignment: Alignment.topRight,
-                                  child: EditButton(
-                                    text: 'Confirm Shape',
-                                    foregroundColor: Colors.black,
-                                    backgroundColor: Colors.white,
-                                    icon: const Icon(Icons.check,
-                                        color: Colors.black),
-                                    onPressed: () async {
-                                      _finalizePolygon();
-                                      setState(() {
-                                        _polygonMode = false;
-                                      });
-                                      // if (_polygon.isNotEmpty) {
-                                      //   await saveProject(
-                                      //     projectTitle: widget.partialProjectData.title,
-                                      //     description:
-                                      //         widget.partialProjectData.description,
-                                      //     teamRef: await getCurrentTeam(),
-                                      //     polygonPoints: _polygonAsPoints,
-                                      //     // Polygon area is square meters
-                                      //     // (miles *= 0.00062137 * 0.00062137)
-                                      //     polygonArea: mp.SphericalUtil.computeArea(
-                                      //         _mapToolsPolygonPoints),
-                                      //   );
-                                      //   Navigator.pushReplacement(
-                                      //       context,
-                                      //       MaterialPageRoute(
-                                      //         builder: (context) => HomeScreen(),
-                                      //       ));
-                                      //   // TODO: Push to project details page.
-                                      //   Navigator.push(
-                                      //       context,
-                                      //       MaterialPageRoute(
-                                      //         builder: (context) => HomeScreen(),
-                                      //       ));
-                                      // } else {
-                                      //   ScaffoldMessenger.of(context).showSnackBar(
-                                      //     const SnackBar(
-                                      //         content: Text(
-                                      //             'Please designate your project area, and confirm with the check button.')),
-                                      //   );
-                                      // }
-                                    },
-                                  ),
-                                )
-                              : Container(),
-                        ],
-                      ),
-                      SizedBox(
-                        height: 10,
-                      ),
-                      Text(
-                        'Animals',
-                        style: TextStyle(
-                          fontSize: 16,
-                          fontWeight: FontWeight.bold,
-                          color: Colors.white,
                         ),
+                      ],
+                    ),
+                    SizedBox(
+                      height: 10,
+                    ),
+                    Text(
+                      'Animals',
+                      style: TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.bold,
+                        color: Colors.white,
                       ),
-                      SizedBox(height: 5),
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                        spacing: 10,
-                        children: [
-                          buildTestButton(
+                    ),
+                    SizedBox(height: 5),
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      spacing: 10,
+                      children: [
+                        Flexible(
+                          child: buildTestButton(
                             text: 'Animal',
                             icon: Icon(Icons.pets, color: Colors.black),
                             context: context,
@@ -1036,44 +958,83 @@ class _NaturePrevalenceState extends State<NaturePrevalence> {
                               showModalAnimal(context);
                             },
                           ),
-                          Align(
-                            alignment: Alignment.centerRight,
-                            child: EditButton(
-                              text: 'Finish',
-                              foregroundColor: Colors.black,
-                              backgroundColor: Colors.white,
-                              icon: const Icon(Icons.chevron_right,
-                                  color: Colors.black),
-                              onPressed: () async {
-                                //   await saveProject(
-                                //     projectTitle: widget.partialProjectData.title,
-                                //     description:
-                                //         widget.partialProjectData.description,
-                                //     teamRef: await getCurrentTeam(),
-                                //     polygonPoints: _polygonAsPoints,
-                                //     // Polygon area is square meters
-                                //     // (miles *= 0.00062137 * 0.00062137)
-                                //     polygonArea: mp.SphericalUtil.computeArea(
-                                //         _mapToolsPolygonPoints),
-                                //   );
-                                //   Navigator.pushReplacement(
-                                //       context,
-                                //       MaterialPageRoute(
-                                //         builder: (context) => HomeScreen(),
-                                //       ));
-                                //   // TODO: Push to project details page.
-                                //   Navigator.push(
-                                //       context,
-                                //       MaterialPageRoute(
-                                //         builder: (context) => HomeScreen(),
-                                //       ));
-                              },
+                        ),
+                      ],
+                    ),
+                    SizedBox(height: 20),
+                    Expanded(
+                      child: Row(
+                        spacing: 10,
+                        children: <Widget>[
+                          Expanded(
+                            child: Row(
+                              spacing: 10,
+                              children: <Widget>[
+                                Flexible(
+                                  child: EditButton(
+                                    text: 'Confirm Shape',
+                                    foregroundColor: Colors.green,
+                                    backgroundColor: Colors.white,
+                                    icon: const Icon(Icons.check),
+                                    iconColor: Colors.green,
+                                    onPressed: (_polygonMode)
+                                        ? _finalizePolygon
+                                        : null,
+                                  ),
+                                ),
+                                Flexible(
+                                  child: EditButton(
+                                    text: 'Cancel',
+                                    foregroundColor: Colors.red,
+                                    backgroundColor: Colors.white,
+                                    icon: const Icon(Icons.cancel),
+                                    iconColor: Colors.red,
+                                    onPressed: (_pointMode || _polygonMode)
+                                        ? () {
+                                            setState(() {
+                                              _pointMode = false;
+                                              _polygonMode = false;
+                                              _polygonMarkers = {};
+                                            });
+                                            _polygonPoints = [];
+                                          }
+                                        : null,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                          Flexible(
+                            flex: 0,
+                            child: Align(
+                              alignment: Alignment.centerRight,
+                              child: EditButton(
+                                text: 'Finish',
+                                foregroundColor: Colors.black,
+                                backgroundColor: Colors.white,
+                                icon: const Icon(Icons.chevron_right,
+                                    color: Colors.black),
+                                onPressed: () async {
+                                  // todo: await saveTest()
+                                  //   Navigator.pushReplacement(
+                                  //       context,
+                                  //       MaterialPageRoute(
+                                  //         builder: (context) => HomeScreen(),
+                                  //       ));
+                                  //   // TODO: Push to project details page.
+                                  //   Navigator.push(
+                                  //       context,
+                                  //       MaterialPageRoute(
+                                  //         builder: (context) => HomeScreen(),
+                                  //       ));
+                                },
+                              ),
                             ),
                           ),
                         ],
                       ),
-                    ],
-                  ),
+                    )
+                  ],
                 ),
               ),
       ),

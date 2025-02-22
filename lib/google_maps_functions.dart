@@ -101,3 +101,11 @@ List<LatLng> _sortPointsClockwise(List<LatLng> points) {
 double _calculateAngle(double centerX, double centerY, double x, double y) {
   return atan2(y - centerY, x - centerX);
 }
+
+///
+///
+Polygon? getProjectPolygon() {
+  Polygon? polygon;
+
+  return polygon;
+}
