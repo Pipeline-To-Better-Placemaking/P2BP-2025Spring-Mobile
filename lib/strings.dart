@@ -9,8 +9,6 @@ class Strings {
       'Select two of your team\'s projects from the dropdown menu to compare their results.';
   static const String compareProjectText2 =
       'A detailed breakdown of the data from the tests shared by both projects will be displayed together, providing direct metrics for your team to analyze.';
-  static const String testSelectionText =
-      'Select a test from one of the available options in the dropdown menu.';
   static const String changeEmailText1 =
       'Want to change the email address attached to your account? Just enter the new address below and press submit.\n\nThen, check your new email address for a verification email. Your email address will only be updated once the new address has been verified.';
   static const String changeEmailText2 =
@@ -21,4 +19,6 @@ class Strings {
       'This will send you back to the login screen and require you to input your account information to log in again.';
   static const String deleteAccountConfirmText =
       'This will permanently erase your account and all associated data. You will have to make a new account if you ever want to use this app again.';
+  static const String testSelectionText =
+      'Select a test from one of the available options in the dropdown menu.';
 }

@@ -4,7 +4,7 @@ import 'theme.dart';
 import 'create_project_details.dart';
 
 class SearchScreen extends StatefulWidget {
-  const SearchScreen({super.key, required Project partialProjectData});
+  const SearchScreen({super.key});
 
   @override
   State<SearchScreen> createState() => _SearchScreenState();
@@ -440,9 +440,10 @@ class _SearchScreenState extends State<SearchScreen> {
   }
 }
 
+
 //  // Hint Text
 //                       Flexible(
-//                         child:
+//                         child: 
 //                       if (isSearching) ...[
 //                         // Cancel button for when search bar has been tapped
 //                         IconButton(
@@ -472,12 +473,16 @@ class _SearchScreenState extends State<SearchScreen> {
 //                 ),
 //               ],
 //               )
+              
 
-//           const SizedBox(height: 16),
 
-//           if(!hasSearched)
-//           Center(
+  //           const SizedBox(height: 16),
 
-//           )
+  //           if(!hasSearched)
+  //           Center(
 
-//
+  //           )
+
+  //           
+
+  

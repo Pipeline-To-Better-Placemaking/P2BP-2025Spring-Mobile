@@ -55,11 +55,6 @@ class _ProjectMapCreationState extends State<ProjectMapCreation> {
     try {
       _currentLocation = await checkAndFetchLocation();
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-            content: Text(
-                'Error retrieving location permissions. Check your permissions and try again.')),
-      );
       setState(() {
         _isLoading = false;
       });

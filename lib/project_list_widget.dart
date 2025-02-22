@@ -19,7 +19,7 @@ class ProjectListWidget extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return ListView.builder(
-      itemCount: 6, // Replace with your actual project count
+      itemCount: 6, // Replace with the actual project count
       itemBuilder: (context, index) {
         bool isSelected = selectedProjects.contains(index);
         return Column(

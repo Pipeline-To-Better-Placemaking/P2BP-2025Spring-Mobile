@@ -293,7 +293,6 @@ class _SettingsPageState extends State<SettingsPage> {
                   title: const Text('Log Out'),
                   iconColor: Color(0xFFFF7474),
                   textColor: Color(0xFFFF7474),
-
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(10),
                   ),

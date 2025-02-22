@@ -10,11 +10,11 @@ final User? _loggedInUser = FirebaseAuth.instance.currentUser;
 // delete it in the user's data). For simplicity, any objects that may be
 // deleted should contain references to the objects which contain it.
 
-
 /// Gets the value of fullName from the 'users' document for the given uid.
 /// Contains error handling for every case starting from uid being null.
 /// This will always either return the successfully found name or throw
 /// an exception, so running this in a try-catch is strongly encouraged.
+
 Future<String> getUserFullName(String? uid) async {
   if (uid == null) {
     throw Exception('no-user-id-found');
@@ -56,21 +56,20 @@ Future<String> saveTeam(
     'teams': FieldValue.arrayUnion([_firestore.doc('/teams/$teamID')])
   });
   // Currently: invites team members only once team is created.
-  for (Member members in membersList) {
-    await _firestore.collection('users').doc(members.getUserID()).update({
+  for (Member member in membersList) {
+    await _firestore.collection('users').doc(member.getUserID()).update({
       'invites': FieldValue.arrayUnion([_firestore.doc('/teams/$teamID')])
     });
   }
 
-  // Debugging print statement.
+  // Debugging print statement:
   // print("Teams reference: ${_firestore.doc('/teams/$teamID')}");
-
   return teamID;
 }
 
 /// Saves project after project creation in create_project_and_teams.dart. Takes
-/// fields for project: String projectTitle, String description,
-/// DocumentReference teamRef, and List`<GeoPoint>` polygonPoints. Saves it in
+/// fields for project: `String` projectTitle, `String` description,
+/// `DocumentReference` teamRef, and `List<GeoPoint>` polygonPoints. Saves it in
 /// teams collection too.
 Future<Project> saveProject({
   required String projectTitle,
@@ -117,7 +116,7 @@ Future<Project> saveProject({
   return tempProject;
 }
 
-/// Retrieves project info from Firestore. Returns a Future`<Project>`. Takes
+/// Retrieves project info from Firestore. Returns a `Future<Project>`. Takes
 /// projectID. Uses projectID to retrieve info, then saves it into a Project
 /// object for future use.
 Future<Project> getProjectInfo(String projectID) async {
@@ -126,7 +125,6 @@ Future<Project> getProjectInfo(String projectID) async {
 
   try {
     projectDoc = await _firestore.collection("projects").doc(projectID).get();
-    
     if (projectDoc.exists && projectDoc.data()!.containsKey('polygonArea')) {
       project = Project(
         teamRef: projectDoc['team'],
@@ -149,8 +147,8 @@ Future<Project> getProjectInfo(String projectID) async {
 }
 
 /// Calling this function returns a future reference to the currently selected
-/// team. If retrieval throws an exception, then returns null. When implementing
-/// this function, check for null before using value.
+/// team. If retrieval throws an exception, then returns `null`. When
+/// implementing this function, check for `null` before using value.
 Future<DocumentReference?> getCurrentTeam() async {
   DocumentReference? teamRef;
   final DocumentSnapshot<Map<String, dynamic>> userDoc;
@@ -195,8 +193,8 @@ Future<List<Project>> getTeamProjects(DocumentReference teamRef) async {
 }
 
 /// Fetches the current user's list of invites (team references). Extracts the
-/// data from them and puts them into a Team object. Returns them as a future
-/// of a list of Team objects. Checks to make sure document exists
+/// data from them and puts them into a `Team` object. Returns them as a future
+/// of a list of `Team` objects. Checks to make sure document exists
 /// and invites field properly created (should *always* be created, failsafe).
 Future<List<Team>> getInvites() async {
   List<Team> teamInvites = [];
@@ -236,8 +234,8 @@ Future<List<Team>> getInvites() async {
 }
 
 /// Fetches the current user's list of teams (team references). Extracts the
-/// data from them and puts them into a Team object. Returns them as a future
-/// of a list of Team objects. Checks to make sure document exists
+/// data from them and puts them into a `Team` object. Returns them as a future
+/// of a list of `Team` objects. Checks to make sure document exists
 /// and teams field properly created (should *always* be created, failsafe).
 Future<List<Team>> getTeamsIDs() async {
   List<Team> teams = [];
@@ -355,8 +353,8 @@ Future<void> addUserToTeam(String teamID) async {
 }
 
 /// Fetches the list of all users in database. Used for inviting members to
-/// to teams. Extracts the name and ID from them and puts them into a list of
-/// Member objects. Returns them as a future of a list of Member objects.
+/// teams. Extracts the name and ID from them and puts them into a list of
+/// `Member` objects. Returns them as a future of a list of Member objects.
 /// Excludes current, logged in user. List can then be queried accordingly.
 Future<List<Member>> getMembersList() async {
   List<Member> membersList = [];

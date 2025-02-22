@@ -176,7 +176,7 @@ class _CreationTextBoxState extends State<CreationTextBox> {
           textSelectionTheme: const TextSelectionThemeData(
               selectionColor: Colors.blue, selectionHandleColor: Colors.blue),
         ),
-        child: TextField(
+        child: TextFormField(
           focusNode: _focusNode,
           onChanged: widget.onChanged,
           style: const TextStyle(
@@ -185,11 +185,20 @@ class _CreationTextBoxState extends State<CreationTextBox> {
           maxLines: widget.maxLines,
           minLines: widget.minLines,
           cursorColor: const Color(0xFF2F6DCF),
+          // Validator remains the same as in Version 2:
+          validator: (value) {
+            if (widget.errorMessage != null &&
+                (value == null || value.length < 3)) {
+              return widget.errorMessage!;
+            }
+            return null;
+          },
           decoration: InputDecoration(
             prefixIcon: focusedIcon,
             alignLabelWithHint: true,
             counterStyle:
                 const TextStyle(color: Color.fromARGB(255, 28, 91, 192)),
+            // BEGIN: Restored error styling from Version 1
             errorBorder: const OutlineInputBorder(
               borderRadius: BorderRadius.all(Radius.circular(10)),
               borderSide: BorderSide(
@@ -204,6 +213,7 @@ class _CreationTextBoxState extends State<CreationTextBox> {
                 width: 2,
               ),
             ),
+            // END: Restored error styling from Version 1
             enabledBorder: const OutlineInputBorder(
               borderRadius: BorderRadius.all(Radius.circular(10)),
               borderSide: BorderSide(
@@ -296,7 +306,6 @@ class PasswordTextFormField extends StatelessWidget {
     onChanged,
     this.style,
     this.cursorColor,
-
   })  : _decoration = decoration ??
             InputDecoration().applyDefaults(ThemeData().inputDecorationTheme),
         _controller = controller,
@@ -384,14 +393,14 @@ class _CustomSegmentedTabState extends State<CustomSegmentedTab> {
   Widget _buildSegment({required CustomTab tab, required String label}) {
     final bool isSelected = (widget.selectedTab == tab);
 
-    // Selected tab: white text
+    // Selected tab
     final TextStyle selectedStyle = const TextStyle(
       color: Colors.white,
       fontWeight: FontWeight.bold,
       fontSize: 16,
     );
 
-    // Unselected tab: B6D1EC
+    // Unselected tab
     final TextStyle unselectedStyle = const TextStyle(
       color: Color(0xFFB6D1EC),
       fontWeight: FontWeight.bold,

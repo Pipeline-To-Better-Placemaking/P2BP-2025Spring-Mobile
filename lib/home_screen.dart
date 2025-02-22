@@ -26,7 +26,7 @@ class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
 
   @override
-  State<HomeScreen> createState() => _HomeScreenState();
+  _HomeScreenState createState() => _HomeScreenState();
 }
 
 class _HomeScreenState extends State<HomeScreen> {
@@ -35,8 +35,9 @@ class _HomeScreenState extends State<HomeScreen> {
   DocumentReference? teamRef;
   int _projectsCount = 0;
   bool _isLoading = true;
+
   int selectedIndex = 0;
-  String _firstName = 'User';
+  String _firstName = 'Michael';
 
   @override
   void initState() {
@@ -79,9 +80,7 @@ class _HomeScreenState extends State<HomeScreen> {
     } catch (e) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text(
-            'An error occurred while retrieving your name: $e',
-          ),
+          content: Text('An error occurred while retrieving your name: $e'),
         ),
       );
     }
@@ -122,7 +121,7 @@ class _HomeScreenState extends State<HomeScreen> {
     required BuildContext context,
     required String bannerImage, // Image path for banner
     required Project project, // Project Name
-    required String teamName, // Team Name
+    required String teamName, // Team name
     required int index,
   }) {
     return Card(
@@ -271,7 +270,6 @@ class _HomeScreenState extends State<HomeScreen> {
         await _populateProjects();
       },
       child: SingleChildScrollView(
-        physics: AlwaysScrollableScrollPhysics(),
         child: Padding(
           padding: const EdgeInsets.symmetric(horizontal: 20),
           child: Column(
@@ -395,9 +393,7 @@ class _HomeScreenState extends State<HomeScreen> {
               ),
               // Project Cards
               _projectsCount > 0
-                  // If there are projects populate ListView
                   ? ListView.separated(
-                      physics: NeverScrollableScrollPhysics(),
                       shrinkWrap: true,
                       padding: const EdgeInsets.only(
                         left: 15,
@@ -420,28 +416,13 @@ class _HomeScreenState extends State<HomeScreen> {
                         height: 50,
                       ),
                     )
-                  // Else if there are no projects
                   : _isLoading == true
-                      // If loading display loading indicator
                       ? const Center(child: CircularProgressIndicator())
-                      // Else display text to create new project
-                      : RefreshIndicator(
-                          onRefresh: () async {
-                            await _populateProjects();
-                          },
-                          child: SingleChildScrollView(
-                            physics: AlwaysScrollableScrollPhysics(),
-                            child: SizedBox(
-                              height:
-                                  MediaQuery.of(context).size.height * 2 / 3,
-                              child: Center(
-                                child: Text(
-                                    "You have no projects! Join a team or create a project first."),
-                              ),
-                            ),
-                          ),
+                      : Align(
+                          alignment: Alignment.center,
+                          child: Text(
+                              "You have no projects! Join or create a team first."),
                         ),
-              SizedBox(height: 100),
             ],
           ),
         ),
