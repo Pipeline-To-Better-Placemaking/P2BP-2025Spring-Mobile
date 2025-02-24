@@ -45,3 +45,10 @@ app.*.map.json
 /android/app/release
 .vscode/
 flutter_01.png
+
+# Firebase files
+firebase.json
+/lib/firebase_options.dart
+
+# Android ndk or something
+**/.cxx
