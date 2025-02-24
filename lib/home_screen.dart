@@ -40,6 +40,7 @@ class _HomeScreenState extends State<HomeScreen> {
   void initState() {
     super.initState();
     _getUserFirstName();
+    _populateProjects();
   }
 
   Future<void> _populateProjects() async {
@@ -253,7 +254,6 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   Widget _buildHomeContent() {
-    _populateProjects();
     return RefreshIndicator(
       onRefresh: () async {
         await _populateProjects();
@@ -304,15 +304,11 @@ class _HomeScreenState extends State<HomeScreen> {
                           IconButton(
                             icon: const Icon(Icons.group),
                             color: const Color(0xFF0A2A88),
-                            onPressed: () {
+                            onPressed: () async {
                               // Navigate to Teams/Invites screen
-                              Navigator.push(
-                                context,
-                                MaterialPageRoute(
-                                  builder: (context) =>
-                                      const TeamsAndInvitesPage(),
-                                ),
-                              );
+                              await Navigator.pushNamed(
+                                  context, '/teams_and_invites');
+                              _populateProjects();
                             },
                             iconSize: 24,
                           ),
