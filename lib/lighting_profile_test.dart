@@ -7,9 +7,8 @@ import 'google_maps_functions.dart';
 import 'db_schema_classes.dart';
 
 class LightingProfileTestPage extends StatefulWidget {
-  const LightingProfileTestPage({super.key});
-  // final LightingProfileTest testToBeCompleted;
-  // const LightingProfileTestPage({super.key, required this.testToBeCompleted});
+  final LightingProfileTest thisTest;
+  const LightingProfileTestPage({super.key, required this.thisTest});
 
   @override
   State<StatefulWidget> createState() => _LightingProfileTestPageState();
@@ -40,9 +39,6 @@ class _LightingProfileTestPageState extends State<LightingProfileTestPage> {
     super.initState();
     _checkAndFetchLocation();
   }
-
-  // Temp static fetch stuff until this is connected to other pages with test backend
-  static const String _testID = 'WBZQb2ZhnjV1CJBx10t1';
 
   void _onMapCreated(GoogleMapController controller) {
     mapController = controller;
@@ -279,7 +275,11 @@ class _LightingProfileTestPageState extends State<LightingProfileTestPage> {
                         Flexible(
                           child: FilledButton.icon(
                             style: _testButtonStyle,
-                            onPressed: () => Navigator.pop(context),
+                            onPressed: () {
+                              // TODO: check isComplete either before submitting or probably before starting test
+                              widget.thisTest.submitData(_allPointsMap);
+                              Navigator.pop(context);
+                            },
                             label: Text('Finish'),
                             icon: Icon(Icons.chevron_right),
                             iconAlignment: IconAlignment.end,

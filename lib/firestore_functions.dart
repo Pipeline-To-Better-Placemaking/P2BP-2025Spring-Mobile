@@ -128,8 +128,11 @@ Future<Project> getProjectInfo(String projectID) async {
     if (projectDoc.exists && projectDoc.data()!.containsKey('polygonArea')) {
       // Create List of Tests from List of DocumentReferences
       List<Test> testList = [];
-      for (final ref in projectDoc['tests']) {
-        testList.add(await getTestInfo(ref));
+      // TODO: maybe remove 'tests' check after DB purge or something
+      if (projectDoc.data()!.containsKey('tests')) {
+        for (final ref in projectDoc['tests']) {
+          testList.add(await getTestInfo(ref));
+        }
       }
 
       project = Project(

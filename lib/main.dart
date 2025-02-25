@@ -71,7 +71,6 @@ class MyApp extends StatelessWidget {
         // Commented out since you need project data to create page.
         // '/search': (context) => const SearchScreen(),
         '/teams_settings': (context) => TeamSettingsScreen(),
-        '/lighting_profile_test': (context) => LightingProfileTestPage(),
       },
     );
   }
@@ -193,12 +192,6 @@ class _HomePageStates extends State<HomePage> {
                 route: '/create_project_details',
                 name: 'Create Project Details',
                 version: 1,
-              ),
-              buildTempButton(
-                context: context,
-                route: '/lighting_profile_test',
-                name: 'Lighting Profile Test',
-                version: 0,
               ),
             ],
           ),

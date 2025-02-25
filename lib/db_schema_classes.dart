@@ -2,6 +2,8 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'firestore_functions.dart';
 
+final FirebaseFirestore _firestore = FirebaseFirestore.instance;
+
 // User class for create_project_and_teams.dart
 class Member {
   String _userID = '';
@@ -201,7 +203,9 @@ abstract class Test<T> {
           scheduledTime: scheduledTime,
           projectRef: projectRef,
           collectionID: collectionID,
-          data: data ?? LightingProfileTest.initialDataStructure,
+          data: (data != null && data is LightToGeoPointMap) // Verify type
+              ? LightingProfileTest.convertDataFromFirestore(data)
+              : LightingProfileTest.initialDataStructure,
           creationTime: creationTime,
           maxResearchers: maxResearchers,
           isComplete: isComplete,
@@ -307,11 +311,18 @@ class LightingProfileTest extends Test<LightToLatLngMap> {
   }) : super._();
 
   @override
-  void submitData(LightToLatLngMap data) {
+  void submitData(LightToLatLngMap data) async {
     // Adds all points of each type from submitted data to overall data
     LightToGeoPointMap firestoreData = convertDataToFirestore(data);
 
-    // TODO: Insert to/update in firestore
+    // Updates data in Firestore
+    await _firestore.collection(collectionID).doc(testID).update({
+      'data': firestoreData,
+      'isComplete': true,
+    });
+
+    print(
+        'Success! In LightingProfileTest.submitData. firestoreData = $firestoreData');
   }
 
   /// Transforms data retrieved from Firestore test instance to
@@ -340,6 +351,7 @@ class LightingProfileTest extends Test<LightToLatLngMap> {
     List<LightType> types = LightType.values;
 
     for (final type in types) {
+      output[type.name] = [];
       if (data.containsKey(type) && data[type] is Set) {
         for (final latlng in data[type]!) {
           output[type.name]?.add(latlng.toGeoPoint());
