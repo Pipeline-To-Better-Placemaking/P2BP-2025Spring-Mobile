@@ -2,11 +2,13 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
+import 'package:p2bp_2025spring_mobile/theme.dart';
 import 'google_maps_functions.dart';
 import 'db_schema_classes.dart';
 import 'test_class_implementations.dart';
 
 class LightingProfileTestPage extends StatefulWidget {
+  const LightingProfileTestPage({super.key});
   // final LightingProfileTest testToBeCompleted;
   // const LightingProfileTestPage({super.key, required this.testToBeCompleted});
 
@@ -31,7 +33,8 @@ class _LightingProfileTestPageState extends State<LightingProfileTestPage> {
     LightType.task: {},
   };
 
-  ButtonStyle _typeButtonStyle = FilledButton.styleFrom();
+  ButtonStyle _testButtonStyle = FilledButton.styleFrom();
+  static const double _bottomSheetHeight = 225;
 
   @override
   void initState() {
@@ -89,6 +92,7 @@ class _LightingProfileTestPageState extends State<LightingProfileTestPage> {
             setState(() {
               _markers.removeWhere((marker) => marker.markerId == markerId);
             });
+            print(_allPointsMap); // debug
           },
         ),
       );
@@ -120,13 +124,16 @@ class _LightingProfileTestPageState extends State<LightingProfileTestPage> {
 
   /// Sets button style on each build based on width of context
   void _setButtonStyle() {
-    _typeButtonStyle = FilledButton.styleFrom(
-      backgroundColor: Colors.blue,
+    _testButtonStyle = FilledButton.styleFrom(
+      padding: const EdgeInsets.symmetric(horizontal: 15),
+      foregroundColor: Colors.black,
+      backgroundColor: Colors.white,
+      disabledBackgroundColor: Color(0xCD6C6C6C),
+      iconColor: Colors.black,
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(10),
       ),
-      visualDensity: VisualDensity(horizontal: -4),
-      fixedSize: Size.fromWidth(MediaQuery.of(context).size.width * .3),
+      textStyle: TextStyle(fontSize: 14),
     );
   }
 
@@ -135,10 +142,13 @@ class _LightingProfileTestPageState extends State<LightingProfileTestPage> {
     _setButtonStyle();
     return SafeArea(
       child: Scaffold(
+        resizeToAvoidBottomInset: false,
+        extendBody: true,
         body: _isLoading
             ? const Center(child: CircularProgressIndicator())
             : Column(
                 children: <Widget>[
+                  SizedBox(height: 10),
                   Text(
                     !_isTypeSelected
                         ? 'Select a type of light.'
@@ -146,11 +156,12 @@ class _LightingProfileTestPageState extends State<LightingProfileTestPage> {
                     style: TextStyle(fontSize: 24),
                   ),
                   Center(
-                    child: SizedBox(
-                      height: MediaQuery.of(context).size.height * .7,
-                      child: Stack(
-                        children: <Widget>[
-                          GoogleMap(
+                    child: Stack(
+                      children: <Widget>[
+                        SizedBox(
+                          height: MediaQuery.of(context).size.height -
+                              (_bottomSheetHeight - 100),
+                          child: GoogleMap(
                             onMapCreated: _onMapCreated,
                             initialCameraPosition: CameraPosition(
                                 target: _currentPosition, zoom: 14),
@@ -158,75 +169,127 @@ class _LightingProfileTestPageState extends State<LightingProfileTestPage> {
                             onTap: _isTypeSelected ? _togglePoint : null,
                             mapType: _currentMapType,
                           ),
-                          Align(
-                            alignment: Alignment.bottomRight,
-                            child: Padding(
-                              padding: const EdgeInsets.symmetric(
-                                  horizontal: 60.0, vertical: 15.0),
-                              child: FloatingActionButton(
-                                heroTag: null,
-                                onPressed: _toggleMapType,
-                                backgroundColor: Colors.green,
-                                child: const Icon(Icons.map),
-                              ),
-                            ),
+                        ),
+                        Align(
+                          alignment: Alignment.bottomRight,
+                          child: Padding(
+                            padding: const EdgeInsets.symmetric(
+                                horizontal: 60.0, vertical: 90.0),
+                            // child: FloatingActionButton(
+                            //   heroTag: null,
+                            //   onPressed: _toggleMapType,
+                            //   backgroundColor: Colors.green,
+                            //   child: const Icon(Icons.map),
+                            // ),
                           ),
-                        ],
-                      ),
-                    ),
-                  ),
-                  Center(
-                    child: Padding(
-                      padding: const EdgeInsets.all(8.0),
-                      child: Column(
-                        children: <Widget>[
-                          Text(
-                            'Light Type',
-                            style: TextStyle(
-                              fontSize: 20,
-                              fontWeight: FontWeight.bold,
-                              decoration: TextDecoration.underline,
-                            ),
-                          ),
-                          if (!_isTypeSelected)
-                            Row(
-                              mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                              children: <Widget>[
-                                FilledButton(
-                                  style: _typeButtonStyle,
-                                  onPressed: () =>
-                                      _setLightType(LightType.rhythmic),
-                                  child: Text('Rhythmic'),
-                                ),
-                                FilledButton(
-                                  style: _typeButtonStyle,
-                                  onPressed: () =>
-                                      _setLightType(LightType.building),
-                                  child: Text('Building'),
-                                ),
-                                FilledButton(
-                                  style: _typeButtonStyle,
-                                  onPressed: () =>
-                                      _setLightType(LightType.task),
-                                  child: Text('Task'),
-                                ),
-                              ],
-                            ),
-                          FilledButton(
-                            style: FilledButton.styleFrom(
-                              backgroundColor: Colors.blue[400],
-                              shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(10),
-                              ),
-                            ),
-                            onPressed: () => Navigator.pop(context),
-                            child: Text('Back'),
-                          ),
-                        ],
-                      ),
+                        ),
+                      ],
                     ),
                   ),
                 ],
+              ),
+        bottomSheet: _isLoading
+            ? SizedBox()
+            : Container(
+                height: _bottomSheetHeight,
+                padding: const EdgeInsets.symmetric(
+                    horizontal: 12.0, vertical: 10.0),
+                decoration: BoxDecoration(
+                  gradient: defaultGrad,
+                  borderRadius: const BorderRadius.only(
+                    topLeft: Radius.circular(24.0),
+                    topRight: Radius.circular(24.0),
+                  ),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black,
+                      offset: Offset(0.0, 1.0), //(x,y)
+                      blurRadius: 6.0,
+                    ),
+                  ],
+                ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: <Widget>[
+                    Center(
+                      child: Text(
+                        'Lighting Profile',
+                        style: TextStyle(
+                          fontSize: 20,
+                          fontWeight: FontWeight.bold,
+                          color: Colors.yellow[600],
+                        ),
+                      ),
+                    ),
+                    SizedBox(height: 10),
+                    Text(
+                      'Light Types',
+                      style: TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.bold,
+                        color: Colors.white,
+                      ),
+                    ),
+                    SizedBox(height: 5),
+                    Row(
+                      spacing: 10,
+                      children: <Widget>[
+                        Flexible(
+                          child: FilledButton(
+                            style: _testButtonStyle,
+                            onPressed: (_isTypeSelected)
+                                ? null
+                                : () => _setLightType(LightType.rhythmic),
+                            child: Text('Rhythmic'),
+                          ),
+                        ),
+                        Flexible(
+                          child: FilledButton(
+                            style: _testButtonStyle,
+                            onPressed: (_isTypeSelected)
+                                ? null
+                                : () => _setLightType(LightType.building),
+                            child: Text('Building'),
+                          ),
+                        ),
+                        Flexible(
+                          child: FilledButton(
+                            style: _testButtonStyle,
+                            onPressed: (_isTypeSelected)
+                                ? null
+                                : () => _setLightType(LightType.task),
+                            child: Text('Task'),
+                          ),
+                        ),
+                      ],
+                    ),
+                    SizedBox(height: 20),
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      spacing: 10,
+                      children: <Widget>[
+                        Flexible(
+                          child: FilledButton.icon(
+                            style: _testButtonStyle,
+                            onPressed: () => Navigator.pop(context),
+                            label: Text('Back'),
+                            icon: Icon(Icons.chevron_left),
+                            iconAlignment: IconAlignment.start,
+                          ),
+                        ),
+                        Flexible(
+                          child: FilledButton.icon(
+                            style: _testButtonStyle,
+                            onPressed: () => Navigator.pop(context),
+                            label: Text('Finish'),
+                            icon: Icon(Icons.chevron_right),
+                            iconAlignment: IconAlignment.end,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
               ),
       ),
     );

@@ -92,7 +92,6 @@ Future<Project> saveProject({
   await _firestore.collection('projects').doc(projectID).set({
     'title': projectTitle,
     'creationTime': FieldValue.serverTimestamp(),
-    // Saves document id as field _id
     'id': projectID,
     'team': teamRef,
     'description': description,
@@ -129,6 +128,12 @@ Future<Project> getProjectInfo(String projectID) async {
   try {
     projectDoc = await _firestore.collection("projects").doc(projectID).get();
     if (projectDoc.exists && projectDoc.data()!.containsKey('polygonArea')) {
+      // Create List of Tests from List of DocumentReferences
+      List<Test> testList = [];
+      for (final ref in projectDoc['tests']) {
+        testList.add(await getTestInfo(ref));
+      }
+
       project = Project(
         teamRef: projectDoc['team'],
         projectID: projectDoc['id'],
@@ -136,6 +141,8 @@ Future<Project> getProjectInfo(String projectID) async {
         description: projectDoc['description'],
         polygonPoints: projectDoc['polygonPoints'],
         polygonArea: projectDoc['polygonArea'],
+        creationTime: projectDoc['creationTime'],
+        tests: testList,
       );
     } else {
       print(
@@ -382,19 +389,22 @@ Future<List<Member>> getMembersList() async {
   return membersList;
 }
 
-/// Retrieves test info from Firestore. When successful, this returns a
-/// [Future] of a [DocumentSnapshot] containing all info
+/// Retrieves test info from Firestore.
+///
+/// When successful, this returns a
+/// [Future] of a [Test] containing all info
 /// from the desired test.
 ///
 /// Returns null if there is an error.
-Future<DocumentSnapshot<Map<String, dynamic>>?> getTestInfo(
-    String testID, String collectionID) async {
+Future<Test> getTestInfo(
+    DocumentReference<Map<String, dynamic>> testRef) async {
+  late Test test;
   final DocumentSnapshot<Map<String, dynamic>> testDoc;
 
   try {
-    testDoc = await _firestore.collection(collectionID).doc(testID).get();
+    testDoc = await testRef.get();
     if (testDoc.exists && testDoc.data()!.containsKey('scheduledTime')) {
-      return testDoc;
+      test = collectionIDToRecreateFromDoc[testRef.parent.id]!(testDoc);
     } else {
       if (!testDoc.exists) {
         throw Exception('test-does-not-exist');
@@ -405,8 +415,28 @@ Future<DocumentSnapshot<Map<String, dynamic>>?> getTestInfo(
   } catch (e, stacktrace) {
     print('Exception retrieving : $e');
     print('Stacktrace: $stacktrace');
-    return null;
   }
+  return test;
+}
+
+/// Creates a new Test from scratch and inserts it into Firestore.
+///
+/// Returns the Test object representing the instance just inserted
+/// to Firestore.
+Future<Test> createTest({
+  required String testTitle,
+  required Timestamp scheduledTime,
+  required DocumentReference? projectRef,
+  required String collectionID,
+}) async {
+  Test tempTest;
+  String testID = _firestore.collection(collectionID).doc().id;
+
+  if (projectRef == null) {
+    throw Exception('projectRef not defined when passed to createTest()');
+  }
+
+  throw UnimplementedError();
 }
 
 extension GeoPointConversion on GeoPoint {

@@ -75,7 +75,6 @@ class Project {
   String description = '';
   List polygonPoints = [];
   num polygonArea = 0;
-  // TODO: Change depending on implementation of tests.
   List<Test>? tests = [];
 
   Project(
@@ -96,14 +95,27 @@ class Project {
 ///
 /// Each specific test will most likely have a different format for data
 /// which needs to be specified around the implementation and used in place
-/// of generic type `A` in each implementation.
-abstract class Test<A> {
+/// of generic type `T` in each implementation.
+abstract class Test<T> {
   Timestamp? creationTime;
   String title = '';
   String testID = '';
+
+  /// The time scheduled for this test to be completed.
+  ///
+  /// For most tests this is the time that the test should be completed at
+  /// but for some like 'Section cutter' and 'Identify programs' it is more
+  /// like a deadline for the latest it should be completed by.
   Timestamp scheduledTime;
   DocumentReference? projectRef;
-  int maxResearchers = 0;
+
+  /// Maximum researchers that can complete this test.
+  ///
+  /// Currently always 1.
+  int maxResearchers = 1;
+
+  /// Whether this test has been completed by a surveyor yet.
+  bool isComplete = false;
 
   /// Instance member using custom data type for each specific test
   /// implementation for storing test data.
@@ -112,13 +124,13 @@ abstract class Test<A> {
   /// each implementation as the value returned from
   /// `getInitialDataStructure()`, as this is used for initializing `data`
   /// when it is not defined in the constructor.
-  late A data;
+  late T data;
 
   /// The collection ID used in Firestore for this specific test.
   ///
-  /// Each implementation should initialize this at some point during
-  /// construction, typically from a `static const String` in the
-  /// implementation with this value hard-coded.
+  /// This should be innately initialized to [getCollectionID] in all
+  /// constructors, which itself needs to be defined in each implementation,
+  /// likely just returning a static constant value.
   late final String collectionID;
 
   /// Creates a new test instance from scratch.
@@ -137,9 +149,8 @@ abstract class Test<A> {
     required this.testID,
     required this.scheduledTime,
     required this.projectRef,
-    required this.maxResearchers,
     this.creationTime,
-    A? data,
+    T? data,
   }) {
     this.creationTime ??= Timestamp.now();
     this.data = data ?? getInitialDataStructure();
@@ -172,13 +183,13 @@ abstract class Test<A> {
   /// This must be defined in each implementation and likely will just
   /// return a static constant value hard-coded for each test in real
   /// implementations.
-  A getInitialDataStructure();
+  T getInitialDataStructure();
 
   /// Returns the value for `collectionID`.
   ///
   /// Used to initialize collectionID, which is constant for each
-  /// specific test type but needs to be defined statically in every
-  /// implementation.
+  /// specific test type but must be overwritten in every implementation
+  /// to return the actual collection ID used for that test.
   String getCollectionID() {
     return '';
   }
@@ -189,10 +200,15 @@ abstract class Test<A> {
   /// This will need to be different for each test and likely will just
   /// call a static method in the implementing class which contains the real
   /// functionality.
-  A convertDataFromDoc(dynamic data);
+  T convertDataFromDoc(dynamic data);
 
-  /// Used on completion of a test and passed all data collected throughout
-  /// the duration of the test. Updates this test instance in Firestore with
-  /// this new data.
-  void submitData(A data);
+  /// Uploads the data from a completed test to Firestore.
+  ///
+  /// Used on completion of a test and should be passed all data
+  /// collected throughout the duration of the test.
+  ///
+  /// Updates this test instance in Firestore with
+  /// this new data and marks the test as complete `isComplete = true`.
+  /// This will need to change if more than 1 researcher is allowed per test.
+  void submitData(T data);
 }

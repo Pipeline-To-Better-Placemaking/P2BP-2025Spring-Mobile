@@ -3,6 +3,17 @@ import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:p2bp_2025spring_mobile/firestore_functions.dart';
 import 'db_schema_classes.dart';
 
+/// Maps the collection IDs for tests to that test's [recreateFromDoc]
+/// constructor.
+///
+/// Intended use case is when using `Test.recreateFromDoc` constructor
+/// with an existing `Test` instance from Firestore, primarily in
+/// [getTestInfo].
+const Map<String, Test Function(DocumentSnapshot<Map<String, dynamic>>)>
+    collectionIDToRecreateFromDoc = {
+  LightingProfileTest.collectionIDStatic: LightingProfileTest.recreateFromDoc,
+};
+
 /// Types of light for lighting profile test.
 enum LightType { rhythmic, building, task }
 
@@ -35,7 +46,6 @@ class LightingProfileTest extends Test<LightToLatLngMap> {
     required super.testID,
     required super.scheduledTime,
     required super.projectRef,
-    required super.maxResearchers,
     super.creationTime,
     super.data,
   }) : super.createNew();
@@ -56,30 +66,20 @@ class LightingProfileTest extends Test<LightToLatLngMap> {
 
   @override
   LightToLatLngMap convertDataFromDoc(dynamic data) {
-    return convertDataFromFirestore(data);
+    return _convertDataFromFirestore(data);
   }
 
   @override
   void submitData(LightToLatLngMap data) {
     // Adds all points of each type from submitted data to overall data
-    if (data[LightType.rhythmic] != null &&
-        data[LightType.rhythmic]!.isNotEmpty) {
-      this.data[LightType.rhythmic]?.addAll(data[LightType.rhythmic]!);
-    }
-    if (data[LightType.building] != null &&
-        data[LightType.building]!.isNotEmpty) {
-      this.data[LightType.building]?.addAll(data[LightType.building]!);
-    }
-    if (data[LightType.task] != null && data[LightType.task]!.isNotEmpty) {
-      this.data[LightType.task]?.addAll(data[LightType.task]!);
-    }
+    LightToGeoPointMap firestoreData = _convertDataToFirestore(data);
 
     // TODO: Insert to/update in firestore
   }
 
   /// Transforms data retrieved from Firestore test instance to
   /// [LightToLatLngMap] for local manipulation.
-  static LightToLatLngMap convertDataFromFirestore(LightToGeoPointMap data) {
+  static LightToLatLngMap _convertDataFromFirestore(LightToGeoPointMap data) {
     LightToLatLngMap output = initialDataStructure;
     List<LightType> types = LightType.values;
 
@@ -98,7 +98,7 @@ class LightingProfileTest extends Test<LightToLatLngMap> {
   /// Transforms data stored locally as [LightToLatLngMap] to
   /// Firestore format (represented by [LightToGeoPointMap])
   /// with String keys and any other needed changes.
-  static LightToGeoPointMap convertDataToFirestore(LightToLatLngMap data) {
+  static LightToGeoPointMap _convertDataToFirestore(LightToLatLngMap data) {
     LightToGeoPointMap output = {};
     List<LightType> types = LightType.values;
 
