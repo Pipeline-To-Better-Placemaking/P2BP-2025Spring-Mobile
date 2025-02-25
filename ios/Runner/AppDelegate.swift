@@ -11,10 +11,17 @@ import GoogleMaps
     _ application: UIApplication,
     didFinishLaunchingWithOptions launchOptions: [UIApplication.LaunchOptionsKey: Any]?
   ) -> Bool {
+    if let apiKey = Bundle.main.object(forInfoDictionaryKey: "MAPS_API_KEY") as? String {
+      GMSServices.provideAPIKey(apiKey)
+    } else {
+      fatalError("Missing or invalid Google Maps API key in Info.plist")
+    }
+
     GeneratedPluginRegistrant.register(with: self)
     // Use Firebase library to configure APIs
-    FirebaseApp.configure()
-    GMSServices.provideAPIKey(ProcessInfo.processInfo.environment["MAPS_API_KEY"] )
+    if let envKey = ProcessInfo.processInfo.environment["MAPS_API_KEY"] {
+    GMSServices.provideAPIKey(envKey)
+    }
 
     return super.application(application, didFinishLaunchingWithOptions: launchOptions)
   }
