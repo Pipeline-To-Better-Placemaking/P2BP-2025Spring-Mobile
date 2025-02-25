@@ -1,3 +1,5 @@
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'strings.dart';
 
@@ -11,15 +13,18 @@ class SubmitBugReportPage extends StatelessWidget {
         appBar: AppBar(
           title: const Text('Submit a bug report'),
         ),
-        body: Padding(
-          padding: const EdgeInsets.all(30),
-          child: DefaultTextStyle(
-            style: TextStyle(
-              color: Colors.blue[800],
-              fontSize: 16,
-              fontWeight: FontWeight.bold,
-            ),
-            child: SubmitBugReportForm(),
+        body: DefaultTextStyle(
+          style: TextStyle(
+            color: Colors.blue[800],
+            fontSize: 16,
+            fontWeight: FontWeight.bold,
+          ),
+          child: ListView(
+            padding: EdgeInsets.all(30),
+            children: <Widget>[
+              SubmitBugReportForm(),
+              const SizedBox(height: 10),
+            ],
           ),
         ),
       ),
@@ -40,6 +45,54 @@ class _SubmitBugReportFormState extends State<SubmitBugReportForm> {
       _descController = TextEditingController();
   String? _titleErrorText, _descErrorText;
 
+  // Stores bug report in Firestore DB after validating
+  Future<void> _submitBugReport() async {
+    String titleText = _titleController.text;
+    String descText = _descController.text;
+    // Resets all error states to null before validating
+    setState(() {
+      _titleErrorText = null;
+      _descErrorText = null;
+    });
+
+    // Checks for no text in fields
+    if (titleText.isEmpty) {
+      setState(() {
+        _titleErrorText = 'Please enter some text.';
+      });
+    }
+    if (descText.isEmpty) {
+      setState(() {
+        _descErrorText = 'Please enter some text.';
+      });
+    }
+
+    // Only succeeds if none of the fields had an error
+    if (_titleErrorText == null && _descErrorText == null) {
+      try {
+        String? uid = FirebaseAuth.instance.currentUser?.uid;
+        await FirebaseFirestore.instance.collection('bug_reports').doc().set({
+          'uid': uid,
+          'title': titleText,
+          'description': descText,
+          'creationTime': FieldValue.serverTimestamp(),
+        });
+
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Report submitted successfully! Thank you!'),
+          ),
+        );
+      } catch (e) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Error occurred while submitting bug report: $e'),
+          ),
+        );
+      }
+    }
+  }
+
   @override
   void dispose() {
     _titleController.dispose();
@@ -51,24 +104,32 @@ class _SubmitBugReportFormState extends State<SubmitBugReportForm> {
   Widget build(BuildContext context) {
     return Form(
       key: _formKey,
-      child: ListView(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
         children: <Widget>[
-          Text(
+          const Text(
             Strings.submitBugReportText,
             style: TextStyle(
-              fontSize: 15,
               fontWeight: FontWeight.normal,
             ),
           ),
-          SizedBox(height: 12),
-          const Text('Title/Short summary'),
+          const SizedBox(height: 16),
+          const Text(
+            'Title/Short summary',
+            style: TextStyle(fontSize: 18),
+          ),
+          const SizedBox(height: 4),
           TextFormField(
             controller: _titleController,
             forceErrorText: _titleErrorText,
             decoration: InputDecoration(border: OutlineInputBorder()),
           ),
-          SizedBox(height: 12),
-          const Text('Description'),
+          const SizedBox(height: 16),
+          const Text(
+            'Description',
+            style: TextStyle(fontSize: 18),
+          ),
+          const SizedBox(height: 4),
           TextFormField(
             controller: _descController,
             forceErrorText: _descErrorText,
@@ -76,7 +137,7 @@ class _SubmitBugReportFormState extends State<SubmitBugReportForm> {
             maxLines: null,
             minLines: 4,
           ),
-          SizedBox(height: 12),
+          const SizedBox(height: 16),
           ElevatedButton(
             style: ElevatedButton.styleFrom(
               backgroundColor: Colors.blue,
@@ -85,29 +146,7 @@ class _SubmitBugReportFormState extends State<SubmitBugReportForm> {
                 borderRadius: BorderRadius.circular(10),
               ),
             ),
-            onPressed: () {
-              setState(() {
-                // Validation
-                String titleText = _titleController.text,
-                    descText = _descController.text;
-                // Resets all error states to null before validating
-                _titleErrorText = null;
-                _descErrorText = null;
-                if (titleText.isEmpty) {
-                  _titleErrorText = 'Please enter some text.';
-                }
-                if (descText.isEmpty) {
-                  _descErrorText = 'Please enter some text.';
-                }
-                // Only succeeds if none of the fields had an error
-                if (_titleErrorText == null && _descErrorText == null) {
-                  // TODO: Actually submit a report to backend
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(content: Text('Processing Data...')),
-                  );
-                }
-              });
-            },
+            onPressed: _submitBugReport,
             child: const Text(
               'Submit report',
               style: TextStyle(
@@ -116,7 +155,7 @@ class _SubmitBugReportFormState extends State<SubmitBugReportForm> {
                 fontWeight: FontWeight.bold,
               ),
             ),
-          )
+          ),
         ],
       ),
     );

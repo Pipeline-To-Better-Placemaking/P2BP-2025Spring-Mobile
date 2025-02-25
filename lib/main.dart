@@ -1,4 +1,9 @@
 import 'package:flutter/material.dart';
+import 'package:firebase_core/firebase_core.dart';
+// import 'firebase_options.dart';
+import 'package:firebase_auth/firebase_auth.dart';
+import 'package:p2bp_2025spring_mobile/db_schema_classes.dart';
+import 'create_project_details.dart';
 import 'results_panel.dart';
 import 'edit_project_panel.dart';
 import 'forgot_password_page.dart';
@@ -9,8 +14,22 @@ import 'teams_and_invites_page.dart';
 import 'login_screen.dart';
 import 'signup_screen.dart';
 import 'home_screen.dart';
+import 'new_home_page.dart';
+import 'project_comparison_page.dart';
+import 'teams_settings_screen.dart';
+import 'search_location_screen.dart';
 
-void main() {
+void main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+  try {
+    // Ensure Firebase is initialized correctly
+    await Firebase.initializeApp(
+        // options: DefaultFirebaseOptions.currentPlatform,
+        );
+  } catch (e) {
+    print("Firebase initialization failed: $e");
+    // Handle the error here, maybe show an error screen or fallback UI
+  }
   runApp(const MyApp());
 }
 
@@ -19,13 +38,16 @@ class MyApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final ColorScheme colorScheme = ColorScheme.fromSeed(
+      seedColor: Colors.blue,
+    );
     return MaterialApp(
       title: 'Flutter Demo',
       theme: ThemeData(
-          // Insert theme here
-          ),
+        colorScheme: colorScheme,
+      ),
       debugShowCheckedModeBanner: false,
-      home: const HomePage(title: 'Home Page'),
+      home: LoginScreen(), // const HomePage(title: 'Home Page'),
       routes: {
         '/results': (context) => const ResultsPanel(),
         '/edit_project': (context) => const EditProjectPanel(),
@@ -35,9 +57,19 @@ class MyApp extends StatelessWidget {
             const CreateProjectAndTeamsPage(),
         '/settings': (context) => const SettingsPage(),
         '/teams_and_invites': (context) => const TeamsAndInvitesPage(),
+        '/create_project_details': (context) => CreateProjectDetails(
+              projectData: Project.partialProject(
+                  title: 'No data sent',
+                  description: 'Accessed without project data'),
+            ),
         '/login': (context) => const LoginScreen(),
         '/signup': (context) => const SignUpScreen(),
         '/home': (context) => const HomeScreen(),
+        '/new_home': (context) => const BottomFloatingNavBar(),
+        '/compare_projects': (context) => const ProjectComparisonPage(),
+        // Commented out since you need project data to create page.
+        // '/search': (context) => const SearchScreen(),
+        '/teams_settings': (context) => TeamSettingsScreen(),
       },
     );
   }
@@ -132,6 +164,32 @@ class _HomePageStates extends State<HomePage> {
                 context: context,
                 route: '/home',
                 name: 'Home',
+                version: 1,
+              ),
+              buildTempButton(
+                context: context,
+                route: '/new_home',
+                name: 'New Home Page',
+                version: 0,
+              ),
+              buildTempButton(
+                context: context,
+                route: '/compare_projects',
+                name: 'Compare Projects',
+                version: 1,
+              ),
+              // Button 13: Team Settings
+              buildTempButton(
+                context: context,
+                route: '/teams_settings',
+                name: 'Team Settings',
+                version: 0,
+              ),
+              // Button 14: Project Details
+              buildTempButton(
+                context: context,
+                route: '/create_project_details',
+                name: 'Create Project Details',
                 version: 1,
               ),
             ],
