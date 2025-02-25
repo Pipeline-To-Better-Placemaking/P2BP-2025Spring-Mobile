@@ -9,7 +9,12 @@ import 'firestore_functions.dart';
 import 'google_maps_functions.dart';
 
 class NaturePrevalence extends StatefulWidget {
-  const NaturePrevalence({super.key});
+  final Project projectData;
+
+  /// IMPORTANT: When navigating to this page, pass in project details. The
+  /// project details page already contains project info, so you should use
+  /// that data.
+  const NaturePrevalence({super.key, required this.projectData});
 
   @override
   State<NaturePrevalence> createState() => _NaturePrevalenceState();
@@ -22,13 +27,13 @@ enum WaterBody { ocean, lake, river, swamp }
 enum Animal { cat, dog, squirrel, bird, rabbit, turtle, duck }
 
 class _NaturePrevalenceState extends State<NaturePrevalence> {
-  bool _isLoading = false;
+  bool _isLoading = true;
   bool _polygonMode = false;
   bool _pointMode = false;
   String? _type = 'cat';
   late DocumentReference teamRef;
   late GoogleMapController mapController;
-  LatLng _currentLocation = defaultLocation; // Default location
+  LatLng _location = defaultLocation; // Default location
 
   List<LatLng> _polygonPoints = []; // Points for the polygon
   List<mp.LatLng> _mapToolsPolygonPoints = [];
@@ -45,9 +50,20 @@ class _NaturePrevalenceState extends State<NaturePrevalence> {
   @override
   void initState() {
     super.initState();
-    _checkAndFetchLocation();
-    //project = getProjectInfo(projectID);
-    // createProjectArea()
+    initProjectArea();
+  }
+
+  /// Gets the project polygon, adds it to the current polygon list, and
+  /// centers the map over it.
+  void initProjectArea() {
+    setState(() {
+      _polygons = getProjectPolygon(widget.projectData.polygonPoints);
+      _location = getPolygonCentroid(_polygons.first);
+      // Take some latitude away to center considering bottom sheet.
+      _location = LatLng(_location.latitude * .999999, _location.longitude);
+      // TODO: dynamic zooming
+      _isLoading = false;
+    });
   }
 
   void showModalWaterBody(BuildContext context) {
@@ -677,33 +693,13 @@ class _NaturePrevalenceState extends State<NaturePrevalence> {
 
   void _onMapCreated(GoogleMapController controller) {
     mapController = controller;
-    _moveToCurrentLocation(); // Ensure the map is centered on the current location
+    _moveToLocation(); // Ensure the map is centered on the current location
   }
 
-  Future<void> _checkAndFetchLocation() async {
-    try {
-      _currentLocation = await checkAndFetchLocation();
-      if (!mounted) return;
-      setState(() {
-        _isLoading = false;
-      });
-    } catch (e, stacktrace) {
-      print('Exception fetching location in project_map_creation.dart: $e');
-      print('Stracktrace: $stacktrace');
-      if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-            content: Text(
-                'Map failed to load. Error trying to retrieve location permissions.')),
-      );
-      Navigator.pop(context);
-    }
-  }
-
-  void _moveToCurrentLocation() {
+  void _moveToLocation() {
     mapController.animateCamera(
       CameraUpdate.newCameraPosition(
-        CameraPosition(target: _currentLocation, zoom: 14.0),
+        CameraPosition(target: _location, zoom: 14),
       ),
     );
   }
@@ -713,7 +709,7 @@ class _NaturePrevalenceState extends State<NaturePrevalence> {
       if (_pointMode) _pointTap(point);
       if (_polygonMode) _polygonTap(point);
     } catch (e, stacktrace) {
-      print('Error in nature_prevalence.dart, _togglePoint(): $e');
+      print('Error in nature_prevalence_test.dart, _togglePoint(): $e');
       print('Stacktrace: $stacktrace');
     }
   }
@@ -800,7 +796,7 @@ class _NaturePrevalenceState extends State<NaturePrevalence> {
         _polygonMode = false;
       });
     } catch (e, stacktrace) {
-      print('Excpetion in _finalize_polygon(): $e');
+      print('Exception in _finalize_polygon(): $e');
       print('Stacktrace: $stacktrace');
     }
   }
@@ -821,49 +817,37 @@ class _NaturePrevalenceState extends State<NaturePrevalence> {
         extendBody: true,
         body: _isLoading
             ? const Center(child: CircularProgressIndicator())
-            : Column(
-                children: [
-                  SizedBox(height: 10),
-                  Text(
-                    "Follow the instructions.",
-                    style: TextStyle(fontSize: 24),
-                  ),
-                  Center(
-                    child: Stack(
-                      children: [
-                        SizedBox(
-                          height: MediaQuery.of(context).size.height - 126,
-                          child: GoogleMap(
-                            onMapCreated: _onMapCreated,
-                            initialCameraPosition: CameraPosition(
-                                target: _currentLocation, zoom: 14.0),
-                            polygons: _polygons,
-                            markers: {..._markers, ..._polygonMarkers},
-                            onTap: _togglePoint,
-                            mapType: _currentMapType, // Use current map type
-                          ),
-                        ),
-                        Align(
-                          alignment: Alignment.bottomRight,
-                          child: Padding(
-                            padding: const EdgeInsets.symmetric(
-                                horizontal: 60.0, vertical: 90.0),
-                            // child: FloatingActionButton(
-                            //   heroTag: null,
-                            //   onPressed: _toggleMapType,
-                            //   backgroundColor: Colors.green,
-                            //   child: const Icon(Icons.map),
-                            // ),
-                          ),
-                        ),
-                        Padding(
-                          padding: const EdgeInsets.symmetric(
-                              horizontal: 60.0, vertical: 20.0),
-                        ),
-                      ],
+            : Center(
+                child: Stack(
+                  children: [
+                    SizedBox(
+                      height: MediaQuery.of(context).size.height,
+                      child: GoogleMap(
+                        // TODO: size based off of bottomsheet container
+                        padding: EdgeInsets.symmetric(vertical: 300),
+                        onMapCreated: _onMapCreated,
+                        initialCameraPosition:
+                            CameraPosition(target: _location, zoom: 14),
+                        polygons: _polygons,
+                        markers: {..._markers, ..._polygonMarkers},
+                        onTap: _togglePoint,
+                        mapType: _currentMapType, // Use current map type
+                      ),
                     ),
-                  ),
-                ],
+                    Align(
+                      alignment: Alignment.centerRight,
+                      child: Padding(
+                        padding: const EdgeInsets.symmetric(horizontal: 10.0),
+                        child: FloatingActionButton(
+                          heroTag: null,
+                          onPressed: _toggleMapType,
+                          backgroundColor: Colors.green,
+                          child: const Icon(Icons.map),
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
               ),
         bottomSheet: _isLoading
             ? SizedBox()
@@ -1016,6 +1000,7 @@ class _NaturePrevalenceState extends State<NaturePrevalence> {
                                     color: Colors.black),
                                 onPressed: () async {
                                   // todo: await saveTest()
+                                  // saveTest()
                                   //   Navigator.pushReplacement(
                                   //       context,
                                   //       MaterialPageRoute(

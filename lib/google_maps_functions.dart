@@ -1,4 +1,5 @@
 import 'dart:math';
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
@@ -102,10 +103,52 @@ double _calculateAngle(double centerX, double centerY, double x, double y) {
   return atan2(y - centerY, x - centerX);
 }
 
-///
-///
-Polygon? getProjectPolygon() {
-  Polygon? polygon;
+/// Takes in a `List<GeoPoint>`. This is the native coordinate type from
+/// Firestore. Converts them to `LatLng`, then creates a `Polygon` with those
+/// points. Default polygon color is a transparent red.
+/// Returns as a `Set<Polygon>`.
+/// <br/> Note: This should render the points in the correct order. However, if
+/// points are **not** connected in the correct order, change function to call
+/// _sortPointsClockwise first.
+Set<Polygon> getProjectPolygon(List polygonPoints) {
+  Set<Polygon> projectPolygon = {};
+  List<LatLng> polygonPointsLatLng = [];
+  try {
+    for (GeoPoint point in polygonPoints) {
+      polygonPointsLatLng.add(LatLng(point.latitude, point.longitude));
+    }
 
-  return polygon;
+    projectPolygon.add(Polygon(
+      polygonId: PolygonId('project_polygon'),
+      points: polygonPointsLatLng,
+      fillColor: Color(0x52F34236),
+      strokeColor: Colors.red,
+      strokeWidth: 1,
+    ));
+
+    return projectPolygon;
+  } catch (e, stacktrace) {
+    print("Error creating project area (getProjectPolygon()) in "
+        "google_maps_functions.dart. \nThis is likely due to an incorrect "
+        "parameter type. Must be a list of GeoPoints.");
+    print("The error is as follows: $e");
+    print("Stacktrace: $stacktrace");
+  }
+  return projectPolygon;
+}
+
+LatLng getPolygonCentroid(Polygon polygon) {
+  List<LatLng> polygonPoints = polygon.points;
+  double latSum = 0;
+  double lngSum = 0;
+  int numPoints = polygonPoints.length;
+
+  if (numPoints == 0) return defaultLocation;
+
+  for (LatLng point in polygonPoints) {
+    latSum += point.latitude.toDouble();
+    lngSum += point.longitude.toDouble();
+  }
+
+  return LatLng(latSum / numPoints, lngSum / numPoints);
 }
