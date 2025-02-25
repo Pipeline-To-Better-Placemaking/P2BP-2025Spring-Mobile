@@ -1,8 +1,6 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
-import 'package:flutter/foundation.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
-import 'test_class_implementations.dart';
 import 'db_schema_classes.dart';
 
 final FirebaseFirestore _firestore = FirebaseFirestore.instance;
@@ -389,6 +387,56 @@ Future<List<Member>> getMembersList() async {
   return membersList;
 }
 
+/// Creates a new [Test] from scratch and inserts it into Firestore.
+///
+/// The [testID] is generated here to be used in the [Test] constructor.
+///
+/// Returns the [Test] object representing the instance just inserted
+/// to Firestore.
+Future<Test> saveTest({
+  required String title,
+  required Timestamp scheduledTime,
+  required DocumentReference? projectRef,
+  required String collectionID,
+}) async {
+  Test tempTest;
+
+  if (projectRef == null) {
+    throw Exception('projectRef not defined when passed to createTest()');
+  }
+
+  // Generates test document ID
+  String testID = _firestore.collection(collectionID).doc().id;
+
+  // Creates Test object
+  tempTest = Test.createNew(
+    title: title,
+    testID: testID,
+    scheduledTime: scheduledTime,
+    projectRef: projectRef,
+    collectionID: collectionID,
+  );
+
+  // Inserts Test to Firestore
+  await _firestore.collection(collectionID).doc(testID).set({
+    'title': title,
+    'id': testID,
+    'scheduledTime': scheduledTime,
+    'project': projectRef,
+    'data': tempTest.data,
+    'creationTime': tempTest.creationTime,
+    'maxResearchers': tempTest.maxResearchers,
+    'isCompleted': false,
+  });
+
+  // Adds a reference to the Test to the relevant Project in Firestore
+  await _firestore.doc('/${projectRef.path}').update({
+    'tests': FieldValue.arrayUnion([_firestore.doc('/$collectionID/$testID')])
+  });
+
+  return tempTest;
+}
+
 /// Retrieves test info from Firestore.
 ///
 /// When successful, this returns a
@@ -404,7 +452,7 @@ Future<Test> getTestInfo(
   try {
     testDoc = await testRef.get();
     if (testDoc.exists && testDoc.data()!.containsKey('scheduledTime')) {
-      test = collectionIDToRecreateFromDoc[testRef.parent.id]!(testDoc);
+      test = Test.recreateFromDoc(testDoc);
     } else {
       if (!testDoc.exists) {
         throw Exception('test-does-not-exist');
@@ -416,27 +464,9 @@ Future<Test> getTestInfo(
     print('Exception retrieving : $e');
     print('Stacktrace: $stacktrace');
   }
+
+  print('Test from getTestInfo: $test'); // debug
   return test;
-}
-
-/// Creates a new Test from scratch and inserts it into Firestore.
-///
-/// Returns the Test object representing the instance just inserted
-/// to Firestore.
-Future<Test> createTest({
-  required String testTitle,
-  required Timestamp scheduledTime,
-  required DocumentReference? projectRef,
-  required String collectionID,
-}) async {
-  Test tempTest;
-  String testID = _firestore.collection(collectionID).doc().id;
-
-  if (projectRef == null) {
-    throw Exception('projectRef not defined when passed to createTest()');
-  }
-
-  throw UnimplementedError();
 }
 
 extension GeoPointConversion on GeoPoint {
