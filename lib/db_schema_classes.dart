@@ -255,13 +255,23 @@ abstract class Test<T> {
     );
   }
 
+  /// Checks if given [Test] has the specified generic type which extends
+  /// [Test] and if so returns it as that type. Otherwise returns `null`.
+  static S? castTo<S extends Test>(Test test) {
+    if (test is S) {
+      return (test as S);
+    } else {
+      return null;
+    }
+  }
+
   /// Uploads the data from a completed test to Firestore.
   ///
   /// Used on completion of a test and should be passed all data
   /// collected throughout the duration of the test.
   ///
   /// Updates this test instance in Firestore with
-  /// this new data and marks the test as complete `isComplete = true`.
+  /// this new data and marks the test as complete; `isComplete = true`.
   /// This will need to change if more than 1 researcher is allowed per test.
   void submitData(T data);
 }
@@ -312,6 +322,8 @@ class LightingProfileTest extends Test<LightToLatLngMap> {
 
   @override
   void submitData(LightToLatLngMap data) async {
+    this.data = data;
+
     // Adds all points of each type from submitted data to overall data
     LightToGeoPointMap firestoreData = convertDataToFirestore(data);
 
