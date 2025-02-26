@@ -54,7 +54,7 @@
 	<key>NSCameraUsageDescription</key>
 	<string>This app requires access to the camera to let you take photos.</string>
 	<key>MAPS_API_KEY</key>
-	<string>AIzaSyDwn6wqGymn4bYA_PB8TorQDelDuHZvyOc</string>
+	<string>$(MAPS_API_KEY)</string>
 	<key>UIViewControllerBasedStatusBarAppearance</key>
 <true/>
 </dict>

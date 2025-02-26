@@ -18,6 +18,7 @@ import 'new_home_page.dart';
 import 'project_comparison_page.dart';
 import 'teams_settings_screen.dart';
 import 'search_location_screen.dart';
+import 'lighting_profile_test.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();

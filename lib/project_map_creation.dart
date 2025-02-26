@@ -55,11 +55,6 @@ class _ProjectMapCreationState extends State<ProjectMapCreation> {
     try {
       _currentLocation = await checkAndFetchLocation();
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-            content: Text(
-                'Error retrieving location permissions. Check your permissions and try again.')),
-      );
       setState(() {
         _isLoading = false;
       });
@@ -190,11 +185,11 @@ class _ProjectMapCreationState extends State<ProjectMapCreation> {
                                 ),
                               ),
                             ),
-                            Padding(
-                              padding: const EdgeInsets.symmetric(
-                                  horizontal: 60.0, vertical: 20.0),
-                              child: Align(
-                                alignment: Alignment.bottomRight,
+                            Align(
+                              alignment: Alignment.bottomRight,
+                              child: Padding(
+                                padding: const EdgeInsets.symmetric(
+                                    horizontal: 60.0, vertical: 20.0),
                                 child: FloatingActionButton(
                                   heroTag: null,
                                   onPressed: () {
