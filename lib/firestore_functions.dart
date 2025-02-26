@@ -95,6 +95,7 @@ Future<Project> saveProject({
     'description': description,
     'polygonPoints': polygonPoints,
     'polygonArea': polygonArea,
+    'tests': [],
   });
 
   await _firestore.doc('/${teamRef.path}').update({
@@ -108,6 +109,7 @@ Future<Project> saveProject({
     description: description,
     polygonPoints: polygonPoints,
     polygonArea: polygonArea,
+    tests: [],
   );
 
   // Debugging print statement.
