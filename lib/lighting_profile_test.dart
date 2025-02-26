@@ -171,9 +171,13 @@ class _LightingProfileTestPageState extends State<LightingProfileTestPage> {
                       ),
                     ),
                     Align(
-                      alignment: Alignment(1.0, -0.1),
+                      alignment: Alignment.bottomLeft,
                       child: Padding(
-                        padding: const EdgeInsets.symmetric(horizontal: 10),
+                        padding: const EdgeInsets.only(
+                          left: 10,
+                          right: 10,
+                          bottom: _bottomSheetHeight + 30,
+                        ),
                         child: FloatingActionButton(
                           heroTag: null,
                           onPressed: _toggleMapType,
