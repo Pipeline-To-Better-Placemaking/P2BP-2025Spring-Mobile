@@ -7,8 +7,14 @@ import 'google_maps_functions.dart';
 import 'db_schema_classes.dart';
 
 class LightingProfileTestPage extends StatefulWidget {
-  final LightingProfileTest thisTest;
-  const LightingProfileTestPage({super.key, required this.thisTest});
+  final Project activeProject;
+  final LightingProfileTest activeTest;
+
+  const LightingProfileTestPage({
+    super.key,
+    required this.activeProject,
+    required this.activeTest,
+  });
 
   @override
   State<StatefulWidget> createState() => _LightingProfileTestPageState();
@@ -22,9 +28,11 @@ class _LightingProfileTestPageState extends State<LightingProfileTestPage> {
   LightType? _selectedType;
 
   late GoogleMapController mapController;
-  LatLng _currentPosition = defaultLocation;
+  LatLng _location = defaultLocation;
   MapType _currentMapType = MapType.satellite; // Default map type
   Set<Marker> _markers = {}; // Set of markers visible on map
+  Set<Polygon> _polygons = {}; // Set of polygons
+
   LightToLatLngMap _allPointsMap = {
     LightType.rhythmic: {},
     LightType.building: {},
@@ -32,34 +40,39 @@ class _LightingProfileTestPageState extends State<LightingProfileTestPage> {
   };
 
   ButtonStyle _testButtonStyle = FilledButton.styleFrom();
-  static const double _bottomSheetHeight = 225;
+  static const double _bottomSheetHeight = 250;
 
   @override
   void initState() {
     super.initState();
-    _checkAndFetchLocation();
+    _initProjectArea();
   }
 
-  void _onMapCreated(GoogleMapController controller) {
-    mapController = controller;
-    _moveToCurrentLocation(); // Ensure the map is centered on the current location
-  }
-
-  Future<void> _checkAndFetchLocation() async {
-    _currentPosition = await checkAndFetchLocation();
+  /// Gets the project polygon, adds it to the current polygon list, and
+  /// centers the map over it.
+  void _initProjectArea() {
     setState(() {
+      _polygons = getProjectPolygon(widget.activeProject.polygonPoints);
+      print(_polygons);
+      _location = getPolygonCentroid(_polygons.first);
+      // Take some latitude away to center considering bottom sheet.
+      _location = LatLng(_location.latitude * .999999, _location.longitude);
+      // TODO: dynamic zooming
       _isLoading = false;
     });
   }
 
-  void _moveToCurrentLocation() {
-    if (mapController != null) {
-      mapController.animateCamera(
-        CameraUpdate.newCameraPosition(
-          CameraPosition(target: _currentPosition, zoom: 14.0),
-        ),
-      );
-    }
+  void _onMapCreated(GoogleMapController controller) {
+    mapController = controller;
+    _moveToLocation(); // Ensure the map is centered on the current location
+  }
+
+  void _moveToLocation() {
+    mapController.animateCamera(
+      CameraUpdate.newCameraPosition(
+        CameraPosition(target: _location, zoom: 14.0),
+      ),
+    );
   }
 
   /// Adds a `Marker` to the map and stores that same point in
@@ -141,47 +154,36 @@ class _LightingProfileTestPageState extends State<LightingProfileTestPage> {
         extendBody: true,
         body: _isLoading
             ? const Center(child: CircularProgressIndicator())
-            : Column(
-                children: <Widget>[
-                  SizedBox(height: 10),
-                  Text(
-                    !_isTypeSelected
-                        ? 'Select a type of light.'
-                        : 'Drop a pin where the light is.',
-                    style: TextStyle(fontSize: 24),
-                  ),
-                  Center(
-                    child: Stack(
-                      children: <Widget>[
-                        SizedBox(
-                          height: MediaQuery.of(context).size.height -
-                              (_bottomSheetHeight - 100),
-                          child: GoogleMap(
-                            onMapCreated: _onMapCreated,
-                            initialCameraPosition: CameraPosition(
-                                target: _currentPosition, zoom: 14),
-                            markers: _markers,
-                            onTap: _isTypeSelected ? _togglePoint : null,
-                            mapType: _currentMapType,
-                          ),
-                        ),
-                        Align(
-                          alignment: Alignment.bottomRight,
-                          child: Padding(
-                            padding: const EdgeInsets.symmetric(
-                                horizontal: 60.0, vertical: 90.0),
-                            // child: FloatingActionButton(
-                            //   heroTag: null,
-                            //   onPressed: _toggleMapType,
-                            //   backgroundColor: Colors.green,
-                            //   child: const Icon(Icons.map),
-                            // ),
-                          ),
-                        ),
-                      ],
+            : Center(
+                child: Stack(
+                  children: <Widget>[
+                    SizedBox(
+                      height: MediaQuery.of(context).size.height,
+                      child: GoogleMap(
+                        padding: EdgeInsets.only(bottom: _bottomSheetHeight),
+                        onMapCreated: _onMapCreated,
+                        initialCameraPosition:
+                            CameraPosition(target: _location, zoom: 14),
+                        markers: _markers,
+                        polygons: _polygons,
+                        onTap: _isTypeSelected ? _togglePoint : null,
+                        mapType: _currentMapType,
+                      ),
                     ),
-                  ),
-                ],
+                    Align(
+                      alignment: Alignment(1.0, -0.1),
+                      child: Padding(
+                        padding: const EdgeInsets.symmetric(horizontal: 10),
+                        child: FloatingActionButton(
+                          heroTag: null,
+                          onPressed: _toggleMapType,
+                          backgroundColor: Colors.green,
+                          child: const Icon(Icons.map),
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
               ),
         bottomSheet: _isLoading
             ? SizedBox()
@@ -216,7 +218,19 @@ class _LightingProfileTestPageState extends State<LightingProfileTestPage> {
                         ),
                       ),
                     ),
-                    SizedBox(height: 10),
+                    SizedBox(height: 5),
+                    Center(
+                      child: Text(
+                        !_isTypeSelected
+                            ? 'Select a type of light.'
+                            : 'Drop a pin where the light is.',
+                        style: TextStyle(
+                          fontSize: 24,
+                          color: Colors.white,
+                        ),
+                      ),
+                    ),
+                    SizedBox(height: 5),
                     Text(
                       'Light Types',
                       style: TextStyle(
@@ -258,7 +272,7 @@ class _LightingProfileTestPageState extends State<LightingProfileTestPage> {
                         ),
                       ],
                     ),
-                    SizedBox(height: 20),
+                    SizedBox(height: 15),
                     Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       spacing: 10,
@@ -277,7 +291,7 @@ class _LightingProfileTestPageState extends State<LightingProfileTestPage> {
                             style: _testButtonStyle,
                             onPressed: () {
                               // TODO: check isComplete either before submitting or probably before starting test
-                              widget.thisTest.submitData(_allPointsMap);
+                              widget.activeTest.submitData(_allPointsMap);
                               Navigator.pop(context);
                             },
                             label: Text('Finish'),

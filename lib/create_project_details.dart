@@ -156,9 +156,14 @@ class _CreateProjectDetailsState extends State<CreateProjectDetails> {
                         Navigator.push(
                           context,
                           MaterialPageRoute(builder: (context) {
-                            return LightingProfileTestPage(thisTest: test);
+                            return LightingProfileTestPage(
+                                activeProject: widget.projectData,
+                                activeTest: test);
                           }),
                         );
+                      } else {
+                        print(
+                            'something went wrong with getTestInfo for LightingProfileTest');
                       }
                     },
                     label: Text('Create'),
