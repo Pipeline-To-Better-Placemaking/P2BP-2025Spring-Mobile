@@ -30,11 +30,14 @@ class _NaturePrevalenceState extends State<NaturePrevalence> {
   bool _isLoading = true;
   bool _polygonMode = false;
   bool _pointMode = false;
+  bool _outsidePoint = false;
   String? _type = 'cat';
+  String _directions = "Choose a category.";
+  double _bottomSheetHeight = 300;
   late DocumentReference teamRef;
   late GoogleMapController mapController;
   LatLng _location = defaultLocation; // Default location
-
+  //Map<String, Set<LatLng>> a;
   List<LatLng> _polygonPoints = []; // Points for the polygon
   List<mp.LatLng> _mapToolsPolygonPoints = [];
   Set<Polygon> _polygons = {}; // Set of polygons
@@ -706,6 +709,7 @@ class _NaturePrevalenceState extends State<NaturePrevalence> {
 
   void _togglePoint(LatLng point) {
     try {
+      // if (mp.PolygonUtil.containsLocation(mp.LatLng(point.latitude, point.longitude), _polygons.first.points, true))
       if (_pointMode) _pointTap(point);
       if (_polygonMode) _polygonTap(point);
     } catch (e, stacktrace) {
@@ -824,7 +828,7 @@ class _NaturePrevalenceState extends State<NaturePrevalence> {
                       height: MediaQuery.of(context).size.height,
                       child: GoogleMap(
                         // TODO: size based off of bottomsheet container
-                        padding: EdgeInsets.symmetric(vertical: 300),
+                        padding: EdgeInsets.only(bottom: _bottomSheetHeight),
                         onMapCreated: _onMapCreated,
                         initialCameraPosition:
                             CameraPosition(target: _location, zoom: 14),
@@ -835,9 +839,44 @@ class _NaturePrevalenceState extends State<NaturePrevalence> {
                       ),
                     ),
                     Align(
-                      alignment: Alignment.centerRight,
+                      alignment: Alignment.topCenter,
                       child: Padding(
-                        padding: const EdgeInsets.symmetric(horizontal: 10.0),
+                        padding: const EdgeInsets.symmetric(
+                            vertical: 20.0, horizontal: 25.0),
+                        child: Container(
+                          padding: EdgeInsets.symmetric(
+                              horizontal: 15, vertical: 10),
+                          decoration: BoxDecoration(
+                            color: const Color(0xFFDDE6F2),
+                            gradient: defaultGrad,
+                            borderRadius:
+                                const BorderRadius.all(Radius.circular(10)),
+                            boxShadow: [
+                              BoxShadow(
+                                color: Colors.black.withValues(alpha: 0.1),
+                                blurRadius: 6,
+                                offset: const Offset(0, 2),
+                              ),
+                            ],
+                          ),
+                          child: Text(
+                            _directions,
+                            maxLines: 3,
+                            overflow: TextOverflow.ellipsis,
+                            style: TextStyle(
+                              fontSize: 18,
+                              fontWeight: FontWeight.w500,
+                              color: Colors.white,
+                            ),
+                          ),
+                        ),
+                      ),
+                    ),
+                    Align(
+                      alignment: Alignment.bottomLeft,
+                      child: Padding(
+                        padding: EdgeInsets.only(
+                            bottom: _bottomSheetHeight + 50, left: 5),
                         child: FloatingActionButton(
                           heroTag: null,
                           onPressed: _toggleMapType,
@@ -851,174 +890,217 @@ class _NaturePrevalenceState extends State<NaturePrevalence> {
               ),
         bottomSheet: _isLoading
             ? SizedBox()
-            : Container(
-                height: 300,
-                padding: const EdgeInsets.symmetric(
-                    horizontal: 12.0, vertical: 10.0),
-                decoration: BoxDecoration(
-                  gradient: defaultGrad,
-                  borderRadius: const BorderRadius.only(
-                    topLeft: Radius.circular(24.0),
-                    topRight: Radius.circular(24.0),
-                  ),
-                  boxShadow: [
-                    BoxShadow(
-                      color: Colors.black,
-                      offset: Offset(0.0, 1.0), //(x,y)
-                      blurRadius: 6.0,
-                    ),
-                  ],
-                ),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
+            : SizedBox(
+                height: _bottomSheetHeight,
+                child: Stack(
                   children: [
-                    SizedBox(height: 5),
-                    Center(
-                      child: Text(
-                        'Nature Prevalence',
-                        style: TextStyle(
-                          fontSize: 20,
-                          fontWeight: FontWeight.bold,
-                          color: Colors.yellow[600],
+                    Container(
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 12.0, vertical: 10.0),
+                      decoration: BoxDecoration(
+                        gradient: defaultGrad,
+                        borderRadius: const BorderRadius.only(
+                          topLeft: Radius.circular(24.0),
+                          topRight: Radius.circular(24.0),
                         ),
-                      ),
-                    ),
-                    SizedBox(height: 10),
-                    Text(
-                      'Natural Boundaries',
-                      style: TextStyle(
-                        fontSize: 16,
-                        fontWeight: FontWeight.bold,
-                        color: Colors.white,
-                      ),
-                    ),
-                    SizedBox(height: 5),
-                    Row(
-                      spacing: 10,
-                      children: [
-                        Flexible(
-                          child: buildTestButton(
-                              onPressed: (BuildContext context) {
-                                showModalWaterBody(context);
-                              },
-                              context: context,
-                              text: 'Body of Water',
-                              icon: Icon(Icons.water)),
-                        ),
-                        Flexible(
-                          child: buildTestButton(
-                            text: 'Vegetation',
-                            icon: Icon(Icons.grass, color: Colors.black),
-                            context: context,
-                            onPressed: (BuildContext context) {
-                              showModalVegetation(context);
-                            },
+                        boxShadow: [
+                          BoxShadow(
+                            color: Colors.black,
+                            offset: Offset(0.0, 1.0), //(x,y)
+                            blurRadius: 6.0,
                           ),
-                        ),
-                      ],
-                    ),
-                    SizedBox(
-                      height: 10,
-                    ),
-                    Text(
-                      'Animals',
-                      style: TextStyle(
-                        fontSize: 16,
-                        fontWeight: FontWeight.bold,
-                        color: Colors.white,
+                        ],
                       ),
-                    ),
-                    SizedBox(height: 5),
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      spacing: 10,
-                      children: [
-                        Flexible(
-                          child: buildTestButton(
-                            text: 'Animal',
-                            icon: Icon(Icons.pets, color: Colors.black),
-                            context: context,
-                            onPressed: (BuildContext context) {
-                              showModalAnimal(context);
-                            },
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          SizedBox(height: 5),
+                          Center(
+                            child: Text(
+                              'Nature Prevalence',
+                              style: TextStyle(
+                                fontSize: 20,
+                                fontWeight: FontWeight.bold,
+                                color: Colors.yellow[600],
+                              ),
+                            ),
                           ),
-                        ),
-                      ],
-                    ),
-                    SizedBox(height: 20),
-                    Expanded(
-                      child: Row(
-                        spacing: 10,
-                        children: <Widget>[
+                          SizedBox(height: 10),
+                          Text(
+                            'Natural Boundaries',
+                            style: TextStyle(
+                              fontSize: 16,
+                              fontWeight: FontWeight.bold,
+                              color: Colors.white,
+                            ),
+                          ),
+                          SizedBox(height: 5),
+                          Row(
+                            spacing: 10,
+                            children: [
+                              Flexible(
+                                child: buildTestButton(
+                                    onPressed: (BuildContext context) {
+                                      showModalWaterBody(context);
+                                    },
+                                    context: context,
+                                    text: 'Body of Water',
+                                    icon: Icon(Icons.water)),
+                              ),
+                              Flexible(
+                                child: buildTestButton(
+                                  text: 'Vegetation',
+                                  icon: Icon(Icons.grass, color: Colors.black),
+                                  context: context,
+                                  onPressed: (BuildContext context) {
+                                    showModalVegetation(context);
+                                  },
+                                ),
+                              ),
+                            ],
+                          ),
+                          SizedBox(
+                            height: 10,
+                          ),
+                          Text(
+                            'Animals',
+                            style: TextStyle(
+                              fontSize: 16,
+                              fontWeight: FontWeight.bold,
+                              color: Colors.white,
+                            ),
+                          ),
+                          SizedBox(height: 5),
+                          Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                            spacing: 10,
+                            children: [
+                              Flexible(
+                                child: buildTestButton(
+                                  text: 'Animal',
+                                  icon: Icon(Icons.pets, color: Colors.black),
+                                  context: context,
+                                  onPressed: (BuildContext context) {
+                                    showModalAnimal(context);
+                                  },
+                                ),
+                              ),
+                            ],
+                          ),
+                          SizedBox(height: 20),
                           Expanded(
                             child: Row(
                               spacing: 10,
                               children: <Widget>[
-                                Flexible(
-                                  child: EditButton(
-                                    text: 'Confirm Shape',
-                                    foregroundColor: Colors.green,
-                                    backgroundColor: Colors.white,
-                                    icon: const Icon(Icons.check),
-                                    iconColor: Colors.green,
-                                    onPressed: (_polygonMode)
-                                        ? _finalizePolygon
-                                        : null,
+                                Expanded(
+                                  child: Row(
+                                    spacing: 10,
+                                    children: <Widget>[
+                                      Flexible(
+                                        child: EditButton(
+                                          text: 'Confirm Shape',
+                                          foregroundColor: Colors.green,
+                                          backgroundColor: Colors.white,
+                                          icon: const Icon(Icons.check),
+                                          iconColor: Colors.green,
+                                          onPressed: (_polygonMode)
+                                              ? _finalizePolygon
+                                              : null,
+                                        ),
+                                      ),
+                                      Flexible(
+                                        child: EditButton(
+                                          text: 'Cancel',
+                                          foregroundColor: Colors.red,
+                                          backgroundColor: Colors.white,
+                                          icon: const Icon(Icons.cancel),
+                                          iconColor: Colors.red,
+                                          onPressed:
+                                              (_pointMode || _polygonMode)
+                                                  ? () {
+                                                      setState(() {
+                                                        _pointMode = false;
+                                                        _polygonMode = false;
+                                                        _polygonMarkers = {};
+                                                      });
+                                                      _polygonPoints = [];
+                                                    }
+                                                  : null,
+                                        ),
+                                      ),
+                                    ],
                                   ),
                                 ),
                                 Flexible(
-                                  child: EditButton(
-                                    text: 'Cancel',
-                                    foregroundColor: Colors.red,
-                                    backgroundColor: Colors.white,
-                                    icon: const Icon(Icons.cancel),
-                                    iconColor: Colors.red,
-                                    onPressed: (_pointMode || _polygonMode)
-                                        ? () {
-                                            setState(() {
-                                              _pointMode = false;
-                                              _polygonMode = false;
-                                              _polygonMarkers = {};
-                                            });
-                                            _polygonPoints = [];
-                                          }
-                                        : null,
+                                  flex: 0,
+                                  child: Align(
+                                    alignment: Alignment.centerRight,
+                                    child: EditButton(
+                                      text: 'Finish',
+                                      foregroundColor: Colors.black,
+                                      backgroundColor: Colors.white,
+                                      icon: const Icon(Icons.chevron_right,
+                                          color: Colors.black),
+                                      onPressed: () async {
+                                        // todo: await saveTest()
+                                        // saveTest()
+                                        //   Navigator.pushReplacement(
+                                        //       context,
+                                        //       MaterialPageRoute(
+                                        //         builder: (context) => HomeScreen(),
+                                        //       ));
+                                        //   // TODO: Push to project details page.
+                                        //   Navigator.push(
+                                        //       context,
+                                        //       MaterialPageRoute(
+                                        //         builder: (context) => HomeScreen(),
+                                        //       ));
+                                      },
+                                    ),
                                   ),
                                 ),
                               ],
                             ),
-                          ),
-                          Flexible(
-                            flex: 0,
-                            child: Align(
-                              alignment: Alignment.centerRight,
-                              child: EditButton(
-                                text: 'Finish',
-                                foregroundColor: Colors.black,
-                                backgroundColor: Colors.white,
-                                icon: const Icon(Icons.chevron_right,
-                                    color: Colors.black),
-                                onPressed: () async {
-                                  // todo: await saveTest()
-                                  // saveTest()
-                                  //   Navigator.pushReplacement(
-                                  //       context,
-                                  //       MaterialPageRoute(
-                                  //         builder: (context) => HomeScreen(),
-                                  //       ));
-                                  //   // TODO: Push to project details page.
-                                  //   Navigator.push(
-                                  //       context,
-                                  //       MaterialPageRoute(
-                                  //         builder: (context) => HomeScreen(),
-                                  //       ));
-                                },
-                              ),
-                            ),
-                          ),
+                          )
                         ],
                       ),
-                    )
+                    ),
+                    _outsidePoint
+                        ? Align(
+                            alignment: Alignment.bottomCenter,
+                            child: Padding(
+                              padding: const EdgeInsets.symmetric(
+                                  vertical: 30.0, horizontal: 100.0),
+                              child: Container(
+                                padding: EdgeInsets.symmetric(
+                                    horizontal: 15, vertical: 10),
+                                decoration: BoxDecoration(
+                                  color: Colors.red[900],
+                                  borderRadius: const BorderRadius.all(
+                                      Radius.circular(10)),
+                                  boxShadow: [
+                                    BoxShadow(
+                                      color:
+                                          Colors.black.withValues(alpha: 0.1),
+                                      blurRadius: 6,
+                                      offset: const Offset(0, 2),
+                                    ),
+                                  ],
+                                ),
+                                child: Text(
+                                  'You have placed a point outside of the project area!',
+                                  maxLines: 3,
+                                  overflow: TextOverflow.ellipsis,
+                                  style: TextStyle(
+                                    fontSize: 18,
+                                    fontWeight: FontWeight.w500,
+                                    color: Colors.red[50],
+                                  ),
+                                ),
+                              ),
+                            ),
+                          )
+                        : SizedBox(),
                   ],
                 ),
               ),

@@ -301,7 +301,7 @@ class LightingProfileTest extends Test<LightToLatLngMap> {
   };
 
   /// Static constant definition of collection ID for this test type.
-  static const String collectionIDStatic = 'lighting_profile_test';
+  static const String collectionIDStatic = 'lighting_profile_tests';
 
   /// Creates a new [LightingProfileTest] instance from the given arguments.
   ///

@@ -30,7 +30,9 @@ class _SectionCutterState extends State<SectionCutter> {
   bool _uploaded = false;
   bool _isLoading = false;
   bool _failedToUpload = false;
+  String _directions = "<Ask about terms>";
   XFile? sectionCutterFile;
+  double _bottomSheetHeight = 300;
   late DocumentReference teamRef;
   late GoogleMapController mapController;
   LatLng _location = defaultLocation; // Default location
@@ -95,7 +97,7 @@ class _SectionCutterState extends State<SectionCutter> {
                       height: MediaQuery.of(context).size.height,
                       child: GoogleMap(
                         // TODO: size based off of bottomsheet container
-                        padding: EdgeInsets.symmetric(vertical: 300),
+                        padding: EdgeInsets.only(bottom: _bottomSheetHeight),
                         onMapCreated: _onMapCreated,
                         initialCameraPosition:
                             CameraPosition(target: _location, zoom: 14),
@@ -104,9 +106,44 @@ class _SectionCutterState extends State<SectionCutter> {
                       ),
                     ),
                     Align(
-                      alignment: Alignment.centerRight,
+                      alignment: Alignment.topCenter,
                       child: Padding(
-                        padding: const EdgeInsets.symmetric(horizontal: 10.0),
+                        padding: const EdgeInsets.symmetric(
+                            vertical: 20.0, horizontal: 25.0),
+                        child: Container(
+                          padding: EdgeInsets.symmetric(
+                              horizontal: 15, vertical: 10),
+                          decoration: BoxDecoration(
+                            color: const Color(0xFFDDE6F2),
+                            gradient: defaultGrad,
+                            borderRadius:
+                                const BorderRadius.all(Radius.circular(10)),
+                            boxShadow: [
+                              BoxShadow(
+                                color: Colors.black.withValues(alpha: 0.1),
+                                blurRadius: 6,
+                                offset: const Offset(0, 2),
+                              ),
+                            ],
+                          ),
+                          child: Text(
+                            _directions,
+                            maxLines: 3,
+                            overflow: TextOverflow.ellipsis,
+                            style: TextStyle(
+                              fontSize: 18,
+                              fontWeight: FontWeight.w500,
+                              color: Colors.white,
+                            ),
+                          ),
+                        ),
+                      ),
+                    ),
+                    Align(
+                      alignment: Alignment.bottomLeft,
+                      child: Padding(
+                        padding: EdgeInsets.only(
+                            bottom: _bottomSheetHeight + 50, left: 5),
                         child: FloatingActionButton(
                           heroTag: null,
                           onPressed: _toggleMapType,
@@ -121,7 +158,7 @@ class _SectionCutterState extends State<SectionCutter> {
         bottomSheet: _isLoading
             ? SizedBox()
             : Container(
-                height: 300,
+                height: _bottomSheetHeight,
                 padding: const EdgeInsets.symmetric(
                     horizontal: 12.0, vertical: 10.0),
                 decoration: BoxDecoration(

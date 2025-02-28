@@ -1,5 +1,6 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:p2bp_2025spring_mobile/theme.dart';
 import 'package:p2bp_2025spring_mobile/widgets.dart';
@@ -20,21 +21,26 @@ class IdentifyingAccess extends StatefulWidget {
   State<IdentifyingAccess> createState() => _IdentifyingAccessState();
 }
 
-enum Vegetation { native, design, openField }
-
-enum WaterBody { ocean, lake, river, swamp }
-
 enum AccessType { bikeRack, rideShare, taxi, parking, transportStation }
 
 class _IdentifyingAccessState extends State<IdentifyingAccess> {
   bool _isLoading = true;
   bool _polygonMode = false;
   bool _pointMode = false;
+  bool _polylineMode = false;
   String? _type = 'cat';
+  String _directions = "Choose a category.";
+  double _bottomSheetHeight = 300;
   late DocumentReference teamRef;
   late GoogleMapController mapController;
   LatLng _location = defaultLocation; // Default location
 
+  Polyline? _currentPolyline;
+  List<LatLng> _currentPolylinePoints = [];
+  // Need list of list of points
+  Set<Polyline> _polylines = {};
+  Set<Marker> _polylineMarkers = {};
+  Set<Marker> _visiblePolylineMarkers = {};
   List<LatLng> _polygonPoints = []; // Points for the polygon
   List<mp.LatLng> _mapToolsPolygonPoints = [];
   Set<Polygon> _polygons = {}; // Set of polygons
@@ -66,192 +72,6 @@ class _IdentifyingAccessState extends State<IdentifyingAccess> {
     });
   }
 
-  void showModalWaterBody(BuildContext context) {
-    showModalBottomSheet<void>(
-      sheetAnimationStyle:
-          AnimationStyle(reverseDuration: Duration(milliseconds: 100)),
-      context: context,
-      isScrollControlled: true,
-      useSafeArea: true,
-      builder: (context) {
-        return SingleChildScrollView(
-          child: Padding(
-            padding: MediaQuery.of(context).viewInsets,
-            child: Container(
-              // Container decoration- rounded corners and gradient
-              decoration: BoxDecoration(
-                gradient: defaultGrad,
-                borderRadius: const BorderRadius.only(
-                  topLeft: Radius.circular(24.0),
-                  topRight: Radius.circular(24.0),
-                ),
-              ),
-              child: Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 10.0),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: <Widget>[
-                    const BarIndicator(),
-                    Center(
-                      child: Text(
-                        'Select the Body of Water',
-                        style: TextStyle(
-                          fontSize: 20,
-                          fontWeight: FontWeight.bold,
-                          color: Colors.yellow[600],
-                        ),
-                      ),
-                    ),
-                    SizedBox(height: 5),
-                    Center(
-                      child: Text(
-                        'Then mark the boundaries on the map.',
-                        style: TextStyle(
-                          fontSize: 16,
-                          fontStyle: FontStyle.italic,
-                          color: Colors.grey[400],
-                        ),
-                      ),
-                    ),
-                    SizedBox(height: 10),
-                    Text(
-                      'Body of Waster Type',
-                      style: TextStyle(
-                        fontSize: 16,
-                        fontWeight: FontWeight.bold,
-                        color: Colors.white,
-                      ),
-                    ),
-                    SizedBox(height: 5),
-                    Row(
-                      spacing: 20,
-                      children: <Widget>[
-                        Expanded(
-                          flex: 1,
-                          child: FilledButton(
-                            style: FilledButton.styleFrom(
-                              backgroundColor: Colors.white,
-                              foregroundColor: Colors.black,
-                              shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(10.0),
-                              ),
-                            ),
-                            onPressed: () {
-                              setState(() {
-                                _type = WaterBody.ocean.name;
-                                _polygonMode = true;
-                              });
-                              Navigator.pop(context);
-                            },
-                            child: Text('Ocean'),
-                          ),
-                        ),
-                        Expanded(
-                          flex: 1,
-                          child: FilledButton(
-                            style: FilledButton.styleFrom(
-                              backgroundColor: Colors.white,
-                              foregroundColor: Colors.black,
-                              shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(10.0),
-                              ),
-                            ),
-                            onPressed: () {
-                              setState(() {
-                                _type = WaterBody.lake.name;
-                                _polygonMode = true;
-                              });
-                              Navigator.pop(context);
-                            },
-                            child: Text('Lake'),
-                          ),
-                        ),
-                        Expanded(
-                          flex: 1,
-                          child: FilledButton(
-                            style: FilledButton.styleFrom(
-                              backgroundColor: Colors.white,
-                              foregroundColor: Colors.black,
-                              shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(10.0),
-                              ),
-                            ),
-                            onPressed: () {
-                              setState(() {
-                                _type = WaterBody.river.name;
-                                _polygonMode = true;
-                              });
-                              Navigator.pop(context);
-                            },
-                            child: Text('River', textAlign: TextAlign.center),
-                          ),
-                        ),
-                      ],
-                    ),
-                    SizedBox(height: 5),
-                    Row(
-                      spacing: 20,
-                      children: <Widget>[
-                        Expanded(
-                          flex: 1,
-                          child: FilledButton(
-                            style: FilledButton.styleFrom(
-                              backgroundColor: Colors.white,
-                              foregroundColor: Colors.black,
-                              shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(10.0),
-                              ),
-                            ),
-                            onPressed: () {
-                              setState(() {
-                                _type = WaterBody.swamp.name;
-                                _polygonMode = true;
-                              });
-                              Navigator.pop(context);
-                            },
-                            child: Text('Swamp'),
-                          ),
-                        ),
-                        Flexible(
-                          flex: 1,
-                          child: SizedBox(),
-                        ),
-                        Flexible(
-                          flex: 1,
-                          child: SizedBox(),
-                        ),
-                      ],
-                    ),
-                    SizedBox(height: 25),
-                    Align(
-                      alignment: Alignment.bottomRight,
-                      child: InkWell(
-                        child: const Padding(
-                          padding: EdgeInsets.only(right: 20, bottom: 0),
-                          child: Text(
-                            'Cancel',
-                            style: TextStyle(
-                                fontSize: 16,
-                                fontWeight: FontWeight.w500,
-                                color: Color(0xFFFFD700)),
-                          ),
-                        ),
-                        onTap: () {
-                          Navigator.pop(context);
-                        },
-                      ),
-                    ),
-                    SizedBox(height: 50),
-                  ],
-                ),
-              ),
-            ),
-          ),
-        );
-      },
-    );
-  }
-
   void _onMapCreated(GoogleMapController controller) {
     mapController = controller;
     _moveToLocation(); // Ensure the map is centered on the current location
@@ -269,8 +89,9 @@ class _IdentifyingAccessState extends State<IdentifyingAccess> {
     try {
       if (_pointMode) _pointTap(point);
       if (_polygonMode) _polygonTap(point);
+      if (_polylineMode) _polylineTap(point);
     } catch (e, stacktrace) {
-      print('Error in nature_prevalence_test.dart, _togglePoint(): $e');
+      print('Error in identifying_access_test.dart, _togglePoint(): $e');
       print('Stacktrace: $stacktrace');
     }
   }
@@ -298,7 +119,50 @@ class _IdentifyingAccessState extends State<IdentifyingAccess> {
         );
       });
       _type = 'cat';
-      _pointMode = false;
+    }
+  }
+
+  void _polylineTap(LatLng point) {
+    if (_type != null) {
+      final markerId = MarkerId('${_type}_marker_${point.toString()}');
+      setState(() {
+        _currentPolylinePoints.add(point);
+        _polylineMarkers.add(
+          Marker(
+            markerId: markerId,
+            position: point,
+            consumeTapEvents: true,
+            icon: AssetMapBitmap('assets/${_type}_marker.png'),
+            onTap: () {
+              // If the marker is tapped again, it will be removed
+              setState(() {
+                _currentPolylinePoints.remove(point);
+                _polylineMarkers
+                    .removeWhere((marker) => marker.markerId == markerId);
+                _currentPolyline =
+                    createPolyline(_currentPolylinePoints, Colors.white);
+                if (_polylineMarkers.isNotEmpty) {
+                  _visiblePolylineMarkers = {
+                    _polylineMarkers.first,
+                    _polylineMarkers.last
+                  };
+                } else {
+                  _visiblePolylineMarkers = {};
+                }
+              });
+            },
+          ),
+        );
+      });
+      if (_polylineMarkers.isNotEmpty) {
+        _visiblePolylineMarkers = {
+          _polylineMarkers.first,
+          _polylineMarkers.last
+        };
+      }
+      _currentPolyline =
+          createPolyline([..._currentPolylinePoints, point], Colors.white);
+      _type = 'cat';
     }
   }
 
@@ -315,7 +179,7 @@ class _IdentifyingAccessState extends State<IdentifyingAccess> {
             icon: AssetMapBitmap('assets/${_type}_marker.png'),
             onTap: () {
               // If placing a point or polygon, don't remove point.
-              if (_pointMode || _polygonMode) return;
+              if (_polylineMode || _polygonMode) return;
               // If the marker is tapped again, it will be removed
               setState(() {
                 _markers.removeWhere((marker) => marker.markerId == markerId);
@@ -328,6 +192,30 @@ class _IdentifyingAccessState extends State<IdentifyingAccess> {
       _type = 'cat';
       _pointMode = false;
     }
+  }
+
+  void _finalizeShape() {
+    if (_polylineMode) _finalizePolyline();
+    if (_polygonMode) _finalizePolygon();
+  }
+
+  void _finalizePolyline() {
+    Polyline? finalPolyline =
+        createPolyline(_currentPolylinePoints, Colors.black);
+    if (finalPolyline != null) {
+      setState(() {
+        _polylines.add(finalPolyline);
+      });
+    } else {
+      print("Polyline is null. Nothing to finalize.");
+    }
+    setState(() {
+      _polylineMarkers = {};
+      _currentPolylinePoints = [];
+      _visiblePolylineMarkers = {};
+      _directions = 'Choose a category. Or, click finish if done.';
+    });
+    _polylineMode = false;
   }
 
   void _finalizePolygon() {
@@ -355,6 +243,9 @@ class _IdentifyingAccessState extends State<IdentifyingAccess> {
       setState(() {
         _polygonMarkers.clear();
         _polygonMode = false;
+        _polylineMode = true;
+        _directions =
+            'Now define the path to the project area from the parking.';
       });
     } catch (e, stacktrace) {
       print('Exception in _finalize_polygon(): $e');
@@ -385,20 +276,62 @@ class _IdentifyingAccessState extends State<IdentifyingAccess> {
                       height: MediaQuery.of(context).size.height,
                       child: GoogleMap(
                         // TODO: size based off of bottomsheet container
-                        padding: EdgeInsets.symmetric(vertical: 300),
+                        polylines: _currentPolyline == null
+                            ? _polylines
+                            : {..._polylines, _currentPolyline!},
+                        padding: EdgeInsets.only(bottom: _bottomSheetHeight),
                         onMapCreated: _onMapCreated,
                         initialCameraPosition:
                             CameraPosition(target: _location, zoom: 14),
                         polygons: _polygons,
-                        markers: {..._markers, ..._polygonMarkers},
+                        markers: {
+                          ..._markers,
+                          ..._polygonMarkers,
+                          ..._visiblePolylineMarkers
+                        },
                         onTap: _togglePoint,
                         mapType: _currentMapType, // Use current map type
                       ),
                     ),
                     Align(
-                      alignment: Alignment.centerRight,
+                      alignment: Alignment.topCenter,
                       child: Padding(
-                        padding: const EdgeInsets.symmetric(horizontal: 10.0),
+                        padding: const EdgeInsets.symmetric(
+                            vertical: 20.0, horizontal: 25.0),
+                        child: Container(
+                          padding: EdgeInsets.symmetric(
+                              horizontal: 15, vertical: 10),
+                          decoration: BoxDecoration(
+                            color: const Color(0xFFDDE6F2),
+                            gradient: defaultGrad,
+                            borderRadius:
+                                const BorderRadius.all(Radius.circular(10)),
+                            boxShadow: [
+                              BoxShadow(
+                                color: Colors.black.withValues(alpha: 0.1),
+                                blurRadius: 6,
+                                offset: const Offset(0, 2),
+                              ),
+                            ],
+                          ),
+                          child: Text(
+                            _directions,
+                            maxLines: 3,
+                            overflow: TextOverflow.ellipsis,
+                            style: TextStyle(
+                              fontSize: 18,
+                              fontWeight: FontWeight.w500,
+                              color: Colors.white,
+                            ),
+                          ),
+                        ),
+                      ),
+                    ),
+                    Align(
+                      alignment: Alignment.bottomLeft,
+                      child: Padding(
+                        padding: EdgeInsets.only(
+                            bottom: _bottomSheetHeight + 50, left: 5),
                         child: FloatingActionButton(
                           heroTag: null,
                           onPressed: _toggleMapType,
@@ -412,187 +345,274 @@ class _IdentifyingAccessState extends State<IdentifyingAccess> {
               ),
         bottomSheet: _isLoading
             ? SizedBox()
-            : Container(
-                height: 300,
-                padding: const EdgeInsets.symmetric(
-                    horizontal: 12.0, vertical: 10.0),
-                decoration: BoxDecoration(
-                  gradient: defaultGrad,
-                  borderRadius: const BorderRadius.only(
-                    topLeft: Radius.circular(24.0),
-                    topRight: Radius.circular(24.0),
+            : Padding(
+                padding: MediaQuery.of(context).viewInsets,
+                child: Container(
+                  height: _bottomSheetHeight,
+                  padding: const EdgeInsets.symmetric(
+                      horizontal: 12.0, vertical: 10.0),
+                  decoration: BoxDecoration(
+                    gradient: defaultGrad,
+                    borderRadius: const BorderRadius.only(
+                      topLeft: Radius.circular(24.0),
+                      topRight: Radius.circular(24.0),
+                    ),
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.black,
+                        offset: Offset(0.0, 1.0), //(x,y)
+                        blurRadius: 6.0,
+                      ),
+                    ],
                   ),
-                  boxShadow: [
-                    BoxShadow(
-                      color: Colors.black,
-                      offset: Offset(0.0, 1.0), //(x,y)
-                      blurRadius: 6.0,
-                    ),
-                  ],
-                ),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    SizedBox(height: 5),
-                    Center(
-                      child: Text(
-                        'Nature Prevalence',
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      SizedBox(height: 5),
+                      Center(
+                        child: Text(
+                          'Identifying Access',
+                          style: TextStyle(
+                            fontSize: 20,
+                            fontWeight: FontWeight.bold,
+                            color: Colors.yellow[600],
+                          ),
+                        ),
+                      ),
+                      Align(
+                        alignment: Alignment.topCenter,
+                        child: Text(
+                          'Mark where people enter the project area from.',
+                          style: TextStyle(
+                            fontSize: 16,
+                            fontStyle: FontStyle.italic,
+                            color: Colors.grey[400],
+                          ),
+                        ),
+                      ),
+                      SizedBox(height: 15),
+                      Text(
+                        'Access Type',
                         style: TextStyle(
-                          fontSize: 20,
+                          fontSize: 16,
                           fontWeight: FontWeight.bold,
-                          color: Colors.yellow[600],
+                          color: Colors.white,
                         ),
                       ),
-                    ),
-                    SizedBox(height: 10),
-                    Text(
-                      'Natural Boundaries',
-                      style: TextStyle(
-                        fontSize: 16,
-                        fontWeight: FontWeight.bold,
-                        color: Colors.white,
-                      ),
-                    ),
-                    SizedBox(height: 5),
-                    Row(
-                      spacing: 10,
-                      children: [
-                        Flexible(
-                          child: buildTestButton(
-                              onPressed: (BuildContext context) {
-                                showModalWaterBody(context);
-                              },
-                              context: context,
-                              text: 'Body of Water',
-                              icon: Icon(Icons.water)),
-                        ),
-                        Flexible(
-                          child: buildTestButton(
-                            text: 'Vegetation',
-                            icon: Icon(Icons.grass, color: Colors.black),
-                            context: context,
-                            onPressed: (BuildContext context) {
-                              // TODO: showModalVegetation(context);
-                            },
-                          ),
-                        ),
-                      ],
-                    ),
-                    SizedBox(
-                      height: 10,
-                    ),
-                    Text(
-                      'Animals',
-                      style: TextStyle(
-                        fontSize: 16,
-                        fontWeight: FontWeight.bold,
-                        color: Colors.white,
-                      ),
-                    ),
-                    SizedBox(height: 5),
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      spacing: 10,
-                      children: [
-                        Flexible(
-                          child: buildTestButton(
-                            text: 'Animal',
-                            icon: Icon(Icons.pets, color: Colors.black),
-                            context: context,
-                            onPressed: (BuildContext context) {
-                              // TODO: showModalAnimal(context);
-                            },
-                          ),
-                        ),
-                      ],
-                    ),
-                    SizedBox(height: 20),
-                    Expanded(
-                      child: Row(
+                      SizedBox(height: 5),
+                      Row(
                         spacing: 10,
                         children: <Widget>[
-                          Expanded(
-                            child: Row(
-                              spacing: 10,
-                              children: <Widget>[
-                                Flexible(
-                                  child: EditButton(
-                                    text: 'Confirm Shape',
-                                    foregroundColor: Colors.green,
-                                    backgroundColor: Colors.white,
-                                    icon: const Icon(Icons.check),
-                                    iconColor: Colors.green,
-                                    onPressed: (_polygonMode)
-                                        ? _finalizePolygon
-                                        : null,
-                                  ),
-                                ),
-                                Flexible(
-                                  child: EditButton(
-                                    text: 'Cancel',
-                                    foregroundColor: Colors.red,
-                                    backgroundColor: Colors.white,
-                                    icon: const Icon(Icons.cancel),
-                                    iconColor: Colors.red,
-                                    onPressed: (_pointMode || _polygonMode)
-                                        ? () {
-                                            setState(() {
-                                              _pointMode = false;
-                                              _polygonMode = false;
-                                              _polygonMarkers = {};
-                                            });
-                                            _polygonPoints = [];
-                                          }
-                                        : null,
-                                  ),
-                                ),
-                              ],
+                          Flexible(
+                            flex: 2,
+                            child: buildTestButton(
+                              onPressed: (BuildContext context) {
+                                _showDialog(
+                                  text: 'How Many Bikes Can Fit?',
+                                  hintText: 'Enter number of spots.',
+                                  onNext: () {
+                                    setState(() {
+                                      _polylineMode = true;
+                                      _directions =
+                                          "Mark the spot of the bike rack. Then define the path to the project area.";
+                                    });
+                                  },
+                                );
+                              },
+                              context: context,
+                              text: 'Bike Rack',
                             ),
                           ),
                           Flexible(
-                            flex: 0,
-                            child: Align(
-                              alignment: Alignment.centerRight,
-                              child: EditButton(
-                                text: 'Finish',
-                                foregroundColor: Colors.black,
-                                backgroundColor: Colors.white,
-                                icon: const Icon(Icons.chevron_right,
-                                    color: Colors.black),
-                                onPressed: () async {
-                                  // todo: await saveTest()
-                                  // saveTest()
-                                  //   Navigator.pushReplacement(
-                                  //       context,
-                                  //       MaterialPageRoute(
-                                  //         builder: (context) => HomeScreen(),
-                                  //       ));
-                                  //   // TODO: Push to project details page.
-                                  //   Navigator.push(
-                                  //       context,
-                                  //       MaterialPageRoute(
-                                  //         builder: (context) => HomeScreen(),
-                                  //       ));
-                                },
-                              ),
+                            flex: 2,
+                            child: buildTestButton(
+                              text: 'Parking',
+                              context: context,
+                              onPressed: (BuildContext context) {
+                                _showDialog(
+                                  text: 'How Many Parking Spots?',
+                                  hintText: 'Enter number of spots.',
+                                  onNext: () {
+                                    setState(() {
+                                      _polygonMode = true;
+                                      _directions =
+                                          'First, define the parking area by creating a polygon.';
+                                    });
+                                  },
+                                );
+                              },
                             ),
+                          ),
+                          Flexible(
+                            flex: 3,
+                            child: buildTestButton(
+                              text: 'Public Transport',
+                              context: context,
+                              onPressed: (BuildContext context) {
+                                _showDialog(
+                                  text: 'Enter the Route Number',
+                                  hintText: 'Route Number',
+                                  onNext: () {
+                                    setState(() {
+                                      _polylineMode = true;
+                                      _directions =
+                                          "Mark the spot of the bike rack. Then define the path to the project area.";
+                                    });
+                                  },
+                                );
+                              },
+                            ),
+                          ),
+                          Flexible(flex: 1, child: SizedBox())
+                        ],
+                      ),
+                      Row(
+                        children: <Widget>[
+                          Flexible(
+                            flex: 2,
+                            child: buildTestButton(
+                                context: context,
+                                text: 'Taxi',
+                                onPressed: (BuildContext context) {
+                                  setState(() {
+                                    _polylineMode = true;
+                                    _directions =
+                                        'Mark a point where the taxi dropped off. Then make a line to denote the path to the project area.';
+                                  });
+                                }),
                           ),
                         ],
                       ),
-                    )
-                  ],
+                      SizedBox(height: 20),
+                      Expanded(
+                        child: Row(
+                          spacing: 10,
+                          children: <Widget>[
+                            Expanded(
+                              child: Row(
+                                spacing: 10,
+                                children: <Widget>[
+                                  Flexible(
+                                    child: EditButton(
+                                      text: 'Confirm Shape',
+                                      foregroundColor: Colors.green,
+                                      backgroundColor: Colors.white,
+                                      icon: const Icon(Icons.check),
+                                      iconColor: Colors.green,
+                                      onPressed: (_polylineMode || _polygonMode)
+                                          ? _finalizeShape
+                                          : null,
+                                    ),
+                                  ),
+                                  Flexible(
+                                    child: EditButton(
+                                      text: 'Cancel',
+                                      foregroundColor: Colors.red,
+                                      backgroundColor: Colors.white,
+                                      icon: const Icon(Icons.cancel),
+                                      iconColor: Colors.red,
+                                      onPressed: (_polylineMode || _polygonMode)
+                                          ? () {
+                                              setState(() {
+                                                _pointMode = false;
+                                                _polygonMode = false;
+                                                _polylineMode = false;
+                                                _polylineMarkers = {};
+                                                _currentPolyline = null;
+                                                _currentPolylinePoints = [];
+                                                _visiblePolylineMarkers = {};
+                                                _polygonMarkers = {};
+                                              });
+                                              _polygonPoints = [];
+                                            }
+                                          : null,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                            Flexible(
+                              flex: 0,
+                              child: Align(
+                                alignment: Alignment.centerRight,
+                                child: EditButton(
+                                  text: 'Finish',
+                                  foregroundColor: Colors.black,
+                                  backgroundColor: Colors.white,
+                                  icon: const Icon(Icons.chevron_right,
+                                      color: Colors.black),
+                                  onPressed: () async {
+                                    // todo: await saveTest()
+                                    // saveTest()
+                                    //   Navigator.pushReplacement(
+                                    //       context,
+                                    //       MaterialPageRoute(
+                                    //         builder: (context) => HomeScreen(),
+                                    //       ));
+                                    //   // TODO: Push to project details page.
+                                    //   Navigator.push(
+                                    //       context,
+                                    //       MaterialPageRoute(
+                                    //         builder: (context) => HomeScreen(),
+                                    //       ));
+                                  },
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                      )
+                    ],
+                  ),
                 ),
               ),
       ),
     );
   }
 
+  void _showDialog(
+      {required String text,
+      required String hintText,
+      required VoidCallback? onNext}) {
+    showDialog(
+      context: context,
+      builder: (context) {
+        return AlertDialog(
+          title: Text(
+            text,
+            style: TextStyle(
+              fontWeight: FontWeight.bold,
+            ),
+          ),
+          content: TextField(
+            keyboardType: TextInputType.number,
+            inputFormatters: [FilteringTextInputFormatter.digitsOnly],
+            autofocus: true,
+            decoration: InputDecoration(hintText: hintText),
+          ),
+          actions: <Widget>[
+            TextButton(
+              onPressed: () => Navigator.pop(context, 'Cancel'),
+              child: const Text('Cancel'),
+            ),
+            TextButton(
+              onPressed: () {
+                onNext!();
+                Navigator.pop(context, 'Next');
+              },
+              child: const Text('Next'),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
   FilledButton buildTestButton(
       {required BuildContext context,
       required String text,
-      required Function(BuildContext) onPressed,
-      required Icon icon}) {
-    return FilledButton.icon(
+      required Function(BuildContext) onPressed}) {
+    return FilledButton(
       style: FilledButton.styleFrom(
         padding: const EdgeInsets.only(left: 15, right: 15),
         shape: RoundedRectangleBorder(
@@ -603,10 +623,9 @@ class _IdentifyingAccessState extends State<IdentifyingAccess> {
         iconColor: Colors.black,
         disabledBackgroundColor: Color(0xCD6C6C6C),
       ),
-      onPressed: (_pointMode || _polygonMode) ? null : () => onPressed(context),
-      label: Text(text),
-      icon: icon,
-      iconAlignment: IconAlignment.end,
+      onPressed:
+          (_polylineMode || _polygonMode) ? null : () => onPressed(context),
+      child: Text(text),
     );
   }
 }
