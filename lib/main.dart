@@ -20,6 +20,11 @@ import 'teams_settings_screen.dart';
 import 'search_location_screen.dart';
 import 'lighting_profile_test.dart';
 
+/// All [Test] subclass's register methods should be called here.
+void registerTestTypes() {
+  LightingProfileTest.register();
+}
+
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   try {
@@ -31,6 +36,7 @@ void main() async {
     print("Firebase initialization failed: $e");
     // Handle the error here, maybe show an error screen or fallback UI
   }
+  registerTestTypes(); // Test class setup
   runApp(const MyApp());
 }
 

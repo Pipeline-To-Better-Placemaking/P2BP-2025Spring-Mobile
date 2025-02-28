@@ -1,18 +1,11 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
-import 'package:p2bp_2025spring_mobile/change_project_name_form.dart';
-import 'package:p2bp_2025spring_mobile/change_project_description_form.dart';
 import 'package:p2bp_2025spring_mobile/show_project_options_dialog.dart';
 import 'db_schema_classes.dart';
 import 'package:flutter/services.dart';
-import 'dart:ui';
 import 'package:p2bp_2025spring_mobile/create_test_form.dart';
 import 'package:p2bp_2025spring_mobile/theme.dart';
-import 'package:dropdown_button2/dropdown_button2.dart';
-import 'package:image_picker/image_picker.dart';
-import 'package:font_awesome_flutter/font_awesome_flutter.dart';
-import 'dart:io';
 
 // IMPORTANT: When navigating to this page, pass in project details. Use
 // getProjectInfo() from firestore_functions.dart to retrieve project object w/ data.

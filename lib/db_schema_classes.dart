@@ -148,6 +148,90 @@ abstract class Test<T> {
   /// Whether this test has been completed by a surveyor yet.
   bool isComplete = false;
 
+  // The below Maps must have values registered for each subclass of Test.
+  // Thus each subclass should have a method `static void register()`
+  // which adds the appropriate values to each Map.
+
+  /// Maps from the collection ID of each [Test] subclass to a function
+  /// which should use a constructor of that [Test] type to make a new instance
+  /// of said [Test].
+  static final Map<
+      String,
+      Test Function({
+        required String title,
+        required String testID,
+        required Timestamp scheduledTime,
+        required DocumentReference projectRef,
+        required String collectionID,
+      })> _newTestConstructors = {};
+
+  /// Maps from collection ID to a function which should use a constructor
+  /// to make and return a [Test] object from the existing information
+  /// given in [testDoc].
+  static final Map<String,
+          Test Function(DocumentSnapshot<Map<String, dynamic>> testDoc)>
+      _recreateTestConstructors = {};
+
+  /// Maps from a [Type] assumed to be a subclass of [Test] to the page
+  /// for completing that [Test].
+  static final Map<Type, Widget Function(Project, Test)> _pageBuilders = {};
+
+  /// Returns a new instance of the [Test] subclass associated with
+  /// [collectionID].
+  ///
+  /// This acts as a factory constructor and is intended to be used for
+  /// any newly created tests.
+  ///
+  /// Utilizes values registered to [Test._newTestConstructors].
+  static Test createNew({
+    required String title,
+    required String testID,
+    required Timestamp scheduledTime,
+    required DocumentReference projectRef,
+    required String collectionID,
+  }) {
+    final constructor = _newTestConstructors[collectionID];
+    if (constructor != null) {
+      return constructor(
+        title: title,
+        testID: testID,
+        scheduledTime: scheduledTime,
+        projectRef: projectRef,
+        collectionID: collectionID,
+      );
+    }
+    throw Exception('Unregistered Test type for collection: $collectionID');
+  }
+
+  /// Returns a new instance of the [Test] subclass appropriate for the
+  /// given [testDoc] based on the collection it is from.
+  ///
+  /// This acts as a factory constructor for tests which already exist in
+  /// Firestore.
+  ///
+  /// Utilizes values registered to [Test._recreateTestConstructors].
+  static Test recreateFromDoc(DocumentSnapshot<Map<String, dynamic>> testDoc) {
+    final constructor = _recreateTestConstructors[testDoc.reference.parent.id];
+    if (constructor != null) {
+      return constructor(testDoc);
+    }
+    throw Exception(
+        'Unregistered Test type for collection: ${testDoc.reference.parent.id}');
+  }
+
+  /// Returns the [Widget] of the page used to complete this type of [Test]
+  /// with the given [Test] and [Project] parameters already given.
+  ///
+  /// Basically when you want to navigate to [Test] completion page just use
+  /// `test.getPage(project)` as the page given to a Navigator function.
+  Widget getPage(Project project) {
+    final pageBuilder = _pageBuilders[runtimeType];
+    if (pageBuilder != null) {
+      return pageBuilder(project, this);
+    }
+    throw Exception('No registered page for test type: $runtimeType');
+  }
+
   /// Creates a new [Test] instance from the given arguments.
   ///
   /// Used for all creation of [Test] subclasses through super-constructor
@@ -171,124 +255,6 @@ abstract class Test<T> {
     this.maxResearchers = maxResearchers ?? 1;
     this.isComplete = isComplete ?? false;
   }
-
-  /// Returns a new instance of the [Test] subclass associated with
-  /// [collectionID].
-  ///
-  /// This is the real 'factory constructor' always used for creating instances
-  /// of any [Test] subclass, but is private and called by the various public
-  /// static methods acting like factory constructors.
-  ///
-  /// Throws an exception if the given [collectionID] does not match any of
-  /// the subclasses that have been included here.
-  ///
-  /// Every new subclass of [Test] is expected to have a case added to this
-  /// method for its statically defined [collectionID] and using its
-  /// unnamed constructor and statically defined initial structure for [data]
-  /// when [data] is not provided.
-  static Test _create({
-    required String title,
-    required String testID,
-    required Timestamp scheduledTime,
-    required DocumentReference projectRef,
-    required String collectionID,
-    dynamic data,
-    Timestamp? creationTime,
-    int? maxResearchers,
-    bool? isComplete,
-  }) {
-    switch (collectionID) {
-      case LightingProfileTest.collectionIDStatic:
-        return LightingProfileTest._(
-          title: title,
-          testID: testID,
-          scheduledTime: scheduledTime,
-          projectRef: projectRef,
-          collectionID: collectionID,
-          data: (data != null && data is LightToGeoPointMap) // Verify type
-              ? LightingProfileTest.convertDataFromFirestore(data)
-              : LightingProfileTest.initialDataStructure,
-          creationTime: creationTime,
-          maxResearchers: maxResearchers,
-          isComplete: isComplete,
-        );
-      default:
-        throw Exception('Invalid collectionID used with Test.createNew()');
-    }
-  }
-
-  /// Returns a new instance of the [Test] subclass associated with
-  /// [collectionID].
-  ///
-  /// This acts as a factory constructor and is intended to be used for
-  /// any newly created tests.
-  static Test createNew({
-    required String title,
-    required String testID,
-    required Timestamp scheduledTime,
-    required DocumentReference projectRef,
-    required String collectionID,
-  }) {
-    return _create(
-      title: title,
-      testID: testID,
-      scheduledTime: scheduledTime,
-      projectRef: projectRef,
-      collectionID: collectionID,
-    );
-  }
-
-  /// Returns a new instance of the [Test] subclass appropriate for the
-  /// given [testDoc] based on the collection it is from.
-  ///
-  /// This acts as a factory constructor for tests which already exist in
-  /// Firestore.
-  static Test recreateFromDoc(DocumentSnapshot<Map<String, dynamic>> testDoc) {
-    return _create(
-      title: testDoc['title'],
-      testID: testDoc['id'],
-      scheduledTime: testDoc['scheduledTime'],
-      projectRef: testDoc['project'],
-      collectionID: testDoc.reference.parent.id,
-      data: testDoc['data'],
-      creationTime: testDoc['creationTime'],
-      maxResearchers: testDoc['maxResearchers'],
-      isComplete: testDoc['isComplete'],
-    );
-  }
-
-  /// Checks if given [Test] has the specified generic type which extends
-  /// [Test] and if so returns it as that type. Otherwise returns `null`.
-  S? castTo<S extends Test>() {
-    if (this is S) {
-      return (this as S);
-    } else {
-      return null;
-    }
-  }
-
-  /// Returns the page for the type of the given [Test], with the given
-  /// [Project] and [Test] arguments already passed to it.
-  ///
-  /// Basically you should just use this in place of any specific test
-  /// completion page when you have a [Test] object but haven't necessarily
-  /// determined which type of test it is.
-  static Widget createTestPageFor(Project project, Test test) {
-    switch (test.collectionID) {
-      case LightingProfileTest.collectionIDStatic:
-        LightingProfileTest? lightTest = test.castTo<LightingProfileTest>();
-        if (lightTest != null) {
-          return LightingProfileTestPage(
-              activeProject: project, activeTest: lightTest);
-        }
-    }
-    throw Exception(
-        'no test page set for given collection ID used in getTestPageFor()');
-  }
-
-  // Side note: I would really like to find some way to abstract away this
-  // switch-case thing that 2 of these methods are now using to determine
-  // the specific type but just haven't figured out how yet.
 
   /// Uploads the data from a completed test to Firestore.
   ///
@@ -328,6 +294,47 @@ class LightingProfileTest extends Test<LightToLatLngMap> {
   /// Static constant definition of collection ID for this test type.
   static const String collectionIDStatic = 'lighting_profile_tests';
 
+  /// Registers this class within the Maps required by class [Test].
+  static void register() {
+    // Register for creating new Lighting Profile Tests
+    Test._newTestConstructors[collectionIDStatic] = ({
+      required String title,
+      required String testID,
+      required Timestamp scheduledTime,
+      required DocumentReference projectRef,
+      required String collectionID,
+    }) =>
+        LightingProfileTest._(
+          title: title,
+          testID: testID,
+          scheduledTime: scheduledTime,
+          projectRef: projectRef,
+          collectionID: collectionID,
+          data: initialDataStructure,
+        );
+
+    // Register for recreating a Lighting Profile Test from Firestore
+    Test._recreateTestConstructors[collectionIDStatic] =
+        (testDoc) => LightingProfileTest._(
+              title: testDoc['title'],
+              testID: testDoc['id'],
+              scheduledTime: testDoc['scheduledTime'],
+              projectRef: testDoc['project'],
+              collectionID: testDoc.reference.parent.id,
+              data: convertDataFromFirestore(testDoc['data']),
+              creationTime: testDoc['creationTime'],
+              maxResearchers: testDoc['maxResearchers'],
+              isComplete: testDoc['isComplete'],
+            );
+
+    // Register for building a Lighting Profile Test page
+    Test._pageBuilders[LightingProfileTest] =
+        (project, test) => LightingProfileTestPage(
+              activeProject: project,
+              activeTest: test as LightingProfileTest,
+            );
+  }
+
   /// Creates a new [LightingProfileTest] instance from the given arguments.
   ///
   /// This is private because the intended usage of this is through the
@@ -347,8 +354,6 @@ class LightingProfileTest extends Test<LightToLatLngMap> {
 
   @override
   void submitData(LightToLatLngMap data) async {
-    this.data = data;
-
     // Adds all points of each type from submitted data to overall data
     LightToGeoPointMap firestoreData = convertDataToFirestore(data);
 
@@ -357,6 +362,9 @@ class LightingProfileTest extends Test<LightToLatLngMap> {
       'data': firestoreData,
       'isComplete': true,
     });
+
+    this.data = data;
+    isComplete = true;
 
     print(
         'Success! In LightingProfileTest.submitData. firestoreData = $firestoreData');
