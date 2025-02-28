@@ -1,9 +1,18 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
-import 'package:p2bp_2025spring_mobile/firestore_functions.dart';
-import 'package:p2bp_2025spring_mobile/lighting_profile_test.dart';
+import 'package:p2bp_2025spring_mobile/change_project_name_form.dart';
+import 'package:p2bp_2025spring_mobile/change_project_description_form.dart';
+import 'package:p2bp_2025spring_mobile/show_project_options_dialog.dart';
 import 'db_schema_classes.dart';
+import 'package:flutter/services.dart';
+import 'dart:ui';
+import 'package:p2bp_2025spring_mobile/create_test_form.dart';
+import 'package:p2bp_2025spring_mobile/theme.dart';
+import 'package:dropdown_button2/dropdown_button2.dart';
+import 'package:image_picker/image_picker.dart';
+import 'package:font_awesome_flutter/font_awesome_flutter.dart';
+import 'dart:io';
 
 // IMPORTANT: When navigating to this page, pass in project details. Use
 // getProjectInfo() from firestore_functions.dart to retrieve project object w/ data.
@@ -26,180 +35,309 @@ class _CreateProjectDetailsState extends State<CreateProjectDetails> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.blue,
-      appBar: AppBar(
-        backgroundColor: Colors.blue,
-        foregroundColor: Colors.white,
-      ),
-      body: SingleChildScrollView(
-        child: Column(
-          children: <Widget>[
-            //Image(image:,),
-            Container(
-              width: double.infinity,
-              height: 150,
-              decoration: BoxDecoration(
-                border: Border(
-                  top: BorderSide(color: Colors.white, width: .5),
-                  bottom: BorderSide(color: Colors.white, width: .5),
-                ),
-                color: Color(0x22535455),
-              ),
-            ),
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: <Widget>[
-                Padding(
-                  padding: const EdgeInsets.only(left: 10.0),
-                  child: Text(
-                    widget.projectData.title,
-                    style: TextStyle(
-                      color: Colors.white,
-                      fontSize: 24,
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-                ),
-                Padding(
-                  padding: const EdgeInsets.all(10.0),
-                  child: Container(
-                    width: 40,
-                    height: 40,
-                    decoration: BoxDecoration(
-                        color: Colors.white, shape: BoxShape.circle),
-                    child: IconButton(
-                      onPressed: () {},
-                      icon: Icon(Icons.edit),
-                    ),
-                  ),
-                )
-              ],
-            ),
-            SizedBox(height: 40),
-            Align(
-              alignment: Alignment.centerLeft,
-              child: Padding(
-                padding: const EdgeInsets.only(left: 10.0),
-                child: Text(
-                  'Project Description',
-                  style: TextStyle(
-                    color: Colors.white,
-                    fontSize: 20,
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
-              ),
-            ),
-            SizedBox(height: 20),
-            Flexible(
-              flex: 0,
+      extendBodyBehindAppBar: true,
+      body: CustomScrollView(
+        slivers: <Widget>[
+          SliverAppBar(
+            expandedHeight: 100,
+            pinned: true,
+            automaticallyImplyLeading: false, // Disable default back arrow
+            leadingWidth: 48,
+            systemOverlayStyle: SystemUiOverlayStyle(
+                statusBarColor: Colors.white,
+                statusBarIconBrightness:
+                    Brightness.dark, // Changes Android status bar to white
+                statusBarBrightness:
+                    Brightness.dark), // Changes iOS status bar to white
+            // Custom back arrow button
+            leading: Padding(
+              padding: const EdgeInsets.only(left: 16),
               child: Container(
-                width: double.infinity,
+                // Opaque circle container for visibility
+                alignment: Alignment.center,
                 decoration: BoxDecoration(
-                  border: Border(
-                    top: BorderSide(color: Colors.white, width: .5),
-                    bottom: BorderSide(color: Colors.white, width: .5),
-                  ),
-                  color: Color(0x22535455),
+                  color: Color.fromRGBO(255, 255, 255, 0.5),
+                  shape: BoxShape.circle,
                 ),
-                child: Padding(
-                  padding: const EdgeInsets.symmetric(
-                      horizontal: 8.0, vertical: 5.0),
-                  child: Text.rich(
-                    maxLines: 7,
-                    overflow: TextOverflow.ellipsis,
-                    TextSpan(
-                      text: "${widget.projectData.description}\n\n\n",
-                    ),
-                    style: TextStyle(
-                      fontSize: 15,
-                      color: Colors.white,
-                    ),
-                  ),
+                child: IconButton(
+                  padding: EdgeInsets
+                      .zero, // Removes internal padding from IconButton
+                  constraints: BoxConstraints(),
+                  icon: Icon(Icons.arrow_back,
+                      color: Color(0xFF2F6DCF), size: 20),
+                  onPressed: () {
+                    Navigator.pop(context);
+                  },
                 ),
               ),
             ),
-            SizedBox(height: 30),
-            SizedBox(height: 30),
-            Padding(
-              padding:
-                  const EdgeInsets.symmetric(horizontal: 10.0, vertical: 10.0),
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: <Widget>[
-                  Text(
-                    "Research Activities",
-                    style: TextStyle(
-                      color: Colors.white,
-                      fontSize: 20,
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-                  FilledButton.icon(
-                    style: FilledButton.styleFrom(
-                      padding: const EdgeInsets.only(left: 15, right: 15),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(10.0),
+            // 'Edit Options' button overlayed on right side of cover photo
+            actions: [
+              Padding(
+                padding: const EdgeInsets.only(right: 16),
+                child: Builder(
+                  builder: (context) {
+                    return Container(
+                      // Opaque circle container for visibility
+                      width: 32,
+                      height: 32,
+                      alignment: Alignment.center,
+                      decoration: BoxDecoration(
+                        color: Color.fromRGBO(255, 255, 255, 0.5),
+                        shape: BoxShape.circle,
                       ),
-                      // foregroundColor: foregroundColor,
-                      // backgroundColor: backgroundColor,
-                    ),
-                    onPressed: () async {
-                      // TODO: Function (research activity)
-                      final Test test = await getTestInfo(FirebaseFirestore
-                          .instance
-                          .collection(LightingProfileTest.collectionIDStatic)
-                          .doc('xlgbCV8S9J3BybFzQXXn'));
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(builder: (context) {
-                          return Test.createTestPageFor(
-                              widget.projectData, test);
-                        }),
-                      );
-                    },
-                    label: Text('Create'),
-                    icon: Icon(Icons.add),
-                    iconAlignment: IconAlignment.end,
-                  )
-                ],
+                      child: IconButton(
+                        padding: EdgeInsets.zero,
+                        constraints: BoxConstraints(),
+                        icon: Icon(
+                          Icons.more_vert,
+                          color: Color(0xFF2F6DCF),
+                        ),
+                        onPressed: () => showProjectOptionsDialog(context),
+                      ),
+                    );
+                  },
+                ),
               ),
-            ),
-            Expanded(
-              flex: 0,
-              child: Container(
-                // TODO: change depending on size of description box.
-                height: 350,
-                decoration: BoxDecoration(
-                  color: Color(0x22535455),
-                  border: Border(
-                    top: BorderSide(color: Colors.white, width: .5),
+            ],
+            flexibleSpace: FlexibleSpaceBar(
+              background: Stack(children: <Widget>[
+                // Banner image
+                Container(
+                  width: double.infinity,
+                  decoration: BoxDecoration(
+                    border: Border(
+                      bottom: BorderSide(color: Colors.white, width: .5),
+                    ),
+                    color: Color(0xFF999999),
                   ),
                 ),
-                child: itemCount > 0
-                    ? ListView.separated(
-                        itemCount: itemCount,
-                        padding: const EdgeInsets.only(
-                          left: 15,
-                          right: 15,
-                          top: 25,
-                          bottom: 30,
-                        ),
-                        itemBuilder: (BuildContext context, int index) =>
-                            TestCard(),
-                        separatorBuilder: (BuildContext context, int index) =>
-                            const SizedBox(height: 10),
-                      )
-                    : _isLoading == true
-                        ? const Center(child: CircularProgressIndicator())
-                        : const Center(
-                            child: Text(
-                                'No research activities. Create one first!'),
-                          ),
-              ),
+              ]),
             ),
-          ],
-        ),
+          ),
+          SliverList(
+            delegate: SliverChildListDelegate([
+              Container(
+                decoration: BoxDecoration(gradient: defaultGrad),
+                child: ConstrainedBox(
+                  constraints: BoxConstraints(
+                    minHeight: MediaQuery.of(context).size.height,
+                  ),
+                  child: IntrinsicHeight(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: <Widget>[
+                        Padding(
+                          padding: const EdgeInsets.only(left: 10.0),
+                          child: Text(
+                            widget.projectData.title,
+                            style: TextStyle(
+                              color: Colors.white,
+                              fontSize: 24,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                        ),
+                        SizedBox(height: 40),
+                        Align(
+                          alignment: Alignment.centerLeft,
+                          child: Padding(
+                            padding: const EdgeInsets.only(left: 10.0),
+                            child: Text(
+                              'Project Description',
+                              style: TextStyle(
+                                color: Colors.white,
+                                fontSize: 18,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                          ),
+                        ),
+                        SizedBox(height: 20),
+                        Container(
+                          width: double.infinity,
+                          height: 150,
+                          decoration: BoxDecoration(
+                            border: Border(
+                              top: BorderSide(color: Colors.white, width: .5),
+                              bottom:
+                                  BorderSide(color: Colors.white, width: .5),
+                            ),
+                            color: Color(0x699F9F9F),
+                          ),
+                          child: Padding(
+                            padding: const EdgeInsets.symmetric(
+                                horizontal: 8.0, vertical: 5.0),
+                            child: Text.rich(
+                              maxLines: 7,
+                              overflow: TextOverflow.ellipsis,
+                              TextSpan(
+                                  text:
+                                      "${widget.projectData.description}\n\n\n"),
+                              style:
+                                  TextStyle(fontSize: 15, color: Colors.white),
+                            ),
+                          ),
+                        ),
+                        SizedBox(height: 30),
+                        Center(
+                          child: Container(
+                            width: 300,
+                            height: 200,
+                            decoration: BoxDecoration(
+                              color: Color(0x699F9F9F),
+                              borderRadius: BorderRadius.circular(10),
+                              boxShadow: [
+                                BoxShadow(
+                                  color: Color(0x98474747),
+                                  spreadRadius: 3,
+                                  blurRadius: 3,
+                                  offset: Offset(
+                                      0, 3), // changes position of shadow
+                                ),
+                              ],
+                            ),
+                            child: Padding(
+                              padding: EdgeInsets.symmetric(
+                                  horizontal: 50, vertical: 77.5),
+                              child: SizedBox(
+                                width: 200,
+                                child: FilledButton.icon(
+                                  style: FilledButton.styleFrom(
+                                    padding: const EdgeInsets.only(
+                                        left: 15, right: 15),
+                                    shape: RoundedRectangleBorder(
+                                      borderRadius: BorderRadius.circular(10.0),
+                                    ),
+                                    // foregroundColor: foregroundColor,
+                                    backgroundColor: Colors.black,
+                                  ),
+                                  onPressed: () => {
+                                    // TODO: Function
+                                  },
+                                  label: Text('View Project Area'),
+                                  icon: Icon(Icons.location_on),
+                                  iconAlignment: IconAlignment.start,
+                                ),
+                              ),
+                            ),
+                          ),
+                        ),
+                        SizedBox(height: 30),
+                        Padding(
+                          padding: const EdgeInsets.symmetric(
+                              horizontal: 25.0, vertical: 20.0),
+                          child: Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                            children: <Widget>[
+                              Text(
+                                "Research Activities",
+                                style: TextStyle(
+                                  color: Colors.white,
+                                  fontSize: 20,
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              ),
+                              FilledButton.icon(
+                                style: FilledButton.styleFrom(
+                                  padding: const EdgeInsets.only(
+                                      left: 15, right: 15),
+                                  backgroundColor: Color(0xFF62B6FF),
+                                  shape: RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.circular(10.0),
+                                  ),
+                                  // foregroundColor: foregroundColor,
+                                  // backgroundColor: backgroundColor,
+                                ),
+                                onPressed: () => {
+                                  showModalBottomSheet(
+                                    context: context,
+                                    isScrollControlled:
+                                        true, // allows the sheet to be fully draggable
+                                    backgroundColor: Colors
+                                        .transparent, // makes the sheet's corners rounded if desired
+                                    builder: (BuildContext context) {
+                                      return DraggableScrollableSheet(
+                                        initialChildSize:
+                                            0.7, // initial height as 50% of screen height
+                                        minChildSize:
+                                            0.3, // minimum height when dragged down
+                                        maxChildSize:
+                                            0.9, // maximum height when dragged up
+                                        builder: (BuildContext context,
+                                            ScrollController scrollController) {
+                                          return Container(
+                                            decoration: BoxDecoration(
+                                              color: Color.fromARGB(
+                                                  255, 234, 245, 255),
+                                              borderRadius: BorderRadius.only(
+                                                topLeft: Radius.circular(16.0),
+                                                topRight: Radius.circular(16.0),
+                                              ),
+                                            ),
+                                            child: CreateTestForm(),
+                                            // Replace this ListView with your desired content
+                                          );
+                                        },
+                                      );
+                                    },
+                                  ),
+                                },
+                                label: Text('Create'),
+                                icon: Icon(Icons.add),
+                                iconAlignment: IconAlignment.end,
+                              )
+                            ],
+                          ),
+                        ),
+                        Expanded(
+                          flex: 0,
+                          child: Container(
+                            // TODO: change depending on size of description box.
+                            height: 350,
+                            decoration: BoxDecoration(
+                              color: Color(0x22535455),
+                              border: Border(
+                                top: BorderSide(color: Colors.white, width: .5),
+                              ),
+                            ),
+                            width: double.infinity,
+                            child: itemCount > 0
+                                ? ListView.separated(
+                                    itemCount: itemCount,
+                                    padding: const EdgeInsets.only(
+                                      left: 15,
+                                      right: 15,
+                                      top: 25,
+                                      bottom: 30,
+                                    ),
+                                    itemBuilder:
+                                        (BuildContext context, int index) {
+                                      return TestCard();
+                                    },
+                                    separatorBuilder:
+                                        (BuildContext context, int index) =>
+                                            const SizedBox(
+                                      height: 10,
+                                    ),
+                                  )
+                                : _isLoading == true
+                                    ? const Center(
+                                        child: CircularProgressIndicator())
+                                    : const Center(
+                                        child: Text(
+                                            'No research activities. Create one first!'),
+                                      ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              ),
+            ]),
+          )
+        ],
       ),
     );
   }
