@@ -1,5 +1,16 @@
 import 'package:flutter/material.dart';
 
+// Color constants:
+/// Default color used when test buttons are disabled.
+const Color disabledGrey = Color(0xCD6C6C6C);
+
+/// Transparency for test hint text (or, the directions at the top of the
+/// test map screen).
+const Color directionsTransparency = Color(0xDFDDE6F2);
+
+/// Default yellow color, used mainly for text on blue gradient background.
+const Color placeYellow = Color(0xFFFFD31F);
+
 const LinearGradient defaultGrad = LinearGradient(
   begin: Alignment.topLeft,
   end: Alignment.bottomRight,

@@ -5,9 +5,11 @@ import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:p2bp_2025spring_mobile/theme.dart';
 import 'package:p2bp_2025spring_mobile/widgets.dart';
 import 'package:maps_toolkit/maps_toolkit.dart' as mp;
+import 'create_project_details.dart';
 import 'db_schema_classes.dart';
 import 'firestore_functions.dart';
 import 'google_maps_functions.dart';
+import 'home_screen.dart';
 
 class IdentifyingAccess extends StatefulWidget {
   final Project projectData;
@@ -302,7 +304,7 @@ class _IdentifyingAccessState extends State<IdentifyingAccess> {
                           padding: EdgeInsets.symmetric(
                               horizontal: 15, vertical: 10),
                           decoration: BoxDecoration(
-                            color: const Color(0xFFDDE6F2),
+                            color: directionsTransparency,
                             gradient: defaultGrad,
                             borderRadius:
                                 const BorderRadius.all(Radius.circular(10)),
@@ -345,225 +347,226 @@ class _IdentifyingAccessState extends State<IdentifyingAccess> {
               ),
         bottomSheet: _isLoading
             ? SizedBox()
-            : Padding(
-                padding: MediaQuery.of(context).viewInsets,
-                child: Container(
-                  height: _bottomSheetHeight,
-                  padding: const EdgeInsets.symmetric(
-                      horizontal: 12.0, vertical: 10.0),
-                  decoration: BoxDecoration(
-                    gradient: defaultGrad,
-                    borderRadius: const BorderRadius.only(
-                      topLeft: Radius.circular(24.0),
-                      topRight: Radius.circular(24.0),
-                    ),
-                    boxShadow: [
-                      BoxShadow(
-                        color: Colors.black,
-                        offset: Offset(0.0, 1.0), //(x,y)
-                        blurRadius: 6.0,
-                      ),
-                    ],
+            : Container(
+                height: _bottomSheetHeight,
+                padding: const EdgeInsets.symmetric(
+                    horizontal: 12.0, vertical: 10.0),
+                decoration: BoxDecoration(
+                  gradient: defaultGrad,
+                  borderRadius: const BorderRadius.only(
+                    topLeft: Radius.circular(24.0),
+                    topRight: Radius.circular(24.0),
                   ),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      SizedBox(height: 5),
-                      Center(
-                        child: Text(
-                          'Identifying Access',
-                          style: TextStyle(
-                            fontSize: 20,
-                            fontWeight: FontWeight.bold,
-                            color: Colors.yellow[600],
-                          ),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black,
+                      offset: Offset(0.0, 1.0), //(x,y)
+                      blurRadius: 6.0,
+                    ),
+                  ],
+                ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    SizedBox(height: 5),
+                    Center(
+                      child: Text(
+                        'Identifying Access',
+                        style: TextStyle(
+                          fontSize: 20,
+                          fontWeight: FontWeight.bold,
+                          color: placeYellow,
                         ),
                       ),
-                      Align(
-                        alignment: Alignment.topCenter,
-                        child: Text(
-                          'Mark where people enter the project area from.',
-                          style: TextStyle(
-                            fontSize: 16,
-                            fontStyle: FontStyle.italic,
-                            color: Colors.grey[400],
-                          ),
-                        ),
-                      ),
-                      SizedBox(height: 15),
-                      Text(
-                        'Access Type',
+                    ),
+                    Align(
+                      alignment: Alignment.topCenter,
+                      child: Text(
+                        'Mark where people enter the project area from.',
                         style: TextStyle(
                           fontSize: 16,
-                          fontWeight: FontWeight.bold,
-                          color: Colors.white,
+                          fontStyle: FontStyle.italic,
+                          color: Colors.grey[400],
                         ),
                       ),
-                      SizedBox(height: 5),
-                      Row(
-                        spacing: 10,
-                        children: <Widget>[
-                          Flexible(
-                            flex: 2,
-                            child: buildTestButton(
-                              onPressed: (BuildContext context) {
-                                _showDialog(
-                                  text: 'How Many Bikes Can Fit?',
-                                  hintText: 'Enter number of spots.',
-                                  onNext: () {
-                                    setState(() {
-                                      _polylineMode = true;
-                                      _directions =
-                                          "Mark the spot of the bike rack. Then define the path to the project area.";
-                                    });
-                                  },
-                                );
-                              },
-                              context: context,
-                              text: 'Bike Rack',
-                            ),
-                          ),
-                          Flexible(
-                            flex: 2,
-                            child: buildTestButton(
-                              text: 'Parking',
-                              context: context,
-                              onPressed: (BuildContext context) {
-                                _showDialog(
-                                  text: 'How Many Parking Spots?',
-                                  hintText: 'Enter number of spots.',
-                                  onNext: () {
-                                    setState(() {
-                                      _polygonMode = true;
-                                      _directions =
-                                          'First, define the parking area by creating a polygon.';
-                                    });
-                                  },
-                                );
-                              },
-                            ),
-                          ),
-                          Flexible(
-                            flex: 3,
-                            child: buildTestButton(
-                              text: 'Public Transport',
-                              context: context,
-                              onPressed: (BuildContext context) {
-                                _showDialog(
-                                  text: 'Enter the Route Number',
-                                  hintText: 'Route Number',
-                                  onNext: () {
-                                    setState(() {
-                                      _polylineMode = true;
-                                      _directions =
-                                          "Mark the spot of the bike rack. Then define the path to the project area.";
-                                    });
-                                  },
-                                );
-                              },
-                            ),
-                          ),
-                          Flexible(flex: 1, child: SizedBox())
-                        ],
+                    ),
+                    SizedBox(height: 15),
+                    Text(
+                      'Access Type',
+                      style: TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.bold,
+                        color: Colors.white,
                       ),
-                      Row(
-                        children: <Widget>[
-                          Flexible(
-                            flex: 2,
-                            child: buildTestButton(
-                                context: context,
-                                text: 'Taxi',
-                                onPressed: (BuildContext context) {
+                    ),
+                    SizedBox(height: 5),
+                    Row(
+                      spacing: 10,
+                      children: <Widget>[
+                        Flexible(
+                          flex: 2,
+                          child: buildTestButton(
+                            onPressed: (BuildContext context) {
+                              _showDialog(
+                                text: 'How Many Bikes Can Fit?',
+                                hintText: 'Enter number of spots.',
+                                onNext: () {
                                   setState(() {
                                     _polylineMode = true;
                                     _directions =
-                                        'Mark a point where the taxi dropped off. Then make a line to denote the path to the project area.';
+                                        "Mark the spot of the bike rack. Then define the path to the project area.";
                                   });
-                                }),
+                                },
+                              );
+                            },
+                            context: context,
+                            text: 'Bike Rack',
+                          ),
+                        ),
+                        Flexible(
+                          flex: 2,
+                          child: buildTestButton(
+                            text: 'Parking',
+                            context: context,
+                            onPressed: (BuildContext context) {
+                              _showDialog(
+                                text: 'How Many Parking Spots?',
+                                hintText: 'Enter number of spots.',
+                                onNext: () {
+                                  setState(() {
+                                    _polygonMode = true;
+                                    _directions =
+                                        'First, define the parking area by creating a polygon.';
+                                  });
+                                },
+                              );
+                            },
+                          ),
+                        ),
+                        Flexible(
+                          flex: 3,
+                          child: buildTestButton(
+                            text: 'Public Transport',
+                            context: context,
+                            onPressed: (BuildContext context) {
+                              _showDialog(
+                                text: 'Enter the Route Number',
+                                hintText: 'Route Number',
+                                onNext: () {
+                                  setState(() {
+                                    _polylineMode = true;
+                                    _directions =
+                                        "Mark the spot of the bike rack. Then define the path to the project area.";
+                                  });
+                                },
+                              );
+                            },
+                          ),
+                        ),
+                        Flexible(flex: 1, child: SizedBox())
+                      ],
+                    ),
+                    Row(
+                      children: <Widget>[
+                        Flexible(
+                          flex: 2,
+                          child: buildTestButton(
+                              context: context,
+                              text: 'Taxi',
+                              onPressed: (BuildContext context) {
+                                setState(() {
+                                  _polylineMode = true;
+                                  _directions =
+                                      'Mark a point where the taxi dropped off. Then make a line to denote the path to the project area.';
+                                });
+                              }),
+                        ),
+                      ],
+                    ),
+                    SizedBox(height: 20),
+                    Expanded(
+                      child: Row(
+                        spacing: 10,
+                        children: <Widget>[
+                          Expanded(
+                            child: Row(
+                              spacing: 10,
+                              children: <Widget>[
+                                Flexible(
+                                  child: EditButton(
+                                    text: 'Confirm Shape',
+                                    foregroundColor: Colors.green,
+                                    backgroundColor: Colors.white,
+                                    icon: const Icon(Icons.check),
+                                    iconColor: Colors.green,
+                                    onPressed: (_polylineMode || _polygonMode)
+                                        ? _finalizeShape
+                                        : null,
+                                  ),
+                                ),
+                                Flexible(
+                                  child: EditButton(
+                                    text: 'Cancel',
+                                    foregroundColor: Colors.red,
+                                    backgroundColor: Colors.white,
+                                    icon: const Icon(Icons.cancel),
+                                    iconColor: Colors.red,
+                                    onPressed: (_polylineMode || _polygonMode)
+                                        ? () {
+                                            setState(() {
+                                              _pointMode = false;
+                                              _polygonMode = false;
+                                              _polylineMode = false;
+                                              _polylineMarkers = {};
+                                              _currentPolyline = null;
+                                              _currentPolylinePoints = [];
+                                              _visiblePolylineMarkers = {};
+                                              _polygonMarkers = {};
+                                              _directions =
+                                                  'Choose a category. Or, click finish if done.';
+                                            });
+                                            _polygonPoints = [];
+                                          }
+                                        : null,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                          Flexible(
+                            flex: 0,
+                            child: Align(
+                              alignment: Alignment.centerRight,
+                              child: EditButton(
+                                text: 'Finish',
+                                foregroundColor: Colors.black,
+                                backgroundColor: Colors.white,
+                                icon: const Icon(Icons.chevron_right,
+                                    color: Colors.black),
+                                onPressed: () async {
+                                  // todo: await saveTest()
+                                  // saveTest()
+                                  Navigator.pushReplacement(
+                                      context,
+                                      MaterialPageRoute(
+                                        builder: (context) => HomeScreen(),
+                                      ));
+                                  Navigator.push(
+                                      context,
+                                      MaterialPageRoute(
+                                        builder: (context) =>
+                                            CreateProjectDetails(
+                                                projectData:
+                                                    widget.projectData),
+                                      ));
+                                },
+                              ),
+                            ),
                           ),
                         ],
                       ),
-                      SizedBox(height: 20),
-                      Expanded(
-                        child: Row(
-                          spacing: 10,
-                          children: <Widget>[
-                            Expanded(
-                              child: Row(
-                                spacing: 10,
-                                children: <Widget>[
-                                  Flexible(
-                                    child: EditButton(
-                                      text: 'Confirm Shape',
-                                      foregroundColor: Colors.green,
-                                      backgroundColor: Colors.white,
-                                      icon: const Icon(Icons.check),
-                                      iconColor: Colors.green,
-                                      onPressed: (_polylineMode || _polygonMode)
-                                          ? _finalizeShape
-                                          : null,
-                                    ),
-                                  ),
-                                  Flexible(
-                                    child: EditButton(
-                                      text: 'Cancel',
-                                      foregroundColor: Colors.red,
-                                      backgroundColor: Colors.white,
-                                      icon: const Icon(Icons.cancel),
-                                      iconColor: Colors.red,
-                                      onPressed: (_polylineMode || _polygonMode)
-                                          ? () {
-                                              setState(() {
-                                                _pointMode = false;
-                                                _polygonMode = false;
-                                                _polylineMode = false;
-                                                _polylineMarkers = {};
-                                                _currentPolyline = null;
-                                                _currentPolylinePoints = [];
-                                                _visiblePolylineMarkers = {};
-                                                _polygonMarkers = {};
-                                              });
-                                              _polygonPoints = [];
-                                            }
-                                          : null,
-                                    ),
-                                  ),
-                                ],
-                              ),
-                            ),
-                            Flexible(
-                              flex: 0,
-                              child: Align(
-                                alignment: Alignment.centerRight,
-                                child: EditButton(
-                                  text: 'Finish',
-                                  foregroundColor: Colors.black,
-                                  backgroundColor: Colors.white,
-                                  icon: const Icon(Icons.chevron_right,
-                                      color: Colors.black),
-                                  onPressed: () async {
-                                    // todo: await saveTest()
-                                    // saveTest()
-                                    //   Navigator.pushReplacement(
-                                    //       context,
-                                    //       MaterialPageRoute(
-                                    //         builder: (context) => HomeScreen(),
-                                    //       ));
-                                    //   // TODO: Push to project details page.
-                                    //   Navigator.push(
-                                    //       context,
-                                    //       MaterialPageRoute(
-                                    //         builder: (context) => HomeScreen(),
-                                    //       ));
-                                  },
-                                ),
-                              ),
-                            ),
-                          ],
-                        ),
-                      )
-                    ],
-                  ),
+                    )
+                  ],
                 ),
               ),
       ),
@@ -578,11 +581,22 @@ class _IdentifyingAccessState extends State<IdentifyingAccess> {
       context: context,
       builder: (context) {
         return AlertDialog(
-          title: Text(
-            text,
-            style: TextStyle(
-              fontWeight: FontWeight.bold,
-            ),
+          scrollable: true,
+          title: Column(
+            children: [
+              Text(
+                text,
+                style: TextStyle(
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+              Text(
+                "Leave blank if unknown.",
+                style: TextStyle(
+                  fontSize: 15,
+                ),
+              ),
+            ],
           ),
           content: TextField(
             keyboardType: TextInputType.number,
@@ -621,7 +635,7 @@ class _IdentifyingAccessState extends State<IdentifyingAccess> {
         foregroundColor: Colors.black,
         backgroundColor: Colors.white,
         iconColor: Colors.black,
-        disabledBackgroundColor: Color(0xCD6C6C6C),
+        disabledBackgroundColor: disabledGrey,
       ),
       onPressed:
           (_polylineMode || _polygonMode) ? null : () => onPressed(context),

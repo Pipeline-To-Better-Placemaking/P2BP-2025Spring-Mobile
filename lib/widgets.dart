@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:p2bp_2025spring_mobile/theme.dart';
 
 /// Bar Indicator for the Sliding Up Panels (Edit Project, Results)
 class BarIndicator extends StatelessWidget {
@@ -101,7 +102,7 @@ class EditButton extends StatelessWidget {
         foregroundColor: foregroundColor,
         backgroundColor: backgroundColor,
         iconColor: iconColor,
-        disabledBackgroundColor: Color(0xCD6C6C6C),
+        disabledBackgroundColor: disabledGrey,
       ),
       onPressed: onPressed,
       label: Text(text),

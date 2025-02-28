@@ -1,12 +1,14 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
+import 'package:p2bp_2025spring_mobile/create_project_details.dart';
 import 'package:p2bp_2025spring_mobile/theme.dart';
 import 'package:p2bp_2025spring_mobile/widgets.dart';
 import 'package:maps_toolkit/maps_toolkit.dart' as mp;
 import 'db_schema_classes.dart';
 import 'firestore_functions.dart';
 import 'google_maps_functions.dart';
+import 'home_screen.dart';
 
 class NaturePrevalence extends StatefulWidget {
   final Project projectData;
@@ -101,7 +103,7 @@ class _NaturePrevalenceState extends State<NaturePrevalence> {
                         style: TextStyle(
                           fontSize: 20,
                           fontWeight: FontWeight.bold,
-                          color: Colors.yellow[600],
+                          color: placeYellow,
                         ),
                       ),
                     ),
@@ -287,7 +289,7 @@ class _NaturePrevalenceState extends State<NaturePrevalence> {
                         style: TextStyle(
                           fontSize: 20,
                           fontWeight: FontWeight.bold,
-                          color: Colors.yellow[600],
+                          color: placeYellow,
                         ),
                       ),
                     ),
@@ -441,7 +443,7 @@ class _NaturePrevalenceState extends State<NaturePrevalence> {
                         style: TextStyle(
                           fontSize: 20,
                           fontWeight: FontWeight.bold,
-                          color: Colors.yellow[600],
+                          color: placeYellow,
                         ),
                       ),
                     ),
@@ -847,7 +849,7 @@ class _NaturePrevalenceState extends State<NaturePrevalence> {
                           padding: EdgeInsets.symmetric(
                               horizontal: 15, vertical: 10),
                           decoration: BoxDecoration(
-                            color: const Color(0xFFDDE6F2),
+                            color: directionsTransparency,
                             gradient: defaultGrad,
                             borderRadius:
                                 const BorderRadius.all(Radius.circular(10)),
@@ -921,7 +923,7 @@ class _NaturePrevalenceState extends State<NaturePrevalence> {
                               style: TextStyle(
                                 fontSize: 20,
                                 fontWeight: FontWeight.bold,
-                                color: Colors.yellow[600],
+                                color: placeYellow,
                               ),
                             ),
                           ),
@@ -1044,17 +1046,20 @@ class _NaturePrevalenceState extends State<NaturePrevalence> {
                                       onPressed: () async {
                                         // todo: await saveTest()
                                         // saveTest()
-                                        //   Navigator.pushReplacement(
-                                        //       context,
-                                        //       MaterialPageRoute(
-                                        //         builder: (context) => HomeScreen(),
-                                        //       ));
-                                        //   // TODO: Push to project details page.
-                                        //   Navigator.push(
-                                        //       context,
-                                        //       MaterialPageRoute(
-                                        //         builder: (context) => HomeScreen(),
-                                        //       ));
+                                        Navigator.pushReplacement(
+                                            context,
+                                            MaterialPageRoute(
+                                              builder: (context) =>
+                                                  HomeScreen(),
+                                            ));
+                                        Navigator.push(
+                                            context,
+                                            MaterialPageRoute(
+                                              builder: (context) =>
+                                                  CreateProjectDetails(
+                                                      projectData:
+                                                          widget.projectData),
+                                            ));
                                       },
                                     ),
                                   ),
@@ -1122,7 +1127,7 @@ class _NaturePrevalenceState extends State<NaturePrevalence> {
         foregroundColor: Colors.black,
         backgroundColor: Colors.white,
         iconColor: Colors.black,
-        disabledBackgroundColor: Color(0xCD6C6C6C),
+        disabledBackgroundColor: disabledGrey,
       ),
       onPressed: (_pointMode || _polygonMode) ? null : () => onPressed(context),
       label: Text(text),
