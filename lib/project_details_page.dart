@@ -146,25 +146,17 @@ class _CreateProjectDetailsState extends State<CreateProjectDetails> {
                     ),
                     onPressed: () async {
                       // TODO: Function (research activity)
-                      final LightingProfileTest? test =
-                          Test.castTo<LightingProfileTest>(await getTestInfo(
-                              FirebaseFirestore.instance
-                                  .collection(
-                                      LightingProfileTest.collectionIDStatic)
-                                  .doc('WBZQb2ZhnjV1CJBx10t1')));
-                      if (test != null) {
-                        Navigator.push(
-                          context,
-                          MaterialPageRoute(builder: (context) {
-                            return LightingProfileTestPage(
-                                activeProject: widget.projectData,
-                                activeTest: test);
-                          }),
-                        );
-                      } else {
-                        print(
-                            'something went wrong with getTestInfo for LightingProfileTest');
-                      }
+                      final Test test = await getTestInfo(FirebaseFirestore
+                          .instance
+                          .collection(LightingProfileTest.collectionIDStatic)
+                          .doc('xlgbCV8S9J3BybFzQXXn'));
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(builder: (context) {
+                          return Test.createTestPageFor(
+                              widget.projectData, test);
+                        }),
+                      );
                     },
                     label: Text('Create'),
                     icon: Icon(Icons.add),

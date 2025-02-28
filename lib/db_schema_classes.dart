@@ -1,6 +1,8 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
+import 'package:p2bp_2025spring_mobile/lighting_profile_test.dart';
 import 'firestore_functions.dart';
+import 'package:flutter/material.dart';
 
 final FirebaseFirestore _firestore = FirebaseFirestore.instance;
 
@@ -257,13 +259,36 @@ abstract class Test<T> {
 
   /// Checks if given [Test] has the specified generic type which extends
   /// [Test] and if so returns it as that type. Otherwise returns `null`.
-  static S? castTo<S extends Test>(Test test) {
-    if (test is S) {
-      return (test as S);
+  S? castTo<S extends Test>() {
+    if (this is S) {
+      return (this as S);
     } else {
       return null;
     }
   }
+
+  /// Returns the page for the type of the given [Test], with the given
+  /// [Project] and [Test] arguments already passed to it.
+  ///
+  /// Basically you should just use this in place of any specific test
+  /// completion page when you have a [Test] object but haven't necessarily
+  /// determined which type of test it is.
+  static Widget createTestPageFor(Project project, Test test) {
+    switch (test.collectionID) {
+      case LightingProfileTest.collectionIDStatic:
+        LightingProfileTest? lightTest = test.castTo<LightingProfileTest>();
+        if (lightTest != null) {
+          return LightingProfileTestPage(
+              activeProject: project, activeTest: lightTest);
+        }
+    }
+    throw Exception(
+        'no test page set for given collection ID used in getTestPageFor()');
+  }
+
+  // Side note: I would really like to find some way to abstract away this
+  // switch-case thing that 2 of these methods are now using to determine
+  // the specific type but just haven't figured out how yet.
 
   /// Uploads the data from a completed test to Firestore.
   ///
@@ -301,7 +326,7 @@ class LightingProfileTest extends Test<LightToLatLngMap> {
   };
 
   /// Static constant definition of collection ID for this test type.
-  static const String collectionIDStatic = 'lighting_profile_test';
+  static const String collectionIDStatic = 'lighting_profile_tests';
 
   /// Creates a new [LightingProfileTest] instance from the given arguments.
   ///
