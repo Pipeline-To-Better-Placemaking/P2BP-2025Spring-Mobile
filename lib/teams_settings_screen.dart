@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'project_details_page.dart';
+import 'create_project_details.dart';
 import 'db_schema_classes.dart';
 
 class TeamSettingsScreen extends StatelessWidget {

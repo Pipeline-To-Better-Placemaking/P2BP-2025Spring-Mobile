@@ -7,7 +7,7 @@ import 'package:geolocator/geolocator.dart';
 import 'package:p2bp_2025spring_mobile/create_project_and_teams.dart';
 import 'package:p2bp_2025spring_mobile/home_screen.dart';
 import 'package:p2bp_2025spring_mobile/widgets.dart';
-import 'project_details_page.dart';
+import 'create_project_details.dart';
 import 'package:maps_toolkit/maps_toolkit.dart' as mp;
 import 'db_schema_classes.dart';
 import 'dart:math';

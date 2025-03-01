@@ -3,7 +3,7 @@ import 'package:firebase_core/firebase_core.dart';
 // import 'firebase_options.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:p2bp_2025spring_mobile/db_schema_classes.dart';
-import 'project_details_page.dart';
+import 'create_project_details.dart';
 import 'results_panel.dart';
 import 'edit_project_panel.dart';
 import 'forgot_password_page.dart';

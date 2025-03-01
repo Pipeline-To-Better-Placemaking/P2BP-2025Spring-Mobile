@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:p2bp_2025spring_mobile/db_schema_classes.dart';
 import 'theme.dart';
-import 'project_details_page.dart';
+import 'create_project_details.dart';
 
 class SearchScreen extends StatefulWidget {
   const SearchScreen({super.key, required Project partialProjectData});

@@ -1,6 +1,6 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
-import 'package:p2bp_2025spring_mobile/project_details_page.dart';
+import 'package:p2bp_2025spring_mobile/create_project_details.dart';
 import 'db_schema_classes.dart';
 import 'theme.dart';
 import 'create_project_and_teams.dart';
