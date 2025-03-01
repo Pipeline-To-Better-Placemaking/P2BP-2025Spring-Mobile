@@ -1,6 +1,10 @@
+import 'dart:io';
+
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:file_selector/file_selector.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'firestore_functions.dart';
+import 'package:firebase_storage/firebase_storage.dart';
 
 final FirebaseFirestore _firestore = FirebaseFirestore.instance;
 
@@ -210,6 +214,20 @@ abstract class Test<T> {
           maxResearchers: maxResearchers,
           isComplete: isComplete,
         );
+      case SectionCutterTest.collectionIDStatic:
+        return SectionCutterTest._(
+          title: title,
+          testID: testID,
+          scheduledTime: scheduledTime,
+          projectRef: projectRef,
+          collectionID: collectionID,
+          data: (data != null && data is String) // Verify type
+              ? {"sectionLink": data}
+              : SectionCutterTest.initialDataStructure,
+          creationTime: creationTime,
+          maxResearchers: maxResearchers,
+          isComplete: isComplete,
+        );
       default:
         throw Exception('Invalid collectionID used with Test.createNew()');
     }
@@ -301,7 +319,7 @@ class LightingProfileTest extends Test<LightToLatLngMap> {
   };
 
   /// Static constant definition of collection ID for this test type.
-  static const String collectionIDStatic = 'lighting_profile_test';
+  static const String collectionIDStatic = 'lighting_profile_tests';
 
   /// Creates a new [LightingProfileTest] instance from the given arguments.
   ///
@@ -372,5 +390,69 @@ class LightingProfileTest extends Test<LightToLatLngMap> {
     }
 
     return output;
+  }
+}
+
+/// Class for section cutter test info and methods.
+class SectionCutterTest extends Test<Map<String, String>> {
+  /// Default structure for Section Cutter test. Simply a [Map<String, String>],
+  /// where the first string is the field and the second is the reference which
+  /// refers to the path of the section drawing.
+  static const Map<String, String> initialDataStructure = {"sectionLink": " "};
+
+  /// Static constant definition of collection ID for this test type.
+  static const String collectionIDStatic = 'section_cutter_tests';
+
+  /// Creates a new [SectionCutterTest] instance from the given arguments.
+  ///
+  /// This is private because the intended usage of this is through the
+  /// 'factory constructor' in [Test] via [Test]'s various static methods
+  /// imitating factory constructors.
+  SectionCutterTest._({
+    required super.title,
+    required super.testID,
+    required super.scheduledTime,
+    required super.projectRef,
+    required super.collectionID,
+    required super.data,
+    super.creationTime,
+    super.maxResearchers,
+    super.isComplete,
+  }) : super._();
+
+  @override
+  void submitData(Map<String, String> data) async {
+    try {
+      // Updates data in Firestore
+      await _firestore.collection(collectionID).doc(testID).update({
+        'data': data,
+        'isComplete': true,
+      });
+
+      print('Success! In SectionCutterTest.submitData. firestoreData = $data');
+    } catch (e, stacktrace) {
+      print("Exception in SectionCutterTest.submitData(): $e");
+      print("Stacktrace: $stacktrace");
+    }
+  }
+
+  Future<Map<String, String>> saveXFile(XFile data) async {
+    Map<String, String> storageLocation = initialDataStructure;
+    try {
+      if (projectRef == null) return storageLocation;
+      final storageRef = FirebaseStorage.instance.ref();
+      final sectionRef = storageRef.child(
+          "project_uploads/${projectRef?.id}/section_cutter_files/$testID");
+      final File sectionFile = File(data.path);
+
+      print(sectionRef.fullPath);
+      storageLocation = {"sectionLink": sectionRef.fullPath};
+      await sectionRef.putFile(sectionFile);
+    } catch (e, stacktrace) {
+      print("Error in SectionCutterTest.saveXFile(): $e");
+      print("Stacktrace: $stacktrace");
+    }
+
+    return storageLocation;
   }
 }

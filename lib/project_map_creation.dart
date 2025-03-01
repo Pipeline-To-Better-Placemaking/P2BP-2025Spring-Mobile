@@ -173,10 +173,10 @@ class _ProjectMapCreationState extends State<ProjectMapCreation> {
                               mapType: _currentMapType, // Use current map type
                             ),
                             Align(
-                              alignment: Alignment.bottomRight,
+                              alignment: Alignment.bottomLeft,
                               child: Padding(
-                                padding: const EdgeInsets.symmetric(
-                                    horizontal: 60.0, vertical: 90.0),
+                                padding: const EdgeInsets.only(
+                                    left: 10.0, bottom: 130.0),
                                 child: FloatingActionButton(
                                   heroTag: null,
                                   onPressed: _toggleMapType,
@@ -186,10 +186,10 @@ class _ProjectMapCreationState extends State<ProjectMapCreation> {
                               ),
                             ),
                             Align(
-                              alignment: Alignment.bottomRight,
+                              alignment: Alignment.bottomLeft,
                               child: Padding(
-                                padding: const EdgeInsets.symmetric(
-                                    horizontal: 60.0, vertical: 20.0),
+                                padding: const EdgeInsets.only(
+                                    left: 10.0, bottom: 53.0),
                                 child: FloatingActionButton(
                                   heroTag: null,
                                   onPressed: () {
