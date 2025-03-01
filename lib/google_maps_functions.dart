@@ -152,3 +152,27 @@ LatLng getPolygonCentroid(Polygon polygon) {
 
   return LatLng(latSum / numPoints, lngSum / numPoints);
 }
+
+/// Creates a [Polyline] from a list of points. Returns that [Polyline]. If no
+/// line can be created from the passed set of points returns [null]. Check
+/// on function call for [null].
+Polyline? createPolyline(List<LatLng> polylinePoints, Color color) {
+  Polyline? polyline;
+  final String polylineID;
+  try {
+    // Creates polygon ID from time
+    polylineID = DateTime.now().millisecondsSinceEpoch.toString();
+
+    polyline = Polyline(
+      polylineId: PolylineId(polylineID),
+      width: 3,
+      startCap: Cap.roundCap,
+      points: polylinePoints,
+      color: color,
+    );
+  } catch (e, stacktrace) {
+    print('Excpetion in finalize_polygon(): $e');
+    print('Stacktrace: $stacktrace');
+  }
+  return polyline;
+}
