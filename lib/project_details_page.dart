@@ -25,12 +25,20 @@ final FirebaseFirestore _firestore = FirebaseFirestore.instance;
 User? loggedInUser = FirebaseAuth.instance.currentUser;
 
 class _ProjectDetailsPageState extends State<ProjectDetailsPage> {
-  int itemCount = 10;
-  bool _isLoading = false;
+  late int _testCount;
+  bool _isLoading = true;
   Project? project;
+  late Widget _testListView;
+
+  @override
+  void initState() {
+    super.initState();
+    _testCount = widget.projectData.tests.length;
+  }
 
   @override
   Widget build(BuildContext context) {
+    _testListView = _buildTestListView();
     return Scaffold(
       extendBodyBehindAppBar: true,
       body: CustomScrollView(
@@ -68,7 +76,7 @@ class _ProjectDetailsPageState extends State<ProjectDetailsPage> {
                 ),
               ),
             ),
-            // 'Edit Options' button overlayed on right side of cover photo
+            // 'Edit Options' button overlaid on right side of cover photo
             actions: [
               Padding(
                 padding: const EdgeInsets.only(right: 16),
@@ -112,205 +120,171 @@ class _ProjectDetailsPageState extends State<ProjectDetailsPage> {
               ]),
             ),
           ),
-          SliverList(
-            delegate: SliverChildListDelegate(
-              [
-                Container(
-                  decoration: BoxDecoration(gradient: defaultGrad),
-                  child: ConstrainedBox(
-                    constraints: BoxConstraints(
-                      minHeight: MediaQuery.of(context).size.height,
-                    ),
-                    child: IntrinsicHeight(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: <Widget>[
-                          Padding(
-                            padding: const EdgeInsets.only(left: 10.0),
-                            child: Text(
-                              widget.projectData.title,
-                              style: TextStyle(
-                                color: Colors.white,
-                                fontSize: 24,
-                                fontWeight: FontWeight.bold,
-                              ),
-                            ),
-                          ),
-                          SizedBox(height: 40),
-                          Align(
-                            alignment: Alignment.centerLeft,
-                            child: Padding(
-                              padding: const EdgeInsets.only(left: 10.0),
-                              child: Text(
-                                'Project Description',
-                                style: TextStyle(
-                                  color: Colors.white,
-                                  fontSize: 18,
-                                  fontWeight: FontWeight.bold,
-                                ),
-                              ),
-                            ),
-                          ),
-                          SizedBox(height: 20),
-                          Container(
-                            width: double.infinity,
-                            height: 150,
-                            decoration: BoxDecoration(
-                              border: Border(
-                                top: BorderSide(color: Colors.white, width: .5),
-                                bottom:
-                                    BorderSide(color: Colors.white, width: .5),
-                              ),
-                              color: Color(0x699F9F9F),
-                            ),
-                            child: Padding(
-                              padding: const EdgeInsets.symmetric(
-                                  horizontal: 8.0, vertical: 5.0),
-                              child: Text.rich(
-                                maxLines: 7,
-                                overflow: TextOverflow.ellipsis,
-                                TextSpan(
-                                    text:
-                                        "${widget.projectData.description}\n\n\n"),
-                                style: TextStyle(
-                                    fontSize: 15, color: Colors.white),
-                              ),
-                            ),
-                          ),
-                          SizedBox(height: 30),
-                          Center(
-                            child: Container(
-                              width: 300,
-                              height: 200,
-                              decoration: BoxDecoration(
-                                color: Color(0x699F9F9F),
-                                borderRadius: BorderRadius.circular(10),
-                                boxShadow: [
-                                  BoxShadow(
-                                    color: Color(0x98474747),
-                                    spreadRadius: 3,
-                                    blurRadius: 3,
-                                    offset: Offset(
-                                        0, 3), // changes position of shadow
-                                  ),
-                                ],
-                              ),
-                              child: Padding(
-                                padding: EdgeInsets.symmetric(
-                                    horizontal: 50, vertical: 77.5),
-                                child: SizedBox(
-                                  width: 200,
-                                  child: FilledButton.icon(
-                                    style: FilledButton.styleFrom(
-                                      padding: const EdgeInsets.only(
-                                          left: 15, right: 15),
-                                      shape: RoundedRectangleBorder(
-                                        borderRadius:
-                                            BorderRadius.circular(10.0),
-                                      ),
-                                      // foregroundColor: foregroundColor,
-                                      backgroundColor: Colors.black,
-                                    ),
-                                    onPressed: () => {
-                                      // TODO: Function
-                                    },
-                                    label: Text('View Project Area'),
-                                    icon: Icon(Icons.location_on),
-                                    iconAlignment: IconAlignment.start,
-                                  ),
-                                ),
-                              ),
-                            ),
-                          ),
-                          SizedBox(height: 30),
-                          Padding(
-                            padding: const EdgeInsets.symmetric(
-                                horizontal: 25.0, vertical: 20.0),
-                            child: Row(
-                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                              children: <Widget>[
-                                Text(
-                                  "Research Activities",
-                                  style: TextStyle(
-                                    color: Colors.white,
-                                    fontSize: 20,
-                                    fontWeight: FontWeight.bold,
-                                  ),
-                                ),
-                                FilledButton.icon(
-                                  style: FilledButton.styleFrom(
-                                    padding: const EdgeInsets.only(
-                                        left: 15, right: 15),
-                                    backgroundColor: Color(0xFF62B6FF),
-                                    shape: RoundedRectangleBorder(
-                                      borderRadius: BorderRadius.circular(10.0),
-                                    ),
-                                    // foregroundColor: foregroundColor,
-                                    // backgroundColor: backgroundColor,
-                                  ),
-                                  onPressed: showCreateTestModal,
-                                  label: Text('Create'),
-                                  icon: Icon(Icons.add),
-                                  iconAlignment: IconAlignment.end,
-                                )
-                              ],
-                            ),
-                          ),
-                          Expanded(
-                            flex: 0,
-                            child: Container(
-                              // TODO: change depending on size of description box.
-                              height: 350,
-                              decoration: BoxDecoration(
-                                color: Color(0x22535455),
-                                border: Border(
-                                  top: BorderSide(
-                                      color: Colors.white, width: .5),
-                                ),
-                              ),
-                              width: double.infinity,
-                              child: itemCount > 0
-                                  ? ListView.separated(
-                                      itemCount: itemCount,
-                                      padding: const EdgeInsets.only(
-                                        left: 15,
-                                        right: 15,
-                                        top: 25,
-                                        bottom: 30,
-                                      ),
-                                      itemBuilder:
-                                          (BuildContext context, int index) {
-                                        return TestCard();
-                                      },
-                                      separatorBuilder:
-                                          (BuildContext context, int index) =>
-                                              const SizedBox(
-                                        height: 10,
-                                      ),
-                                    )
-                                  : _isLoading == true
-                                      ? const Center(
-                                          child: CircularProgressIndicator())
-                                      : const Center(
-                                          child: Text(
-                                              'No research activities. Create one first!'),
-                                        ),
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ),
-                ),
-              ],
-            ),
-          ),
+          SliverList(delegate: SliverChildListDelegate([_getPageBody()])),
         ],
       ),
     );
   }
 
-  void showCreateTestModal() async {
+  Widget _getPageBody() {
+    return Container(
+      decoration: BoxDecoration(gradient: defaultGrad),
+      child: ConstrainedBox(
+        constraints: BoxConstraints(
+          minHeight: MediaQuery.of(context).size.height,
+        ),
+        child: IntrinsicHeight(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: <Widget>[
+              Padding(
+                padding: const EdgeInsets.only(left: 10.0),
+                child: Text(
+                  widget.projectData.title,
+                  style: TextStyle(
+                    color: Colors.white,
+                    fontSize: 24,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+              ),
+              SizedBox(height: 40),
+              Align(
+                alignment: Alignment.centerLeft,
+                child: Padding(
+                  padding: const EdgeInsets.only(left: 10.0),
+                  child: Text(
+                    'Project Description',
+                    style: TextStyle(
+                      color: Colors.white,
+                      fontSize: 18,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                ),
+              ),
+              SizedBox(height: 20),
+              Container(
+                width: double.infinity,
+                height: 150,
+                decoration: BoxDecoration(
+                  border: Border(
+                    top: BorderSide(color: Colors.white, width: .5),
+                    bottom: BorderSide(color: Colors.white, width: .5),
+                  ),
+                  color: Color(0x699F9F9F),
+                ),
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(
+                      horizontal: 8.0, vertical: 5.0),
+                  child: Text.rich(
+                    maxLines: 7,
+                    overflow: TextOverflow.ellipsis,
+                    TextSpan(text: "${widget.projectData.description}\n\n\n"),
+                    style: TextStyle(fontSize: 15, color: Colors.white),
+                  ),
+                ),
+              ),
+              SizedBox(height: 30),
+              Center(
+                child: Container(
+                  width: 300,
+                  height: 200,
+                  decoration: BoxDecoration(
+                    color: Color(0x699F9F9F),
+                    borderRadius: BorderRadius.circular(10),
+                    boxShadow: [
+                      BoxShadow(
+                        color: Color(0x98474747),
+                        spreadRadius: 3,
+                        blurRadius: 3,
+                        offset: Offset(0, 3),
+                      ),
+                    ],
+                  ),
+                  child: Padding(
+                    padding:
+                        EdgeInsets.symmetric(horizontal: 50, vertical: 77.5),
+                    child: SizedBox(
+                      width: 200,
+                      child: FilledButton.icon(
+                        style: FilledButton.styleFrom(
+                          padding: const EdgeInsets.only(left: 15, right: 15),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(10.0),
+                          ),
+                          // foregroundColor: foregroundColor,
+                          backgroundColor: Colors.black,
+                        ),
+                        onPressed: () => {
+                          // TODO: Function
+                        },
+                        label: Text('View Project Area'),
+                        icon: Icon(Icons.location_on),
+                        iconAlignment: IconAlignment.start,
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+              SizedBox(height: 30),
+              Padding(
+                padding: const EdgeInsets.symmetric(
+                    horizontal: 25.0, vertical: 20.0),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: <Widget>[
+                    Text(
+                      "Research Activities",
+                      style: TextStyle(
+                        color: Colors.white,
+                        fontSize: 20,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                    FilledButton.icon(
+                      style: FilledButton.styleFrom(
+                        padding: const EdgeInsets.only(left: 15, right: 15),
+                        backgroundColor: Color(0xFF62B6FF),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(10.0),
+                        ),
+                        // foregroundColor: foregroundColor,
+                        // backgroundColor: backgroundColor,
+                      ),
+                      onPressed: _showCreateTestModal,
+                      label: Text('Create'),
+                      icon: Icon(Icons.add),
+                      iconAlignment: IconAlignment.end,
+                    )
+                  ],
+                ),
+              ),
+              Container(
+                // TODO: change depending on size of description box.
+                height: 350,
+                decoration: BoxDecoration(
+                  color: Color(0x22535455),
+                  border: Border(
+                    top: BorderSide(color: Colors.white, width: .5),
+                  ),
+                ),
+                child: _isLoading == true
+                    ? const Center(child: CircularProgressIndicator())
+                    : _testCount > 0
+                        ? _testListView
+                        : const Center(
+                            child: Text(
+                                'No research activities. Create one first!')),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  void _showCreateTestModal() async {
     final Map<String, dynamic> newTestInfo = await showModalBottomSheet(
       context: context,
       isScrollControlled: true, // allows the sheet to be fully draggable
@@ -337,7 +311,7 @@ class _ProjectDetailsPageState extends State<ProjectDetailsPage> {
         );
       },
     );
-    widget.projectData.tests?.add(await saveTest(
+    widget.projectData.tests.add(await saveTest(
       title: newTestInfo['title'],
       scheduledTime: newTestInfo['scheduledTime'],
       projectRef:
@@ -345,11 +319,43 @@ class _ProjectDetailsPageState extends State<ProjectDetailsPage> {
       collectionID: newTestInfo['collectionID'],
     ));
   }
+
+  Widget _buildTestListView() {
+    Widget list = ListView.separated(
+      itemCount: _testCount,
+      padding: const EdgeInsets.only(
+        left: 15,
+        right: 15,
+        top: 25,
+        bottom: 30,
+      ),
+      itemBuilder: (BuildContext context, int index) => TestCard(
+        test: widget.projectData.tests[index],
+        project: widget.projectData,
+      ),
+      separatorBuilder: (BuildContext context, int index) =>
+          const SizedBox(height: 10),
+    );
+    setState(() {
+      _isLoading = false;
+    });
+    return list;
+  }
 }
 
+const Map<Type, String> _testInitialsMap = {
+  LightingProfileTest: 'LP',
+  SectionCutterTest: 'SC',
+};
+
 class TestCard extends StatelessWidget {
+  final Test test;
+  final Project project;
+
   const TestCard({
     super.key,
+    required this.test,
+    required this.project,
   });
 
   @override
@@ -360,10 +366,12 @@ class TestCard extends StatelessWidget {
         child: Row(
           children: <Widget>[
             // TODO: change corresponding to test type
-            CircleAvatar(),
+            CircleAvatar(
+              child: Text(_testInitialsMap[test.runtimeType] ?? ''),
+            ),
             SizedBox(width: 15),
             Expanded(
-              child: Text("Placeholder (Research activity)"),
+              child: Text(test.title),
             ),
             Align(
               alignment: Alignment.centerRight,
@@ -374,11 +382,11 @@ class TestCard extends StatelessWidget {
                 ),
                 tooltip: 'Open team settings',
                 onPressed: () {
-                  // TODO: Actual function (chevron right, project details)
-                  // Navigator.push(
-                  //     context,
-                  //     MaterialPageRoute(
-                  //         builder: (context) => TeamSettingsScreen()));
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                        builder: (context) => test.getPage(project)),
+                  );
                 },
               ),
             ),

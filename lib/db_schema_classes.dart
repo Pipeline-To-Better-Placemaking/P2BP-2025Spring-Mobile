@@ -84,17 +84,18 @@ class Project {
   String description = '';
   List polygonPoints = [];
   num polygonArea = 0;
-  List<Test>? tests = [];
+  List<Test> tests = [];
 
-  Project(
-      {this.creationTime,
-      required this.teamRef,
-      required this.projectID,
-      required this.title,
-      required this.description,
-      required this.polygonPoints,
-      required this.polygonArea,
-      this.tests});
+  Project({
+    this.creationTime,
+    required this.teamRef,
+    required this.projectID,
+    required this.title,
+    required this.description,
+    required this.polygonPoints,
+    required this.polygonArea,
+    List<Test>? tests,
+  }) : tests = tests ?? [];
 
   // TODO: Eventually add Team Photo and Team Color
   Project.partialProject({required this.title, required this.description});

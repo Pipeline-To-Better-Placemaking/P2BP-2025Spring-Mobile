@@ -128,13 +128,10 @@ class _HomeScreenState extends State<HomeScreen> {
           ),
       child: InkWell(
         onTap: () async {
-          // TODO: Navigation to project details page
-          Project tempProject = await getProjectInfo(project.projectID);
           Navigator.push(
             context,
             MaterialPageRoute(
-              builder: (context) =>
-                  ProjectDetailsPage(projectData: tempProject),
+              builder: (context) => ProjectDetailsPage(projectData: project),
             ),
           );
         },

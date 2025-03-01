@@ -447,7 +447,6 @@ Future<Test> getTestInfo(
   try {
     testDoc = await testRef.get();
     if (testDoc.exists && testDoc.data()!.containsKey('scheduledTime')) {
-      print(testDoc); // debug
       test = Test.recreateFromDoc(testDoc);
     } else {
       if (!testDoc.exists) {
