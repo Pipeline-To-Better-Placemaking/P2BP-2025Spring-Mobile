@@ -1056,7 +1056,7 @@ class _NaturePrevalenceState extends State<NaturePrevalence> {
                                             context,
                                             MaterialPageRoute(
                                               builder: (context) =>
-                                                  CreateProjectDetails(
+                                                  ProjectDetailsPage(
                                                       projectData:
                                                           widget.projectData),
                                             ));

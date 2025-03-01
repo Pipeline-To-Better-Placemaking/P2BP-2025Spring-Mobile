@@ -1,5 +1,7 @@
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:dropdown_button2/dropdown_button2.dart';
+import 'package:p2bp_2025spring_mobile/db_schema_classes.dart';
 
 class CreateTestForm extends StatefulWidget {
   const CreateTestForm({super.key});
@@ -9,9 +11,11 @@ class CreateTestForm extends StatefulWidget {
 }
 
 class _CreateTestFormState extends State<CreateTestForm> {
-  TimeOfDay? _selectedTime;
   final TextEditingController _timeController = TextEditingController();
   final TextEditingController _activityNameController = TextEditingController();
+
+  TimeOfDay? _selectedTime;
+  String? _selectedTest;
 
   @override
   void dispose() {
@@ -119,78 +123,78 @@ class _CreateTestFormState extends State<CreateTestForm> {
               ),
               isExpanded: true,
               items: [
+                // DropdownMenuItem(
+                //   value: 'People In Place',
+                //   child: Text(
+                //     'People In Place',
+                //     style: TextStyle(color: Color(0xFF2F6DCF)),
+                //   ),
+                // ),
+                // DropdownMenuItem(
+                //   value: 'People in Motion',
+                //   child: Text(
+                //     'People in Motion',
+                //     style: TextStyle(color: Color(0xFF2F6DCF)),
+                //   ),
+                // ),
+                // DropdownMenuItem(
+                //   value: 'Community Survey',
+                //   child: Text(
+                //     'Community Survey',
+                //     style: TextStyle(color: Color(0xFF2F6DCF)),
+                //   ),
+                // ),
+                // DropdownMenuItem(
+                //   value: 'Spatial Boundaries',
+                //   child: Text(
+                //     'Spatial Boundaries',
+                //     style: TextStyle(color: Color(0xFF2F6DCF)),
+                //   ),
+                // ),
+                // DropdownMenuItem(
+                //   value: 'Nature Prevalence',
+                //   child: Text(
+                //     'Nature Prevalence',
+                //     style: TextStyle(color: Color(0xFF2F6DCF)),
+                //   ),
+                // ),
                 DropdownMenuItem(
-                  value: 'People In Place',
-                  child: Text(
-                    'People In Place',
-                    style: TextStyle(color: Color(0xFF2F6DCF)),
-                  ),
-                ),
-                DropdownMenuItem(
-                  value: 'People in Motion',
-                  child: Text(
-                    'People in Motion',
-                    style: TextStyle(color: Color(0xFF2F6DCF)),
-                  ),
-                ),
-                DropdownMenuItem(
-                  value: 'Community Survey',
-                  child: Text(
-                    'Community Survey',
-                    style: TextStyle(color: Color(0xFF2F6DCF)),
-                  ),
-                ),
-                DropdownMenuItem(
-                  value: 'Spatial Boundaries',
-                  child: Text(
-                    'Spatial Boundaries',
-                    style: TextStyle(color: Color(0xFF2F6DCF)),
-                  ),
-                ),
-                DropdownMenuItem(
-                  value: 'Nature Prevalence',
-                  child: Text(
-                    'Nature Prevalence',
-                    style: TextStyle(color: Color(0xFF2F6DCF)),
-                  ),
-                ),
-                DropdownMenuItem(
-                  value: 'Lighting Profile',
+                  value: LightingProfileTest.collectionIDStatic,
                   child: Text(
                     'Lighting Profile',
                     style: TextStyle(color: Color(0xFF2F6DCF)),
                   ),
                 ),
+                // DropdownMenuItem(
+                //   value: 'Acoustical Profile',
+                //   child: Text(
+                //     'Acoustical Profile',
+                //     style: TextStyle(color: Color(0xFF2F6DCF)),
+                //   ),
+                // ),
+                // DropdownMenuItem(
+                //   value: 'Absence of Order Locator',
+                //   child: Text(
+                //     'Absence of Order Locator',
+                //     style: TextStyle(color: Color(0xFF2F6DCF)),
+                //   ),
+                // ),
+                // DropdownMenuItem(
+                //   value: 'Identifying Access',
+                //   child: Text(
+                //     'Identifying Access',
+                //     style: TextStyle(color: Color(0xFF2F6DCF)),
+                //   ),
+                // ),
+                // DropdownMenuItem(
+                //   value: 'Identifying Program',
+                //   child: Text(
+                //     'Identifying Program',
+                //     style: TextStyle(color: Color(0xFF2F6DCF)),
+                //   ),
+                // ),
                 DropdownMenuItem(
-                  value: 'Acoustical Profile',
-                  child: Text(
-                    'Acoustical Profile',
-                    style: TextStyle(color: Color(0xFF2F6DCF)),
-                  ),
-                ),
-                DropdownMenuItem(
-                  value: 'Absence of Order Locator',
-                  child: Text(
-                    'Absence of Order Locator',
-                    style: TextStyle(color: Color(0xFF2F6DCF)),
-                  ),
-                ),
-                DropdownMenuItem(
-                  value: 'Identifying Access',
-                  child: Text(
-                    'Identifying Access',
-                    style: TextStyle(color: Color(0xFF2F6DCF)),
-                  ),
-                ),
-                DropdownMenuItem(
-                  value: 'Identifying Program',
-                  child: Text(
-                    'Identifying Program',
-                    style: TextStyle(color: Color(0xFF2F6DCF)),
-                  ),
-                ),
-                DropdownMenuItem(
-                  value: 'Section Cutter',
+                  value: SectionCutterTest.collectionIDStatic,
                   child: Text(
                     'Section Cutter',
                     style: TextStyle(color: Color(0xFF2F6DCF)),
@@ -198,7 +202,7 @@ class _CreateTestFormState extends State<CreateTestForm> {
                 ),
               ],
               onChanged: (value) {
-                // Handle selection
+                _selectedTest = value;
               },
               dropdownStyleData: DropdownStyleData(
                   width: 370,
@@ -232,10 +236,13 @@ class _CreateTestFormState extends State<CreateTestForm> {
           // Optional: A button to submit the form
           ElevatedButton(
             onPressed: () {
-              final newActivity =
-                  "Activity: ${_timeController.text} - {_activityNameController.text}";
+              final Map<String, dynamic> newTestInfo = {
+                'title': _activityNameController.text,
+                'scheduledTime': Timestamp.now(),
+                'collectionID': _selectedTest,
+              };
               // Handle form submission
-              Navigator.of(context).pop(newActivity);
+              Navigator.of(context).pop(newTestInfo);
             },
             style: ElevatedButton.styleFrom(
               backgroundColor: Color(0xFF2F6DCF),

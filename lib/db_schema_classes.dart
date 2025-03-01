@@ -389,6 +389,20 @@ class LightingProfileTest extends Test<LightToLatLngMap> {
         'Success! In LightingProfileTest.submitData. firestoreData = $firestoreData');
   }
 
+  void saveToFirestore() async {
+    // Inserts Test to Firestore
+    await _firestore.collection(collectionID).doc(testID).set({
+      'title': title,
+      'id': testID,
+      'scheduledTime': scheduledTime,
+      'project': projectRef,
+      'data': convertDataToFirestore(data),
+      'creationTime': creationTime,
+      'maxResearchers': maxResearchers,
+      'isCompleted': false,
+    }, SetOptions(merge: true));
+  }
+
   /// Transforms data retrieved from Firestore test instance to
   /// [LightToLatLngMap] for local manipulation.
   static LightToLatLngMap convertDataFromFirestore(Map<String, dynamic> data) {

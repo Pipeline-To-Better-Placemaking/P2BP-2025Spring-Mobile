@@ -6,23 +6,25 @@ import 'db_schema_classes.dart';
 import 'package:flutter/services.dart';
 import 'package:p2bp_2025spring_mobile/create_test_form.dart';
 import 'package:p2bp_2025spring_mobile/theme.dart';
+import 'firestore_functions.dart';
 
-class CreateProjectDetails extends StatefulWidget {
+class ProjectDetailsPage extends StatefulWidget {
   final Project projectData;
 
   /// IMPORTANT: When navigating to this page, pass in project details. Use
   /// `getProjectInfo()` from firestore_functions.dart to retrieve project
   /// object w/ data.
   /// <br/>Note: project is returned as future, await return before passing.
-  const CreateProjectDetails({super.key, required this.projectData});
+  const ProjectDetailsPage({super.key, required this.projectData});
 
   @override
-  State<CreateProjectDetails> createState() => _CreateProjectDetailsState();
+  State<ProjectDetailsPage> createState() => _ProjectDetailsPageState();
 }
 
+final FirebaseFirestore _firestore = FirebaseFirestore.instance;
 User? loggedInUser = FirebaseAuth.instance.currentUser;
 
-class _CreateProjectDetailsState extends State<CreateProjectDetails> {
+class _ProjectDetailsPageState extends State<ProjectDetailsPage> {
   int itemCount = 10;
   bool _isLoading = false;
   Project? project;
@@ -246,43 +248,7 @@ class _CreateProjectDetailsState extends State<CreateProjectDetails> {
                                     // foregroundColor: foregroundColor,
                                     // backgroundColor: backgroundColor,
                                   ),
-                                  onPressed: () => {
-                                    showModalBottomSheet(
-                                      context: context,
-                                      isScrollControlled:
-                                          true, // allows the sheet to be fully draggable
-                                      backgroundColor: Colors
-                                          .transparent, // makes the sheet's corners rounded if desired
-                                      builder: (BuildContext context) {
-                                        return DraggableScrollableSheet(
-                                          initialChildSize:
-                                              0.7, // initial height as 50% of screen height
-                                          minChildSize:
-                                              0.3, // minimum height when dragged down
-                                          maxChildSize:
-                                              0.9, // maximum height when dragged up
-                                          builder: (BuildContext context,
-                                              ScrollController
-                                                  scrollController) {
-                                            return Container(
-                                              decoration: BoxDecoration(
-                                                color: Color.fromARGB(
-                                                    255, 234, 245, 255),
-                                                borderRadius: BorderRadius.only(
-                                                  topLeft:
-                                                      Radius.circular(16.0),
-                                                  topRight:
-                                                      Radius.circular(16.0),
-                                                ),
-                                              ),
-                                              child: CreateTestForm(),
-                                              // Replace this ListView with your desired content
-                                            );
-                                          },
-                                        );
-                                      },
-                                    ),
-                                  },
+                                  onPressed: showCreateTestModal,
                                   label: Text('Create'),
                                   icon: Icon(Icons.add),
                                   iconAlignment: IconAlignment.end,
@@ -342,6 +308,42 @@ class _CreateProjectDetailsState extends State<CreateProjectDetails> {
         ],
       ),
     );
+  }
+
+  void showCreateTestModal() async {
+    final Map<String, dynamic> newTestInfo = await showModalBottomSheet(
+      context: context,
+      isScrollControlled: true, // allows the sheet to be fully draggable
+      backgroundColor:
+          Colors.transparent, // makes the sheet's corners rounded if desired
+      builder: (BuildContext context) {
+        return DraggableScrollableSheet(
+          initialChildSize: 0.7, // initial height as 50% of screen height
+          minChildSize: 0.3, // minimum height when dragged down
+          maxChildSize: 0.9, // maximum height when dragged up
+          builder: (BuildContext context, ScrollController scrollController) {
+            return Container(
+              decoration: BoxDecoration(
+                color: Color.fromARGB(255, 234, 245, 255),
+                borderRadius: BorderRadius.only(
+                  topLeft: Radius.circular(16.0),
+                  topRight: Radius.circular(16.0),
+                ),
+              ),
+              child: CreateTestForm(),
+              // Replace this ListView with your desired content
+            );
+          },
+        );
+      },
+    );
+    widget.projectData.tests?.add(await saveTest(
+      title: newTestInfo['title'],
+      scheduledTime: newTestInfo['scheduledTime'],
+      projectRef:
+          _firestore.collection('projects').doc(widget.projectData.projectID),
+      collectionID: newTestInfo['collectionID'],
+    ));
   }
 }
 

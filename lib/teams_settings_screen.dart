@@ -335,7 +335,7 @@ class TeamSettingsScreen extends StatelessWidget {
                               Navigator.push(
                                   context,
                                   MaterialPageRoute(
-                                    builder: (context) => CreateProjectDetails(
+                                    builder: (context) => ProjectDetailsPage(
                                       projectData: Project.partialProject(
                                           title: 'No data sent',
                                           description:

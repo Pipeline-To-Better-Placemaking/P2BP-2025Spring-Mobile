@@ -134,7 +134,7 @@ class _HomeScreenState extends State<HomeScreen> {
             context,
             MaterialPageRoute(
               builder: (context) =>
-                  CreateProjectDetails(projectData: tempProject),
+                  ProjectDetailsPage(projectData: tempProject),
             ),
           );
         },
