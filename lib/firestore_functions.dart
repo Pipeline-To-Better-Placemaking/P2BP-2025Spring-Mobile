@@ -457,6 +457,7 @@ Future<Test> getTestInfo(
   try {
     testDoc = await testRef.get();
     if (testDoc.exists && testDoc.data()!.containsKey('scheduledTime')) {
+      print(testDoc); // debug
       test = Test.recreateFromDoc(testDoc);
     } else {
       if (!testDoc.exists) {
@@ -470,18 +471,18 @@ Future<Test> getTestInfo(
     print('Stacktrace: $stacktrace');
   }
 
-  print('Test from getTestInfo: $test'); // debug
+  print('Test from getTestInfo: ${test.toString()}'); // debug
   return test;
 }
 
 extension GeoPointConversion on GeoPoint {
   LatLng toLatLng() {
-    return LatLng(this.latitude, this.longitude);
+    return LatLng(latitude, longitude);
   }
 }
 
 extension LatLngConversion on LatLng {
   GeoPoint toGeoPoint() {
-    return GeoPoint(this.latitude, this.longitude);
+    return GeoPoint(latitude, longitude);
   }
 }

@@ -1,5 +1,4 @@
 import 'dart:io';
-
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:file_selector/file_selector.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
@@ -174,7 +173,7 @@ abstract class Test<T> {
   /// to make and return a [Test] object from the existing information
   /// given in [testDoc].
   static final Map<String,
-          Test Function(DocumentSnapshot<Map<String, dynamic>> testDoc)>
+          Test Function(DocumentSnapshot<Map<String, dynamic>>)>
       _recreateTestConstructors = {};
 
   /// Maps from a [Type] assumed to be a subclass of [Test] to the page
@@ -244,7 +243,7 @@ abstract class Test<T> {
   /// values are not provided should be here.
   ///
   /// This is private because the only intended usage is through various
-  /// static methods acting as factory constructors.
+  /// public methods acting as factory constructors.
   Test._({
     required this.title,
     required this.testID,
@@ -259,6 +258,20 @@ abstract class Test<T> {
     this.creationTime = creationTime ?? Timestamp.now();
     this.maxResearchers = maxResearchers ?? 1;
     this.isComplete = isComplete ?? false;
+  }
+
+  @override
+  String toString() {
+    return 'This is an instance of ${runtimeType}\n'
+        'title: ${this.title}\n'
+        'testID: ${this.testID}\n'
+        'scheduledTime: ${this.scheduledTime}\n'
+        'projectRef: ${this.projectRef}\n'
+        'collectionID: ${this.collectionID}\n'
+        'data: ${this.data}\n'
+        'creationTime: ${this.creationTime}\n'
+        'maxResearchers: ${this.maxResearchers}\n'
+        'isComplete: ${this.isComplete}\n';
   }
 
   /// Uploads the data from a completed test to Firestore.
@@ -290,7 +303,7 @@ typedef LightToGeoPointMap = Map<String, List<GeoPoint>>;
 class LightingProfileTest extends Test<LightToLatLngMap> {
   /// Hard-coded definition of basic structure for `data`
   /// used for initialization of new lighting tests.
-  static const LightToLatLngMap initialDataStructure = {
+  static final LightToLatLngMap initialDataStructure = {
     LightType.rhythmic: {},
     LightType.building: {},
     LightType.task: {},
@@ -315,23 +328,24 @@ class LightingProfileTest extends Test<LightToLatLngMap> {
           scheduledTime: scheduledTime,
           projectRef: projectRef,
           collectionID: collectionID,
-          data: initialDataStructure,
+          data: Map.from(initialDataStructure),
         );
 
     // Register for recreating a Lighting Profile Test from Firestore
-    Test._recreateTestConstructors[collectionIDStatic] =
-        (testDoc) => LightingProfileTest._(
-              title: testDoc['title'],
-              testID: testDoc['id'],
-              scheduledTime: testDoc['scheduledTime'],
-              projectRef: testDoc['project'],
-              collectionID: testDoc.reference.parent.id,
-              data: convertDataFromFirestore(testDoc['data']),
-              creationTime: testDoc['creationTime'],
-              maxResearchers: testDoc['maxResearchers'],
-              isComplete: testDoc['isComplete'],
-            );
-
+    Test._recreateTestConstructors[collectionIDStatic] = (testDoc) {
+      print(testDoc['data']);
+      return LightingProfileTest._(
+        title: testDoc['title'],
+        testID: testDoc['id'],
+        scheduledTime: testDoc['scheduledTime'],
+        projectRef: testDoc['project'],
+        collectionID: testDoc.reference.parent.id,
+        data: convertDataFromFirestore(testDoc['data']),
+        creationTime: testDoc['creationTime'],
+        maxResearchers: testDoc['maxResearchers'],
+        isComplete: testDoc['isComplete'],
+      );
+    };
     // Register for building a Lighting Profile Test page
     Test._pageBuilders[LightingProfileTest] =
         (project, test) => LightingProfileTestPage(
@@ -377,14 +391,14 @@ class LightingProfileTest extends Test<LightToLatLngMap> {
 
   /// Transforms data retrieved from Firestore test instance to
   /// [LightToLatLngMap] for local manipulation.
-  static LightToLatLngMap convertDataFromFirestore(LightToGeoPointMap data) {
-    LightToLatLngMap output = initialDataStructure;
+  static LightToLatLngMap convertDataFromFirestore(Map<String, dynamic> data) {
+    LightToLatLngMap output = Map.from(initialDataStructure);
     List<LightType> types = LightType.values;
 
     // Adds all data from parameter to output one type at a time
     for (final type in types) {
-      if (data.containsKey(type.name) && data[type.name] is List) {
-        for (final geopoint in data[type.name]!) {
+      if (data.containsKey(type.name)) {
+        for (final GeoPoint geopoint in data[type.name]!) {
           output[type]?.add(geopoint.toLatLng());
         }
       }
@@ -439,7 +453,7 @@ class SectionCutterTest extends Test<Map<String, String>> {
           scheduledTime: scheduledTime,
           projectRef: projectRef,
           collectionID: collectionID,
-          data: initialDataStructure,
+          data: Map.from(initialDataStructure),
         );
 
     // Register for recreating a Lighting Profile Test from Firestore
@@ -450,7 +464,7 @@ class SectionCutterTest extends Test<Map<String, String>> {
               scheduledTime: testDoc['scheduledTime'],
               projectRef: testDoc['project'],
               collectionID: testDoc.reference.parent.id,
-              data: testDoc['data'],
+              data: convertDataFromFirestore(testDoc['data']),
               creationTime: testDoc['creationTime'],
               maxResearchers: testDoc['maxResearchers'],
               isComplete: testDoc['isComplete'],
@@ -517,5 +531,16 @@ class SectionCutterTest extends Test<Map<String, String>> {
     }
 
     return storageLocation;
+  }
+
+  static Map<String, String> convertDataFromFirestore(
+      Map<String, dynamic> data) {
+    Map<String, String> output = Map.from(initialDataStructure);
+
+    if (data['sectionLink'] is String) {
+      output = Map.from(data);
+    }
+
+    return output;
   }
 }
