@@ -1,14 +1,19 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
-import 'package:p2bp_2025spring_mobile/nature_prevalence.dart';
+import 'package:p2bp_2025spring_mobile/identifying_access_test.dart';
+import 'package:p2bp_2025spring_mobile/nature_prevalence_test.dart';
+import 'package:p2bp_2025spring_mobile/section_cutter_test.dart';
 import 'db_schema_classes.dart';
+import 'firestore_functions.dart';
 
-// IMPORTANT: When navigating to this page, pass in project details. Use
-// getProjectInfo() from firestore_functions.dart to retrieve project object w/ data.
-// *Note: project is returned as future. Must await response before passing.
 class CreateProjectDetails extends StatefulWidget {
   final Project projectData;
+
+  /// IMPORTANT: When navigating to this page, pass in project details. Use
+  /// `getProjectInfo()` from firestore_functions.dart to retrieve project
+  /// object w/ data.
+  /// <br/>Note: project is returned as future, await return before passing.
   const CreateProjectDetails({super.key, required this.projectData});
 
   @override
@@ -144,13 +149,7 @@ class _CreateProjectDetailsState extends State<CreateProjectDetails> {
                       // backgroundColor: backgroundColor,
                     ),
                     onPressed: () {
-                      // TODO: Function (research activity)
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                          builder: (context) => const NaturePrevalence(),
-                        ),
-                      );
+                      // TODO: Function (create research activity)
                     },
                     label: Text('Create'),
                     icon: Icon(Icons.add),
@@ -179,13 +178,10 @@ class _CreateProjectDetailsState extends State<CreateProjectDetails> {
                           top: 25,
                           bottom: 30,
                         ),
-                        itemBuilder: (BuildContext context, int index) {
-                          return TestCard();
-                        },
+                        itemBuilder: (BuildContext context, int index) =>
+                            TestCard(projectData: widget.projectData),
                         separatorBuilder: (BuildContext context, int index) =>
-                            const SizedBox(
-                          height: 10,
-                        ),
+                            const SizedBox(height: 10),
                       )
                     : _isLoading == true
                         ? const Center(child: CircularProgressIndicator())
@@ -203,9 +199,8 @@ class _CreateProjectDetailsState extends State<CreateProjectDetails> {
 }
 
 class TestCard extends StatelessWidget {
-  const TestCard({
-    super.key,
-  });
+  final Project projectData;
+  const TestCard({super.key, required this.projectData});
 
   @override
   Widget build(BuildContext context) {
@@ -227,13 +222,25 @@ class TestCard extends StatelessWidget {
                   Icons.chevron_right,
                   color: Colors.blue,
                 ),
-                tooltip: 'Open team settings',
-                onPressed: () {
-                  // TODO: Actual function (chevron right, project details)
-                  // Navigator.push(
-                  //     context,
-                  //     MaterialPageRoute(
-                  //         builder: (context) => TeamSettingsScreen()));
+                tooltip: 'Start test',
+                onPressed: () async {
+                  // TODO: Function (research activity)
+                  final SectionCutterTest? test =
+                      Test.castTo<SectionCutterTest>(await getTestInfo(
+                          FirebaseFirestore.instance
+                              .collection(SectionCutterTest.collectionIDStatic)
+                              .doc('bBoihCszZAHf2FmHzoln')));
+                  if (test != null) {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(builder: (context) {
+                        return SectionCutter(
+                            projectData: projectData, activeTest: test);
+                      }),
+                    );
+                  } else {
+                    print('something went wrong with getTestInfo for Section');
+                  }
                 },
               ),
             ),
