@@ -4,7 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:p2bp_2025spring_mobile/theme.dart';
 import 'package:p2bp_2025spring_mobile/widgets.dart';
-import 'create_project_details.dart';
+import 'project_details_page.dart';
 import 'db_schema_classes.dart';
 import 'firestore_functions.dart';
 import 'google_maps_functions.dart';

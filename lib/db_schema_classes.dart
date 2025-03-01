@@ -4,6 +4,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:file_selector/file_selector.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:p2bp_2025spring_mobile/lighting_profile_test.dart';
+import 'package:p2bp_2025spring_mobile/section_cutter_test.dart';
 import 'firestore_functions.dart';
 import 'package:flutter/material.dart';
 import 'package:firebase_storage/firebase_storage.dart';
@@ -422,6 +423,46 @@ class SectionCutterTest extends Test<Map<String, String>> {
   /// Static constant definition of collection ID for this test type.
   static const String collectionIDStatic = 'section_cutter_tests';
 
+  /// Registers this class within the Maps required by class [Test].
+  static void register() {
+    // Register for creating new Lighting Profile Tests
+    Test._newTestConstructors[collectionIDStatic] = ({
+      required String title,
+      required String testID,
+      required Timestamp scheduledTime,
+      required DocumentReference projectRef,
+      required String collectionID,
+    }) =>
+        SectionCutterTest._(
+          title: title,
+          testID: testID,
+          scheduledTime: scheduledTime,
+          projectRef: projectRef,
+          collectionID: collectionID,
+          data: initialDataStructure,
+        );
+
+    // Register for recreating a Lighting Profile Test from Firestore
+    Test._recreateTestConstructors[collectionIDStatic] =
+        (testDoc) => SectionCutterTest._(
+              title: testDoc['title'],
+              testID: testDoc['id'],
+              scheduledTime: testDoc['scheduledTime'],
+              projectRef: testDoc['project'],
+              collectionID: testDoc.reference.parent.id,
+              data: testDoc['data'],
+              creationTime: testDoc['creationTime'],
+              maxResearchers: testDoc['maxResearchers'],
+              isComplete: testDoc['isComplete'],
+            );
+
+    // Register for building a Lighting Profile Test page
+    Test._pageBuilders[SectionCutterTest] = (project, test) => SectionCutter(
+          projectData: project,
+          activeTest: test as SectionCutterTest,
+        );
+  }
+
   /// Creates a new [SectionCutterTest] instance from the given arguments.
   ///
   /// This is private because the intended usage of this is through the
@@ -447,6 +488,9 @@ class SectionCutterTest extends Test<Map<String, String>> {
         'data': data,
         'isComplete': true,
       });
+
+      this.data = data;
+      isComplete = true;
 
       print('Success! In SectionCutterTest.submitData. firestoreData = $data');
     } catch (e, stacktrace) {
