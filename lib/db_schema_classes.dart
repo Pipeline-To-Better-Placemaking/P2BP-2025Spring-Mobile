@@ -1,9 +1,11 @@
 import 'dart:io';
-
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:file_selector/file_selector.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
+import 'package:p2bp_2025spring_mobile/lighting_profile_test.dart';
+import 'package:p2bp_2025spring_mobile/section_cutter_test.dart';
 import 'firestore_functions.dart';
+import 'package:flutter/material.dart';
 import 'package:firebase_storage/firebase_storage.dart';
 
 final FirebaseFirestore _firestore = FirebaseFirestore.instance;
@@ -82,17 +84,18 @@ class Project {
   String description = '';
   List polygonPoints = [];
   num polygonArea = 0;
-  List<Test>? tests = [];
+  List<Test> tests = [];
 
-  Project(
-      {this.creationTime,
-      required this.teamRef,
-      required this.projectID,
-      required this.title,
-      required this.description,
-      required this.polygonPoints,
-      required this.polygonArea,
-      this.tests});
+  Project({
+    this.creationTime,
+    required this.teamRef,
+    required this.projectID,
+    required this.title,
+    required this.description,
+    required this.polygonPoints,
+    required this.polygonArea,
+    List<Test>? tests,
+  }) : tests = tests ?? [];
 
   // TODO: Eventually add Team Photo and Team Color
   Project.partialProject({required this.title, required this.description});
@@ -137,14 +140,13 @@ abstract class Test<T> {
   /// each implementation as the value returned from
   /// `getInitialDataStructure()`, as this is used for initializing `data`
   /// when it is not defined in the constructor.
-  late T data;
+  T data;
 
   /// The collection ID used in Firestore for this specific test.
   ///
   /// Each implementation of [Test] should statically define its
-  /// collection ID for comparison in factory constructors and possibly
-  /// other use cases, but it is also assigned to this instance member
-  /// for no particular reason.
+  /// collection ID for comparison against this field in
+  /// factory constructors and other use cases.
   late final String collectionID;
 
   /// Whether this test has been completed by a surveyor yet.
@@ -157,7 +159,7 @@ abstract class Test<T> {
   /// values are not provided should be here.
   ///
   /// This is private because the only intended usage is through various
-  /// static methods acting as factory constructors.
+  /// public methods acting as factory constructors.
   Test._({
     required this.title,
     required this.testID,
@@ -174,70 +176,45 @@ abstract class Test<T> {
     this.isComplete = isComplete ?? false;
   }
 
-  /// Returns a new instance of the [Test] subclass associated with
-  /// [collectionID].
-  ///
-  /// This is the real 'factory constructor' always used for creating instances
-  /// of any [Test] subclass, but is private and called by the various public
-  /// static methods acting like factory constructors.
-  ///
-  /// Throws an exception if the given [collectionID] does not match any of
-  /// the subclasses that have been included here.
-  ///
-  /// Every new subclass of [Test] is expected to have a case added to this
-  /// method for its statically defined [collectionID] and using its
-  /// unnamed constructor and statically defined initial structure for [data]
-  /// when [data] is not provided.
-  static Test _create({
-    required String title,
-    required String testID,
-    required Timestamp scheduledTime,
-    required DocumentReference projectRef,
-    required String collectionID,
-    dynamic data,
-    Timestamp? creationTime,
-    int? maxResearchers,
-    bool? isComplete,
-  }) {
-    switch (collectionID) {
-      case LightingProfileTest.collectionIDStatic:
-        return LightingProfileTest._(
-          title: title,
-          testID: testID,
-          scheduledTime: scheduledTime,
-          projectRef: projectRef,
-          collectionID: collectionID,
-          data: (data != null && data is LightToGeoPointMap) // Verify type
-              ? LightingProfileTest.convertDataFromFirestore(data)
-              : LightingProfileTest.initialDataStructure,
-          creationTime: creationTime,
-          maxResearchers: maxResearchers,
-          isComplete: isComplete,
-        );
-      case SectionCutterTest.collectionIDStatic:
-        return SectionCutterTest._(
-          title: title,
-          testID: testID,
-          scheduledTime: scheduledTime,
-          projectRef: projectRef,
-          collectionID: collectionID,
-          data: (data != null && data is String) // Verify type
-              ? {"sectionLink": data}
-              : SectionCutterTest.initialDataStructure,
-          creationTime: creationTime,
-          maxResearchers: maxResearchers,
-          isComplete: isComplete,
-        );
-      default:
-        throw Exception('Invalid collectionID used with Test.createNew()');
-    }
-  }
+  // The below Maps must have values registered for each subclass of Test.
+  // Thus each subclass should have a method `static void register()`
+  // which adds the appropriate values to each Map.
+
+  /// Maps from the collection ID of each [Test] subclass to a function
+  /// which should use a constructor of that [Test] type to make a new instance
+  /// of said [Test].
+  static final Map<
+      String,
+      Test Function({
+        required String title,
+        required String testID,
+        required Timestamp scheduledTime,
+        required DocumentReference projectRef,
+        required String collectionID,
+      })> _newTestConstructors = {};
+
+  /// Maps from collection ID to a function which should use a constructor
+  /// to make and return a [Test] object from the existing information
+  /// given in [testDoc].
+  static final Map<String,
+          Test Function(DocumentSnapshot<Map<String, dynamic>>)>
+      _recreateTestConstructors = {};
+
+  /// Maps from a [Type] assumed to be a subclass of [Test] to the page
+  /// for completing that [Test].
+  static final Map<Type, Widget Function(Project, Test)> _pageBuilders = {};
+
+  /// Maps from [Type] assumed to extend [Test] to the function used to
+  /// save that [Test] instance to Firestore.
+  static final Map<Type, void Function(Test)> _saveToFirestoreFunctions = {};
 
   /// Returns a new instance of the [Test] subclass associated with
   /// [collectionID].
   ///
   /// This acts as a factory constructor and is intended to be used for
   /// any newly created tests.
+  ///
+  /// Utilizes values registered to [Test._newTestConstructors].
   static Test createNew({
     required String title,
     required String testID,
@@ -245,13 +222,17 @@ abstract class Test<T> {
     required DocumentReference projectRef,
     required String collectionID,
   }) {
-    return _create(
-      title: title,
-      testID: testID,
-      scheduledTime: scheduledTime,
-      projectRef: projectRef,
-      collectionID: collectionID,
-    );
+    final constructor = _newTestConstructors[collectionID];
+    if (constructor != null) {
+      return constructor(
+        title: title,
+        testID: testID,
+        scheduledTime: scheduledTime,
+        projectRef: projectRef,
+        collectionID: collectionID,
+      );
+    }
+    throw Exception('Unregistered Test type for collection: $collectionID');
   }
 
   /// Returns a new instance of the [Test] subclass appropriate for the
@@ -259,28 +240,51 @@ abstract class Test<T> {
   ///
   /// This acts as a factory constructor for tests which already exist in
   /// Firestore.
+  ///
+  /// Utilizes values registered to [Test._recreateTestConstructors].
   static Test recreateFromDoc(DocumentSnapshot<Map<String, dynamic>> testDoc) {
-    return _create(
-      title: testDoc['title'],
-      testID: testDoc['id'],
-      scheduledTime: testDoc['scheduledTime'],
-      projectRef: testDoc['project'],
-      collectionID: testDoc.reference.parent.id,
-      data: testDoc['data'],
-      creationTime: testDoc['creationTime'],
-      maxResearchers: testDoc['maxResearchers'],
-      isComplete: testDoc['isComplete'],
-    );
+    final constructor = _recreateTestConstructors[testDoc.reference.parent.id];
+    if (constructor != null) {
+      return constructor(testDoc);
+    }
+    throw Exception(
+        'Unregistered Test type for collection: ${testDoc.reference.parent.id}');
   }
 
-  /// Checks if given [Test] has the specified generic type which extends
-  /// [Test] and if so returns it as that type. Otherwise returns `null`.
-  static S? castTo<S extends Test>(Test test) {
-    if (test is S) {
-      return (test as S);
-    } else {
-      return null;
+  /// Returns the [Widget] of the page used to complete this type of [Test]
+  /// with the given [Test] and [Project] parameters already given.
+  ///
+  /// Basically when you want to navigate to [Test] completion page just use
+  /// `test.getPage(project)` as the page given to a Navigator function.
+  Widget getPage(Project project) {
+    final pageBuilder = _pageBuilders[runtimeType];
+    if (pageBuilder != null) {
+      return pageBuilder(project, this);
     }
+    throw Exception('No registered page for test type: $runtimeType');
+  }
+
+  void saveToFirestore() {
+    final saveFunction = _saveToFirestoreFunctions[runtimeType];
+    if (saveFunction != null) {
+      return saveFunction(this);
+    }
+    throw Exception(
+        'No registered saveToFirestore function for test type: $runtimeType');
+  }
+
+  @override
+  String toString() {
+    return 'This is an instance of $runtimeType\n'
+        'title: ${this.title}\n'
+        'testID: ${this.testID}\n'
+        'scheduledTime: ${this.scheduledTime}\n'
+        'projectRef: ${this.projectRef}\n'
+        'collectionID: ${this.collectionID}\n'
+        'data: ${this.data}\n'
+        'creationTime: ${this.creationTime}\n'
+        'maxResearchers: ${this.maxResearchers}\n'
+        'isComplete: ${this.isComplete}\n';
   }
 
   /// Uploads the data from a completed test to Firestore.
@@ -306,17 +310,25 @@ typedef LightToLatLngMap = Map<LightType, Set<LatLng>>;
 
 /// Convenience alias for `LightingProfileTest` format used for `data`
 /// retrieved from Firestore.
-typedef LightToGeoPointMap = Map<String, List<GeoPoint>>;
+typedef StringToGeoPointMap = Map<String, List<GeoPoint>>;
 
 /// Class for lighting profile test info and methods.
 class LightingProfileTest extends Test<LightToLatLngMap> {
-  /// Hard-coded definition of basic structure for `data`
-  /// used for initialization of new lighting tests.
-  static const LightToLatLngMap initialDataStructure = {
-    LightType.rhythmic: {},
-    LightType.building: {},
-    LightType.task: {},
-  };
+  /// Returns a new instance of the initial data structure used for
+  /// Lighting Profile Test.
+  ///
+  /// Initial data structure needs to be setup similar to this as
+  /// just assigning a Map normally assigns by reference and will
+  /// either overwrite the variable holding that initial structure
+  /// or throw an Exception because you attempted to modify an
+  /// immutable value if it was const.
+  static LightToLatLngMap newInitialDataDeepCopy() {
+    LightToLatLngMap newInitial = {};
+    newInitial[LightType.rhythmic] = <LatLng>{};
+    newInitial[LightType.building] = <LatLng>{};
+    newInitial[LightType.task] = <LatLng>{};
+    return newInitial;
+  }
 
   /// Static constant definition of collection ID for this test type.
   static const String collectionIDStatic = 'lighting_profile_tests';
@@ -338,12 +350,64 @@ class LightingProfileTest extends Test<LightToLatLngMap> {
     super.isComplete,
   }) : super._();
 
+  /// Registers this class within the Maps required by class [Test].
+  static void register() {
+    // Register for creating new Lighting Profile Tests
+    Test._newTestConstructors[collectionIDStatic] = ({
+      required String title,
+      required String testID,
+      required Timestamp scheduledTime,
+      required DocumentReference projectRef,
+      required String collectionID,
+    }) =>
+        LightingProfileTest._(
+          title: title,
+          testID: testID,
+          scheduledTime: scheduledTime,
+          projectRef: projectRef,
+          collectionID: collectionID,
+          data: newInitialDataDeepCopy(),
+        );
+    // Register for recreating a Lighting Profile Test from Firestore
+    Test._recreateTestConstructors[collectionIDStatic] = (testDoc) {
+      print(testDoc['data']);
+      return LightingProfileTest._(
+        title: testDoc['title'],
+        testID: testDoc['id'],
+        scheduledTime: testDoc['scheduledTime'],
+        projectRef: testDoc['project'],
+        collectionID: testDoc.reference.parent.id,
+        data: convertDataFromFirestore(testDoc['data']),
+        creationTime: testDoc['creationTime'],
+        maxResearchers: testDoc['maxResearchers'],
+        isComplete: testDoc['isComplete'],
+      );
+    };
+    // Register for building a Lighting Profile Test page
+    Test._pageBuilders[LightingProfileTest] =
+        (project, test) => LightingProfileTestPage(
+              activeProject: project,
+              activeTest: test as LightingProfileTest,
+            );
+    // Register a function for saving to Firestore
+    Test._saveToFirestoreFunctions[LightingProfileTest] = (test) async {
+      await _firestore.collection(test.collectionID).doc(test.testID).set({
+        'title': test.title,
+        'id': test.testID,
+        'scheduledTime': test.scheduledTime,
+        'project': test.projectRef,
+        'data': convertDataToFirestore(test.data),
+        'creationTime': test.creationTime,
+        'maxResearchers': test.maxResearchers,
+        'isComplete': false,
+      }, SetOptions(merge: true));
+    };
+  }
+
   @override
   void submitData(LightToLatLngMap data) async {
-    this.data = data;
-
     // Adds all points of each type from submitted data to overall data
-    LightToGeoPointMap firestoreData = convertDataToFirestore(data);
+    StringToGeoPointMap firestoreData = convertDataToFirestore(data);
 
     // Updates data in Firestore
     await _firestore.collection(collectionID).doc(testID).update({
@@ -351,35 +415,35 @@ class LightingProfileTest extends Test<LightToLatLngMap> {
       'isComplete': true,
     });
 
+    this.data = data;
+    isComplete = true;
+
     print(
         'Success! In LightingProfileTest.submitData. firestoreData = $firestoreData');
   }
 
   /// Transforms data retrieved from Firestore test instance to
   /// [LightToLatLngMap] for local manipulation.
-  static LightToLatLngMap convertDataFromFirestore(LightToGeoPointMap data) {
-    LightToLatLngMap output = initialDataStructure;
+  static LightToLatLngMap convertDataFromFirestore(Map<String, dynamic> data) {
+    LightToLatLngMap output = newInitialDataDeepCopy();
     List<LightType> types = LightType.values;
-
-    // Adds all data from parameter to output one type at a time
+    // Adds all data to output one type at a time
     for (final type in types) {
-      if (data.containsKey(type.name) && data[type.name] is List) {
-        for (final geopoint in data[type.name]!) {
+      if (data.containsKey(type.name)) {
+        for (final GeoPoint geopoint in data[type.name]!) {
           output[type]?.add(geopoint.toLatLng());
         }
       }
     }
-
     return output;
   }
 
   /// Transforms data stored locally as [LightToLatLngMap] to
-  /// Firestore format (represented by [LightToGeoPointMap])
+  /// Firestore format (represented by [StringToGeoPointMap])
   /// with String keys and any other needed changes.
-  static LightToGeoPointMap convertDataToFirestore(LightToLatLngMap data) {
-    LightToGeoPointMap output = {};
+  static StringToGeoPointMap convertDataToFirestore(LightToLatLngMap data) {
+    StringToGeoPointMap output = {};
     List<LightType> types = LightType.values;
-
     for (final type in types) {
       output[type.name] = [];
       if (data.containsKey(type) && data[type] is Set) {
@@ -388,7 +452,6 @@ class LightingProfileTest extends Test<LightToLatLngMap> {
         }
       }
     }
-
     return output;
   }
 }
@@ -399,6 +462,11 @@ class SectionCutterTest extends Test<Map<String, String>> {
   /// where the first string is the field and the second is the reference which
   /// refers to the path of the section drawing.
   static const Map<String, String> initialDataStructure = {"sectionLink": " "};
+  static Map<String, String> newInitialDataDeepCopy() {
+    Map<String, String> newInitial = {};
+    newInitial['sectionLink'] = '';
+    return newInitial;
+  }
 
   /// Static constant definition of collection ID for this test type.
   static const String collectionIDStatic = 'section_cutter_tests';
@@ -420,6 +488,57 @@ class SectionCutterTest extends Test<Map<String, String>> {
     super.isComplete,
   }) : super._();
 
+  /// Registers this class within the Maps required by class [Test].
+  static void register() {
+    // Register for Map for Test.createNew
+    Test._newTestConstructors[collectionIDStatic] = ({
+      required String title,
+      required String testID,
+      required Timestamp scheduledTime,
+      required DocumentReference projectRef,
+      required String collectionID,
+    }) =>
+        SectionCutterTest._(
+          title: title,
+          testID: testID,
+          scheduledTime: scheduledTime,
+          projectRef: projectRef,
+          collectionID: collectionID,
+          data: newInitialDataDeepCopy(),
+        );
+    // Register for Map for Test.recreateFromDoc
+    Test._recreateTestConstructors[collectionIDStatic] =
+        (testDoc) => SectionCutterTest._(
+              title: testDoc['title'],
+              testID: testDoc['id'],
+              scheduledTime: testDoc['scheduledTime'],
+              projectRef: testDoc['project'],
+              collectionID: testDoc.reference.parent.id,
+              data: convertDataFromFirestore(testDoc['data']),
+              creationTime: testDoc['creationTime'],
+              maxResearchers: testDoc['maxResearchers'],
+              isComplete: testDoc['isComplete'],
+            );
+    // Register for Map for Test.getPage
+    Test._pageBuilders[SectionCutterTest] = (project, test) => SectionCutter(
+          projectData: project,
+          activeTest: test as SectionCutterTest,
+        );
+    // Register for Map for Test.saveToFirestore
+    Test._saveToFirestoreFunctions[SectionCutterTest] = (test) async {
+      await _firestore.collection(test.collectionID).doc(test.testID).set({
+        'title': test.title,
+        'id': test.testID,
+        'scheduledTime': test.scheduledTime,
+        'project': test.projectRef,
+        'data': test.data,
+        'creationTime': test.creationTime,
+        'maxResearchers': test.maxResearchers,
+        'isComplete': false,
+      }, SetOptions(merge: true));
+    };
+  }
+
   @override
   void submitData(Map<String, String> data) async {
     try {
@@ -429,6 +548,9 @@ class SectionCutterTest extends Test<Map<String, String>> {
         'isComplete': true,
       });
 
+      this.data = data;
+      isComplete = true;
+
       print('Success! In SectionCutterTest.submitData. firestoreData = $data');
     } catch (e, stacktrace) {
       print("Exception in SectionCutterTest.submitData(): $e");
@@ -437,7 +559,7 @@ class SectionCutterTest extends Test<Map<String, String>> {
   }
 
   Future<Map<String, String>> saveXFile(XFile data) async {
-    Map<String, String> storageLocation = initialDataStructure;
+    Map<String, String> storageLocation = newInitialDataDeepCopy();
     try {
       if (projectRef == null) return storageLocation;
       final storageRef = FirebaseStorage.instance.ref();
@@ -454,5 +576,14 @@ class SectionCutterTest extends Test<Map<String, String>> {
     }
 
     return storageLocation;
+  }
+
+  static Map<String, String> convertDataFromFirestore(
+      Map<String, dynamic> data) {
+    Map<String, String> output = newInitialDataDeepCopy();
+    if (data.containsKey('sectionLink') && data['sectionLink'] is String) {
+      output['sectionLink'] = data['sectionLink'];
+    }
+    return output;
   }
 }

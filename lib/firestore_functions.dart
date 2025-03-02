@@ -422,17 +422,7 @@ Future<Test> saveTest({
     collectionID: collectionID,
   );
 
-  // Inserts Test to Firestore
-  await _firestore.collection(collectionID).doc(testID).set({
-    'title': title,
-    'id': testID,
-    'scheduledTime': scheduledTime,
-    'project': projectRef,
-    'data': tempTest.data,
-    'creationTime': tempTest.creationTime,
-    'maxResearchers': tempTest.maxResearchers,
-    'isCompleted': false,
-  });
+  tempTest.saveToFirestore();
 
   // Adds a reference to the Test to the relevant Project in Firestore
   await _firestore.doc('/${projectRef.path}').update({
@@ -470,18 +460,18 @@ Future<Test> getTestInfo(
     print('Stacktrace: $stacktrace');
   }
 
-  print('Test from getTestInfo: $test'); // debug
+  print('Test from getTestInfo: ${test.toString()}'); // debug
   return test;
 }
 
 extension GeoPointConversion on GeoPoint {
   LatLng toLatLng() {
-    return LatLng(this.latitude, this.longitude);
+    return LatLng(latitude, longitude);
   }
 }
 
 extension LatLngConversion on LatLng {
   GeoPoint toGeoPoint() {
-    return GeoPoint(this.latitude, this.longitude);
+    return GeoPoint(latitude, longitude);
   }
 }
