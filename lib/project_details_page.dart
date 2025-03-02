@@ -31,13 +31,8 @@ class _ProjectDetailsPageState extends State<ProjectDetailsPage> {
   late Widget _testListView;
 
   @override
-  void initState() {
-    super.initState();
-    _testCount = widget.projectData.tests.length;
-  }
-
-  @override
   Widget build(BuildContext context) {
+    _testCount = widget.projectData.tests.length;
     _testListView = _buildTestListView();
     return Scaffold(
       extendBodyBehindAppBar: true,
@@ -311,13 +306,16 @@ class _ProjectDetailsPageState extends State<ProjectDetailsPage> {
         );
       },
     );
-    widget.projectData.tests.add(await saveTest(
+    final Test test = await saveTest(
       title: newTestInfo['title'],
       scheduledTime: newTestInfo['scheduledTime'],
       projectRef:
           _firestore.collection('projects').doc(widget.projectData.projectID),
       collectionID: newTestInfo['collectionID'],
-    ));
+    );
+    setState(() {
+      widget.projectData.tests.add(test);
+    });
   }
 
   Widget _buildTestListView() {
