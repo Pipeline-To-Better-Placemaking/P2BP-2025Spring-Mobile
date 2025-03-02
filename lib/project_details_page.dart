@@ -32,7 +32,7 @@ class _ProjectDetailsPageState extends State<ProjectDetailsPage> {
 
   @override
   Widget build(BuildContext context) {
-    _testCount = widget.projectData.tests.length;
+    _testCount = widget.projectData.tests!.length;
     _testListView = _buildTestListView();
     return Scaffold(
       extendBodyBehindAppBar: true,
@@ -314,7 +314,7 @@ class _ProjectDetailsPageState extends State<ProjectDetailsPage> {
       collectionID: newTestInfo['collectionID'],
     );
     setState(() {
-      widget.projectData.tests.add(test);
+      widget.projectData.tests?.add(test);
     });
   }
 
@@ -328,7 +328,7 @@ class _ProjectDetailsPageState extends State<ProjectDetailsPage> {
         bottom: 30,
       ),
       itemBuilder: (BuildContext context, int index) => TestCard(
-        test: widget.projectData.tests[index],
+        test: widget.projectData.tests![index],
         project: widget.projectData,
       ),
       separatorBuilder: (BuildContext context, int index) =>

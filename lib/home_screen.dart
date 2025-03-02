@@ -128,6 +128,9 @@ class _HomeScreenState extends State<HomeScreen> {
           ),
       child: InkWell(
         onTap: () async {
+          if (project.tests == null) {
+            await project.loadAllTestData();
+          }
           Navigator.push(
             context,
             MaterialPageRoute(

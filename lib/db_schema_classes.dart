@@ -84,7 +84,8 @@ class Project {
   String description = '';
   List polygonPoints = [];
   num polygonArea = 0;
-  List<Test> tests = [];
+  List<DocumentReference> testRefs = [];
+  List<Test>? tests;
 
   Project({
     this.creationTime,
@@ -94,11 +95,25 @@ class Project {
     required this.description,
     required this.polygonPoints,
     required this.polygonArea,
-    List<Test>? tests,
-  }) : tests = tests ?? [];
+    required this.testRefs,
+    this.tests,
+  });
 
   // TODO: Eventually add Team Photo and Team Color
   Project.partialProject({required this.title, required this.description});
+
+  /// Gets all fields for each [Test] in this [Project] and loads them
+  /// into the [tests]. Also returns [tests].
+  Future<List<Test>> loadAllTestData() async {
+    List<Test> tests = [];
+    for (final ref in testRefs) {
+      if (ref is DocumentReference<Map<String, dynamic>>) {
+        tests.add(await getTestInfo(ref));
+      }
+    }
+    this.tests = tests;
+    return tests;
+  }
 }
 
 /// Parent class extended by every specific test class.
@@ -370,7 +385,6 @@ class LightingProfileTest extends Test<LightToLatLngMap> {
         );
     // Register for recreating a Lighting Profile Test from Firestore
     Test._recreateTestConstructors[collectionIDStatic] = (testDoc) {
-      print(testDoc['data']);
       return LightingProfileTest._(
         title: testDoc['title'],
         testID: testDoc['id'],
@@ -406,20 +420,25 @@ class LightingProfileTest extends Test<LightToLatLngMap> {
 
   @override
   void submitData(LightToLatLngMap data) async {
-    // Adds all points of each type from submitted data to overall data
-    StringToGeoPointMap firestoreData = convertDataToFirestore(data);
+    try {
+      // Adds all points of each type from submitted data to overall data
+      StringToGeoPointMap firestoreData = convertDataToFirestore(data);
 
-    // Updates data in Firestore
-    await _firestore.collection(collectionID).doc(testID).update({
-      'data': firestoreData,
-      'isComplete': true,
-    });
+      // Updates data in Firestore
+      await _firestore.collection(collectionID).doc(testID).update({
+        'data': firestoreData,
+        'isComplete': true,
+      });
 
-    this.data = data;
-    isComplete = true;
+      this.data = data;
+      isComplete = true;
 
-    print(
-        'Success! In LightingProfileTest.submitData. firestoreData = $firestoreData');
+      print(
+          'Success! In LightingProfileTest.submitData. firestoreData = $firestoreData');
+    } catch (e, stacktrace) {
+      print("Exception in LightingProfileTest.submitData(): $e");
+      print("Stacktrace: $stacktrace");
+    }
   }
 
   /// Transforms data retrieved from Firestore test instance to

@@ -109,7 +109,7 @@ Future<Project> saveProject({
     description: description,
     polygonPoints: polygonPoints,
     polygonArea: polygonArea,
-    tests: [],
+    testRefs: [],
   );
 
   // Debugging print statement.
@@ -128,12 +128,11 @@ Future<Project> getProjectInfo(String projectID) async {
   try {
     projectDoc = await _firestore.collection("projects").doc(projectID).get();
     if (projectDoc.exists && projectDoc.data()!.containsKey('polygonArea')) {
-      // Create List of Tests from List of DocumentReferences
-      List<Test> testList = [];
-      // TODO: maybe remove 'tests' check after DB purge or something
+      // Create List of testRefs for Project
+      List<DocumentReference<Map<String, dynamic>>> testRefs = [];
       if (projectDoc.data()!.containsKey('tests')) {
         for (final ref in projectDoc['tests']) {
-          testList.add(await getTestInfo(ref));
+          testRefs.add(ref);
         }
       }
 
@@ -145,7 +144,7 @@ Future<Project> getProjectInfo(String projectID) async {
         polygonPoints: projectDoc['polygonPoints'],
         polygonArea: projectDoc['polygonArea'],
         creationTime: projectDoc['creationTime'],
-        tests: testList,
+        testRefs: testRefs,
       );
     } else {
       print(
@@ -460,7 +459,6 @@ Future<Test> getTestInfo(
     print('Stacktrace: $stacktrace');
   }
 
-  print('Test from getTestInfo: ${test.toString()}'); // debug
   return test;
 }
 
