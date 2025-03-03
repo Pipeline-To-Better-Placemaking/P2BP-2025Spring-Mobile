@@ -56,6 +56,6 @@
 	<key>MAPS_API_KEY</key>
 	<string>AIzaSyDwn6wqGymn4bYA_PB8TorQDelDuHZvyOc</string>
 	<key>UIViewControllerBasedStatusBarAppearance</key>
-<true/>
+<false/>
 </dict>
 </plist>

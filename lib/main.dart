@@ -48,37 +48,39 @@ class MyApp extends StatelessWidget {
     final ColorScheme colorScheme = ColorScheme.fromSeed(
       seedColor: Colors.blue,
     );
+
+    Project partialProject =
+        Project.partialProject(title: 'Project Yoda', description: 'blah blah');
     return MaterialApp(
-      title: 'Flutter Demo',
-      theme: ThemeData(
-        colorScheme: colorScheme,
-      ),
-      debugShowCheckedModeBanner: false,
-      home: LoginScreen(), // const HomePage(title: 'Home Page'),
-      routes: {
-        '/results': (context) => const ResultsPanel(),
-        '/edit_project': (context) => const EditProjectPanel(),
-        '/forgot_password': (context) => const ForgotPasswordPage(),
-        '/reset_password': (context) => const ResetPasswordPage(),
-        '/create_project_and_teams': (context) =>
-            const CreateProjectAndTeamsPage(),
-        '/settings': (context) => const SettingsPage(),
-        '/teams_and_invites': (context) => const TeamsAndInvitesPage(),
-        '/create_project_details': (context) => CreateProjectDetails(
-              projectData: Project.partialProject(
-                  title: 'No data sent',
-                  description: 'Accessed without project data'),
-            ),
-        '/login': (context) => const LoginScreen(),
-        '/signup': (context) => const SignUpScreen(),
-        '/home': (context) => const HomeScreen(),
-        '/new_home': (context) => const BottomFloatingNavBar(),
-        '/compare_projects': (context) => const ProjectComparisonPage(),
-        // Commented out since you need project data to create page
-        // '/search': (context) => const SearchScreen(),
-        '/teams_settings': (context) => TeamSettingsScreen(),
-      },
-    );
+        title: 'Flutter Demo',
+        theme: ThemeData(
+          colorScheme: colorScheme,
+        ),
+        debugShowCheckedModeBanner: false,
+        home: LoginScreen(), // const HomePage(title: 'Home Page'),
+        routes: {
+          '/results': (context) => const ResultsPanel(),
+          '/edit_project': (context) => const EditProjectPanel(),
+          '/forgot_password': (context) => const ForgotPasswordPage(),
+          '/reset_password': (context) => const ResetPasswordPage(),
+          '/create_project_and_teams': (context) =>
+              const CreateProjectAndTeamsPage(),
+          '/settings': (context) => const SettingsPage(),
+          '/teams_and_invites': (context) => const TeamsAndInvitesPage(),
+          '/create_project_details': (context) => CreateProjectDetails(
+                projectData: Project.partialProject(
+                    title: 'No data sent',
+                    description: 'Accessed without project data'),
+              ),
+          '/login': (context) => const LoginScreen(),
+          '/signup': (context) => const SignUpScreen(),
+          '/home': (context) => const HomeScreen(),
+          '/new_home': (context) => const BottomFloatingNavBar(),
+          '/compare_projects': (context) => const ProjectComparisonPage(),
+          // Commented out since you need project data to create page
+          // '/search': (context) => const SearchScreen(),
+          '/teams_settings': (context) => TeamSettingsScreen(),
+        });
   }
 }
 
@@ -198,13 +200,6 @@ class _HomePageStates extends State<HomePage> {
                 route: '/create_project_details',
                 name: 'Create Project Details',
                 version: 1,
-              ),
-              // Button 15: Test Selection
-              buildTempButton(
-                context: context,
-                route: '/test_selection',
-                name: 'Test Selection',
-                version: 0,
               ),
             ],
           ),

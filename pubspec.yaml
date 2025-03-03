@@ -19,7 +19,7 @@ publish_to: "none" # Remove this line if you wish to publish to pub.dev
 version: 1.0.0+2
 
 environment:
-  sdk: ^3.5.4
+  sdk: ^3.6.0
 
 # Dependencies specify other packages that your package needs in order to work.
 # To automatically upgrade your package dependencies to the latest versions
@@ -30,7 +30,7 @@ environment:
 dependencies:
   flutter:
     sdk: flutter
-  google_maps_flutter: ^2.0.10 # Check for the latest version
+  google_maps_flutter: ^2.9.0 # Check for the latest version
   firebase_core: ^3.11.0
   cloud_firestore: ^5.6.1
   firebase_auth: ^5.4.0
@@ -46,6 +46,10 @@ dependencies:
   geocoding: ^3.0.0
   geolocator: ^13.0.2
   maps_toolkit: ^3.1.0
+  shared_preferences: ^2.0.15
+
+dependency_overrides:
+  google_maps_flutter_ios: 2.13.1
 
 dev_dependencies:
   flutter_test:
@@ -89,6 +93,14 @@ flutter:
     - assets/custom_icons/Compare_Icon.png
     - assets/custom_icons/Profile_Icon.png
     - assets/custom_icons/Filter_Icon.png
+    - assets/custom_icons/male_marker.png
+    - assets/custom_icons/female_marker.png
+    - assets/custom_icons/na_marker.png
+    - assets/custom_icons/test_specific/people_in_motion/square_marker_teal.png
+    - assets/custom_icons/test_specific/people_in_motion/square_marker_red.png
+    - assets/custom_icons/test_specific/people_in_motion/square_marker_cyan.png
+    - assets/custom_icons/test_specific/people_in_motion/square_marker_orange.png
+    - assets/custom_icons/test_specific/people_in_motion/square_marker_purple.png
 
   # An image asset can refer to one or more resolution-specific "variants", see
   # https://flutter.dev/to/resolution-aware-images

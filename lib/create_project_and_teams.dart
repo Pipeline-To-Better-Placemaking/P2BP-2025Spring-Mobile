@@ -1,7 +1,9 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
+import 'package:p2bp_2025spring_mobile/people_in_place_test.dart';
 import 'package:p2bp_2025spring_mobile/project_map_creation.dart';
+import 'package:p2bp_2025spring_mobile/project_map_creation_v2.dart';
 import 'package:p2bp_2025spring_mobile/teams_and_invites_page.dart';
 import 'firestore_functions.dart';
 import 'home_screen.dart';
@@ -222,7 +224,7 @@ class _CreateProjectWidgetState extends State<CreateProjectWidget> {
                                       context,
                                       MaterialPageRoute(
                                           builder: (context) =>
-                                              ProjectMapCreation(
+                                              ProjectMapCreationV2(
                                                   partialProjectData:
                                                       partialProject)));
                                 }

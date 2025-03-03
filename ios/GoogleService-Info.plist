@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+	<key>API_KEY</key>
+	<string>AIzaSyCg_pohYqzYxp7BZYu4Zyu2fGw_JTIapwc</string>
+	<key>GCM_SENDER_ID</key>
+	<string>15566872110</string>
+	<key>PLIST_VERSION</key>
+	<string>1</string>
+	<key>BUNDLE_ID</key>
+	<string>com.pipelinetobetterplacemaking.p2bp2025springMobile</string>
+	<key>PROJECT_ID</key>
+	<string>better-placemaking</string>
+	<key>STORAGE_BUCKET</key>
+	<string>better-placemaking.appspot.com</string>
+	<key>IS_ADS_ENABLED</key>
+	<false></false>
+	<key>IS_ANALYTICS_ENABLED</key>
+	<false></false>
+	<key>IS_APPINVITE_ENABLED</key>
+	<true></true>
+	<key>IS_GCM_ENABLED</key>
+	<true></true>
+	<key>IS_SIGNIN_ENABLED</key>
+	<true></true>
+	<key>GOOGLE_APP_ID</key>
+	<string>1:15566872110:ios:47ff6ab573f8bf080509bf</string>
+	<key>DATABASE_URL</key>
+	<string>https://better-placemaking-default-rtdb.firebaseio.com</string>
+</dict>
+</plist>
