@@ -2,6 +2,7 @@ import 'dart:io';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:file_selector/file_selector.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
+import 'package:p2bp_2025spring_mobile/absence_of_order_test.dart';
 import 'package:p2bp_2025spring_mobile/lighting_profile_test.dart';
 import 'package:p2bp_2025spring_mobile/section_cutter_test.dart';
 import 'firestore_functions.dart';
@@ -141,7 +142,7 @@ abstract class Test<T> {
 
   /// The [DocumentReference] pointing to the project in which this [Test]
   /// resides.
-  DocumentReference? projectRef;
+  DocumentReference projectRef;
 
   /// Maximum researchers that can complete this test.
   ///
@@ -472,6 +473,245 @@ class LightingProfileTest extends Test<LightToLatLngMap> {
       }
     }
     return output;
+  }
+}
+
+class DataPoint {
+  LatLng location;
+
+  DataPoint({required this.location});
+}
+
+class BehaviorPoint extends DataPoint {
+  bool boisterousVoice;
+  bool dangerousWildlife;
+  bool livingInPublic;
+  bool panhandling;
+  bool recklessBehavior;
+  bool unsafeEquipment;
+  String other;
+
+  BehaviorPoint({
+    required super.location,
+    required this.boisterousVoice,
+    required this.dangerousWildlife,
+    required this.livingInPublic,
+    required this.panhandling,
+    required this.recklessBehavior,
+    required this.unsafeEquipment,
+    required this.other,
+  });
+
+  static BehaviorPoint fromJson(Map<String, dynamic> point) {
+    return BehaviorPoint(
+      location: (point['location'] as GeoPoint).toLatLng(),
+      boisterousVoice: point['boisterousVoice'],
+      dangerousWildlife: point['dangerousWildlife'],
+      livingInPublic: point['livingInPublic'],
+      panhandling: point['panhandling'],
+      recklessBehavior: point['recklessBehavior'],
+      unsafeEquipment: point['unsafeEquipment'],
+      other: point['other'],
+    );
+  }
+
+  Map<String, Object> toJson() {
+    return {
+      'location': location.toGeoPoint(),
+      'boisterousVoice': boisterousVoice,
+      'dangerousWildlife': dangerousWildlife,
+      'livingInPublic': livingInPublic,
+      'panhandling': panhandling,
+      'recklessBehavior': recklessBehavior,
+      'unsafeEquipment': unsafeEquipment,
+      'other': other,
+    };
+  }
+}
+
+class MaintenancePoint extends DataPoint {
+  bool brokenEnvironment;
+  bool dirtyOrUnmaintained;
+  bool littering;
+  bool overfilledTrash;
+  bool unkeptLandscape;
+  bool unwantedGraffiti;
+  String other;
+
+  MaintenancePoint({
+    required super.location,
+    required this.brokenEnvironment,
+    required this.dirtyOrUnmaintained,
+    required this.littering,
+    required this.overfilledTrash,
+    required this.unkeptLandscape,
+    required this.unwantedGraffiti,
+    required this.other,
+  });
+
+  static MaintenancePoint fromJson(Map<String, dynamic> point) {
+    return MaintenancePoint(
+      location: (point['location'] as GeoPoint).toLatLng(),
+      brokenEnvironment: point['brokenEnvironment'],
+      dirtyOrUnmaintained: point['dirtyOrUnmaintained'],
+      littering: point['littering'],
+      overfilledTrash: point['overfilledTrash'],
+      unkeptLandscape: point['unkeptLandscape'],
+      unwantedGraffiti: point['unwantedGraffiti'],
+      other: point['other'],
+    );
+  }
+
+  Map<String, Object> toJson() {
+    return {
+      'location': location.toGeoPoint(),
+      'brokenEnvironment': brokenEnvironment,
+      'dirtyOrUnmaintained': dirtyOrUnmaintained,
+      'littering': littering,
+      'overfilledTrash': overfilledTrash,
+      'unkeptLandscape': unkeptLandscape,
+      'unwantedGraffiti': unwantedGraffiti,
+      'other': other,
+    };
+  }
+}
+
+enum MisconductType { behavior, maintenance }
+
+class AbsenceOfOrderData {
+  List<BehaviorPoint> behaviorList = [];
+  List<MaintenancePoint> maintenanceList = [];
+
+  AbsenceOfOrderData();
+
+  AbsenceOfOrderData.fromJson(Map<String, dynamic> data) {
+    if (data.containsKey('behavior') && (data['behavior'] as List).isNotEmpty) {
+      for (final point in data['behavior'] as List) {
+        behaviorList.add(BehaviorPoint.fromJson(point));
+      }
+    }
+    if (data.containsKey('maintenance') &&
+        (data['maintenance'] as List).isNotEmpty) {
+      for (final point in data['maintenance'] as List) {
+        maintenanceList.add(MaintenancePoint.fromJson(point));
+      }
+    }
+  }
+
+  Map<String, Object> toJson() {
+    Map<String, List<Map<String, dynamic>?>> json = {
+      'behavior': [],
+      'maintenance': [],
+    };
+    for (final behavior in behaviorList) {
+      json['behavior']?.add(behavior.toJson());
+    }
+    for (final maintenance in maintenanceList) {
+      json['maintenance']?.add(maintenance.toJson());
+    }
+    return json;
+  }
+}
+
+class AbsenceOfOrderTest extends Test<AbsenceOfOrderData> {
+  static const String collectionIDStatic = 'absence_of_order_tests';
+
+  AbsenceOfOrderTest._({
+    required super.title,
+    required super.testID,
+    required super.scheduledTime,
+    required super.projectRef,
+    required super.collectionID,
+    required super.data,
+    super.creationTime,
+    super.maxResearchers,
+    super.isComplete,
+  }) : super._();
+
+  static void register() {
+    // Register for creating new Absence of Order Tests
+    Test._newTestConstructors[collectionIDStatic] = ({
+      required String title,
+      required String testID,
+      required Timestamp scheduledTime,
+      required DocumentReference projectRef,
+      required String collectionID,
+    }) =>
+        AbsenceOfOrderTest._(
+          title: title,
+          testID: testID,
+          scheduledTime: scheduledTime,
+          projectRef: projectRef,
+          collectionID: collectionID,
+          data: AbsenceOfOrderData(),
+        );
+    // Register for recreating an Absence of Order Test from Firestore
+    Test._recreateTestConstructors[collectionIDStatic] = (testDoc) {
+      return AbsenceOfOrderTest.fromJson(testDoc.data()!);
+    };
+    // Register for building an Absence of Order Test page
+    Test._pageBuilders[AbsenceOfOrderTest] =
+        (project, test) => AbsenceOfOrderTestPage(
+              activeProject: project,
+              activeTest: test as AbsenceOfOrderTest,
+            );
+    // Register a function for saving to Firestore
+    Test._saveToFirestoreFunctions[AbsenceOfOrderTest] = (test) async {
+      final testRef = _firestore
+          .collection(test.collectionID)
+          .doc(test.testID)
+          .withConverter<AbsenceOfOrderTest>(
+            fromFirestore: (snapshot, _) =>
+                AbsenceOfOrderTest.fromJson(snapshot.data()!),
+            toFirestore: (test, _) => test.toJson(),
+          );
+      await testRef.set(test as AbsenceOfOrderTest, SetOptions(merge: true));
+    };
+  }
+
+  @override
+  void submitData(AbsenceOfOrderData data) async {
+    try {
+      await _firestore.collection(collectionID).doc(testID).update({
+        'data': data.toJson(),
+        'isComplete': true,
+      });
+
+      this.data = data;
+      isComplete = true;
+
+      print('Success! In AbsenceOfOrder.submitData. data = $data');
+    } catch (e, stacktrace) {
+      print("Exception in AbsenceOfOrderTest.submitData(): $e");
+      print("Stacktrace: $stacktrace");
+    }
+  }
+
+  static AbsenceOfOrderTest fromJson(Map<String, dynamic> doc) {
+    return AbsenceOfOrderTest._(
+      title: doc['title'],
+      testID: doc['id'],
+      scheduledTime: doc['scheduledTime'],
+      projectRef: doc['project'],
+      collectionID: collectionIDStatic,
+      data: AbsenceOfOrderData.fromJson(doc['data']),
+      creationTime: doc['creationTime'],
+      maxResearchers: doc['maxResearchers'],
+      isComplete: doc['isComplete'],
+    );
+  }
+
+  Map<String, Object> toJson() {
+    return {
+      'title': title,
+      'id': testID,
+      'scheduledTime': scheduledTime,
+      'project': projectRef,
+      'data': data.toJson(),
+      'creationTime': creationTime,
+      'maxResearchers': maxResearchers,
+      'isComplete': isComplete,
+    };
   }
 }
 

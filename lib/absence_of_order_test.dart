@@ -6,26 +6,26 @@ import 'package:p2bp_2025spring_mobile/theme.dart';
 import 'google_maps_functions.dart';
 import 'db_schema_classes.dart';
 
-class LightingProfileTestPage extends StatefulWidget {
+class AbsenceOfOrderTestPage extends StatefulWidget {
   final Project activeProject;
-  final LightingProfileTest activeTest;
+  final AbsenceOfOrderTest activeTest;
 
-  const LightingProfileTestPage({
+  const AbsenceOfOrderTestPage({
     super.key,
     required this.activeProject,
     required this.activeTest,
   });
 
   @override
-  State<StatefulWidget> createState() => _LightingProfileTestPageState();
+  State<StatefulWidget> createState() => _AbsenceOfOrderTestPageState();
 }
 
 final FirebaseFirestore _firestore = FirebaseFirestore.instance;
 
-class _LightingProfileTestPageState extends State<LightingProfileTestPage> {
+class _AbsenceOfOrderTestPageState extends State<AbsenceOfOrderTestPage> {
   bool _isLoading = true;
   bool _isTypeSelected = false;
-  LightType? _selectedType;
+  MisconductType? _selectedType;
 
   late GoogleMapController mapController;
   LatLng _location = defaultLocation;
@@ -33,8 +33,8 @@ class _LightingProfileTestPageState extends State<LightingProfileTestPage> {
   final Set<Marker> _markers = {}; // Set of markers visible on map
   Set<Polygon> _polygons = {}; // Set of polygons
 
-  final LightToLatLngMap _allPointsMap =
-      LightingProfileTest.newInitialDataDeepCopy();
+  Set<LatLng> _allPoints = {};
+  AbsenceOfOrderData _newData = AbsenceOfOrderData();
 
   ButtonStyle _testButtonStyle = FilledButton.styleFrom();
   static const double _bottomSheetHeight = 250;
@@ -50,6 +50,7 @@ class _LightingProfileTestPageState extends State<LightingProfileTestPage> {
   void _initProjectArea() {
     setState(() {
       _polygons = getProjectPolygon(widget.activeProject.polygonPoints);
+      print(_polygons);
       _location = getPolygonCentroid(_polygons.first);
       // Take some latitude away to center considering bottom sheet.
       _location = LatLng(_location.latitude * .999999, _location.longitude);
@@ -66,18 +67,13 @@ class _LightingProfileTestPageState extends State<LightingProfileTestPage> {
   void _moveToLocation() {
     mapController.animateCamera(
       CameraUpdate.newCameraPosition(
-        CameraPosition(target: _location, zoom: 14.0),
+        CameraPosition(target: _location, zoom: 18.0),
       ),
     );
   }
 
-  /// Adds a `Marker` to the map and stores that same point in
-  /// `_allPointsMap` to be submitted as test data later.
-  ///
-  /// This also resets the fields for selecting type so another can be
-  /// selected after this point is placed.
   void _togglePoint(LatLng point) {
-    _allPointsMap[_selectedType]?.add(point);
+    _allPoints.add(point);
     final markerId = MarkerId(point.toString());
 
     setState(() {
@@ -89,10 +85,7 @@ class _LightingProfileTestPageState extends State<LightingProfileTestPage> {
           consumeTapEvents: true,
           onTap: () {
             // If the marker is tapped again, it will be removed
-            _allPointsMap.updateAll((key, value) {
-              value.remove(point);
-              return value;
-            });
+            _allPoints.remove(point);
             setState(() {
               _markers.removeWhere((marker) => marker.markerId == markerId);
             });
@@ -101,13 +94,11 @@ class _LightingProfileTestPageState extends State<LightingProfileTestPage> {
       );
 
       // Reset selected light type
-      _setLightType(null);
+      _setMisconductType(null);
     });
   }
 
-  /// Sets [_selectedType] to parameter `type` and [_isTypeSelected] to
-  /// true if [type] is non-null and false otherwise.
-  void _setLightType(LightType? type) {
+  void _setMisconductType(MisconductType? type) {
     setState(() {
       _selectedType = type;
       _isTypeSelected = _selectedType != null;
@@ -123,7 +114,6 @@ class _LightingProfileTestPageState extends State<LightingProfileTestPage> {
     });
   }
 
-  /// Sets button style on each build based on width of context
   void _setButtonStyle() {
     _testButtonStyle = FilledButton.styleFrom(
       padding: const EdgeInsets.symmetric(horizontal: 15),
@@ -156,7 +146,7 @@ class _LightingProfileTestPageState extends State<LightingProfileTestPage> {
                         padding: EdgeInsets.only(bottom: _bottomSheetHeight),
                         onMapCreated: _onMapCreated,
                         initialCameraPosition:
-                            CameraPosition(target: _location, zoom: 14),
+                            CameraPosition(target: _location, zoom: 15),
                         markers: _markers,
                         polygons: _polygons,
                         onTap: _isTypeSelected ? _togglePoint : null,
@@ -207,7 +197,7 @@ class _LightingProfileTestPageState extends State<LightingProfileTestPage> {
                   children: <Widget>[
                     Center(
                       child: Text(
-                        'Lighting Profile',
+                        'Absence of Order',
                         style: TextStyle(
                           fontSize: 20,
                           fontWeight: FontWeight.bold,
@@ -219,8 +209,8 @@ class _LightingProfileTestPageState extends State<LightingProfileTestPage> {
                     Center(
                       child: Text(
                         !_isTypeSelected
-                            ? 'Select a type of light.'
-                            : 'Drop a pin where the light is.',
+                            ? 'Select a type of misconduct.'
+                            : 'Drop a pin where the misconduct is.',
                         style: TextStyle(
                           fontSize: 24,
                           color: Colors.white,
@@ -229,7 +219,7 @@ class _LightingProfileTestPageState extends State<LightingProfileTestPage> {
                     ),
                     SizedBox(height: 5),
                     Text(
-                      'Light Types',
+                      'Type of Misconduct',
                       style: TextStyle(
                         fontSize: 16,
                         fontWeight: FontWeight.bold,
@@ -245,8 +235,9 @@ class _LightingProfileTestPageState extends State<LightingProfileTestPage> {
                             style: _testButtonStyle,
                             onPressed: (_isTypeSelected)
                                 ? null
-                                : () => _setLightType(LightType.rhythmic),
-                            child: Text('Rhythmic'),
+                                : () =>
+                                    _setMisconductType(MisconductType.behavior),
+                            child: Text('Behavior'),
                           ),
                         ),
                         Flexible(
@@ -254,17 +245,9 @@ class _LightingProfileTestPageState extends State<LightingProfileTestPage> {
                             style: _testButtonStyle,
                             onPressed: (_isTypeSelected)
                                 ? null
-                                : () => _setLightType(LightType.building),
-                            child: Text('Building'),
-                          ),
-                        ),
-                        Flexible(
-                          child: FilledButton(
-                            style: _testButtonStyle,
-                            onPressed: (_isTypeSelected)
-                                ? null
-                                : () => _setLightType(LightType.task),
-                            child: Text('Task'),
+                                : () => _setMisconductType(
+                                    MisconductType.maintenance),
+                            child: Text('Maintenance'),
                           ),
                         ),
                       ],
@@ -288,7 +271,7 @@ class _LightingProfileTestPageState extends State<LightingProfileTestPage> {
                             style: _testButtonStyle,
                             onPressed: () {
                               // TODO: check isComplete either before submitting or probably before starting test
-                              widget.activeTest.submitData(_allPointsMap);
+                              widget.activeTest.submitData(_newData);
                               Navigator.pop(context);
                             },
                             label: Text('Finish'),
