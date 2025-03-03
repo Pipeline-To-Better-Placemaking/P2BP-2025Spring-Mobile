@@ -75,6 +75,7 @@ class _HomeScreenState extends State<HomeScreen> {
         });
       }
     } catch (e) {
+      if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text(
@@ -127,10 +128,12 @@ class _HomeScreenState extends State<HomeScreen> {
               BorderRadius.circular(12) // Match the container's corner radius
           ),
       child: InkWell(
+        // TODO: Add a loading indicator for loading project detail page
         onTap: () async {
           if (project.tests == null) {
             await project.loadAllTestData();
           }
+          if (!context.mounted) return;
           Navigator.push(
             context,
             MaterialPageRoute(
@@ -367,35 +370,37 @@ class _HomeScreenState extends State<HomeScreen> {
               // Project Cards
               _projectsCount > 0
                   // If there are projects populate ListView
-                  ? ListView.separated(
-                      physics: NeverScrollableScrollPhysics(),
-                      shrinkWrap: true,
-                      padding: const EdgeInsets.only(
-                        left: 15,
-                        right: 15,
-                        top: 25,
-                        bottom: 25,
-                      ),
-                      itemCount: _projectsCount,
-                      itemBuilder: (BuildContext context, int index) {
-                        return buildProjectCard(
-                          context: context,
-                          bannerImage: 'assets/RedHouse.png',
-                          project: _projectList[index],
-                          teamName: 'Team: Eola Design Group',
-                          index: index,
-                        );
-                      },
-                      separatorBuilder: (BuildContext context, int index) =>
-                          const SizedBox(
-                        height: 50,
-                      ),
-                    )
+                  ? _isLoading
+                      ? const Center(child: CircularProgressIndicator())
+                      : ListView.separated(
+                          physics: NeverScrollableScrollPhysics(),
+                          shrinkWrap: true,
+                          padding: const EdgeInsets.only(
+                            left: 15,
+                            right: 15,
+                            top: 25,
+                            bottom: 25,
+                          ),
+                          itemCount: _projectsCount,
+                          itemBuilder: (BuildContext context, int index) {
+                            return buildProjectCard(
+                              context: context,
+                              bannerImage: 'assets/RedHouse.png',
+                              project: _projectList[index],
+                              teamName: 'Team: Eola Design Group',
+                              index: index,
+                            );
+                          },
+                          separatorBuilder: (BuildContext context, int index) =>
+                              const SizedBox(
+                            height: 50,
+                          ),
+                        )
                   // Else if there are no projects
                   : _isLoading == true
-                      // If loading display loading indicator
+                      // If loading, display loading indicator
                       ? const Center(child: CircularProgressIndicator())
-                      // Else display text to create new project
+                      // Else, display text to create new project
                       : RefreshIndicator(
                           onRefresh: () async {
                             await _populateProjects();

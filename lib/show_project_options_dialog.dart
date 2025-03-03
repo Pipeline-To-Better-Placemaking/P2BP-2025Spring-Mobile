@@ -207,6 +207,7 @@ void showProjectOptionsDialog(BuildContext context) {
         }
       } else if (value == 1) {
         print("Edit Project Name");
+        if (!context.mounted) return;
         showModalBottomSheet(
           context: context,
           isScrollControlled: true, // allows the sheet to be fully draggable
@@ -237,6 +238,7 @@ void showProjectOptionsDialog(BuildContext context) {
         );
       } else if (value == 2) {
         print("Edit Project Description");
+        if (!context.mounted) return;
         showModalBottomSheet(
           context: context,
           isScrollControlled: true, // allows the sheet to be fully draggable
@@ -268,6 +270,7 @@ void showProjectOptionsDialog(BuildContext context) {
         // TODO: Add archive functionality here
       } else if (value == 4) {
         print("Delete Project");
+        if (!context.mounted) return;
         showDialog(
           context: context,
           barrierColor: Colors.black.withValues(alpha: 0.5), // Optional overlay

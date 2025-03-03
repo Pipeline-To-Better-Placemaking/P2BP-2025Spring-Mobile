@@ -344,6 +344,7 @@ class _ProjectDetailsPageState extends State<ProjectDetailsPage> {
 const Map<Type, String> _testInitialsMap = {
   LightingProfileTest: 'LP',
   SectionCutterTest: 'SC',
+  IdentifyingAccessTest: 'IA',
 };
 
 class TestCard extends StatelessWidget {

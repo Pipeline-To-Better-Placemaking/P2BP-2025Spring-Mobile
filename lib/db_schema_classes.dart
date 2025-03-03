@@ -1,12 +1,17 @@
 import 'dart:io';
+import 'dart:math';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:file_selector/file_selector.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
+import 'package:p2bp_2025spring_mobile/google_maps_functions.dart';
 import 'package:p2bp_2025spring_mobile/lighting_profile_test.dart';
 import 'package:p2bp_2025spring_mobile/section_cutter_test.dart';
 import 'firestore_functions.dart';
 import 'package:flutter/material.dart';
 import 'package:firebase_storage/firebase_storage.dart';
+import 'package:maps_toolkit/maps_toolkit.dart' as mp;
+
+import 'identifying_access_test.dart';
 
 final FirebaseFirestore _firestore = FirebaseFirestore.instance;
 
@@ -577,6 +582,9 @@ class SectionCutterTest extends Test<Map<String, String>> {
     }
   }
 
+  /// Saves given [XFile]. Takes in the given data and saves it according to
+  /// its corresponding project reference, under its given test id. Then,
+  /// returns a [Map] where the path to the file is mapped to "sectionLink".
   Future<Map<String, String>> saveXFile(XFile data) async {
     Map<String, String> storageLocation = newInitialDataDeepCopy();
     try {
@@ -602,6 +610,374 @@ class SectionCutterTest extends Test<Map<String, String>> {
     Map<String, String> output = newInitialDataDeepCopy();
     if (data.containsKey('sectionLink') && data['sectionLink'] is String) {
       output['sectionLink'] = data['sectionLink'];
+    }
+    return output;
+  }
+}
+
+/// Enum types for Identifying Access test:
+/// [bikeRack], [taxiAndRideShare], [parking], or [transportStation]
+enum AccessType { bikeRack, taxiAndRideShare, parking, transportStation }
+
+List<Object> accessObjects = [
+  List<BikeRack>,
+  List<TaxiAndRideShare>,
+  List<Parking>,
+  List<TransportStation>
+];
+
+// Realistically, these should all inherit from a parent class that has certain
+// constants, such as width, color, and cap. Also have an abstract method for
+// converting to Firestore.
+/// Bike rack type for Identifying Access test. Enum type [bikeRack].
+class BikeRack {
+  static const AccessType type = AccessType.bikeRack;
+  static const int polylineWidth = 3;
+  static const Color color = Colors.black;
+  static const Cap startCap = Cap.roundCap;
+  final int spots;
+  final Polyline polyline;
+  final double pathLength;
+
+  BikeRack({required this.spots, required this.polyline})
+      : pathLength = mp.SphericalUtil.computeLength(polyline.toMPLatLngList())
+            .toDouble();
+
+  Map<String, dynamic> convertToFirestoreData() {
+    Map<String, dynamic> firestoreData = {
+      'spots': spots,
+      'pathInfo': {
+        'path': polyline.points.toGeoPointList(),
+        'pathLength': pathLength,
+      }
+    };
+    return firestoreData;
+  }
+}
+
+/// Taxi/ride share type for Identifying Access test. Enum type
+/// [taxiAndRideShare].
+class TaxiAndRideShare {
+  static const AccessType type = AccessType.taxiAndRideShare;
+  static const int polylineWidth = 3;
+  static const Color color = Colors.black;
+  static const Cap startCap = Cap.roundCap;
+  final Polyline polyline;
+  final double pathLength;
+
+  TaxiAndRideShare({required this.polyline})
+      : pathLength = mp.SphericalUtil.computeLength(polyline.toMPLatLngList())
+            .toDouble();
+
+  Map<String, dynamic> convertToFirestoreData() {
+    Map<String, dynamic> firestoreData = {
+      'pathInfo': {
+        'path': polyline.points.toGeoPointList(),
+        'pathLength': pathLength
+      }
+    };
+    return firestoreData;
+  }
+}
+
+/// Parking type for Identifying Access test. Enum type [parking].
+class Parking {
+  static const AccessType type = AccessType.parking;
+  static const int polylineWidth = 3;
+  static const Color color = Colors.black;
+  static const Cap startCap = Cap.roundCap;
+  final int spots;
+  final Polygon polygon;
+  final Polyline polyline;
+  final double pathLength;
+  final double polygonArea;
+
+  Parking({required this.spots, required this.polyline, required this.polygon})
+      : pathLength = mp.SphericalUtil.computeLength(polyline.toMPLatLngList())
+            .toDouble(),
+        polygonArea = (mp.SphericalUtil.computeArea(polygon.toMPLatLngList()) *
+                pow(feetPerMeter, 2))
+            .toDouble();
+
+  Map<String, dynamic> convertToFirestoreData() {
+    Map<String, dynamic> firestoreData = {
+      'spots': spots,
+      'pathInfo': {
+        'path': polyline.points.toGeoPointList(),
+        'pathLength': pathLength,
+      },
+      'polygonInfo': {
+        'polygon': polygon.points.toGeoPointList(),
+        'polygonArea': pathLength,
+      }
+    };
+    return firestoreData;
+  }
+}
+
+/// Transport station type for Identifying Access test. Enum type
+/// [transportStation].
+class TransportStation {
+  static const AccessType type = AccessType.transportStation;
+  static const int polylineWidth = 3;
+  static const Color color = Colors.black;
+  static const Cap startCap = Cap.roundCap;
+  final int routeNumber;
+  final Polyline polyline;
+  final double pathLength;
+
+  TransportStation({required this.routeNumber, required this.polyline})
+      : pathLength = mp.SphericalUtil.computeLength(polyline.toMPLatLngList())
+            .toDouble();
+
+  Map<String, dynamic> convertToFirestoreData() {
+    Map<String, dynamic> firestoreData = {
+      'routeNumber': routeNumber,
+      'pathInfo': {
+        'path': polyline.points.toGeoPointList(),
+        'pathLength': pathLength,
+      }
+    };
+    return firestoreData;
+  }
+}
+
+/// Class for identifying access test info and methods.
+class IdentifyingAccessTest extends Test<Map> {
+  /// Returns a new instance of the initial data structure used for
+  /// Identifying Access Test.
+  static Map<AccessType, List> newInitialDataDeepCopy() {
+    Map<AccessType, List> accessData = {};
+    accessData[AccessType.bikeRack] = [];
+    accessData[AccessType.taxiAndRideShare] = [];
+    accessData[AccessType.transportStation] = [];
+    accessData[AccessType.parking] = [];
+    return accessData;
+  }
+
+  /// Static constant definition of collection ID for this test type.
+  static const String collectionIDStatic = 'identifying_access_tests';
+
+  /// Creates a new [IdentifyingAccessTest] instance from the given arguments.
+  IdentifyingAccessTest._({
+    required super.title,
+    required super.testID,
+    required super.scheduledTime,
+    required super.projectRef,
+    required super.collectionID,
+    required super.data,
+    super.creationTime,
+    super.maxResearchers,
+    super.isComplete,
+  }) : super._();
+
+  /// Registers this class within the Maps required by class [Test].
+  static void register() {
+    // Register for creating new Lighting Profile Tests
+    Test._newTestConstructors[collectionIDStatic] = ({
+      required String title,
+      required String testID,
+      required Timestamp scheduledTime,
+      required DocumentReference projectRef,
+      required String collectionID,
+    }) =>
+        IdentifyingAccessTest._(
+          title: title,
+          testID: testID,
+          scheduledTime: scheduledTime,
+          projectRef: projectRef,
+          collectionID: collectionID,
+          data: newInitialDataDeepCopy(),
+        );
+    // Register for recreating a Lighting Profile Test from Firestore
+    Test._recreateTestConstructors[collectionIDStatic] = (testDoc) {
+      print(testDoc['data']);
+      return IdentifyingAccessTest._(
+        title: testDoc['title'],
+        testID: testDoc['id'],
+        scheduledTime: testDoc['scheduledTime'],
+        projectRef: testDoc['project'],
+        collectionID: testDoc.reference.parent.id,
+        data: convertDataFromFirestore(testDoc['data']),
+        creationTime: testDoc['creationTime'],
+        maxResearchers: testDoc['maxResearchers'],
+        isComplete: testDoc['isComplete'],
+      );
+    };
+    // Register for building a Lighting Profile Test page
+    Test._pageBuilders[IdentifyingAccessTest] =
+        (project, test) => IdentifyingAccess(
+              activeProject: project,
+              activeTest: test as IdentifyingAccessTest,
+            );
+    // Register a function for saving to Firestore
+    Test._saveToFirestoreFunctions[IdentifyingAccessTest] = (test) async {
+      await _firestore.collection(test.collectionID).doc(test.testID).set({
+        'title': test.title,
+        'id': test.testID,
+        'scheduledTime': test.scheduledTime,
+        'project': test.projectRef,
+        'data': convertDataToFirestore(test.data),
+        'creationTime': test.creationTime,
+        'maxResearchers': test.maxResearchers,
+        'isComplete': false,
+      }, SetOptions(merge: true));
+    };
+  }
+
+  @override
+  void submitData(Map data) async {
+    // Adds all points of each type from submitted data to overall data
+    Map firestoreData = convertDataToFirestore(data);
+
+    // Updates data in Firestore
+    await _firestore.collection(collectionID).doc(testID).update({
+      'data': firestoreData,
+      'isComplete': true,
+    });
+
+    this.data = data;
+    isComplete = true;
+
+    print(
+        'Success! In IdentifyingAccessTest.submitData. firestoreData = $firestoreData');
+  }
+
+  /// Transforms data retrieved from Firestore test instance to
+  /// a list of AccessType objects, with data accessed through the fields of
+  /// the respective objects.
+  static Map<AccessType, dynamic> convertDataFromFirestore(
+      Map<String, dynamic> data) {
+    Map<AccessType, dynamic> output = newInitialDataDeepCopy();
+    List<AccessType> types = AccessType.values;
+    List dataList;
+    // Adds all data to output one type at a time
+    for (final type in types) {
+      output[type] = [];
+      if (data.containsKey(type.name)) {
+        dataList = data[type.name];
+        switch (type) {
+          case AccessType.bikeRack:
+            for (Map bikeRackMap in dataList) {
+              if (bikeRackMap.containsKey('pathInfo') &&
+                  bikeRackMap['pathInfo'].containsKey('path')) {
+                List polylinePoints = bikeRackMap['pathInfo']['path'];
+                output[type]?.add(
+                  BikeRack(
+                    spots: bikeRackMap['spots'],
+                    polyline: Polyline(
+                      polylineId: PolylineId(
+                          DateTime.now().millisecondsSinceEpoch.toString()),
+                      color: BikeRack.color,
+                      width: BikeRack.polylineWidth,
+                      startCap: BikeRack.startCap,
+                      points: polylinePoints.toLatLngList(),
+                    ),
+                  ),
+                );
+              }
+            }
+          case AccessType.taxiAndRideShare:
+            for (Map taxiRideShareMap in dataList) {
+              if (taxiRideShareMap.containsKey('pathInfo') &&
+                  taxiRideShareMap['pathInfo'].containsKey('path')) {
+                List polylinePoints = taxiRideShareMap['pathInfo']['path'];
+                output[type]?.add(
+                  TaxiAndRideShare(
+                    polyline: Polyline(
+                      polylineId: PolylineId(
+                          DateTime.now().millisecondsSinceEpoch.toString()),
+                      color: TaxiAndRideShare.color,
+                      width: TaxiAndRideShare.polylineWidth,
+                      startCap: TaxiAndRideShare.startCap,
+                      points: polylinePoints.toLatLngList(),
+                    ),
+                  ),
+                );
+              }
+            }
+          case AccessType.parking:
+            for (Map parkingMap in dataList) {
+              if ((parkingMap.containsKey('pathInfo') &&
+                      parkingMap['pathInfo'].containsKey('path')) &&
+                  (parkingMap.containsKey('polygonInfo') &&
+                      parkingMap['polygonInfo'].containsKey('polygon'))) {
+                List polylinePoints = parkingMap['pathInfo']['path'];
+                List polygonPoints = parkingMap['polygonInfo']['polygon'];
+                output[type]?.add(
+                  Parking(
+                    spots: parkingMap['spots'],
+                    polyline: Polyline(
+                        polylineId: PolylineId(
+                            DateTime.now().millisecondsSinceEpoch.toString()),
+                        color: Parking.color,
+                        width: Parking.polylineWidth,
+                        startCap: Parking.startCap,
+                        points: polylinePoints.toLatLngList()),
+                    polygon: Polygon(
+                      polygonId: PolygonId(
+                          DateTime.now().millisecondsSinceEpoch.toString()),
+                      points: polygonPoints.toLatLngList(),
+                      fillColor: Color(0x55999999),
+                    ),
+                  ),
+                );
+              }
+            }
+          case AccessType.transportStation:
+            for (Map transportStationMap in dataList) {
+              if (transportStationMap.containsKey('pathInfo') &&
+                  transportStationMap['pathInfo'].containsKey('path')) {
+                List polylinePoints = transportStationMap['pathInfo']['path'];
+                output[type]?.add(
+                  TransportStation(
+                    routeNumber: transportStationMap['routeNumber'],
+                    polyline: Polyline(
+                        polylineId: PolylineId(
+                            DateTime.now().millisecondsSinceEpoch.toString()),
+                        color: TransportStation.color,
+                        width: TransportStation.polylineWidth,
+                        startCap: TransportStation.startCap,
+                        points: polylinePoints.toLatLngList()),
+                  ),
+                );
+              }
+            }
+        }
+      }
+    }
+    return output;
+  }
+
+  /// Transforms data stored locally as of [List] access type objects to
+  /// Firestore format (represented by a [Map])
+  /// with String keys and any other needed changes.
+  static Map<String, List> convertDataToFirestore(Map data) {
+    Map<String, List> output = {};
+    List<AccessType> types = AccessType.values;
+    for (final type in types) {
+      output[type.name] = [];
+      // && accessObjects.contains(data[type].runtimeType)
+      if (data.containsKey(type)) {
+        switch (type) {
+          case AccessType.bikeRack:
+            for (BikeRack accessObject in data[type]!) {
+              output[type.name]?.add(accessObject.convertToFirestoreData());
+            }
+          case AccessType.taxiAndRideShare:
+            for (TaxiAndRideShare accessObject in data[type]!) {
+              output[type.name]?.add(accessObject.convertToFirestoreData());
+            }
+          case AccessType.parking:
+            for (Parking accessObject in data[type]!) {
+              output[type.name]?.add(accessObject.convertToFirestoreData());
+            }
+          case AccessType.transportStation:
+            for (TransportStation accessObject in data[type]!) {
+              output[type.name]?.add(accessObject.convertToFirestoreData());
+            }
+        }
+      }
     }
     return output;
   }
