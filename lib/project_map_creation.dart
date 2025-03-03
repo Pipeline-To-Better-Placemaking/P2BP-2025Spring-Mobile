@@ -2,6 +2,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
+import 'package:p2bp_2025spring_mobile/theme.dart';
 import 'google_maps_functions.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:p2bp_2025spring_mobile/create_project_and_teams.dart';
@@ -147,114 +148,143 @@ class _ProjectMapCreationState extends State<ProjectMapCreation> {
       child: Scaffold(
         body: _isLoading
             ? const Center(child: CircularProgressIndicator())
-            : Column(
+            : Stack(
                 children: [
-                  SizedBox(height: 20),
-                  Text(
-                    "Define your project area.",
-                    style: TextStyle(fontSize: 24),
-                  ),
-                  Center(
-                    child: SizedBox(
-                      // TODO: Explore alternative approaches. Maps widgets automatically sizes to infinity unless declared.
-                      height: MediaQuery.of(context).size.height * .8,
-                      child: Padding(
-                        // TODO: Define padding
-                        padding: const EdgeInsets.all(0),
-                        child: Stack(
-                          children: [
-                            GoogleMap(
-                              onMapCreated: _onMapCreated,
-                              initialCameraPosition: CameraPosition(
-                                  target: _currentLocation, zoom: 14.0),
-                              polygons: _polygon,
-                              markers: _markers,
-                              onTap: _togglePoint,
-                              mapType: _currentMapType, // Use current map type
-                            ),
-                            Align(
-                              alignment: Alignment.bottomLeft,
-                              child: Padding(
-                                padding: const EdgeInsets.only(
-                                    left: 10.0, bottom: 130.0),
-                                child: FloatingActionButton(
-                                  heroTag: null,
-                                  onPressed: _toggleMapType,
-                                  backgroundColor: Colors.green,
-                                  child: const Icon(Icons.map),
-                                ),
-                              ),
-                            ),
-                            Align(
-                              alignment: Alignment.bottomLeft,
-                              child: Padding(
-                                padding: const EdgeInsets.only(
-                                    left: 10.0, bottom: 53.0),
-                                child: FloatingActionButton(
-                                  heroTag: null,
-                                  onPressed: () {
-                                    setState(() {
-                                      if (_polygonPoints.length >= 3) {
-                                        _finalizePolygon();
-                                      }
-                                    });
-                                  },
-                                  backgroundColor: Colors.blue,
-                                  child: const Icon(
-                                    Icons.check,
-                                    size: 35,
-                                  ),
-                                ),
-                              ),
-                            ),
-                          ],
+                  SizedBox(
+                    // TODO: Explore alternative approaches. Maps widgets automatically sizes to infinity unless declared.
+                    height: MediaQuery.of(context).size.height,
+                    child: Stack(
+                      children: [
+                        GoogleMap(
+                          onMapCreated: _onMapCreated,
+                          initialCameraPosition: CameraPosition(
+                              target: _currentLocation, zoom: 14.0),
+                          polygons: _polygon,
+                          markers: _markers,
+                          onTap: _togglePoint,
+                          mapType: _currentMapType, // Use current map type
                         ),
-                      ),
+                        Align(
+                          alignment: Alignment.topCenter,
+                          child: Padding(
+                            padding: const EdgeInsets.symmetric(
+                                vertical: 20.0, horizontal: 25.0),
+                            child: Container(
+                              padding: EdgeInsets.symmetric(
+                                  horizontal: 15, vertical: 10),
+                              decoration: BoxDecoration(
+                                color: directionsTransparency,
+                                gradient: defaultGrad,
+                                borderRadius:
+                                    const BorderRadius.all(Radius.circular(10)),
+                                boxShadow: [
+                                  BoxShadow(
+                                    color: Colors.black.withValues(alpha: 0.1),
+                                    blurRadius: 6,
+                                    offset: const Offset(0, 2),
+                                  ),
+                                ],
+                              ),
+                              child: Text(
+                                "Place points for your polygon, and click the check to confirm it. When you're satisfied click finish.",
+                                maxLines: 3,
+                                overflow: TextOverflow.ellipsis,
+                                style: TextStyle(
+                                  fontSize: 18,
+                                  fontWeight: FontWeight.w500,
+                                  color: Colors.white,
+                                ),
+                              ),
+                            ),
+                          ),
+                        ),
+                        Align(
+                          alignment: Alignment.bottomLeft,
+                          child: Padding(
+                            padding: const EdgeInsets.only(
+                                left: 10.0, bottom: 130.0),
+                            child: FloatingActionButton(
+                              heroTag: null,
+                              onPressed: _toggleMapType,
+                              backgroundColor: Colors.green,
+                              child: const Icon(Icons.map),
+                            ),
+                          ),
+                        ),
+                        Align(
+                          alignment: Alignment.bottomLeft,
+                          child: Padding(
+                            padding:
+                                const EdgeInsets.only(left: 10.0, bottom: 53.0),
+                            child: FloatingActionButton(
+                              heroTag: null,
+                              onPressed: () {
+                                setState(() {
+                                  if (_polygonPoints.length >= 3) {
+                                    _finalizePolygon();
+                                  }
+                                });
+                              },
+                              backgroundColor: Colors.blue,
+                              child: const Icon(
+                                Icons.check,
+                                size: 35,
+                              ),
+                            ),
+                          ),
+                        ),
+                      ],
                     ),
                   ),
                   Padding(
-                    padding: EdgeInsets.symmetric(horizontal: 10, vertical: 10),
+                    padding: EdgeInsets.symmetric(vertical: 15),
                     child: Align(
-                      alignment: Alignment.bottomRight,
+                      alignment: Alignment.bottomCenter,
                       child: EditButton(
                         text: 'Finish',
                         foregroundColor: Colors.white,
                         backgroundColor: const Color(0xFF4871AE),
                         icon: const Icon(Icons.chevron_right),
-                        onPressed: () async {
-                          if (_polygon.isNotEmpty) {
-                            await saveProject(
-                              projectTitle: widget.partialProjectData.title,
-                              description:
-                                  widget.partialProjectData.description,
-                              teamRef: await getCurrentTeam(),
-                              polygonPoints: _polygonAsGeoPoints,
-                              // Polygon area is square feet, returned in
-                              // (meters)^2, multiplied by (feet/meter)^2
-                              polygonArea: mp.SphericalUtil.computeArea(
-                                      _mapToolsPolygonPoints) *
-                                  pow(feetPerMeter, 2),
-                            );
-                            if (!context.mounted) return;
-                            Navigator.pushReplacement(
-                                context,
-                                MaterialPageRoute(
-                                  builder: (context) => HomeScreen(),
-                                ));
-                            // TODO: Push to project details page.
-                            Navigator.push(
-                                context,
-                                MaterialPageRoute(
-                                  builder: (context) => HomeScreen(),
-                                ));
-                          } else {
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              const SnackBar(
-                                  content: Text(
-                                      'Please designate your project area, and confirm with the check button.')),
-                            );
-                          }
-                        },
+                        onPressed: _isLoading
+                            ? null
+                            : () async {
+                                if (_polygon.isNotEmpty) {
+                                  setState(() {
+                                    _isLoading = true;
+                                  });
+                                  await saveProject(
+                                    projectTitle:
+                                        widget.partialProjectData.title,
+                                    description:
+                                        widget.partialProjectData.description,
+                                    teamRef: await getCurrentTeam(),
+                                    polygonPoints: _polygonAsGeoPoints,
+                                    // Polygon area is square feet, returned in
+                                    // (meters)^2, multiplied by (feet/meter)^2
+                                    polygonArea: mp.SphericalUtil.computeArea(
+                                            _mapToolsPolygonPoints) *
+                                        pow(feetPerMeter, 2),
+                                  );
+                                  if (!context.mounted) return;
+                                  Navigator.pushReplacement(
+                                      context,
+                                      MaterialPageRoute(
+                                        builder: (context) => HomeScreen(),
+                                      ));
+                                  // TODO: Push to project details page.
+                                  Navigator.push(
+                                      context,
+                                      MaterialPageRoute(
+                                        builder: (context) => HomeScreen(),
+                                      ));
+                                } else {
+                                  ScaffoldMessenger.of(context).showSnackBar(
+                                    const SnackBar(
+                                        content: Text(
+                                            'Please designate your project area, and confirm with the check button.')),
+                                  );
+                                }
+                              },
                       ),
                     ),
                   ),
