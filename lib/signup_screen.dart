@@ -200,6 +200,7 @@ class _SignUpFormState extends State<SignUpForm> {
         // Send email verification
         if (userCredential.user != null) {
           await userCredential.user!.sendEmailVerification();
+          if (!mounted) return;
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
               content: Text(
@@ -208,7 +209,7 @@ class _SignUpFormState extends State<SignUpForm> {
             ),
           );
         }
-
+        if (!mounted) return;
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(content: Text('User Registered Successfully!')),
         );

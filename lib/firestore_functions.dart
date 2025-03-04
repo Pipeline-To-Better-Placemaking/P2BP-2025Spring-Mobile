@@ -1,6 +1,7 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
+import 'package:maps_toolkit/maps_toolkit.dart' as mp;
 import 'db_schema_classes.dart';
 
 final FirebaseFirestore _firestore = FirebaseFirestore.instance;
@@ -109,7 +110,7 @@ Future<Project> saveProject({
     description: description,
     polygonPoints: polygonPoints,
     polygonArea: polygonArea,
-    tests: [],
+    testRefs: [],
   );
 
   // Debugging print statement.
@@ -128,12 +129,11 @@ Future<Project> getProjectInfo(String projectID) async {
   try {
     projectDoc = await _firestore.collection("projects").doc(projectID).get();
     if (projectDoc.exists && projectDoc.data()!.containsKey('polygonArea')) {
-      // Create List of Tests from List of DocumentReferences
-      List<Test> testList = [];
-      // TODO: maybe remove 'tests' check after DB purge or something
+      // Create List of testRefs for Project
+      List<DocumentReference<Map<String, dynamic>>> testRefs = [];
       if (projectDoc.data()!.containsKey('tests')) {
         for (final ref in projectDoc['tests']) {
-          testList.add(await getTestInfo(ref));
+          testRefs.add(ref);
         }
       }
 
@@ -145,7 +145,7 @@ Future<Project> getProjectInfo(String projectID) async {
         polygonPoints: projectDoc['polygonPoints'],
         polygonArea: projectDoc['polygonArea'],
         creationTime: projectDoc['creationTime'],
-        tests: testList,
+        testRefs: testRefs,
       );
     } else {
       print(
@@ -460,18 +460,146 @@ Future<Test> getTestInfo(
     print('Stacktrace: $stacktrace');
   }
 
-  print('Test from getTestInfo: ${test.toString()}'); // debug
   return test;
 }
 
 extension GeoPointConversion on GeoPoint {
+  /// Takes a [GeoPoint] representation of a point and converts it to a
+  /// [LatLng]. Returns that [LatLng].
   LatLng toLatLng() {
     return LatLng(latitude, longitude);
   }
 }
 
 extension LatLngConversion on LatLng {
+  /// Takes a [LatLng] representation of a point and converts it to a
+  /// [GeoPoint]. Returns that [GeoPoint].
   GeoPoint toGeoPoint() {
     return GeoPoint(latitude, longitude);
+  }
+}
+
+extension LatLngListConversion on List<LatLng> {
+  /// Extension function on [List`<LatLng>`]. Converts the list to a list of
+  /// [GeoPoint]s for storing in Firestore. Returns the [List`<GeoPoint>`].
+  List<GeoPoint> toGeoPointList() {
+    List<GeoPoint> newGeoPointList = [];
+    forEach((coordinate) {
+      newGeoPointList.add(GeoPoint(coordinate.latitude, coordinate.longitude));
+    });
+    return newGeoPointList;
+  }
+}
+
+extension GeoPointListConversion on List<GeoPoint> {
+  /// Extension function on [List]`<`[GeoPoint]`>`. Converts the list to a list
+  /// of [LatLng]s for use locally in application. Returns the
+  /// [List]`<`[LatLng]`>`.
+  List<LatLng> toLatLngList() {
+    List<LatLng> newLatLngList = [];
+    forEach((coordinate) {
+      newLatLngList.add(LatLng(coordinate.latitude, coordinate.longitude));
+    });
+    return newLatLngList;
+  }
+}
+
+extension PolygonToGeoPoints on Polygon {
+  /// Extension function on [Polygon]. Takes a [Polygon] and converts it to a
+  /// list of [GeoPoint]s for Firestore storing. Returns the
+  /// [List]`<`[GeoPoint]`>`.
+  List<GeoPoint> toGeoPointList() {
+    List<GeoPoint> geoPointRepresentation = [];
+    if (points.isEmpty) return geoPointRepresentation;
+    for (var point in points) {
+      geoPointRepresentation.add(GeoPoint(point.latitude, point.longitude));
+    }
+    return geoPointRepresentation;
+  }
+}
+
+extension PolygonToLatLngs on Polygon {
+  /// Extension function on [Polygon]. Takes a [Polygon] and converts it to a
+  /// list of [LatLng]s for Firestore storing. Returns the
+  /// [List]`<`[LatLng]`>`.
+  List<LatLng> toLatLngList() {
+    List<LatLng> latLngRepresentation = [];
+    if (points.isEmpty) return latLngRepresentation;
+    for (var point in points) {
+      latLngRepresentation.add(LatLng(point.latitude, point.longitude));
+    }
+    return latLngRepresentation;
+  }
+}
+
+extension PolygonToMapsToolkitLatLngs on Polygon {
+  /// Extension function on [Polygon]. Takes a [Polygon] and converts it to a
+  /// list of [mp.LatLng]s for maps toolkit functions. Returns the
+  /// [List]`<`[mp.LatLng]`>`.
+  List<mp.LatLng> toMPLatLngList() {
+    List<mp.LatLng> latLngRepresentation = [];
+    if (points.isEmpty) return latLngRepresentation;
+    for (var point in points) {
+      latLngRepresentation.add(mp.LatLng(point.latitude, point.longitude));
+    }
+    return latLngRepresentation;
+  }
+}
+
+extension PolylineToGeoPoints on Polyline {
+  /// Extension function on [Polyline]. Takes a [Polyline] and converts it to a
+  /// list of [GeoPoint]s for Firestore storing. Returns the
+  /// [List]`<`[GeoPoint]`>`.
+  List<GeoPoint> toGeoPointList() {
+    List<GeoPoint> geoPointRepresentation = [];
+    if (points.isEmpty) return geoPointRepresentation;
+    for (var point in points) {
+      geoPointRepresentation.add(GeoPoint(point.latitude, point.longitude));
+    }
+    return geoPointRepresentation;
+  }
+}
+
+extension PolylineToLatLngs on Polyline {
+  /// Extension function on [Polyline]. Takes a [Polyline] and converts it to a
+  /// list of [LatLng]s for Firestore storing. Returns the
+  /// [List]`<`[LatLng]`>`.
+  List<LatLng> toLatLngList() {
+    List<LatLng> latLngRepresentation = [];
+    if (points.isEmpty) return latLngRepresentation;
+    for (var point in points) {
+      latLngRepresentation.add(LatLng(point.latitude, point.longitude));
+    }
+    return latLngRepresentation;
+  }
+}
+
+extension PolylineToMapsToolkitLatLngs on Polyline {
+  /// Extension function on [Polyline]. Takes a [Polyline] and converts it to a
+  /// list of [mp.LatLng]s for maps toolkit functions. Returns the
+  /// [List]`<`[mp.LatLng]`>`.
+  List<mp.LatLng> toMPLatLngList() {
+    List<mp.LatLng> latLngRepresentation = [];
+    if (points.isEmpty) return latLngRepresentation;
+    for (var point in points) {
+      latLngRepresentation.add(mp.LatLng(point.latitude, point.longitude));
+    }
+    return latLngRepresentation;
+  }
+}
+
+extension DynamicLatLngExtraction on List<dynamic> {
+  /// Extension function on [List]`<`[dynamic]`>`. Takes any objects of type
+  /// [GeoPoint] out of the list, converts them to [LatLng], and returns a new
+  /// [List]`<`[LatLng]`>`. Primarily used when Firestore returns a
+  /// [List]`<`[dynamic]`>`, to extract the coordinates for further use.
+  List<LatLng> toLatLngList() {
+    List<LatLng> newLatLngList = [];
+    forEach((coordinate) {
+      if (coordinate.runtimeType == GeoPoint) {
+        newLatLngList.add(LatLng(coordinate.latitude, coordinate.longitude));
+      }
+    });
+    return newLatLngList;
   }
 }

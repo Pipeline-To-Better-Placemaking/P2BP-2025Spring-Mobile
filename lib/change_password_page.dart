@@ -125,6 +125,7 @@ class _ChangePasswordFormState extends State<ChangePasswordForm> {
         isCurrentPassValid) {
       try {
         await _currentUser?.updatePassword(newPass);
+        if (!mounted) return;
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(content: Text('Password changed successfully.')),
         );

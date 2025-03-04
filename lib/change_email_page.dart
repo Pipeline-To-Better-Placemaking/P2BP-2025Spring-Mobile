@@ -80,6 +80,7 @@ class _ChangeEmailFormState extends State<ChangeEmailForm> {
           );
         });
       } catch (e) {
+        if (!mounted) return;
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(content: Text('Error changing email: $e')),
         );

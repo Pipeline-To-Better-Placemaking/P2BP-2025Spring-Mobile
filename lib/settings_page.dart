@@ -361,6 +361,7 @@ class _ProfileIconEditStackState extends State<ProfileIconEditStack> {
       }
       return result;
     } catch (e) {
+      if (!mounted) return result;
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text(

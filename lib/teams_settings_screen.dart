@@ -8,7 +8,7 @@ class TeamSettingsScreen extends StatelessWidget {
     return Scaffold(
       body: Stack(
         children: [
-          // Graident background
+          // Gradient background
           Container(
             decoration: BoxDecoration(
               gradient: LinearGradient(
@@ -345,7 +345,7 @@ class TeamSettingsScreen extends StatelessWidget {
                             }, // Replace with project title
                           ),
                           Divider(
-                            color: Colors.white.withOpacity(0.3),
+                            color: Colors.white.withValues(alpha: 0.3),
                             thickness: 1,
                             indent: 16,
                             endIndent: 16,

@@ -166,7 +166,7 @@ class _LoginFormState extends State<LoginForm> {
       if (user != null && !user.emailVerified) {
         // Log the user out immediately
         await FirebaseAuth.instance.signOut();
-
+        if (!mounted) return;
         ScaffoldMessenger.of(context).clearSnackBars();
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
@@ -212,6 +212,7 @@ class _LoginFormState extends State<LoginForm> {
         });
 
         // Successfully logged in, navigate to the home screen
+        if (!mounted) return;
         ScaffoldMessenger.of(context).clearSnackBars();
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(content: Text('Welcome, $_fullName!')),
@@ -225,6 +226,7 @@ class _LoginFormState extends State<LoginForm> {
         );
       } else {
         // Handle case where user data does not exist in Firestore (shouldn't happen if user data is properly saved)
+        if (!mounted) return;
         ScaffoldMessenger.of(context).clearSnackBars();
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(content: Text('User data not found in Firestore')),
