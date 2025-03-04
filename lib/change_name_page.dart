@@ -70,6 +70,7 @@ class _ChangeNameFormState extends State<ChangeNameForm> {
         });
       }
     } catch (e) {
+      if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text(
@@ -94,6 +95,7 @@ class _ChangeNameFormState extends State<ChangeNameForm> {
         // Refresh current name being displayed
         _getUserFullName();
       } catch (e) {
+        if (!mounted) return;
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(content: Text('Error changing name: $e')),
         );

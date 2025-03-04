@@ -1,12 +1,10 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:firebase_storage/firebase_storage.dart';
 import 'package:flutter/material.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:p2bp_2025spring_mobile/theme.dart';
 import 'package:p2bp_2025spring_mobile/widgets.dart';
 import 'project_details_page.dart';
 import 'db_schema_classes.dart';
-import 'firestore_functions.dart';
 import 'google_maps_functions.dart';
 import 'package:file_selector/file_selector.dart';
 
@@ -40,7 +38,7 @@ class _SectionCutterState extends State<SectionCutter> {
   String _directions =
       "Go to designated section. Then upload the section drawing here.";
   XFile? sectionCutterFile;
-  double _bottomSheetHeight = 300;
+  final double _bottomSheetHeight = 300;
   late DocumentReference teamRef;
   late GoogleMapController mapController;
   LatLng _location = defaultLocation; // Default location
@@ -66,6 +64,7 @@ class _SectionCutterState extends State<SectionCutter> {
       // Take some lattitude away to center considering bottom sheet.
       _location = LatLng(_location.latitude * .999999, _location.longitude);
       // TODO: dynamic zooming
+      // get test polyline
     });
   }
 
@@ -324,6 +323,16 @@ class _SectionCutterState extends State<SectionCutter> {
                       child: Row(
                         spacing: 10,
                         children: <Widget>[
+                          EditButton(
+                            text: 'Back',
+                            foregroundColor: Colors.black,
+                            backgroundColor: Colors.white,
+                            onPressed: _isLoadingUpload
+                                ? null
+                                : () => Navigator.pop(context, 'Back'),
+                            iconAlignment: IconAlignment.start,
+                            icon: Icon(Icons.chevron_left, color: Colors.black),
+                          ),
                           Flexible(
                             flex: 1,
                             child: Align(

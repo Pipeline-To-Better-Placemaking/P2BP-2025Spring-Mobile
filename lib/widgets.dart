@@ -77,18 +77,20 @@ class EditButton extends StatelessWidget {
   final String text;
   final Color foregroundColor;
   final Color backgroundColor;
-  final Icon icon;
+  final Icon? icon;
   final VoidCallback? onPressed;
   final Color iconColor;
+  final IconAlignment iconAlignment;
 
   const EditButton({
     super.key,
     required this.text,
     required this.foregroundColor,
     required this.backgroundColor,
-    required this.icon,
     required this.onPressed,
+    this.icon,
     this.iconColor = Colors.white,
+    this.iconAlignment = IconAlignment.end,
   });
 
   @override
@@ -107,7 +109,7 @@ class EditButton extends StatelessWidget {
       onPressed: onPressed,
       label: Text(text),
       icon: icon,
-      iconAlignment: IconAlignment.end,
+      iconAlignment: iconAlignment,
     );
   }
 }

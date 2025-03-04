@@ -4,9 +4,12 @@ import 'package:flutter/material.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 
-// Conversion used for length and area to convert from meters to feet.
-// Make sure to multiply twice (or square) for use in area,
+/// Conversion used for length and area to convert from meters to feet.
+/// Make sure to multiply twice (or square) for use in area,
 const double feetPerMeter = 3.280839895;
+
+/// Radius of the Earth in feet.
+const double earthRadius = 20925646.3254;
 
 // Default position (UCF) if location is denied.
 const LatLng defaultLocation = LatLng(28.6024, -81.2001);

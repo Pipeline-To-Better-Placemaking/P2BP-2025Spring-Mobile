@@ -1,4 +1,3 @@
-import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:p2bp_2025spring_mobile/project_map_creation.dart';
@@ -20,7 +19,6 @@ class CreateProjectAndTeamsPage extends StatefulWidget {
       _CreateProjectAndTeamsPageState();
 }
 
-final FirebaseFirestore _firestore = FirebaseFirestore.instance;
 User? loggedInUser = FirebaseAuth.instance.currentUser;
 
 class _CreateProjectAndTeamsPageState extends State<CreateProjectAndTeamsPage> {
@@ -219,6 +217,7 @@ class _CreateProjectWidgetState extends State<CreateProjectWidget> {
                     onPressed: () async {
                       if (await getCurrentTeam() == null) {
                         // TODO: Display error for creating project before team
+                        if (!context.mounted) return;
                         ScaffoldMessenger.of(context).showSnackBar(
                           const SnackBar(
                               content: Text(
@@ -228,6 +227,7 @@ class _CreateProjectWidgetState extends State<CreateProjectWidget> {
                         Project partialProject = Project.partialProject(
                             title: projectTitle,
                             description: projectDescription);
+                        if (!context.mounted) return;
                         Navigator.push(
                             context,
                             MaterialPageRoute(
@@ -487,6 +487,7 @@ class _CreateTeamWidgetState extends State<CreateTeamWidget> {
                         );
                         await saveTeam(
                             membersList: invitedMembers, teamName: teamName);
+                        if (!context.mounted) return;
                         Navigator.pushReplacement(
                           context,
                           MaterialPageRoute(
