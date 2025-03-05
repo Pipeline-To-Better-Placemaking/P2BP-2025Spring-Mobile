@@ -1,12 +1,14 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
+import 'package:p2bp_2025spring_mobile/firestore_functions.dart';
 import 'package:p2bp_2025spring_mobile/project_details_page.dart';
 import 'package:p2bp_2025spring_mobile/theme.dart';
 import 'package:p2bp_2025spring_mobile/widgets.dart';
 import 'db_schema_classes.dart';
 import 'google_maps_functions.dart';
 import 'home_screen.dart';
+import 'package:maps_toolkit/maps_toolkit.dart' as mp;
 
 class NaturePrevalence extends StatefulWidget {
   final Project activeProject;
@@ -27,6 +29,7 @@ class _NaturePrevalenceState extends State<NaturePrevalence> {
   bool _polygonMode = false;
   bool _pointMode = false;
   bool _outsidePoint = false;
+  List<mp.LatLng> _projectArea = [];
   String _directions = "Choose a category.";
   double _bottomSheetHeight = 300;
   late DocumentReference teamRef;
@@ -36,7 +39,6 @@ class _NaturePrevalenceState extends State<NaturePrevalence> {
   Set<Polygon> _polygons = {}; // Set of polygons
   Set<Marker> _markers = {}; // Set of markers for points
   Set<Marker> _polygonMarkers = {}; // Set of markers for polygon creation
-
   MapType _currentMapType = MapType.satellite; // Default map type
 
   NatureData natureData = NatureData();
@@ -71,6 +73,7 @@ class _NaturePrevalenceState extends State<NaturePrevalence> {
     _vegetationType = null;
     _waterBodyType = null;
     _otherType = null;
+    _directions = 'Choose a category. Or, click finish to submit.';
   }
 
   String? _getCurrentTypeName() {
@@ -95,6 +98,7 @@ class _NaturePrevalenceState extends State<NaturePrevalence> {
       _location = getPolygonCentroid(_polygons.first);
       // Take some latitude away to center considering bottom sheet.
       _location = LatLng(_location.latitude * .999999, _location.longitude);
+      _projectArea = _polygons.first.toMPLatLngList();
       // TODO: dynamic zooming
       _isLoading = false;
     });
@@ -175,6 +179,8 @@ class _NaturePrevalenceState extends State<NaturePrevalence> {
                                 _natureType = NatureType.waterBody;
                                 _waterBodyType = WaterBodyType.ocean;
                                 _polygonMode = true;
+                                _directions =
+                                    'Place points to create an outline, then click confirm shape to build the polygon.';
                               });
                               Navigator.pop(context);
                             },
@@ -196,6 +202,8 @@ class _NaturePrevalenceState extends State<NaturePrevalence> {
                                 _natureType = NatureType.waterBody;
                                 _waterBodyType = WaterBodyType.lake;
                                 _polygonMode = true;
+                                _directions =
+                                    'Place points to create an outline, then click confirm shape to build the polygon.';
                               });
                               Navigator.pop(context);
                             },
@@ -217,6 +225,8 @@ class _NaturePrevalenceState extends State<NaturePrevalence> {
                                 _natureType = NatureType.waterBody;
                                 _waterBodyType = WaterBodyType.river;
                                 _polygonMode = true;
+                                _directions =
+                                    'Place points to create an outline, then click confirm shape to build the polygon.';
                               });
                               Navigator.pop(context);
                             },
@@ -244,6 +254,8 @@ class _NaturePrevalenceState extends State<NaturePrevalence> {
                                 _natureType = NatureType.waterBody;
                                 _waterBodyType = WaterBodyType.swamp;
                                 _polygonMode = true;
+                                _directions =
+                                    'Place points to create an outline, then click confirm shape to build the polygon.';
                               });
                               Navigator.pop(context);
                             },
@@ -367,6 +379,8 @@ class _NaturePrevalenceState extends State<NaturePrevalence> {
                                 _natureType = NatureType.vegetation;
                                 _vegetationType = VegetationType.native;
                                 _polygonMode = true;
+                                _directions =
+                                    'Place points to create an outline, then click confirm shape to build the polygon.';
                               });
                               Navigator.pop(context);
                             },
@@ -388,6 +402,8 @@ class _NaturePrevalenceState extends State<NaturePrevalence> {
                                 _natureType = NatureType.vegetation;
                                 _vegetationType = VegetationType.design;
                                 _polygonMode = true;
+                                _directions =
+                                    'Place points to create an outline, then click confirm shape to build the polygon.';
                               });
                               Navigator.pop(context);
                             },
@@ -409,6 +425,8 @@ class _NaturePrevalenceState extends State<NaturePrevalence> {
                                 _natureType = NatureType.vegetation;
                                 _vegetationType = VegetationType.openField;
                                 _polygonMode = true;
+                                _directions =
+                                    'Place points to create an outline, then click confirm shape to build the polygon.';
                               });
 
                               Navigator.pop(context);
@@ -515,6 +533,8 @@ class _NaturePrevalenceState extends State<NaturePrevalence> {
                                 _natureType = NatureType.animal;
                                 _animalType = AnimalType.cat;
                                 _pointMode = true;
+                                _directions =
+                                    'Place a point where you see the ${_animalType?.name}.';
                               });
                               Navigator.pop(context);
                             },
@@ -537,6 +557,8 @@ class _NaturePrevalenceState extends State<NaturePrevalence> {
                                 _natureType = NatureType.animal;
                                 _animalType = AnimalType.dog;
                                 _pointMode = true;
+                                _directions =
+                                    'Place a point where you see the ${_animalType?.name}.';
                               });
                               Navigator.pop(context);
                             },
@@ -572,6 +594,8 @@ class _NaturePrevalenceState extends State<NaturePrevalence> {
                                 _natureType = NatureType.animal;
                                 _animalType = AnimalType.squirrel;
                                 _pointMode = true;
+                                _directions =
+                                    'Place a point where you see the ${_animalType?.name}.';
                               });
                               Navigator.pop(context);
                             },
@@ -593,6 +617,8 @@ class _NaturePrevalenceState extends State<NaturePrevalence> {
                                 _natureType = NatureType.animal;
                                 _animalType = AnimalType.bird;
                                 _pointMode = true;
+                                _directions =
+                                    'Place a point where you see the ${_animalType?.name}.';
                               });
 
                               Navigator.pop(context);
@@ -615,6 +641,8 @@ class _NaturePrevalenceState extends State<NaturePrevalence> {
                                 _natureType = NatureType.animal;
                                 _animalType = AnimalType.rabbit;
                                 _pointMode = true;
+                                _directions =
+                                    'Place a point where you see the ${_animalType?.name}.';
                               });
                               Navigator.pop(context);
                             },
@@ -641,6 +669,8 @@ class _NaturePrevalenceState extends State<NaturePrevalence> {
                                 _natureType = NatureType.animal;
                                 _animalType = AnimalType.turtle;
                                 _pointMode = true;
+                                _directions =
+                                    'Place a point where you see the ${_animalType?.name}.';
                               });
                               Navigator.pop(context);
                             },
@@ -662,6 +692,8 @@ class _NaturePrevalenceState extends State<NaturePrevalence> {
                                 _natureType = NatureType.animal;
                                 _animalType = AnimalType.duck;
                                 _pointMode = true;
+                                _directions =
+                                    'Place a point where you see the ${_animalType?.name}.';
                               });
                               Navigator.pop(context);
                             },
@@ -706,6 +738,8 @@ class _NaturePrevalenceState extends State<NaturePrevalence> {
                                 _natureType = NatureType.animal;
                                 _animalType = AnimalType.other;
                                 _pointMode = true;
+                                _directions =
+                                    'Place a point where you see the animal.';
                               });
                               Navigator.pop(context);
                             },
@@ -768,9 +802,18 @@ class _NaturePrevalenceState extends State<NaturePrevalence> {
     );
   }
 
-  void _togglePoint(LatLng point) {
+  Future<void> _togglePoint(LatLng point) async {
     try {
-      // if (mp.PolygonUtil.containsLocation(mp.LatLng(point.latitude, point.longitude), _polygons.first.points, true))
+      if (!mp.PolygonUtil.containsLocation(
+          mp.LatLng(point.latitude, point.longitude), _projectArea, true)) {
+        setState(() async {
+          _outsidePoint = true;
+          await Future.delayed(const Duration(seconds: 2));
+          setState(() {
+            _outsidePoint = false;
+          });
+        });
+      }
       if (_pointMode) _pointTap(point);
       if (_polygonMode) _polygonTap(point);
     } catch (e, stacktrace) {
@@ -831,6 +874,7 @@ class _NaturePrevalenceState extends State<NaturePrevalence> {
             },
           ),
         );
+        _directions = 'Choose a category. Or, click finish to submit.';
       });
       animalData.add(Animal(
           animalType: _animalType!, point: point, otherType: _otherType));
@@ -864,6 +908,7 @@ class _NaturePrevalenceState extends State<NaturePrevalence> {
       setState(() {
         _polygonMarkers.clear();
         _polygonMode = false;
+        _clearTypes();
       });
     } catch (e, stacktrace) {
       print('Exception in _finalize_polygon(): $e');
@@ -1070,7 +1115,13 @@ class _NaturePrevalenceState extends State<NaturePrevalence> {
                                           icon: const Icon(Icons.check),
                                           iconColor: Colors.green,
                                           onPressed: (_polygonMode)
-                                              ? _finalizePolygon
+                                              ? () {
+                                                  _finalizePolygon();
+                                                  setState(() {
+                                                    _directions =
+                                                        'Choose a category. Or, click finish if done.';
+                                                  });
+                                                }
                                               : null,
                                         ),
                                       ),
