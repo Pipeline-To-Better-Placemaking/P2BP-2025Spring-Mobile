@@ -806,16 +806,19 @@ class _NaturePrevalenceState extends State<NaturePrevalence> {
     try {
       if (!mp.PolygonUtil.containsLocation(
           mp.LatLng(point.latitude, point.longitude), _projectArea, true)) {
-        setState(() async {
+        setState(() {
           _outsidePoint = true;
-          await Future.delayed(const Duration(seconds: 2));
-          setState(() {
-            _outsidePoint = false;
-          });
         });
       }
       if (_pointMode) _pointTap(point);
       if (_polygonMode) _polygonTap(point);
+      if (_outsidePoint) {
+        // TODO: fix delay. delay will overlap with consecutive taps. this means taps do not necessarily refresh the timer and will end prematurely
+        await Future.delayed(const Duration(seconds: 2));
+        setState(() {
+          _outsidePoint = false;
+        });
+      }
     } catch (e, stacktrace) {
       print('Error in nature_prevalence_test.dart, _togglePoint(): $e');
       print('Stacktrace: $stacktrace');

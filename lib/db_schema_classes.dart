@@ -1359,22 +1359,22 @@ class NaturePrevalenceTest extends Test<NatureData> {
           // If contains key corresponding to designation (domestic,
           // wild, other) and animal type.
           if (data[NatureType.animal.name]
-                  .containsKey(animalToDesignation[animal]?.name) &&
-              data[NatureType.animal.name][animalToDesignation[animal]?.name]
-                  .containsKey(animal.name)) {
+              .containsKey(animalToDesignation[animal]?.name)) {
             if (animal == AnimalType.other) {
               // For every 'other' type of animal
               for (Map map in data[NatureType.animal.name]
-                  [animalToDesignation[animal]?.name][animal.name]) {
+                  [animalToDesignation[animal]?.name]) {
                 animalList.add(
                   Animal(
                     animalType: animal,
-                    point: map['point'],
+                    point: (map['point'] as GeoPoint).toLatLng(),
                     otherType: map['name'],
                   ),
                 );
               }
-            } else {
+            } else if (data[NatureType.animal.name]
+                    [animalToDesignation[animal]?.name]
+                .containsKey(animal.name)) {
               // For every specified (non-other) type of animal
               for (GeoPoint coordinate in data[NatureType.animal.name]
                   [animalToDesignation[animal]?.name][animal.name]) {
