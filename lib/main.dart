@@ -25,6 +25,7 @@ void registerTestTypes() {
   LightingProfileTest.register();
   SectionCutterTest.register();
   IdentifyingAccessTest.register();
+  NaturePrevalenceTest.register();
 }
 
 void main() async {
