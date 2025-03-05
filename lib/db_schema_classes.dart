@@ -482,9 +482,9 @@ class LightingProfileTest extends Test<LightToLatLngMap> {
 }
 
 abstract class DataPoint {
-  LatLng location;
+  LatLng? location;
 
-  DataPoint({required this.location});
+  DataPoint({this.location});
 }
 
 class BehaviorPoint extends DataPoint {
@@ -507,6 +507,25 @@ class BehaviorPoint extends DataPoint {
     required this.other,
   });
 
+  BehaviorPoint.noLocation({
+    required this.boisterousVoice,
+    required this.dangerousWildlife,
+    required this.livingInPublic,
+    required this.panhandling,
+    required this.recklessBehavior,
+    required this.unsafeEquipment,
+    required this.other,
+  });
+
+  BehaviorPoint.empty()
+      : boisterousVoice = false,
+        dangerousWildlife = false,
+        livingInPublic = false,
+        panhandling = false,
+        recklessBehavior = false,
+        unsafeEquipment = false,
+        other = '';
+
   static BehaviorPoint fromJson(Map<String, dynamic> point) {
     return BehaviorPoint(
       location: (point['location'] as GeoPoint).toLatLng(),
@@ -520,9 +539,9 @@ class BehaviorPoint extends DataPoint {
     );
   }
 
-  Map<String, Object> toJson() {
+  Map<String, Object?> toJson() {
     return {
-      'location': location.toGeoPoint(),
+      'location': location?.toGeoPoint(),
       'boisterousVoice': boisterousVoice,
       'dangerousWildlife': dangerousWildlife,
       'livingInPublic': livingInPublic,
@@ -554,6 +573,25 @@ class MaintenancePoint extends DataPoint {
     required this.other,
   });
 
+  MaintenancePoint.noLocation({
+    required this.brokenEnvironment,
+    required this.dirtyOrUnmaintained,
+    required this.littering,
+    required this.overfilledTrash,
+    required this.unkeptLandscape,
+    required this.unwantedGraffiti,
+    required this.other,
+  });
+
+  MaintenancePoint.empty()
+      : brokenEnvironment = false,
+        dirtyOrUnmaintained = false,
+        littering = false,
+        overfilledTrash = false,
+        unkeptLandscape = false,
+        unwantedGraffiti = false,
+        other = '';
+
   static MaintenancePoint fromJson(Map<String, dynamic> point) {
     return MaintenancePoint(
       location: (point['location'] as GeoPoint).toLatLng(),
@@ -567,9 +605,9 @@ class MaintenancePoint extends DataPoint {
     );
   }
 
-  Map<String, Object> toJson() {
+  Map<String, Object?> toJson() {
     return {
-      'location': location.toGeoPoint(),
+      'location': location?.toGeoPoint(),
       'brokenEnvironment': brokenEnvironment,
       'dirtyOrUnmaintained': dirtyOrUnmaintained,
       'littering': littering,

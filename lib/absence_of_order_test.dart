@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:p2bp_2025spring_mobile/theme.dart';
+import 'package:p2bp_2025spring_mobile/widgets.dart';
 import 'google_maps_functions.dart';
 import 'db_schema_classes.dart';
 
@@ -35,9 +36,11 @@ class _AbsenceOfOrderTestPageState extends State<AbsenceOfOrderTestPage> {
 
   Set<LatLng> _allPoints = {};
   AbsenceOfOrderData _newData = AbsenceOfOrderData();
+  BehaviorPoint _tempBehavior = BehaviorPoint.empty();
+  MaintenancePoint _tempMaintenance = MaintenancePoint.empty();
 
   ButtonStyle _testButtonStyle = FilledButton.styleFrom();
-  static const double _bottomSheetHeight = 250;
+  static const double _bottomSheetHeight = 300;
 
   @override
   void initState() {
@@ -67,7 +70,7 @@ class _AbsenceOfOrderTestPageState extends State<AbsenceOfOrderTestPage> {
   void _moveToLocation() {
     mapController.animateCamera(
       CameraUpdate.newCameraPosition(
-        CameraPosition(target: _location, zoom: 18.0),
+        CameraPosition(target: _location, zoom: 17.0),
       ),
     );
   }
@@ -127,6 +130,191 @@ class _AbsenceOfOrderTestPageState extends State<AbsenceOfOrderTestPage> {
       textStyle: TextStyle(fontSize: 14),
     );
   }
+
+  void showBehaviorModal(BuildContext context) {
+    _tempBehavior = BehaviorPoint.empty();
+    showModalBottomSheet<void>(
+      context: context,
+      builder: (context) {
+        return SingleChildScrollView(
+            child: Padding(
+          padding: MediaQuery.of(context).viewInsets,
+          child: Container(
+            // Container decoration- rounded corners and gradient
+            decoration: BoxDecoration(
+              gradient: defaultGrad,
+              borderRadius: const BorderRadius.only(
+                topLeft: Radius.circular(24.0),
+                topRight: Radius.circular(24.0),
+              ),
+            ),
+            child: Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 10),
+              child: Column(
+                children: <Widget>[
+                  const BarIndicator(),
+                  Center(
+                    child: Text(
+                      'Description of Behavior Misconduct',
+                      style: TextStyle(
+                        fontSize: 20,
+                        fontWeight: FontWeight.bold,
+                        color: placeYellow,
+                      ),
+                    ),
+                  ),
+                  Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 25),
+                    child: Center(
+                      child: Text(
+                        'Select all of the following that describes the misconduct.',
+                        style: TextStyle(
+                          fontSize: 16,
+                          fontStyle: FontStyle.italic,
+                          color: Colors.grey[400],
+                        ),
+                      ),
+                    ),
+                  ),
+                  SizedBox(height: 10),
+                  Row(
+                    spacing: 20,
+                    children: <Widget>[
+                      Expanded(
+                        flex: 1,
+                        child: FilledButton(
+                          style: FilledButton.styleFrom(
+                            backgroundColor: _tempBehavior.panhandling
+                                ? Colors.blue
+                                : Colors.white,
+                            foregroundColor: Colors.black,
+                          ),
+                          onPressed: () {
+                            setState(() {
+                              _tempBehavior.panhandling =
+                                  !(_tempBehavior.panhandling);
+                              print(_tempBehavior.panhandling);
+                            });
+                          },
+                          child: Text('Panhandling'),
+                        ),
+                      ),
+                      Expanded(
+                        flex: 1,
+                        child: FilledButton(
+                          style: FilledButton.styleFrom(
+                            backgroundColor: _tempBehavior.boisterousVoice
+                                ? Colors.blue
+                                : Colors.white,
+                            foregroundColor: Colors.black,
+                          ),
+                          onPressed: () {
+                            setState(() {
+                              _tempBehavior.boisterousVoice =
+                                  !(_tempBehavior.boisterousVoice);
+                              print(_tempBehavior.boisterousVoice);
+                            });
+                          },
+                          child: Text('Boisterous Voice'),
+                        ),
+                      ),
+                    ],
+                  ),
+                  SizedBox(height: 5),
+                  Row(
+                    spacing: 20,
+                    children: <Widget>[
+                      Expanded(
+                        flex: 1,
+                        child: FilledButton(
+                          style: FilledButton.styleFrom(
+                            backgroundColor: _tempBehavior.panhandling
+                                ? Colors.blue
+                                : Colors.white,
+                            foregroundColor: Colors.black,
+                          ),
+                          onPressed: () {
+                            Navigator.pop(context);
+                          },
+                          child: Text('Dangerous Wildlife'),
+                        ),
+                      ),
+                      Expanded(
+                        flex: 1,
+                        child: FilledButton(
+                          style: FilledButton.styleFrom(
+                            backgroundColor: _tempBehavior.panhandling
+                                ? Colors.blue
+                                : Colors.white,
+                            foregroundColor: Colors.black,
+                          ),
+                          onPressed: () {
+                            Navigator.pop(context);
+                          },
+                          child: Text('Reckless Behavior'),
+                        ),
+                      ),
+                    ],
+                  ),
+                  SizedBox(height: 5),
+                  Row(
+                    spacing: 20,
+                    children: <Widget>[
+                      Expanded(
+                        flex: 1,
+                        child: FilledButton(
+                          style: FilledButton.styleFrom(
+                            backgroundColor: _tempBehavior.panhandling
+                                ? Colors.blue
+                                : Colors.white,
+                            foregroundColor: Colors.black,
+                          ),
+                          onPressed: () {
+                            Navigator.pop(context);
+                          },
+                          child: Text('Unsafe Equipment'),
+                        ),
+                      ),
+                      Expanded(
+                        flex: 1,
+                        child: FilledButton(
+                          style: FilledButton.styleFrom(
+                            backgroundColor: _tempBehavior.panhandling
+                                ? Colors.blue
+                                : Colors.white,
+                            foregroundColor: Colors.black,
+                          ),
+                          onPressed: () {
+                            Navigator.pop(context);
+                          },
+                          child: Text('Living in Public'),
+                        ),
+                      ),
+                    ],
+                  ),
+                  SizedBox(height: 5),
+                  Align(
+                    alignment: Alignment.centerLeft,
+                    child: Text(
+                      'Other',
+                      style: TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.bold,
+                        color: Colors.white,
+                      ),
+                    ),
+                  ),
+                  SizedBox(height: 50),
+                ],
+              ),
+            ),
+          ),
+        ));
+      },
+    );
+  }
+
+  void showMaintenanceModal(BuildContext context) {}
 
   @override
   Widget build(BuildContext context) {
@@ -193,7 +381,6 @@ class _AbsenceOfOrderTestPageState extends State<AbsenceOfOrderTestPage> {
                   ],
                 ),
                 child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
                   children: <Widget>[
                     Center(
                       child: Text(
@@ -201,7 +388,7 @@ class _AbsenceOfOrderTestPageState extends State<AbsenceOfOrderTestPage> {
                         style: TextStyle(
                           fontSize: 20,
                           fontWeight: FontWeight.bold,
-                          color: Colors.yellow[600],
+                          color: placeYellow,
                         ),
                       ),
                     ),
@@ -212,8 +399,10 @@ class _AbsenceOfOrderTestPageState extends State<AbsenceOfOrderTestPage> {
                             ? 'Select a type of misconduct.'
                             : 'Drop a pin where the misconduct is.',
                         style: TextStyle(
-                          fontSize: 24,
+                          fontSize: 22,
                           color: Colors.white,
+                          decoration: TextDecoration.underline,
+                          decorationColor: Colors.white,
                         ),
                       ),
                     ),
@@ -221,22 +410,22 @@ class _AbsenceOfOrderTestPageState extends State<AbsenceOfOrderTestPage> {
                     Text(
                       'Type of Misconduct',
                       style: TextStyle(
-                        fontSize: 16,
+                        fontSize: 18,
                         fontWeight: FontWeight.bold,
                         color: Colors.white,
                       ),
                     ),
                     SizedBox(height: 5),
                     Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                       spacing: 10,
                       children: <Widget>[
                         Flexible(
                           child: FilledButton(
                             style: _testButtonStyle,
-                            onPressed: (_isTypeSelected)
-                                ? null
-                                : () =>
-                                    _setMisconductType(MisconductType.behavior),
+                            onPressed: () {
+                              showBehaviorModal(context);
+                            },
                             child: Text('Behavior'),
                           ),
                         ),
@@ -245,8 +434,10 @@ class _AbsenceOfOrderTestPageState extends State<AbsenceOfOrderTestPage> {
                             style: _testButtonStyle,
                             onPressed: (_isTypeSelected)
                                 ? null
-                                : () => _setMisconductType(
-                                    MisconductType.maintenance),
+                                : () {
+                                    _setMisconductType(
+                                        MisconductType.maintenance);
+                                  },
                             child: Text('Maintenance'),
                           ),
                         ),
