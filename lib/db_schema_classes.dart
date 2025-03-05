@@ -1048,17 +1048,11 @@ class PeopleInPlaceTest extends Test<List<LoggedDataPoint>> {
       );
     };
 
-    Test._pageBuilders[PeopleInPlaceTest] = (project, test) => PeopleInPlace(
-          polygonPoints: (project.polygonPoints as List).toLatLngList(),
-          // Get the project's polygon using getProjectPolygon()
-          polygon: getProjectPolygon(project.polygonPoints),
-          // Build a DocumentReference for this test.
-          testRef: _firestore
-              .collection('projects')
-              .doc(project.projectID)
-              .collection(PeopleInPlaceTest.collectionIDStatic)
-              .doc(test.testID),
-        );
+    Test._pageBuilders[PeopleInPlaceTest] =
+        (project, test) => PeopleInPlaceTestPage(
+              activeProject: project,
+              activeTest: test as PeopleInPlaceTest,
+            );
 
     Test._saveToFirestoreFunctions[PeopleInPlaceTest] = (test) async {
       await _firestore.collection(test.collectionID).doc(test.testID).set({
@@ -1151,13 +1145,11 @@ class PeopleInMotionTest extends Test<List<TracedRoute>> {
     };
 
     // Register the test's UI page
-    Test._pageBuilders[PeopleInMotionTest] = (project, test) => PeopleInMotion(
-          activeProject: project,
-          activeTest: test as PeopleInMotionTest,
-          polygonPoints: [],
-          polygon: <Polygon>{},
-          testRef: test.projectRef!,
-        );
+    Test._pageBuilders[PeopleInMotionTest] =
+        (project, test) => PeopleInMotionTestPage(
+              activeProject: project,
+              activeTest: test as PeopleInMotionTest,
+            );
 
     // Register the save function
     Test._saveToFirestoreFunctions[PeopleInMotionTest] = (test) async {

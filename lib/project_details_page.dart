@@ -345,6 +345,8 @@ const Map<Type, String> _testInitialsMap = {
   LightingProfileTest: 'LP',
   SectionCutterTest: 'SC',
   IdentifyingAccessTest: 'IA',
+  PeopleInPlaceTest: 'PP',
+  PeopleInMotionTest: 'PM',
 };
 
 class TestCard extends StatelessWidget {

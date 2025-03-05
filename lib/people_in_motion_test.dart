@@ -50,27 +50,21 @@ class TracedRoute {
   }
 }
 
-class PeopleInMotion extends StatefulWidget {
-  final List<GeoPoint> polygonPoints;
-  final Set<Polygon> polygon;
-  final DocumentReference testRef;
+class PeopleInMotionTestPage extends StatefulWidget {
   final Project activeProject;
-  final Test activeTest;
+  final PeopleInMotionTest activeTest;
 
-  const PeopleInMotion({
-    Key? key,
-    required this.polygonPoints,
-    required this.polygon,
-    required this.testRef,
+  const PeopleInMotionTestPage({
+    super.key,
     required this.activeProject,
     required this.activeTest,
-  }) : super(key: key);
+  }) : super();
 
   @override
-  State<PeopleInMotion> createState() => _PeopleInMotionTestState();
+  State<PeopleInMotionTestPage> createState() => _PeopleInMotionTestPageState();
 }
 
-class _PeopleInMotionTestState extends State<PeopleInMotion> {
+class _PeopleInMotionTestPageState extends State<PeopleInMotionTestPage> {
   final GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey<ScaffoldState>();
   late GoogleMapController mapController;
   LatLng _currentLocation = defaultLocation; // Default location
@@ -80,6 +74,7 @@ class _PeopleInMotionTestState extends State<PeopleInMotion> {
   bool _isTestRunning = false;
   Timer? _timer;
   Set<Marker> _markers = {}; // Set of markers for points
+  Set<Polygon> _polygons = {}; // Set of polygons
   MapType _currentMapType = MapType.normal; // Default map type
   bool _showErrorMessage = false;
   bool _isPointsMenuVisible = false;
@@ -115,13 +110,15 @@ class _PeopleInMotionTestState extends State<PeopleInMotion> {
 
   // Initialize project area using polygon data from ProjectDetails
   void initProjectArea() {
-    if (widget.polygonPoints.isNotEmpty) {
-      Set<Polygon> projectPolygon = getProjectPolygon(widget.polygonPoints);
-      if (projectPolygon.isNotEmpty) {
-        // Calculate the centroid of the first polygon to center the map
-        _currentLocation = getPolygonCentroid(projectPolygon.first);
+    setState(() {
+      if (widget.activeProject.polygonPoints.isNotEmpty) {
+        _polygons = getProjectPolygon(widget.activeProject.polygonPoints);
+        if (_polygons.isNotEmpty) {
+          // Calculate the centroid of the first polygon to center the map
+          _currentLocation = getPolygonCentroid(_polygons.first);
+        }
       }
-    }
+    });
   }
 
   @override
@@ -469,9 +466,9 @@ class _PeopleInMotionTestState extends State<PeopleInMotion> {
 
   void _onMapCreated(GoogleMapController controller) {
     mapController = controller;
-    if (widget.polygonPoints.isNotEmpty) {
+    if (widget.activeProject.polygonPoints.isNotEmpty) {
       WidgetsBinding.instance.addPostFrameCallback((_) {
-        final latLngPoints = widget.polygonPoints.toLatLngList();
+        final latLngPoints = widget.activeProject.polygonPoints.toLatLngList();
         final bounds = _getPolygonBounds(latLngPoints);
         mapController.animateCamera(CameraUpdate.newLatLngBounds(bounds, 50));
       });
@@ -556,7 +553,8 @@ class _PeopleInMotionTestState extends State<PeopleInMotion> {
   Future<void> _handleMapTap(LatLng point) async {
     _resetHintTimer();
     // If point is outside the project boundary, display error message
-    if (!_isPointInsidePolygon(point, widget.polygonPoints.toLatLngList())) {
+    if (!_isPointInsidePolygon(
+        point, widget.activeProject.polygonPoints.toLatLngList())) {
       setState(() {
         _showErrorMessage = true;
       });
@@ -795,7 +793,7 @@ class _PeopleInMotionTestState extends State<PeopleInMotion> {
               _confirmedRoutes.add(tracedRoute);
 
               saveTracedRoute(
-                testRef: widget.testRef,
+                test: widget.activeTest,
                 tracedRouteData: tracedRoute.toJson(),
               );
 
@@ -902,7 +900,7 @@ class _PeopleInMotionTestState extends State<PeopleInMotion> {
               zoom: 14.0,
             ),
             markers: _markers,
-            polygons: widget.polygon,
+            polygons: _polygons,
             polylines: allPolylines,
             onTap: _handleMapTap,
             mapType: _currentMapType,
@@ -928,7 +926,7 @@ class _PeopleInMotionTestState extends State<PeopleInMotion> {
                 ),
               ),
             ),
-          // Overlayed button for toggling map type.
+          // Overlaid button for toggling map type.
           Positioned(
             top: MediaQuery.of(context).padding.top + kToolbarHeight + 8.0,
             right: 20.0,
@@ -952,7 +950,7 @@ class _PeopleInMotionTestState extends State<PeopleInMotion> {
               ),
             ),
           ),
-          // Overlayed button for toggling instructions.
+          // Overlaid button for toggling instructions.
           if (!_isLoading)
             Positioned(
               top: MediaQuery.of(context).padding.top + kToolbarHeight + 70.0,
@@ -975,7 +973,7 @@ class _PeopleInMotionTestState extends State<PeopleInMotion> {
                 ),
               ),
             ),
-          // Overlayed button for toggling points menu.
+          // Overlaid button for toggling points menu.
           Positioned(
             top: MediaQuery.of(context).padding.top + kToolbarHeight + 132.0,
             right: 20.0,
@@ -1001,7 +999,7 @@ class _PeopleInMotionTestState extends State<PeopleInMotion> {
               ),
             ),
           ),
-          // Overlayed button for activating tracing mode.
+          // Overlaid button for activating tracing mode.
           Positioned(
             top: MediaQuery.of(context).padding.top + kToolbarHeight + 194.0,
             right: 20.0,

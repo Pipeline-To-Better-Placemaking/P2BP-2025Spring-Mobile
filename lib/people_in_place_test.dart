@@ -63,22 +63,21 @@ List<Map<String, dynamic>> loggedDataPointsToJson(
   return dataPoints.map((point) => point.toJson()).toList();
 }
 
-class PeopleInPlace extends StatefulWidget {
-  final List<LatLng> polygonPoints;
-  final Set<Polygon> polygon;
-  final DocumentReference testRef;
-  const PeopleInPlace({
+class PeopleInPlaceTestPage extends StatefulWidget {
+  final Project activeProject;
+  final PeopleInPlaceTest activeTest;
+
+  const PeopleInPlaceTestPage({
     super.key,
-    required this.polygonPoints,
-    required this.polygon,
-    required this.testRef,
+    required this.activeProject,
+    required this.activeTest,
   });
 
   @override
-  State<PeopleInPlace> createState() => _PeopleInPlaceTestState();
+  State<PeopleInPlaceTestPage> createState() => _PeopleInPlaceTestPageState();
 }
 
-class _PeopleInPlaceTestState extends State<PeopleInPlace> {
+class _PeopleInPlaceTestPageState extends State<PeopleInPlaceTestPage> {
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
   late GoogleMapController mapController;
   LatLng _currentLocation = defaultLocation; // Default location
@@ -89,6 +88,7 @@ class _PeopleInPlaceTestState extends State<PeopleInPlace> {
   int _remainingSeconds = 0;
   Timer? _timer;
   Set<Marker> _markers = {}; // Set of markers for points
+  Set<Polygon> _polygons = {}; // Set of polygons
   MapType _currentMapType = MapType.normal; // Default map type
   bool _showErrorMessage = false;
   bool _isPointsMenuVisible = false;
@@ -167,8 +167,8 @@ class _PeopleInPlaceTestState extends State<PeopleInPlace> {
 
     try {
       await _firestore
-          .collection(widget.testRef.parent.id)
-          .doc(widget.testRef.id)
+          .collection(widget.activeTest.collectionID)
+          .doc(widget.activeTest.testID)
           .update({
         'data': loggedDataPointsToJson(_loggedDataPoints),
         'isComplete': true,
@@ -233,14 +233,18 @@ class _PeopleInPlaceTestState extends State<PeopleInPlace> {
 
   void _onMapCreated(GoogleMapController controller) {
     mapController = controller;
-    if (widget.polygonPoints.isNotEmpty) {
-      WidgetsBinding.instance.addPostFrameCallback((_) {
-        final bounds = _getPolygonBounds(widget.polygonPoints);
-        mapController.animateCamera(CameraUpdate.newLatLngBounds(bounds, 50));
-      });
-    } else {
-      _moveToCurrentLocation(); // Ensure the map is centered on the current location
-    }
+    setState(() {
+      if (widget.activeProject.polygonPoints.isNotEmpty) {
+        _polygons = getProjectPolygon(widget.activeProject.polygonPoints);
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          final bounds = _getPolygonBounds(
+              widget.activeProject.polygonPoints.toLatLngList());
+          mapController.animateCamera(CameraUpdate.newLatLngBounds(bounds, 50));
+        });
+      } else {
+        _moveToCurrentLocation(); // Ensure the map is centered on the current location
+      }
+    });
   }
 
   Future<void> _checkAndFetchLocation() async {
@@ -320,7 +324,8 @@ class _PeopleInPlaceTestState extends State<PeopleInPlace> {
   Future<void> _handleMapTap(LatLng point) async {
     _resetHintTimer();
     // Check if tapped point is inside the polygon boundary.
-    bool inside = _isPointInsidePolygon(point, widget.polygonPoints);
+    bool inside = _isPointInsidePolygon(
+        point, widget.activeProject.polygonPoints.toLatLngList());
     if (!inside) {
       // If outside, show error message.
       setState(() {
@@ -610,7 +615,7 @@ class _PeopleInPlaceTestState extends State<PeopleInPlace> {
                 ),
               ),
             ),
-          )
+          ),
         ],
       ),
       body: Stack(
@@ -623,7 +628,7 @@ class _PeopleInPlaceTestState extends State<PeopleInPlace> {
               zoom: 14.0,
             ),
             markers: _markers,
-            polygons: widget.polygon,
+            polygons: _polygons,
             onTap: _handleMapTap,
             mapType: _currentMapType,
             myLocationButtonEnabled: false,
@@ -648,7 +653,7 @@ class _PeopleInPlaceTestState extends State<PeopleInPlace> {
                 ),
               ),
             ),
-          // Overlayed button for toggling map type.
+          // Overlaid button for toggling map type.
           Positioned(
             top: MediaQuery.of(context).padding.top + kToolbarHeight + 8.0,
             right: 20.0,
@@ -672,8 +677,7 @@ class _PeopleInPlaceTestState extends State<PeopleInPlace> {
               ),
             ),
           ),
-
-          // Overlayed button for toggling tooltip popup to appear on the screen.
+          // Overlaid button for toggling tooltip popup to appear on the screen.
           if (!_isLoading)
             Positioned(
               top: MediaQuery.of(context).padding.top + kToolbarHeight + 70.0,
@@ -696,8 +700,7 @@ class _PeopleInPlaceTestState extends State<PeopleInPlace> {
                 ),
               ),
             ),
-
-          // Overlayed button for toggling points menu.
+          // Overlaid button for toggling points menu.
           Positioned(
             top: MediaQuery.of(context).padding.top + kToolbarHeight + 132.0,
             right: 20.0,
@@ -722,7 +725,6 @@ class _PeopleInPlaceTestState extends State<PeopleInPlace> {
                   }),
             ),
           ),
-
           if (_isPointsMenuVisible)
             Positioned(
               bottom: 220.0,
