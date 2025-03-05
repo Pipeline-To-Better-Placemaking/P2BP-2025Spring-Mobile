@@ -25,6 +25,8 @@ void registerTestTypes() {
   LightingProfileTest.register();
   SectionCutterTest.register();
   IdentifyingAccessTest.register();
+  PeopleInPlaceTest.register();
+  PeopleInMotionTest.register();
 }
 
 void main() async {

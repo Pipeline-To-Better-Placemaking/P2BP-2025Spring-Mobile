@@ -6,6 +6,8 @@ import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:p2bp_2025spring_mobile/google_maps_functions.dart';
 import 'package:p2bp_2025spring_mobile/lighting_profile_test.dart';
 import 'package:p2bp_2025spring_mobile/section_cutter_test.dart';
+import 'package:p2bp_2025spring_mobile/people_in_place_test.dart';
+import 'package:p2bp_2025spring_mobile/people_in_motion_test.dart';
 import 'firestore_functions.dart';
 import 'package:flutter/material.dart';
 import 'package:firebase_storage/firebase_storage.dart';
@@ -980,5 +982,245 @@ class IdentifyingAccessTest extends Test<Map> {
       }
     }
     return output;
+  }
+}
+
+class PeopleInPlaceTest extends Test<List<LoggedDataPoint>> {
+  static const String collectionIDStatic = 'people_in_place_tests';
+
+  static List<LoggedDataPoint> newInitialDataDeepCopy() {
+    return [];
+  }
+
+  PeopleInPlaceTest._({
+    required super.title,
+    required super.testID,
+    required super.scheduledTime,
+    required super.projectRef,
+    required super.collectionID,
+    required super.data,
+    super.creationTime,
+    super.maxResearchers,
+    super.isComplete,
+  }) : super._();
+
+  static void register() {
+    Test._newTestConstructors[collectionIDStatic] = ({
+      required String title,
+      required String testID,
+      required Timestamp scheduledTime,
+      required DocumentReference projectRef,
+      required String collectionID,
+    }) =>
+        PeopleInPlaceTest._(
+          title: title,
+          testID: testID,
+          scheduledTime: scheduledTime,
+          projectRef: projectRef,
+          collectionID: collectionID,
+          data: newInitialDataDeepCopy(),
+        );
+
+    Test._recreateTestConstructors[collectionIDStatic] = (testDoc) {
+      List<dynamic> dataList = testDoc['data'] ?? [];
+
+      List<LoggedDataPoint> loggedDataPoints = dataList.map((item) {
+        return LoggedDataPoint(
+          location: LatLng(item['location']['lat'], item['location']['lng']),
+          age: item['age'] ?? '',
+          gender: item['gender'] ?? '',
+          activityType: item['activityType'] ?? '',
+          posture: item['posture'] ?? '',
+          timestamp: DateTime.parse(item['timestamp']),
+        );
+      }).toList();
+
+      return PeopleInPlaceTest._(
+        title: testDoc['title'],
+        testID: testDoc['id'],
+        scheduledTime: testDoc['scheduledTime'],
+        projectRef: testDoc['project'],
+        collectionID: testDoc.reference.parent.id,
+        data: loggedDataPoints,
+        creationTime: testDoc['creationTime'],
+        maxResearchers: testDoc['maxResearchers'],
+        isComplete: testDoc['isComplete'],
+      );
+    };
+
+    Test._pageBuilders[PeopleInPlaceTest] = (project, test) => PeopleInPlace(
+          polygonPoints: (project.polygonPoints as List).toLatLngList(),
+          // Get the project's polygon using getProjectPolygon()
+          polygon: getProjectPolygon(project.polygonPoints),
+          // Build a DocumentReference for this test.
+          testRef: _firestore
+              .collection('projects')
+              .doc(project.projectID)
+              .collection(PeopleInPlaceTest.collectionIDStatic)
+              .doc(test.testID),
+        );
+
+    Test._saveToFirestoreFunctions[PeopleInPlaceTest] = (test) async {
+      await _firestore.collection(test.collectionID).doc(test.testID).set({
+        'title': test.title,
+        'id': test.testID,
+        'scheduledTime': test.scheduledTime,
+        'project': test.projectRef,
+        'data': test.data.map((dp) => dp.toJson()).toList(),
+        'creationTime': test.creationTime,
+        'maxResearchers': test.maxResearchers,
+        'isComplete': test.isComplete,
+      }, SetOptions(merge: true));
+    };
+  }
+
+  @override
+  void submitData(List<LoggedDataPoint> data) async {
+    try {
+      List<Map<String, dynamic>> firestoreData =
+          data.map((dp) => dp.toJson()).toList();
+
+      await _firestore.collection(collectionIDStatic).doc(testID).update({
+        'data': firestoreData,
+        'isComplete': true,
+      });
+      this.data = data;
+      isComplete = true;
+      print('Success! In PeopleInPlaceTest.submitData.');
+    } catch (e, stacktrace) {
+      print("Exception in PeopleInPlaceTest.submitData(): $e");
+      print("Stacktrace: $stacktrace");
+    }
+  }
+}
+
+class PeopleInMotionTest extends Test<List<TracedRoute>> {
+  /// Returns a new instance of the initial data structure used for this test.
+  static List<TracedRoute> newInitialDataDeepCopy() {
+    return [];
+  }
+
+  /// Static constant definition of collection ID for this test type.
+  static const String collectionIDStatic = 'people_in_motion_tests';
+
+  /// Private constructor for PeopleInMotionTest.
+  PeopleInMotionTest._({
+    required super.title,
+    required super.testID,
+    required super.scheduledTime,
+    required super.projectRef,
+    required super.collectionID,
+    required super.data,
+    super.creationTime,
+    super.maxResearchers,
+    super.isComplete,
+  }) : super._();
+
+  /// Registers this test type in the Test class system.
+  static void register() {
+    // Register for creating new instances
+    Test._newTestConstructors[collectionIDStatic] = ({
+      required String title,
+      required String testID,
+      required Timestamp scheduledTime,
+      required DocumentReference projectRef,
+      required String collectionID,
+    }) =>
+        PeopleInMotionTest._(
+          title: title,
+          testID: testID,
+          scheduledTime: scheduledTime,
+          projectRef: projectRef,
+          collectionID: collectionID,
+          data: newInitialDataDeepCopy(),
+        );
+
+    // Register for recreating from Firestore
+    Test._recreateTestConstructors[collectionIDStatic] = (testDoc) {
+      return PeopleInMotionTest._(
+        title: testDoc['title'],
+        testID: testDoc['id'],
+        scheduledTime: testDoc['scheduledTime'],
+        projectRef: testDoc['project'],
+        collectionID: testDoc.reference.parent.id,
+        data: convertDataFromFirestore(testDoc['data']),
+        creationTime: testDoc['creationTime'],
+        maxResearchers: testDoc['maxResearchers'],
+        isComplete: testDoc['isComplete'],
+      );
+    };
+
+    // Register the test's UI page
+    Test._pageBuilders[PeopleInMotionTest] = (project, test) => PeopleInMotion(
+          activeProject: project,
+          activeTest: test as PeopleInMotionTest,
+          polygonPoints: [],
+          polygon: <Polygon>{},
+          testRef: test.projectRef!,
+        );
+
+    // Register the save function
+    Test._saveToFirestoreFunctions[PeopleInMotionTest] = (test) async {
+      await _firestore.collection(test.collectionID).doc(test.testID).set({
+        'title': test.title,
+        'id': test.testID,
+        'scheduledTime': test.scheduledTime,
+        'project': test.projectRef,
+        'data': convertDataToFirestore(test.data),
+        'creationTime': test.creationTime,
+        'maxResearchers': test.maxResearchers,
+        'isComplete': false,
+      }, SetOptions(merge: true));
+    };
+  }
+
+  /// Handles data submission to Firestore when the test is completed.
+  @override
+  void submitData(List<TracedRoute> data) async {
+    try {
+      // Convert the data to Firestore format
+      List<Map<String, dynamic>> firestoreData = convertDataToFirestore(data);
+
+      // Update Firestore with the test data and mark it as complete
+      await _firestore.collection(collectionID).doc(testID).update({
+        'data': firestoreData,
+        'isComplete': true,
+      });
+
+      this.data = data;
+      isComplete = true;
+
+      print('Success! PeopleInMotionTest data submitted: $firestoreData');
+    } catch (e, stacktrace) {
+      print("Exception in PeopleInMotionTest.submitData(): $e");
+      print("Stacktrace: $stacktrace");
+    }
+  }
+
+  /// Converts Firestore data back into a List<TracedRoute> for use in the app.
+  static List<TracedRoute> convertDataFromFirestore(List<dynamic> data) {
+    return data.map((entry) {
+      return TracedRoute(
+        points: (entry['points'] as List<dynamic>)
+            .map((point) => LatLng(point['lat'], point['lng']))
+            .toList(),
+        activityType: entry['activityType'],
+        timestamp: DateTime.parse(entry['timestamp']),
+      );
+    }).toList();
+  }
+
+  /// Converts local `TracedRoute` data to Firestore format.
+  static List<Map<String, dynamic>> convertDataToFirestore(
+      List<TracedRoute> data) {
+    return data.map((route) {
+      return {
+        'points': route.points
+            .map((point) => {'lat': point.latitude, 'lng': point.longitude})
+            .toList(),
+        'activityType': route.activityType,
+        'timestamp': route.timestamp.toIso8601String(),
+      };
+    }).toList();
   }
 }

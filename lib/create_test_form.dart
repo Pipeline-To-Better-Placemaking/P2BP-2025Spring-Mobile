@@ -192,6 +192,20 @@ class _CreateTestFormState extends State<CreateTestForm> {
                     style: TextStyle(color: Color(0xFF2F6DCF)),
                   ),
                 ),
+                DropdownMenuItem(
+                  value: PeopleInPlaceTest.collectionIDStatic,
+                  child: Text(
+                    'People in Place',
+                    style: TextStyle(color: Color(0xFF2F6DCF)),
+                  ),
+                ),
+                DropdownMenuItem(
+                  value: PeopleInMotionTest.collectionIDStatic,
+                  child: Text(
+                    'People in Motion',
+                    style: TextStyle(color: Color(0xFF2F6DCF)),
+                  ),
+                ),
               ],
               onChanged: (value) {
                 _selectedTest = value;

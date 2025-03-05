@@ -603,3 +603,18 @@ extension DynamicLatLngExtraction on List<dynamic> {
     return newLatLngList;
   }
 }
+
+/// Saves the traced route from PeopleInMotionTest
+Future<void> saveTracedRoute({
+  required DocumentReference testRef,
+  required Map<String, dynamic> tracedRouteData,
+}) async {
+  try {
+    await _firestore.collection('tests').doc(testRef.id).update({
+      'tracedRoutes': FieldValue.arrayUnion([tracedRouteData])
+    });
+    print("Traced route saved successfully.");
+  } catch (e) {
+    print("Error saving traced route: $e");
+  }
+}
