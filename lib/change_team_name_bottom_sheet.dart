@@ -2,8 +2,10 @@ import 'package:flutter/material.dart';
 import 'package:dropdown_button2/dropdown_button2.dart';
 
 class ChangeTeamNameBottomSheet extends StatefulWidget {
+  const ChangeTeamNameBottomSheet({super.key});
+
   @override
-  _ChangeTeamNameBottomSheetState createState() =>
+  State<ChangeTeamNameBottomSheet> createState() =>
       _ChangeTeamNameBottomSheetState();
 }
 
