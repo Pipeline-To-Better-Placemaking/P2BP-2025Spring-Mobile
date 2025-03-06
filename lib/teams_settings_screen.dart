@@ -574,185 +574,193 @@ class _TeamSettingsScreenState extends State<TeamSettingsScreen> {
                   ),
                   SizedBox(height: 12),
                   // Profile Avatar and Header Row
-                  Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 16.0),
-                    child: Row(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        // Profile Avatar on the left
-                        Stack(
-                          alignment: Alignment.bottomRight,
-                          children: [
-                            CircleAvatar(
-                              radius: 36,
-                              backgroundImage: AssetImage(
-                                  'assets/profile_image.jpg'), // Replace with actual image
-                            ),
-                            GestureDetector(
-                              onTap: () async {
-                                // Open image edit functionality
-                                final XFile? pickedFile = await ImagePicker()
-                                    .pickImage(source: ImageSource.gallery);
-                                if (pickedFile != null) {
-                                  final File imageFile = File(pickedFile.path);
-                                  // Now you have the image file, and you can submit or process it.
-                                  print("Image selected: ${imageFile.path}");
-                                } else {
-                                  print("No image selected.");
-                                }
-                              },
-                              child: CircleAvatar(
-                                radius: 16,
-                                backgroundColor: Colors.blue,
-                                child: Icon(
-                                  Icons.edit,
-                                  size: 16,
-                                  color: Colors.white,
-                                ),
-                              ),
-                            ),
-                          ],
-                        ),
-
-                        SizedBox(width: 90),
-                        // Column with Team Name and Team Members Row
-                        Flexible(
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
+                  LayoutBuilder(builder: (context, constraints) {
+                    final bool isNarrow = constraints.maxWidth < 350;
+                    return Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 16.0),
+                      child: Row(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          // Profile Avatar on the left
+                          Stack(
+                            alignment: Alignment.bottomRight,
                             children: [
-                              // Header Text
-                              Text(
-                                'Lake Nona Design Group',
-                                style: TextStyle(
-                                  color: Colors.white,
-                                  fontSize: 18,
-                                  fontWeight: FontWeight.bold,
-                                ),
-                                overflow: TextOverflow.ellipsis,
+                              CircleAvatar(
+                                radius: 36,
+                                backgroundImage: AssetImage(
+                                    'assets/profile_image.jpg'), // Replace with actual image
                               ),
-
-                              // Space between team name and avatars
-                              SizedBox(height: 8),
-                              // Team Members Row
-                              SizedBox(
-                                height: 36,
-                                child: Stack(
-                                    clipBehavior: Clip
-                                        .none, // Allows the edit button to overflow slightly
-                                    children: [
-                                      // Overlapping team members
-                                      for (int index = 0; index < 6; index++)
-                                        Positioned(
-                                          left: index * 24.0, // Overlap amount
-                                          child: CircleAvatar(
-                                            radius: 16,
-                                            backgroundImage: AssetImage(
-                                                'assets/member_$index.jpg'), // Replace with team member profile photos
-                                          ),
-                                        ),
-
-                                      // Edit button overlapping the last avatar
-                                      Positioned(
-                                        left: 5 * 24.0 +
-                                            20, // Overlap position for the last avatar
-                                        top:
-                                            12, // Adjust for proper vertical alignment
-                                        child: GestureDetector(
-                                          onTap: () {
-                                            // Open team edit functionality
-                                            showModalBottomSheet(
-                                              context: context,
-                                              isScrollControlled:
-                                                  true, // allows the sheet to be fully draggable
-                                              backgroundColor: Colors
-                                                  .transparent, // makes the sheet's corners rounded if desired
-                                              builder: (BuildContext context) {
-                                                return DraggableScrollableSheet(
-                                                  initialChildSize:
-                                                      0.7, // initial height as 50% of screen height
-                                                  minChildSize:
-                                                      0.3, // minimum height when dragged down
-                                                  maxChildSize:
-                                                      0.9, // maximum height when dragged up
-                                                  builder: (BuildContext
-                                                          context,
-                                                      ScrollController
-                                                          scrollController) {
-                                                    return Container(
-                                                      decoration: BoxDecoration(
-                                                        gradient: defaultGrad,
-                                                        borderRadius:
-                                                            BorderRadius.only(
-                                                          topLeft:
-                                                              Radius.circular(
-                                                                  16.0),
-                                                          topRight:
-                                                              Radius.circular(
-                                                                  16.0),
-                                                        ),
-                                                      ),
-                                                      child:
-                                                          ManageTeamBottomSheet(),
-
-                                                      // Replace this ListView with your desired content
-                                                    );
-                                                  },
-                                                );
-                                              },
-                                            );
-                                          },
-                                          child: CircleAvatar(
-                                            radius: 12,
-                                            backgroundColor: Colors.blue,
-                                            child: Icon(
-                                              Icons.edit,
-                                              size: 12,
-                                              color: Colors.white,
-                                            ),
-                                          ),
-                                        ),
-                                      ),
-
-                                      // Invite button to the right of the Team Members Profile Avatars
-                                      Positioned(
-                                          left: 6 * 24.0 +
-                                              20, // Place the invite button to the right of the team avatars
-                                          top:
-                                              -6, // Align with the team avatars vertically
-                                          child: // Invite button
-                                              ElevatedButton(
-                                                  onPressed: () {
-                                                    // Invite functionality
-                                                    _showInviteDialog(context);
-                                                  },
-                                                  style:
-                                                      ElevatedButton.styleFrom(
-                                                    shape:
-                                                        RoundedRectangleBorder(
-                                                            borderRadius:
-                                                                BorderRadius
-                                                                    .circular(
-                                                                        8)),
-                                                    padding: EdgeInsets.zero,
-                                                    minimumSize: Size(30, 25),
-                                                    backgroundColor:
-                                                        Colors.blue,
-                                                  ),
-                                                  child: Icon(
-                                                    Icons
-                                                        .person_add, // Invite icon
-                                                    color: Colors.white,
-                                                    size: 20,
-                                                  )))
-                                    ]),
+                              GestureDetector(
+                                onTap: () async {
+                                  // Open image edit functionality
+                                  final XFile? pickedFile = await ImagePicker()
+                                      .pickImage(source: ImageSource.gallery);
+                                  if (pickedFile != null) {
+                                    final File imageFile =
+                                        File(pickedFile.path);
+                                    // Now you have the image file, and you can submit or process it.
+                                    print("Image selected: ${imageFile.path}");
+                                  } else {
+                                    print("No image selected.");
+                                  }
+                                },
+                                child: CircleAvatar(
+                                  radius: 16,
+                                  backgroundColor: Colors.blue,
+                                  child: Icon(
+                                    Icons.edit,
+                                    size: 16,
+                                    color: Colors.white,
+                                  ),
+                                ),
                               ),
                             ],
                           ),
-                        ),
-                      ],
-                    ),
-                  ),
+
+                          SizedBox(width: isNarrow ? 16 : 90),
+                          // Column with Team Name and Team Members Row
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                // Header Text
+                                Text(
+                                  'Lake Nona Design Group',
+                                  style: TextStyle(
+                                    color: Colors.white,
+                                    fontSize: 18,
+                                    fontWeight: FontWeight.bold,
+                                  ),
+                                  overflow: TextOverflow.ellipsis,
+                                ),
+
+                                // Space between team name and avatars
+                                SizedBox(height: 8),
+                                // Team Members Row
+                                SizedBox(
+                                  height: 36,
+                                  child: Stack(
+                                      clipBehavior: Clip
+                                          .none, // Allows the edit button to overflow slightly
+                                      children: [
+                                        // Overlapping team members
+                                        for (int index = 0; index < 6; index++)
+                                          Positioned(
+                                            left:
+                                                index * 24.0, // Overlap amount
+                                            child: CircleAvatar(
+                                              radius: 16,
+                                              backgroundImage: AssetImage(
+                                                  'assets/member_$index.jpg'), // Replace with team member profile photos
+                                            ),
+                                          ),
+
+                                        // Edit button overlapping the last avatar
+                                        Positioned(
+                                          left: 5 * 24.0 +
+                                              20, // Overlap position for the last avatar
+                                          top:
+                                              12, // Adjust for proper vertical alignment
+                                          child: GestureDetector(
+                                            onTap: () {
+                                              // Open team edit functionality
+                                              showModalBottomSheet(
+                                                context: context,
+                                                isScrollControlled:
+                                                    true, // allows the sheet to be fully draggable
+                                                backgroundColor: Colors
+                                                    .transparent, // makes the sheet's corners rounded if desired
+                                                builder:
+                                                    (BuildContext context) {
+                                                  return DraggableScrollableSheet(
+                                                    initialChildSize:
+                                                        0.7, // initial height as 50% of screen height
+                                                    minChildSize:
+                                                        0.3, // minimum height when dragged down
+                                                    maxChildSize:
+                                                        0.9, // maximum height when dragged up
+                                                    builder: (BuildContext
+                                                            context,
+                                                        ScrollController
+                                                            scrollController) {
+                                                      return Container(
+                                                        decoration:
+                                                            BoxDecoration(
+                                                          gradient: defaultGrad,
+                                                          borderRadius:
+                                                              BorderRadius.only(
+                                                            topLeft:
+                                                                Radius.circular(
+                                                                    16.0),
+                                                            topRight:
+                                                                Radius.circular(
+                                                                    16.0),
+                                                          ),
+                                                        ),
+                                                        child:
+                                                            ManageTeamBottomSheet(),
+
+                                                        // Replace this ListView with your desired content
+                                                      );
+                                                    },
+                                                  );
+                                                },
+                                              );
+                                            },
+                                            child: CircleAvatar(
+                                              radius: 12,
+                                              backgroundColor: Colors.blue,
+                                              child: Icon(
+                                                Icons.edit,
+                                                size: 12,
+                                                color: Colors.white,
+                                              ),
+                                            ),
+                                          ),
+                                        ),
+
+                                        // Invite button to the right of the Team Members Profile Avatars
+                                        Positioned(
+                                            left: 6 * 24.0 +
+                                                20, // Place the invite button to the right of the team avatars
+                                            top:
+                                                -6, // Align with the team avatars vertically
+                                            child: // Invite button
+                                                ElevatedButton(
+                                                    onPressed: () {
+                                                      // Invite functionality
+                                                      _showInviteDialog(
+                                                          context);
+                                                    },
+                                                    style: ElevatedButton
+                                                        .styleFrom(
+                                                      shape:
+                                                          RoundedRectangleBorder(
+                                                              borderRadius:
+                                                                  BorderRadius
+                                                                      .circular(
+                                                                          8)),
+                                                      padding: EdgeInsets.zero,
+                                                      minimumSize: Size(30, 25),
+                                                      backgroundColor:
+                                                          Colors.blue,
+                                                    ),
+                                                    child: Icon(
+                                                      Icons
+                                                          .person_add, // Invite icon
+                                                      color: Colors.white,
+                                                      size: 20,
+                                                    )))
+                                      ]),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ],
+                      ),
+                    );
+                  }),
 
                   SizedBox(height: 48),
 
