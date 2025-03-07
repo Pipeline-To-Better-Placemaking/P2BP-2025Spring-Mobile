@@ -551,6 +551,11 @@ class BehaviorPoint extends DataPoint {
       'other': other,
     };
   }
+
+  @override
+  String toString() {
+    return toJson().toString();
+  }
 }
 
 class MaintenancePoint extends DataPoint {
@@ -617,9 +622,12 @@ class MaintenancePoint extends DataPoint {
       'other': other,
     };
   }
-}
 
-enum MisconductType { behavior, maintenance }
+  @override
+  String toString() {
+    return toJson().toString();
+  }
+}
 
 class AbsenceOfOrderData {
   List<BehaviorPoint> behaviorList = [];
@@ -628,14 +636,15 @@ class AbsenceOfOrderData {
   AbsenceOfOrderData();
 
   AbsenceOfOrderData.fromJson(Map<String, dynamic> data) {
-    if (data.containsKey('behavior') && (data['behavior'] as List).isNotEmpty) {
-      for (final point in data['behavior'] as List) {
+    if (data.containsKey('behaviorPoints') &&
+        (data['behaviorPoints'] as List).isNotEmpty) {
+      for (final point in data['behaviorPoints'] as List) {
         behaviorList.add(BehaviorPoint.fromJson(point));
       }
     }
-    if (data.containsKey('maintenance') &&
-        (data['maintenance'] as List).isNotEmpty) {
-      for (final point in data['maintenance'] as List) {
+    if (data.containsKey('maintenancePoints') &&
+        (data['maintenancePoints'] as List).isNotEmpty) {
+      for (final point in data['maintenancePoints'] as List) {
         maintenanceList.add(MaintenancePoint.fromJson(point));
       }
     }
@@ -643,16 +652,49 @@ class AbsenceOfOrderData {
 
   Map<String, Object> toJson() {
     Map<String, List<Map<String, dynamic>?>> json = {
-      'behavior': [],
-      'maintenance': [],
+      'behaviorPoints': [],
+      'maintenancePoints': [],
     };
     for (final behavior in behaviorList) {
-      json['behavior']?.add(behavior.toJson());
+      json['behaviorPoints']?.add(behavior.toJson());
     }
     for (final maintenance in maintenanceList) {
-      json['maintenance']?.add(maintenance.toJson());
+      json['maintenancePoints']?.add(maintenance.toJson());
     }
     return json;
+  }
+
+  @override
+  String toString() {
+    return toJson().toString();
+  }
+
+  /// Adds given [dataPoint] to the appropriate List in this data set.
+  ///
+  /// An exception is thrown if [dataPoint] has a null `location`.
+  void addDataPoint(DataPoint dataPoint) {
+    if (dataPoint.location == null) {
+      print(
+          'Error: dataPoint in AbsenceOfOrderTest.addDataPoint has no location');
+      throw Exception('null-location-on-datapoint');
+    }
+    if (dataPoint is BehaviorPoint) {
+      behaviorList.add(dataPoint);
+      return;
+    }
+    if (dataPoint is MaintenancePoint) {
+      maintenanceList.add(dataPoint);
+      return;
+    }
+  }
+
+  /// Removes all data points where [location] matches the given [point]
+  /// from both Lists.
+  void removeDataPoint(LatLng point) {
+    behaviorList
+        .removeWhere((behaviorPoint) => behaviorPoint.location == point);
+    maintenanceList
+        .removeWhere((maintenancePoint) => maintenancePoint.location == point);
   }
 }
 
