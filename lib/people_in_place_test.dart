@@ -25,6 +25,8 @@ import 'package:geolocator/geolocator.dart';
 import 'package:maps_toolkit/maps_toolkit.dart' as mp;
 import 'package:p2bp_2025spring_mobile/firestore_functions.dart';
 import 'package:p2bp_2025spring_mobile/db_schema_classes.dart';
+import 'package:p2bp_2025spring_mobile/project_details_page.dart';
+import 'package:p2bp_2025spring_mobile/peope_in_place_instructions.dart';
 
 // Class to represent a logged data point for backend storage.
 class LoggedDataPoint {
@@ -153,7 +155,11 @@ class _PeopleInPlaceTestPageState extends State<PeopleInPlaceTestPage> {
     });
     _timer = Timer.periodic(Duration(seconds: 1), (timer) {
       setState(() {
-        _remainingSeconds--;
+        if (_remainingSeconds > 0) {
+          _remainingSeconds--;
+          timer.cancel();
+          _endTest();
+        }
       });
     });
   }
@@ -162,8 +168,15 @@ class _PeopleInPlaceTestPageState extends State<PeopleInPlaceTestPage> {
   Future<void> _endTest() async {
     setState(() {
       _isTestRunning = false;
+      Navigator.pushReplacement(
+        context,
+        MaterialPageRoute(
+          builder: (context) => ProjectDetailsPage(
+            projectData: widget.activeProject,
+          ),
+        ),
+      );
     });
-    _timer?.cancel();
 
     try {
       await _firestore
@@ -185,30 +198,52 @@ class _PeopleInPlaceTestPageState extends State<PeopleInPlaceTestPage> {
       context: context,
       barrierDismissible: false,
       builder: (context) {
+        final screenSize = MediaQuery.of(context).size;
         return AlertDialog(
-          title: Text('Instructions'),
-          content: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Text('Tap screen to log a data point.'),
-              Row(
+          insetPadding: EdgeInsets.symmetric(
+              horizontal: MediaQuery.of(context).size.width * 0.05,
+              vertical: MediaQuery.of(context).size.height * 0.005),
+          actionsPadding: EdgeInsets.zero,
+          title: Text(
+            'How It Works:',
+            style: TextStyle(
+              fontSize: 20,
+            ),
+            textAlign: TextAlign.center,
+          ),
+          content: SingleChildScrollView(
+            child: SizedBox(
+              width: screenSize.width * 0.95,
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
                 children: [
-                  // Checkbox to make sure pop up doesn't open the next time they conduct this type of test
-                  Checkbox(
-                    value: false,
-                    onChanged: (_) {},
-                  ),
-                  Text("Don't show this again"),
+                  peopleInPlaceInstructions(),
+                  SizedBox(height: 10),
+                  buildLegends(),
                 ],
               ),
-            ],
+            ),
           ),
           actions: [
-            TextButton(
-              onPressed: () {
-                Navigator.of(context).pop();
-              },
-              child: Text('OK'),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+              children: [
+                Row(
+                  children: [
+                    Checkbox(
+                      value: false,
+                      onChanged: (_) {},
+                    ),
+                    Text("Don't show this again next time"),
+                  ],
+                ),
+                TextButton(
+                  onPressed: () {
+                    Navigator.of(context).pop();
+                  },
+                  child: Text('OK'),
+                ),
+              ],
             ),
           ],
         );
@@ -491,49 +526,49 @@ class _PeopleInPlaceTestPageState extends State<PeopleInPlaceTestPage> {
       );
       standingFemaleMarker = await AssetMapBitmap.create(
         configuration,
-        'assets/custom_icons/test_specific/people_in_place/standing_male_marker.png',
+        'assets/custom_icons/test_specific/people_in_place/standing_female_marker.png',
         width: 36,
         height: 36,
       );
       sittingFemaleMarker = await AssetMapBitmap.create(
         configuration,
-        'assets/custom_icons/test_specific/people_in_place/sitting_male_marker.png',
+        'assets/custom_icons/test_specific/people_in_place/sitting_female_marker.png',
         width: 36,
         height: 36,
       );
       layingFemaleMarker = await AssetMapBitmap.create(
         configuration,
-        'assets/custom_icons/test_specific/people_in_place/laying_male_marker.png',
+        'assets/custom_icons/test_specific/people_in_place/laying_female_marker.png',
         width: 36,
         height: 36,
       );
       squattingFemaleMarker = await AssetMapBitmap.create(
         configuration,
-        'assets/custom_icons/test_specific/people_in_place/squatting_male_marker.png',
+        'assets/custom_icons/test_specific/people_in_place/squatting_female_marker.png',
         width: 36,
         height: 36,
       );
       standingNAMarker = await AssetMapBitmap.create(
         configuration,
-        'assets/custom_icons/test_specific/people_in_place/standing_male_marker.png',
+        'assets/custom_icons/test_specific/people_in_place/standing_na_marker.png',
         width: 36,
         height: 36,
       );
       sittingNAMarker = await AssetMapBitmap.create(
         configuration,
-        'assets/custom_icons/test_specific/people_in_place/sitting_male_marker.png',
+        'assets/custom_icons/test_specific/people_in_place/sitting_na_marker.png',
         width: 36,
         height: 36,
       );
       layingNAMarker = await AssetMapBitmap.create(
         configuration,
-        'assets/custom_icons/test_specific/people_in_place/laying_male_marker.png',
+        'assets/custom_icons/test_specific/people_in_place/laying_na_marker.png',
         width: 36,
         height: 36,
       );
       squattingNAMarker = await AssetMapBitmap.create(
         configuration,
-        'assets/custom_icons/test_specific/people_in_place/squatting_male_marker.png',
+        'assets/custom_icons/test_specific/people_in_place/squatting_na_marker.png',
         width: 36,
         height: 36,
       );
