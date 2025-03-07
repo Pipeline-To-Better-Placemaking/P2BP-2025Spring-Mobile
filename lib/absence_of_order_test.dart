@@ -106,6 +106,15 @@ class _AbsenceOfOrderTestPageState extends State<AbsenceOfOrderTestPage> {
     );
   }
 
+  /// Toggles map type between satellite and normal
+  void _toggleMapType() {
+    setState(() {
+      _currentMapType = (_currentMapType == MapType.normal
+          ? MapType.satellite
+          : MapType.normal);
+    });
+  }
+
   /// Places point on the map and adds that location and the description from
   /// [_tempDataPoint] to the appropriate `List` in [_newData].
   void _togglePoint(LatLng point) {
@@ -138,18 +147,8 @@ class _AbsenceOfOrderTestPageState extends State<AbsenceOfOrderTestPage> {
     });
   }
 
-  /// Toggles map type between satellite and normal
-  void _toggleMapType() {
-    setState(() {
-      _currentMapType = (_currentMapType == MapType.normal
-          ? MapType.satellite
-          : MapType.normal);
-    });
-  }
-
   void doBehaviorModal(BuildContext context) async {
-    final BehaviorPoint? behaviorPoint =
-        await showModalBottomSheet<BehaviorPoint?>(
+    final BehaviorPoint? behaviorPoint = await showModalBottomSheet(
       isScrollControlled: true,
       context: context,
       builder: (context) => _BehaviorDescriptionForm(),
@@ -161,6 +160,7 @@ class _AbsenceOfOrderTestPageState extends State<AbsenceOfOrderTestPage> {
 
   @override
   Widget build(BuildContext context) {
+    bool isDescriptionReady = (_tempDataPoint != null);
     return SafeArea(
       child: Scaffold(
         resizeToAvoidBottomInset: false,
@@ -179,7 +179,7 @@ class _AbsenceOfOrderTestPageState extends State<AbsenceOfOrderTestPage> {
                             CameraPosition(target: _location, zoom: 15),
                         markers: _markers,
                         polygons: _polygons,
-                        onTap: (_tempDataPoint != null) ? _togglePoint : null,
+                        onTap: isDescriptionReady ? _togglePoint : null,
                         mapType: _currentMapType,
                       ),
                     ),
@@ -237,7 +237,7 @@ class _AbsenceOfOrderTestPageState extends State<AbsenceOfOrderTestPage> {
                     SizedBox(height: 5),
                     Center(
                       child: Text(
-                        (_tempDataPoint == null)
+                        !isDescriptionReady
                             ? 'Select a type of misconduct.'
                             : 'Drop a pin where the misconduct is.',
                         style: TextStyle(
@@ -265,16 +265,18 @@ class _AbsenceOfOrderTestPageState extends State<AbsenceOfOrderTestPage> {
                         Expanded(
                           child: FilledButton(
                             style: _testButtonStyle,
-                            onPressed: () {
-                              doBehaviorModal(context);
-                            },
+                            onPressed: isDescriptionReady
+                                ? null
+                                : () {
+                                    doBehaviorModal(context);
+                                  },
                             child: Text('Behavior'),
                           ),
                         ),
                         Expanded(
                           child: FilledButton(
                             style: _testButtonStyle,
-                            onPressed: () {},
+                            onPressed: isDescriptionReady ? null : () {},
                             child: Text('Maintenance'),
                           ),
                         ),
@@ -326,6 +328,8 @@ class _BehaviorDescriptionForm extends StatefulWidget {
 }
 
 class _BehaviorDescriptionFormState extends State<_BehaviorDescriptionForm> {
+  final GlobalKey<FormFieldState> _formFieldKey = GlobalKey<FormFieldState>();
+  late List<Widget> _buttonList;
   static const List<String> _buttonOptions = [
     'Panhandling',
     'Boisterous Voice',
@@ -334,14 +338,16 @@ class _BehaviorDescriptionFormState extends State<_BehaviorDescriptionForm> {
     'Unsafe Equipment',
     'Living in Public',
   ];
-  final GlobalKey<FormFieldState> _formFieldKey = GlobalKey<FormFieldState>();
-
-  List<String> _selectedTypes = [];
-  final TextEditingController _otherTextController = TextEditingController();
+  final List<String> _selectedTypes = [];
   bool _otherSelected = false;
-  late List<Widget> _buttonList;
+  final TextEditingController _otherTextController = TextEditingController();
 
   void _submitDescription() {
+    // Validate other text box and return if invalid
+    if (!_formFieldKey.currentState!.validate()) {
+      return;
+    }
+
     final BehaviorPoint point;
     point = BehaviorPoint.noLocation(
       panhandling: _selectedTypes.contains(_buttonOptions[0]),
@@ -350,7 +356,7 @@ class _BehaviorDescriptionFormState extends State<_BehaviorDescriptionForm> {
       recklessBehavior: _selectedTypes.contains(_buttonOptions[3]),
       unsafeEquipment: _selectedTypes.contains(_buttonOptions[4]),
       livingInPublic: _selectedTypes.contains(_buttonOptions[5]),
-      other: (_otherSelected) ? _otherTextController.text : '',
+      other: _otherTextController.text,
     );
     Navigator.pop(context, point);
   }
@@ -360,7 +366,7 @@ class _BehaviorDescriptionFormState extends State<_BehaviorDescriptionForm> {
     _buttonList = buildToggleButtonList(
       options: _buttonOptions,
       selectedList: _selectedTypes,
-      onPressed: (String option) {
+      onPressed: (option) {
         setState(() {
           if (_selectedTypes.contains(option)) {
             _selectedTypes.remove(option);
@@ -473,6 +479,13 @@ class _BehaviorDescriptionFormState extends State<_BehaviorDescriptionForm> {
                           border: OutlineInputBorder(),
                           hintText: 'Other...',
                         ),
+                        validator: (value) {
+                          if (_otherSelected &&
+                              (value == null || value.isEmpty)) {
+                            return 'Please describe the misconduct.';
+                          }
+                          return null;
+                        },
                       ),
                     ),
                     Expanded(
