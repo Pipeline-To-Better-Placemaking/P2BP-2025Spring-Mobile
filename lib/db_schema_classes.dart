@@ -12,6 +12,7 @@ import 'package:firebase_storage/firebase_storage.dart';
 import 'package:maps_toolkit/maps_toolkit.dart' as mp;
 
 import 'identifying_access_test.dart';
+import 'nature_prevalence_test.dart';
 
 final FirebaseFirestore _firestore = FirebaseFirestore.instance;
 
@@ -107,6 +108,7 @@ class Project {
   // TODO: Eventually add Team Photo and Team Color
   Project.partialProject({required this.title, required this.description});
 
+  // TODO: Probably want to delete test if test reference is not found; however, functionality may be unnecessary if the implementation of deleting a test deletes it from the project also (which is ideal).
   /// Gets all fields for each [Test] in this [Project] and loads them
   /// into the [tests]. Also returns [tests].
   Future<List<Test>> loadAllTestData() async {
@@ -120,6 +122,13 @@ class Project {
     return tests;
   }
 }
+
+// *--------------------------------------------------------------------------*
+// | Important: When adding a test, make sure to implement the requisite      |
+// | fields and functions. When done, make sure to implement it in the        |
+// | dropdown on create_test_form.dart, register it on main.dart, and add it  |
+// | to the initials list on project_details.dart.                            |
+// *--------------------------------------------------------------------------*
 
 /// Parent class extended by every specific test class.
 ///
@@ -643,6 +652,7 @@ class BikeRack {
       : pathLength = mp.SphericalUtil.computeLength(polyline.toMPLatLngList())
             .toDouble();
 
+  /// Returns a map with data that can be stored in Firestore easily.
   Map<String, dynamic> convertToFirestoreData() {
     Map<String, dynamic> firestoreData = {
       'spots': spots,
@@ -669,6 +679,7 @@ class TaxiAndRideShare {
       : pathLength = mp.SphericalUtil.computeLength(polyline.toMPLatLngList())
             .toDouble();
 
+  /// Returns a map with data that can be stored in Firestore easily.
   Map<String, dynamic> convertToFirestoreData() {
     Map<String, dynamic> firestoreData = {
       'pathInfo': {
@@ -699,6 +710,7 @@ class Parking {
                 pow(feetPerMeter, 2))
             .toDouble();
 
+  /// Returns a map with data that can be stored in Firestore easily.
   Map<String, dynamic> convertToFirestoreData() {
     Map<String, dynamic> firestoreData = {
       'spots': spots,
@@ -730,6 +742,7 @@ class TransportStation {
       : pathLength = mp.SphericalUtil.computeLength(polyline.toMPLatLngList())
             .toDouble();
 
+  /// Returns a map with data that can be stored in Firestore easily.
   Map<String, dynamic> convertToFirestoreData() {
     Map<String, dynamic> firestoreData = {
       'routeNumber': routeNumber,
@@ -949,7 +962,7 @@ class IdentifyingAccessTest extends Test<Map> {
     return output;
   }
 
-  /// Transforms data stored locally as of [List] access type objects to
+  /// Transforms data stored locally as a [List] of access type objects to
   /// Firestore format (represented by a [Map])
   /// with String keys and any other needed changes.
   static Map<String, List> convertDataToFirestore(Map data) {
@@ -957,7 +970,6 @@ class IdentifyingAccessTest extends Test<Map> {
     List<AccessType> types = AccessType.values;
     for (final type in types) {
       output[type.name] = [];
-      // && accessObjects.contains(data[type].runtimeType)
       if (data.containsKey(type)) {
         switch (type) {
           case AccessType.bikeRack:
@@ -980,5 +992,483 @@ class IdentifyingAccessTest extends Test<Map> {
       }
     }
     return output;
+  }
+}
+
+/// Enum for Nature Types. Used in Nature Prevalence test. Types include
+/// [vegetation], [waterBody], and [animal].
+enum NatureType { vegetation, waterBody, animal }
+
+/// Enum for types of vegetation. Used in Nature Prevalence test. Types include
+/// [native], [design], [openField], and [other].
+enum VegetationType { native, design, openField, other }
+
+/// Enum for types of bodies of water. Used in Nature Prevalence test. Types
+/// include [ocean], [lake], [river], and [swamp].
+enum WaterBodyType { ocean, lake, river, swamp }
+
+/// Enum for types of animals. Used in Nature Prevalence test. Types include
+/// [cat], [dog], [squirrel], [bird], [rabbit], [turtle], [duck], and [other].
+/// </br> [cat] and [dog] are domestic, [other] is its own type, and all other
+/// defined types are wild.
+enum AnimalType { cat, dog, squirrel, bird, rabbit, turtle, duck, other }
+
+/// The following designations are used to differentiate types of animals. They
+/// include [domesticated], [wild], and [other]
+enum AnimalDesignation { domesticated, wild, other }
+
+/// Map used to match animal type with their respective designation.
+Map<AnimalType, AnimalDesignation> animalToDesignation = {
+  AnimalType.cat: AnimalDesignation.domesticated,
+  AnimalType.dog: AnimalDesignation.domesticated,
+  AnimalType.squirrel: AnimalDesignation.wild,
+  AnimalType.bird: AnimalDesignation.wild,
+  AnimalType.rabbit: AnimalDesignation.wild,
+  AnimalType.turtle: AnimalDesignation.wild,
+  AnimalType.duck: AnimalDesignation.wild,
+  AnimalType.other: AnimalDesignation.other
+};
+
+/// Interface for Nature Types. All Nature Types must implement this interface
+/// and its functions.
+abstract class NatureTypes {
+  /// Uses the class fields to create a [Map] that is able to be stored in
+  /// Firestore easily.
+  Map<String, dynamic> convertToFirestoreData();
+}
+
+/// Containing class for Nature Prevalence Test.
+///
+/// Contains a list of objects corresponding to the Nature Prevalence Test
+/// types ([Animal], [WaterBody], [Vegetation]). Also implements the
+/// [convertToFirestoreData()], which returns a map that is able to be inputted
+/// directly into Firestore.
+class NatureData implements NatureTypes {
+  List<Animal> animals = [];
+  List<WaterBody> waterBodies = [];
+  List<Vegetation> vegetation = [];
+
+  @override
+  Map<String, Map> convertToFirestoreData() {
+    Map<String, Map> firestoreData = {};
+    Map<String, dynamic> animalData = {
+      AnimalDesignation.wild.name: {
+        AnimalType.squirrel.name: [],
+        AnimalType.bird.name: [],
+        AnimalType.rabbit.name: [],
+        AnimalType.turtle.name: [],
+        AnimalType.duck.name: [],
+      },
+      AnimalDesignation.domesticated.name: {
+        AnimalType.cat.name: [],
+        AnimalType.dog.name: [],
+      },
+      AnimalDesignation.other.name: [],
+    };
+    Map<String, List> vegetationData = {
+      VegetationType.native.name: [],
+      VegetationType.design.name: [],
+      VegetationType.openField.name: [],
+      VegetationType.other.name: [],
+    };
+    Map<String, List> waterBodyData = {
+      WaterBodyType.ocean.name: [],
+      WaterBodyType.lake.name: [],
+      WaterBodyType.river.name: [],
+      WaterBodyType.swamp.name: [],
+    };
+    try {
+      for (Animal animal in animals) {
+        // Checks that the set contains the correct fields as needed, included
+        // domestication designation and name, then adds the data accordingly.
+        if (animal.animalType == AnimalType.other &&
+            animalData.containsKey(animal.designation.name)) {
+          animalData[animal.designation.name]
+              ?.add(animal.convertToFirestoreData());
+        } else if (animalData.containsKey(animal.designation.name) &&
+            animalData[animal.designation.name]!
+                .containsKey(animal.animalType.name)) {
+          animalData[animal.designation.name]![animal.animalType.name]
+              ?.add(animal.convertToFirestoreData()['point']);
+        }
+      }
+      for (WaterBody waterBody in waterBodies) {
+        waterBodyData[waterBody.waterBodyType.name]
+            ?.add(waterBody.convertToFirestoreData());
+      }
+      for (Vegetation vegetation in vegetation) {
+        vegetationData[vegetation.vegetationType.name]
+            ?.add(vegetation.convertToFirestoreData());
+      }
+      firestoreData = {
+        NatureType.animal.name: animalData,
+        NatureType.vegetation.name: vegetationData,
+        NatureType.waterBody.name: waterBodyData,
+      };
+    } catch (e, stacktrace) {
+      print("Error in NatureType.convertToFirestoreData(): $e");
+      print("Stacktrace $stacktrace");
+    }
+
+    return firestoreData;
+  }
+}
+
+/// Class for vegetation in Nature Prevalence Test. Implements enum type
+/// [vegetation].
+class Vegetation implements NatureTypes {
+  static const NatureType natureType = NatureType.vegetation;
+  static const Color polygonColor = Color(0x6510FF30);
+  final VegetationType vegetationType;
+  final String? otherType;
+  final Polygon polygon;
+  final double polygonArea;
+
+  /// For all vegetation, other or not, otherType is required. If the
+  /// vegetation is of a defined type (i.e. not other) then set otherType equal
+  /// to [null].
+  /// </br> A [null] otherType will be ignored in convertToFirestoreData().
+  Vegetation(
+      {required this.vegetationType,
+      required this.polygon,
+      required this.otherType})
+      : polygonArea = (mp.SphericalUtil.computeArea(polygon.toMPLatLngList()) *
+                pow(feetPerMeter, 2))
+            .toDouble();
+
+  @override
+  Map<String, dynamic> convertToFirestoreData() {
+    Map<String, dynamic> firestoreData = {};
+    try {
+      if (vegetationType == VegetationType.other) {
+        if (otherType == null) {
+          throw Exception(
+              "It seems that the selected type is other, however no otherType "
+              "was specified or was specified as null. Please make sure "
+              "to specify otherType.");
+        }
+        firestoreData = {
+          'name': otherType,
+          'polygon': polygon.points.toGeoPointList(),
+          'polygonArea': polygonArea
+        };
+      } else {
+        firestoreData = {
+          'polygon': polygon.points.toGeoPointList(),
+          'polygonArea': polygonArea
+        };
+      }
+    } catch (e, stacktrace) {
+      print("Error in Vegetation.convertToFirestoreData(): $e");
+      print("Stacktrace: $stacktrace");
+    }
+    return firestoreData;
+  }
+}
+
+/// Class for bodies of water in Nature Prevalence Test. Implements enum type
+/// [waterBody].
+class WaterBody implements NatureTypes {
+  static const NatureType natureType = NatureType.waterBody;
+  static const Color polygonColor = Color(0x651020FF);
+  final WaterBodyType waterBodyType;
+  final Polygon polygon;
+  final double polygonArea;
+
+  WaterBody({required this.waterBodyType, required this.polygon})
+      : polygonArea = (mp.SphericalUtil.computeArea(polygon.toMPLatLngList()) *
+                pow(feetPerMeter, 2))
+            .toDouble();
+
+  @override
+  Map<String, dynamic> convertToFirestoreData() {
+    Map<String, dynamic> firestoreData = {};
+    try {
+      firestoreData = {
+        'polygon': polygon.points.toGeoPointList(),
+        'polygonArea': polygonArea
+      };
+    } catch (e, stacktrace) {
+      print("Error in WaterBody.convertToFirestoreData(): $e");
+      print("Stacktrace: $stacktrace");
+    }
+    return firestoreData;
+  }
+}
+
+/// Class for animals in Nature Prevalence Test. Implements enum type [animal].
+class Animal implements NatureTypes {
+  static const NatureType natureType = NatureType.animal;
+  final AnimalType animalType;
+  final AnimalDesignation designation;
+  final String? otherType;
+  final LatLng point;
+
+  /// For all animals, other or not, otherType is required. If the animal is
+  /// of a defined type (i.e. not other) then set otherType equal to [null].
+  /// </br> A [null] otherType will be ignored in convertToFirestoreData().
+  Animal(
+      {required this.animalType, required this.point, required this.otherType})
+      // Map should never return [null]. Will produce a runtime error if that
+      // happens.
+      : designation = animalToDesignation[animalType]!;
+
+  @override
+  Map<String, dynamic> convertToFirestoreData() {
+    Map<String, dynamic> firestoreData = {};
+    try {
+      if (animalType == AnimalType.other) {
+        if (otherType == null) {
+          throw Exception(
+              "It seems that the selected type is other, however no otherType "
+              "was specified or was specified as null. Please make sure "
+              "to specify otherType.");
+        }
+        firestoreData = {
+          'name': otherType,
+          'point': point.toGeoPoint(),
+        };
+      } else {
+        firestoreData = {
+          'point': point.toGeoPoint(),
+        };
+      }
+    } catch (e, stacktrace) {
+      print("Error in Animal.convertToFirestoreData(): $e");
+      print("Stacktrace: $stacktrace");
+    }
+    return firestoreData;
+  }
+}
+
+/// Class for Nature Prevalence test info and methods.
+class NaturePrevalenceTest extends Test<NatureData> {
+  /// Returns a new instance of the initial data structure used for
+  /// Nature Prevalence Test.
+  static NatureData newInitialDataDeepCopy() {
+    return NatureData();
+  }
+
+  /// Static constant definition of collection ID for this test type.
+  static const String collectionIDStatic = 'nature_prevalence_tests';
+
+  /// Creates a new [NaturePrevalenceTest] instance from the given arguments.
+  NaturePrevalenceTest._({
+    required super.title,
+    required super.testID,
+    required super.scheduledTime,
+    required super.projectRef,
+    required super.collectionID,
+    required super.data,
+    super.creationTime,
+    super.maxResearchers,
+    super.isComplete,
+  }) : super._();
+
+  /// Registers this class within the Maps required by class [Test].
+  static void register() {
+    // Register for creating new Nature Prevalence Tests
+    Test._newTestConstructors[collectionIDStatic] = ({
+      required String title,
+      required String testID,
+      required Timestamp scheduledTime,
+      required DocumentReference projectRef,
+      required String collectionID,
+    }) =>
+        NaturePrevalenceTest._(
+          title: title,
+          testID: testID,
+          scheduledTime: scheduledTime,
+          projectRef: projectRef,
+          collectionID: collectionID,
+          data: newInitialDataDeepCopy(),
+        );
+    // Register for recreating a Nature Prevalence Test from Firestore
+    Test._recreateTestConstructors[collectionIDStatic] = (testDoc) {
+      print(testDoc['data']);
+      return NaturePrevalenceTest._(
+        title: testDoc['title'],
+        testID: testDoc['id'],
+        scheduledTime: testDoc['scheduledTime'],
+        projectRef: testDoc['project'],
+        collectionID: testDoc.reference.parent.id,
+        data: convertDataFromFirestore(testDoc['data']),
+        creationTime: testDoc['creationTime'],
+        maxResearchers: testDoc['maxResearchers'],
+        isComplete: testDoc['isComplete'],
+      );
+    };
+    // Register for building a Nature Prevalence Test page
+    Test._pageBuilders[NaturePrevalenceTest] =
+        (project, test) => NaturePrevalence(
+              activeProject: project,
+              activeTest: test as NaturePrevalenceTest,
+            );
+    // Register a function for saving to Firestore
+    Test._saveToFirestoreFunctions[NaturePrevalenceTest] = (test) async {
+      await _firestore.collection(test.collectionID).doc(test.testID).set({
+        'title': test.title,
+        'id': test.testID,
+        'scheduledTime': test.scheduledTime,
+        'project': test.projectRef,
+        'data': convertDataToFirestore(test.data),
+        'creationTime': test.creationTime,
+        'maxResearchers': test.maxResearchers,
+        'isComplete': false,
+      }, SetOptions(merge: true));
+    };
+  }
+
+  @override
+
+  /// Submits data to Firestore for Nature Prevalence Test.
+  ///
+  /// Unlike other tests, this [submitData()] function (for
+  /// [NaturePrevalenceTest]) takes in a [NatureData] type.
+  void submitData(NatureData data) async {
+    // Adds all points of each type from submitted data to overall data
+    Map firestoreData = data.convertToFirestoreData();
+
+    // Updates data in Firestore
+    await _firestore.collection(collectionID).doc(testID).update({
+      'data': firestoreData,
+      'isComplete': true,
+    });
+
+    this.data = data;
+    isComplete = true;
+
+    print(
+        'Success! In NaturePrevalenceTest.submitData. firestoreData = $firestoreData');
+  }
+
+  /// Transforms data retrieved from Firestore test instance to
+  /// a list of AccessType objects, with data accessed through the fields of
+  /// the respective objects.
+  static NatureData convertDataFromFirestore(Map<String, dynamic> data) {
+    NatureData output = NatureData();
+    List<Animal> animalList = [];
+    List<WaterBody> waterBodyList = [];
+    List<Vegetation> vegetationList = [];
+
+    try {
+      // Getting data from animal in Firestore
+      if (data.containsKey(NatureType.animal.name)) {
+        // For every animal type
+        for (AnimalType animal in animalToDesignation.keys) {
+          // If contains key corresponding to designation (domestic,
+          // wild, other) and animal type.
+          if (data[NatureType.animal.name]
+              .containsKey(animalToDesignation[animal]?.name)) {
+            if (animal == AnimalType.other) {
+              // For every 'other' type of animal
+              for (Map map in data[NatureType.animal.name]
+                  [animalToDesignation[animal]?.name]) {
+                animalList.add(
+                  Animal(
+                    animalType: animal,
+                    point: (map['point'] as GeoPoint).toLatLng(),
+                    otherType: map['name'],
+                  ),
+                );
+              }
+            } else if (data[NatureType.animal.name]
+                    [animalToDesignation[animal]?.name]
+                .containsKey(animal.name)) {
+              // For every specified (non-other) type of animal
+              for (GeoPoint coordinate in data[NatureType.animal.name]
+                  [animalToDesignation[animal]?.name][animal.name]) {
+                animalList.add(
+                  Animal(
+                    animalType: animal,
+                    point: coordinate.toLatLng(),
+                    otherType: null,
+                  ),
+                );
+              }
+            }
+          }
+        }
+      }
+      // Getting data from vegetation in Firestore
+      if (data.containsKey(NatureType.vegetation.name)) {
+        // For every kind of vegetation
+        for (VegetationType vegetation in VegetationType.values) {
+          if (data[NatureType.vegetation.name].containsKey(vegetation)) {
+            if (vegetation == VegetationType.other) {
+              // For every 'other' type of vegetation
+              for (Map map in data[NatureType.vegetation.name]
+                  [vegetation.name]) {
+                vegetationList.add(
+                  Vegetation(
+                    otherType: map['name'],
+                    vegetationType: vegetation,
+                    polygon: Polygon(
+                      polygonId: PolygonId(
+                          DateTime.now().millisecondsSinceEpoch.toString()),
+                      points: map['points'].toLatLngList(),
+                      fillColor: Vegetation.polygonColor,
+                    ),
+                  ),
+                );
+              }
+            } else {
+              // For every defined (non-other) type of vegetation
+              for (Map map in data[NatureType.vegetation.name]
+                  [vegetation.name]) {
+                vegetationList.add(
+                  Vegetation(
+                    otherType: null,
+                    vegetationType: vegetation,
+                    polygon: Polygon(
+                      polygonId: PolygonId(
+                          DateTime.now().millisecondsSinceEpoch.toString()),
+                      points: map['points'].toLatLngList(),
+                      fillColor: Vegetation.polygonColor,
+                    ),
+                  ),
+                );
+              }
+            }
+          }
+        }
+      }
+      // Getting data from waterBody in Firestore
+      if (data.containsKey(NatureType.waterBody.name)) {
+        // For every kind of body of water
+        for (WaterBodyType waterBody in WaterBodyType.values) {
+          if (data[NatureType.waterBody.name].containsKey(waterBody)) {
+            // For every type of body of water (no 'other' type)
+            for (Map map in data[NatureType.waterBody.name][waterBody.name]) {
+              waterBodyList.add(
+                WaterBody(
+                  waterBodyType: waterBody,
+                  polygon: Polygon(
+                    polygonId: PolygonId(
+                        DateTime.now().millisecondsSinceEpoch.toString()),
+                    points: map['points'].toLatLngList(),
+                    fillColor: Vegetation.polygonColor,
+                  ),
+                ),
+              );
+            }
+          }
+        }
+      }
+      output.animals = animalList;
+      output.vegetation = vegetationList;
+      output.waterBodies = waterBodyList;
+    } catch (e, stacktrace) {
+      print("Error in NaturePrevalenceTest.convertDataFromFirestore(): $e");
+      print("Stacktrace: $stacktrace");
+    }
+
+    return output;
+  }
+
+  /// Simply invokes the class method for [NatureData] to convert the data to
+  /// the appropriate Firestore representation.
+  static Map<String, Map> convertDataToFirestore(NatureData data) {
+    return data.convertToFirestoreData();
   }
 }

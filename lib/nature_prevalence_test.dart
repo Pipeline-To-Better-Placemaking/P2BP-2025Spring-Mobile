@@ -1,56 +1,62 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
+import 'package:p2bp_2025spring_mobile/firestore_functions.dart';
 import 'package:p2bp_2025spring_mobile/project_details_page.dart';
 import 'package:p2bp_2025spring_mobile/theme.dart';
 import 'package:p2bp_2025spring_mobile/widgets.dart';
-import 'package:maps_toolkit/maps_toolkit.dart' as mp;
 import 'db_schema_classes.dart';
-import 'firestore_functions.dart';
 import 'google_maps_functions.dart';
 import 'home_screen.dart';
+import 'package:maps_toolkit/maps_toolkit.dart' as mp;
 
 class NaturePrevalence extends StatefulWidget {
-  final Project projectData;
+  final Project activeProject;
+  final NaturePrevalenceTest activeTest;
 
   /// IMPORTANT: When navigating to this page, pass in project details. The
   /// project details page already contains project info, so you should use
   /// that data.
-  const NaturePrevalence({super.key, required this.projectData});
+  const NaturePrevalence(
+      {super.key, required this.activeProject, required this.activeTest});
 
   @override
   State<NaturePrevalence> createState() => _NaturePrevalenceState();
 }
-
-enum Vegetation { native, design, openField }
-
-enum WaterBody { ocean, lake, river, swamp }
-
-enum Animal { cat, dog, squirrel, bird, rabbit, turtle, duck }
 
 class _NaturePrevalenceState extends State<NaturePrevalence> {
   bool _isLoading = true;
   bool _polygonMode = false;
   bool _pointMode = false;
   bool _outsidePoint = false;
-  String? _type = 'cat';
+  List<mp.LatLng> _projectArea = [];
   String _directions = "Choose a category.";
   double _bottomSheetHeight = 300;
   late DocumentReference teamRef;
   late GoogleMapController mapController;
   LatLng _location = defaultLocation; // Default location
-  //Map<String, Set<LatLng>> a;
   List<LatLng> _polygonPoints = []; // Points for the polygon
-  List<mp.LatLng> _mapToolsPolygonPoints = [];
   Set<Polygon> _polygons = {}; // Set of polygons
-  List<GeoPoint> _polygonAsGeoPoints =
-      []; // The current polygon represented as points (for Firestore).
   Set<Marker> _markers = {}; // Set of markers for points
   Set<Marker> _polygonMarkers = {}; // Set of markers for polygon creation
-
   MapType _currentMapType = MapType.satellite; // Default map type
 
-  Project? project;
+  NatureData natureData = NatureData();
+
+  List<Animal> animalData = [];
+  List<Vegetation> vegetationData = [];
+  List<WaterBody> waterBodyData = [];
+
+  AnimalType? _animalType;
+  VegetationType? _vegetationType;
+  WaterBodyType? _waterBodyType;
+  Map<NatureType, Type> natureToSpecific = {
+    NatureType.animal: AnimalType,
+    NatureType.vegetation: VegetationType,
+    NatureType.waterBody: WaterBodyType,
+  };
+  NatureType? _natureType;
+  String? _otherType;
 
   @override
   void initState() {
@@ -58,14 +64,41 @@ class _NaturePrevalenceState extends State<NaturePrevalence> {
     initProjectArea();
   }
 
+  /// Sets all type variables to null.
+  ///
+  /// Called after finishing data placement.
+  void _clearTypes() {
+    _natureType = null;
+    _animalType = null;
+    _vegetationType = null;
+    _waterBodyType = null;
+    _otherType = null;
+    _directions = 'Choose a category. Or, click finish to submit.';
+  }
+
+  String? _getCurrentTypeName() {
+    switch (_natureType) {
+      case null:
+        throw Exception("Type not chosen! "
+            "_natureType is null and _getCurrentType() has been invoked.");
+      case NatureType.vegetation:
+        return _vegetationType?.name;
+      case NatureType.waterBody:
+        return _waterBodyType?.name;
+      case NatureType.animal:
+        return _animalType?.name;
+    }
+  }
+
   /// Gets the project polygon, adds it to the current polygon list, and
   /// centers the map over it.
   void initProjectArea() {
     setState(() {
-      _polygons = getProjectPolygon(widget.projectData.polygonPoints);
+      _polygons = getProjectPolygon(widget.activeProject.polygonPoints);
       _location = getPolygonCentroid(_polygons.first);
       // Take some latitude away to center considering bottom sheet.
       _location = LatLng(_location.latitude * .999999, _location.longitude);
+      _projectArea = _polygons.first.toMPLatLngList();
       // TODO: dynamic zooming
       _isLoading = false;
     });
@@ -143,8 +176,11 @@ class _NaturePrevalenceState extends State<NaturePrevalence> {
                             ),
                             onPressed: () {
                               setState(() {
-                                _type = WaterBody.ocean.name;
+                                _natureType = NatureType.waterBody;
+                                _waterBodyType = WaterBodyType.ocean;
                                 _polygonMode = true;
+                                _directions =
+                                    'Place points to create an outline, then click confirm shape to build the polygon.';
                               });
                               Navigator.pop(context);
                             },
@@ -163,8 +199,11 @@ class _NaturePrevalenceState extends State<NaturePrevalence> {
                             ),
                             onPressed: () {
                               setState(() {
-                                _type = WaterBody.lake.name;
+                                _natureType = NatureType.waterBody;
+                                _waterBodyType = WaterBodyType.lake;
                                 _polygonMode = true;
+                                _directions =
+                                    'Place points to create an outline, then click confirm shape to build the polygon.';
                               });
                               Navigator.pop(context);
                             },
@@ -183,8 +222,11 @@ class _NaturePrevalenceState extends State<NaturePrevalence> {
                             ),
                             onPressed: () {
                               setState(() {
-                                _type = WaterBody.river.name;
+                                _natureType = NatureType.waterBody;
+                                _waterBodyType = WaterBodyType.river;
                                 _polygonMode = true;
+                                _directions =
+                                    'Place points to create an outline, then click confirm shape to build the polygon.';
                               });
                               Navigator.pop(context);
                             },
@@ -209,8 +251,11 @@ class _NaturePrevalenceState extends State<NaturePrevalence> {
                             ),
                             onPressed: () {
                               setState(() {
-                                _type = WaterBody.swamp.name;
+                                _natureType = NatureType.waterBody;
+                                _waterBodyType = WaterBodyType.swamp;
                                 _polygonMode = true;
+                                _directions =
+                                    'Place points to create an outline, then click confirm shape to build the polygon.';
                               });
                               Navigator.pop(context);
                             },
@@ -242,6 +287,9 @@ class _NaturePrevalenceState extends State<NaturePrevalence> {
                           ),
                         ),
                         onTap: () {
+                          setState(() {
+                            _clearTypes();
+                          });
                           Navigator.pop(context);
                         },
                       ),
@@ -328,8 +376,11 @@ class _NaturePrevalenceState extends State<NaturePrevalence> {
                             ),
                             onPressed: () {
                               setState(() {
-                                _type = Vegetation.native.name;
+                                _natureType = NatureType.vegetation;
+                                _vegetationType = VegetationType.native;
                                 _polygonMode = true;
+                                _directions =
+                                    'Place points to create an outline, then click confirm shape to build the polygon.';
                               });
                               Navigator.pop(context);
                             },
@@ -348,8 +399,11 @@ class _NaturePrevalenceState extends State<NaturePrevalence> {
                             ),
                             onPressed: () {
                               setState(() {
-                                _type = Vegetation.design.name;
+                                _natureType = NatureType.vegetation;
+                                _vegetationType = VegetationType.design;
                                 _polygonMode = true;
+                                _directions =
+                                    'Place points to create an outline, then click confirm shape to build the polygon.';
                               });
                               Navigator.pop(context);
                             },
@@ -368,8 +422,11 @@ class _NaturePrevalenceState extends State<NaturePrevalence> {
                             ),
                             onPressed: () {
                               setState(() {
-                                _type = Vegetation.openField.name;
+                                _natureType = NatureType.vegetation;
+                                _vegetationType = VegetationType.openField;
                                 _polygonMode = true;
+                                _directions =
+                                    'Place points to create an outline, then click confirm shape to build the polygon.';
                               });
 
                               Navigator.pop(context);
@@ -395,6 +452,9 @@ class _NaturePrevalenceState extends State<NaturePrevalence> {
                           ),
                         ),
                         onTap: () {
+                          setState(() {
+                            _clearTypes();
+                          });
                           Navigator.pop(context);
                         },
                       ),
@@ -470,8 +530,11 @@ class _NaturePrevalenceState extends State<NaturePrevalence> {
                             ),
                             onPressed: () {
                               setState(() {
-                                _type = 'cat';
+                                _natureType = NatureType.animal;
+                                _animalType = AnimalType.cat;
                                 _pointMode = true;
+                                _directions =
+                                    'Place a point where you see the ${_animalType?.name}.';
                               });
                               Navigator.pop(context);
                             },
@@ -491,8 +554,11 @@ class _NaturePrevalenceState extends State<NaturePrevalence> {
                             child: Text('Dog'),
                             onPressed: () {
                               setState(() {
-                                _type = 'dog';
+                                _natureType = NatureType.animal;
+                                _animalType = AnimalType.dog;
                                 _pointMode = true;
+                                _directions =
+                                    'Place a point where you see the ${_animalType?.name}.';
                               });
                               Navigator.pop(context);
                             },
@@ -525,8 +591,11 @@ class _NaturePrevalenceState extends State<NaturePrevalence> {
                             ),
                             onPressed: () {
                               setState(() {
-                                _type = 'squirrel';
+                                _natureType = NatureType.animal;
+                                _animalType = AnimalType.squirrel;
                                 _pointMode = true;
+                                _directions =
+                                    'Place a point where you see the ${_animalType?.name}.';
                               });
                               Navigator.pop(context);
                             },
@@ -545,8 +614,11 @@ class _NaturePrevalenceState extends State<NaturePrevalence> {
                             ),
                             onPressed: () {
                               setState(() {
-                                _type = 'bird';
+                                _natureType = NatureType.animal;
+                                _animalType = AnimalType.bird;
                                 _pointMode = true;
+                                _directions =
+                                    'Place a point where you see the ${_animalType?.name}.';
                               });
 
                               Navigator.pop(context);
@@ -566,8 +638,11 @@ class _NaturePrevalenceState extends State<NaturePrevalence> {
                             ),
                             onPressed: () {
                               setState(() {
-                                _type = 'rabbit';
+                                _natureType = NatureType.animal;
+                                _animalType = AnimalType.rabbit;
                                 _pointMode = true;
+                                _directions =
+                                    'Place a point where you see the ${_animalType?.name}.';
                               });
                               Navigator.pop(context);
                             },
@@ -591,8 +666,11 @@ class _NaturePrevalenceState extends State<NaturePrevalence> {
                             ),
                             onPressed: () {
                               setState(() {
-                                _type = 'turtle';
+                                _natureType = NatureType.animal;
+                                _animalType = AnimalType.turtle;
                                 _pointMode = true;
+                                _directions =
+                                    'Place a point where you see the ${_animalType?.name}.';
                               });
                               Navigator.pop(context);
                             },
@@ -611,8 +689,11 @@ class _NaturePrevalenceState extends State<NaturePrevalence> {
                             ),
                             onPressed: () {
                               setState(() {
-                                _type = 'duck';
+                                _natureType = NatureType.animal;
+                                _animalType = AnimalType.duck;
                                 _pointMode = true;
+                                _directions =
+                                    'Place a point where you see the ${_animalType?.name}.';
                               });
                               Navigator.pop(context);
                             },
@@ -637,7 +718,7 @@ class _NaturePrevalenceState extends State<NaturePrevalence> {
                           flex: 3,
                           child: TextField(
                             onChanged: (otherText) {
-                              // TODO: use value
+                              _otherType = otherText;
                             },
                             decoration: InputDecoration(
                                 filled: true,
@@ -652,7 +733,16 @@ class _NaturePrevalenceState extends State<NaturePrevalence> {
                         Flexible(
                           flex: 2,
                           child: FilledButton(
-                            onPressed: () {},
+                            onPressed: () {
+                              setState(() {
+                                _natureType = NatureType.animal;
+                                _animalType = AnimalType.other;
+                                _pointMode = true;
+                                _directions =
+                                    'Place a point where you see the animal.';
+                              });
+                              Navigator.pop(context);
+                            },
                             style: FilledButton.styleFrom(
                               backgroundColor: Colors.white,
                               foregroundColor: Colors.black,
@@ -681,6 +771,9 @@ class _NaturePrevalenceState extends State<NaturePrevalence> {
                           ),
                         ),
                         onTap: () {
+                          setState(() {
+                            _clearTypes();
+                          });
                           Navigator.pop(context);
                         },
                       ),
@@ -709,11 +802,23 @@ class _NaturePrevalenceState extends State<NaturePrevalence> {
     );
   }
 
-  void _togglePoint(LatLng point) {
+  Future<void> _togglePoint(LatLng point) async {
     try {
-      // if (mp.PolygonUtil.containsLocation(mp.LatLng(point.latitude, point.longitude), _polygons.first.points, true))
+      if (!mp.PolygonUtil.containsLocation(
+          mp.LatLng(point.latitude, point.longitude), _projectArea, true)) {
+        setState(() {
+          _outsidePoint = true;
+        });
+      }
       if (_pointMode) _pointTap(point);
       if (_polygonMode) _polygonTap(point);
+      if (_outsidePoint) {
+        // TODO: fix delay. delay will overlap with consecutive taps. this means taps do not necessarily refresh the timer and will end prematurely
+        await Future.delayed(const Duration(seconds: 2));
+        setState(() {
+          _outsidePoint = false;
+        });
+      }
     } catch (e, stacktrace) {
       print('Error in nature_prevalence_test.dart, _togglePoint(): $e');
       print('Stacktrace: $stacktrace');
@@ -721,35 +826,33 @@ class _NaturePrevalenceState extends State<NaturePrevalence> {
   }
 
   void _polygonTap(LatLng point) {
-    if (_type != null) {
-      final markerId = MarkerId('${_type}_marker_${point.toString()}');
-      setState(() {
-        _polygonPoints.add(point);
-        _polygonMarkers.add(
-          Marker(
-            markerId: markerId,
-            position: point,
-            consumeTapEvents: true,
-            icon: AssetMapBitmap('assets/${_type}_marker.png'),
-            onTap: () {
-              // If the marker is tapped again, it will be removed
-              setState(() {
-                _polygonPoints.remove(point);
-                _polygonMarkers
-                    .removeWhere((marker) => marker.markerId == markerId);
-              });
-            },
-          ),
-        );
-      });
-      _type = 'cat';
-      _pointMode = false;
-    }
+    String? type = _getCurrentTypeName();
+    if (type == null) return;
+    final markerId = MarkerId('${type}_marker_${point.toString()}');
+    setState(() {
+      _polygonPoints.add(point);
+      _polygonMarkers.add(
+        Marker(
+          markerId: markerId,
+          position: point,
+          consumeTapEvents: true,
+          onTap: () {
+            // If the marker is tapped again, it will be removed
+            setState(() {
+              _polygonPoints.remove(point);
+              _polygonMarkers
+                  .removeWhere((marker) => marker.markerId == markerId);
+            });
+          },
+        ),
+      );
+    });
   }
 
   void _pointTap(LatLng point) {
-    if (_type != null) {
-      final markerId = MarkerId('${_type}_marker_${point.toString()}');
+    String? type = _getCurrentTypeName();
+    if (type != null) {
+      final markerId = MarkerId('${type}_marker_${point.toString()}');
       setState(() {
         // TODO: create list of markers for test, add these to it (cat, dog, etc.)
         _markers.add(
@@ -757,42 +860,50 @@ class _NaturePrevalenceState extends State<NaturePrevalence> {
             markerId: markerId,
             position: point,
             consumeTapEvents: true,
-            icon: AssetMapBitmap('assets/${_type}_marker.png'),
+            infoWindow: InfoWindow(),
+            icon: AssetMapBitmap(
+              'assets/test_markers/${type}_marker.png',
+              width: 25,
+              height: 25,
+            ),
             onTap: () {
               // If placing a point or polygon, don't remove point.
               if (_pointMode || _polygonMode) return;
               // If the marker is tapped again, it will be removed
+              animalData.removeWhere((animal) => animal.point == point);
               setState(() {
                 _markers.removeWhere((marker) => marker.markerId == markerId);
-                // TODO: create list of points for test
               });
             },
           ),
         );
+        _directions = 'Choose a category. Or, click finish to submit.';
       });
-      _type = 'cat';
+      animalData.add(Animal(
+          animalType: _animalType!, point: point, otherType: _otherType));
       _pointMode = false;
     }
   }
 
   void _finalizePolygon() {
+    Set<Polygon> tempPolygon;
     try {
+      tempPolygon = finalizePolygon(_polygonPoints);
       // Create polygon.
-      _polygons = {..._polygons, ...finalizePolygon(_polygonPoints)};
-      print(_polygons);
+      _polygons = {..._polygons, ...tempPolygon};
 
-      // Cleans up current polygon representations.
-      _polygonAsGeoPoints = [];
-      _mapToolsPolygonPoints = [];
-
-      // Creating points representations for Firestore storage and area calculation
-      for (LatLng coordinate in _polygonPoints) {
-        _polygonAsGeoPoints
-            .add(GeoPoint(coordinate.latitude, coordinate.longitude));
-        _mapToolsPolygonPoints
-            .add(mp.LatLng(coordinate.latitude, coordinate.longitude));
+      if (_natureType == NatureType.vegetation) {
+        vegetationData.add(Vegetation(
+            vegetationType: _vegetationType!,
+            polygon: tempPolygon.first,
+            otherType: _otherType));
+      } else if (_natureType == NatureType.waterBody) {
+        waterBodyData.add(WaterBody(
+            waterBodyType: _waterBodyType!, polygon: tempPolygon.first));
+      } else {
+        throw Exception("Invalid nature type in _finalizePolygon(), "
+            "_natureType = $_natureType");
       }
-
       // Clears polygon points and enter add points mode.
       _polygonPoints = [];
 
@@ -800,6 +911,7 @@ class _NaturePrevalenceState extends State<NaturePrevalence> {
       setState(() {
         _polygonMarkers.clear();
         _polygonMode = false;
+        _clearTypes();
       });
     } catch (e, stacktrace) {
       print('Exception in _finalize_polygon(): $e');
@@ -1006,7 +1118,13 @@ class _NaturePrevalenceState extends State<NaturePrevalence> {
                                           icon: const Icon(Icons.check),
                                           iconColor: Colors.green,
                                           onPressed: (_polygonMode)
-                                              ? _finalizePolygon
+                                              ? () {
+                                                  _finalizePolygon();
+                                                  setState(() {
+                                                    _directions =
+                                                        'Choose a category. Or, click finish if done.';
+                                                  });
+                                                }
                                               : null,
                                         ),
                                       ),
@@ -1024,6 +1142,7 @@ class _NaturePrevalenceState extends State<NaturePrevalence> {
                                                         _pointMode = false;
                                                         _polygonMode = false;
                                                         _polygonMarkers = {};
+                                                        _clearTypes();
                                                       });
                                                       _polygonPoints = [];
                                                     }
@@ -1044,8 +1163,11 @@ class _NaturePrevalenceState extends State<NaturePrevalence> {
                                       icon: const Icon(Icons.chevron_right,
                                           color: Colors.black),
                                       onPressed: () async {
-                                        // todo: await saveTest()
-                                        // saveTest()
+                                        natureData.animals = animalData;
+                                        natureData.vegetation = vegetationData;
+                                        natureData.waterBodies = waterBodyData;
+                                        widget.activeTest
+                                            .submitData(natureData);
                                         Navigator.pushReplacement(
                                             context,
                                             MaterialPageRoute(
@@ -1058,7 +1180,7 @@ class _NaturePrevalenceState extends State<NaturePrevalence> {
                                               builder: (context) =>
                                                   ProjectDetailsPage(
                                                       projectData:
-                                                          widget.projectData),
+                                                          widget.activeProject),
                                             ));
                                       },
                                     ),
