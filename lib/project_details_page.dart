@@ -2,6 +2,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:p2bp_2025spring_mobile/show_project_options_dialog.dart';
+import 'package:p2bp_2025spring_mobile/standing_points_page.dart';
 import 'db_schema_classes.dart';
 import 'package:flutter/services.dart';
 import 'package:p2bp_2025spring_mobile/create_test_form.dart';
@@ -247,7 +248,15 @@ class _ProjectDetailsPageState extends State<ProjectDetailsPage> {
                         // foregroundColor: foregroundColor,
                         // backgroundColor: backgroundColor,
                       ),
-                      onPressed: _showCreateTestModal,
+                      onPressed: () {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                              builder: (context) => StandingPointsPage(
+                                  activeProject: widget.projectData)),
+                        );
+                        // _showCreateTestModal
+                      },
                       label: Text('Create'),
                       icon: Icon(Icons.add),
                       iconAlignment: IconAlignment.end,

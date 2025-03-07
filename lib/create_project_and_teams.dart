@@ -169,7 +169,7 @@ class _CreateProjectWidgetState extends State<CreateProjectWidget> {
                   labelText: 'Project Name',
                   maxLines: 1,
                   minLines: 1,
-                  // Error mesasge field includes validation (3 characters min)
+                  // Error message field includes validation (3 characters min)
                   errorMessage:
                       'Project names must be at least 3 characters long.',
                   onChanged: (titleText) {
@@ -197,7 +197,7 @@ class _CreateProjectWidgetState extends State<CreateProjectWidget> {
                   labelText: 'Project Description',
                   maxLines: 3,
                   minLines: 3,
-                  // Error mesasge field includes validation (3 characters min)
+                  // Error message field includes validation (3 characters min)
                   errorMessage:
                       'Project descriptions must be at least 3 characters long.',
                   onChanged: (descriptionText) {
@@ -288,7 +288,7 @@ class _CreateTeamWidgetState extends State<CreateTeamWidget> {
 
       membersList = membersList
           .where((member) =>
-              member.getFullName().toLowerCase().startsWith(text.toLowerCase()))
+              member.fullName.toLowerCase().startsWith(text.toLowerCase()))
           .toList();
 
       _isLoading = false;
@@ -406,7 +406,7 @@ class _CreateTeamWidgetState extends State<CreateTeamWidget> {
                   labelText: 'Team Name',
                   maxLines: 1,
                   minLines: 1,
-                  // Error mesasge field includes validation (3 characters min)
+                  // Error message field includes validation (3 characters min)
                   errorMessage:
                       'Team names must be at least 3 characters long.',
                   onChanged: (teamText) {
@@ -481,9 +481,8 @@ class _CreateTeamWidgetState extends State<CreateTeamWidget> {
                     icon: const Icon(Icons.chevron_right),
                     onPressed: () async {
                       if (_formKey.currentState!.validate()) {
-                        // TODO: If the form is valid, display a snackbar, await database
                         ScaffoldMessenger.of(context).showSnackBar(
-                          const SnackBar(content: Text('Processing Data')),
+                          const SnackBar(content: Text('Saving data...')),
                         );
                         await saveTeam(
                             membersList: invitedMembers, teamName: teamName);
@@ -521,7 +520,7 @@ class _CreateTeamWidgetState extends State<CreateTeamWidget> {
             CircleAvatar(),
             SizedBox(width: 15),
             Expanded(
-              child: Text(member.getFullName()),
+              child: Text(member.fullName),
             ),
             Align(
               alignment: Alignment.centerRight,
@@ -537,11 +536,11 @@ class _CreateTeamWidgetState extends State<CreateTeamWidget> {
   InkWell memberInviteButton(
       {required int index, required String teamID, required Member member}) {
     return InkWell(
-      child: Text(member.getInvited() == true ? "Invite sent!" : "Invite"),
+      child: Text(member.invited ? "Invite sent!" : "Invite"),
       onTap: () {
         setState(() {
-          if (member.getInvited() == false) {
-            member.setInvited(true);
+          if (!member.invited) {
+            member.invited = true;
             invitedMembers.add(member);
           }
         });

@@ -17,41 +17,11 @@ final FirebaseFirestore _firestore = FirebaseFirestore.instance;
 
 // User class for create_project_and_teams.dart
 class Member {
-  String _userID = '';
-  String _fullName = '';
-  bool _invited = false;
+  String userID = '';
+  String fullName = '';
+  bool invited = false;
 
-  Member(
-      {required String userID,
-      required String fullName,
-      bool invited = false}) {
-    _userID = userID;
-    _fullName = fullName;
-    _invited = invited;
-  }
-  void setUserID(String userID) {
-    _userID = userID;
-  }
-
-  void setFullName(String fullName) {
-    _fullName = fullName;
-  }
-
-  void setInvited(bool invited) {
-    _invited = invited;
-  }
-
-  String getUserID() {
-    return _userID;
-  }
-
-  String getFullName() {
-    return _fullName;
-  }
-
-  bool getInvited() {
-    return _invited;
-  }
+  Member({required this.userID, required this.fullName, this.invited = false});
 }
 
 // Team class for teams_and_invites_page.dart
@@ -91,6 +61,7 @@ class Project {
   num polygonArea = 0;
   List<DocumentReference> testRefs = [];
   List<Test>? tests;
+  List standingPoints = [];
 
   Project({
     this.creationTime,
@@ -100,6 +71,7 @@ class Project {
     required this.description,
     required this.polygonPoints,
     required this.polygonArea,
+    required this.standingPoints,
     required this.testRefs,
     this.tests,
   });
