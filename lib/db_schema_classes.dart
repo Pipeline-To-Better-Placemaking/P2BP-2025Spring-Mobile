@@ -333,7 +333,7 @@ typedef LightToLatLngMap = Map<LightType, Set<LatLng>>;
 /// retrieved from Firestore.
 typedef StringToGeoPointMap = Map<String, List<GeoPoint>>;
 
-/// Class for lighting profile test info and methods.
+/// Class for Lighting Profile Test info and methods.
 class LightingProfileTest extends Test<LightToLatLngMap> {
   /// Returns a new instance of the initial data structure used for
   /// Lighting Profile Test.
@@ -440,7 +440,7 @@ class LightingProfileTest extends Test<LightToLatLngMap> {
       isComplete = true;
 
       print(
-          'Success! In LightingProfileTest.submitData. firestoreData = $firestoreData');
+          'Success! In LightingProfileTest.submitData. data = $firestoreData');
     } catch (e, stacktrace) {
       print("Exception in LightingProfileTest.submitData(): $e");
       print("Stacktrace: $stacktrace");
@@ -481,12 +481,20 @@ class LightingProfileTest extends Test<LightToLatLngMap> {
   }
 }
 
+/// Parent class for data classes which need a single location point.
+///
+/// Created for use with [BehaviorPoint] and [MaintenancePoint] in
+/// [AbsenceOfOrderTest], but could potentially be used for other similar
+/// data types which use a single point with an arbitrary amount of other
+/// attributes attached to it.
 abstract class DataPoint {
   LatLng? location;
 
   DataPoint({this.location});
 }
 
+/// Class for points representing instances of Behavior Misconduct in
+/// [AbsenceOfOrderTest].
 class BehaviorPoint extends DataPoint {
   bool boisterousVoice;
   bool dangerousWildlife;
@@ -507,6 +515,8 @@ class BehaviorPoint extends DataPoint {
     required this.other,
   });
 
+  /// Constructor not requiring a location. Used when setting description
+  /// of misconduct before placing point on [AbsenceOfOrderTestPage].
   BehaviorPoint.noLocation({
     required this.boisterousVoice,
     required this.dangerousWildlife,
@@ -517,28 +527,27 @@ class BehaviorPoint extends DataPoint {
     required this.other,
   });
 
-  BehaviorPoint.empty()
-      : boisterousVoice = false,
-        dangerousWildlife = false,
-        livingInPublic = false,
-        panhandling = false,
-        recklessBehavior = false,
-        unsafeEquipment = false,
-        other = '';
-
-  static BehaviorPoint fromJson(Map<String, dynamic> point) {
+  /// Directly takes a Json-type object and returns a new [BehaviorPoint]
+  /// created with that data.
+  static BehaviorPoint fromJson(Map<String, dynamic> dataPoint) {
     return BehaviorPoint(
-      location: (point['location'] as GeoPoint).toLatLng(),
-      boisterousVoice: point['boisterousVoice'],
-      dangerousWildlife: point['dangerousWildlife'],
-      livingInPublic: point['livingInPublic'],
-      panhandling: point['panhandling'],
-      recklessBehavior: point['recklessBehavior'],
-      unsafeEquipment: point['unsafeEquipment'],
-      other: point['other'],
+      location: (dataPoint['location'] as GeoPoint).toLatLng(),
+      boisterousVoice: dataPoint['boisterousVoice'],
+      dangerousWildlife: dataPoint['dangerousWildlife'],
+      livingInPublic: dataPoint['livingInPublic'],
+      panhandling: dataPoint['panhandling'],
+      recklessBehavior: dataPoint['recklessBehavior'],
+      unsafeEquipment: dataPoint['unsafeEquipment'],
+      other: dataPoint['other'],
     );
   }
 
+  /// Returns a new Json-type object containing all properties of this
+  /// [BehaviorPoint].
+  ///
+  /// Converts the [location] to [GeoPoint] since that is the type
+  /// used in Firestore. This leads to [location] not being as easily
+  /// converted to a String as the rest of the properties.
   Map<String, Object?> toJson() {
     return {
       'location': location?.toGeoPoint(),
@@ -558,6 +567,8 @@ class BehaviorPoint extends DataPoint {
   }
 }
 
+/// Class for points representing instances of Maintenance Misconduct in
+/// [AbsenceOfOrderTest].
 class MaintenancePoint extends DataPoint {
   bool brokenEnvironment;
   bool dirtyOrUnmaintained;
@@ -578,6 +589,8 @@ class MaintenancePoint extends DataPoint {
     required this.other,
   });
 
+  /// Constructor not requiring a location. Used when setting description
+  /// of misconduct before placing point on [AbsenceOfOrderTestPage].
   MaintenancePoint.noLocation({
     required this.brokenEnvironment,
     required this.dirtyOrUnmaintained,
@@ -588,28 +601,27 @@ class MaintenancePoint extends DataPoint {
     required this.other,
   });
 
-  MaintenancePoint.empty()
-      : brokenEnvironment = false,
-        dirtyOrUnmaintained = false,
-        littering = false,
-        overfilledTrash = false,
-        unkeptLandscape = false,
-        unwantedGraffiti = false,
-        other = '';
-
-  static MaintenancePoint fromJson(Map<String, dynamic> point) {
+  /// Directly takes a Json-type object and returns a new [MaintenancePoint]
+  /// created with that data.
+  static MaintenancePoint fromJson(Map<String, dynamic> dataPoint) {
     return MaintenancePoint(
-      location: (point['location'] as GeoPoint).toLatLng(),
-      brokenEnvironment: point['brokenEnvironment'],
-      dirtyOrUnmaintained: point['dirtyOrUnmaintained'],
-      littering: point['littering'],
-      overfilledTrash: point['overfilledTrash'],
-      unkeptLandscape: point['unkeptLandscape'],
-      unwantedGraffiti: point['unwantedGraffiti'],
-      other: point['other'],
+      location: (dataPoint['location'] as GeoPoint).toLatLng(),
+      brokenEnvironment: dataPoint['brokenEnvironment'],
+      dirtyOrUnmaintained: dataPoint['dirtyOrUnmaintained'],
+      littering: dataPoint['littering'],
+      overfilledTrash: dataPoint['overfilledTrash'],
+      unkeptLandscape: dataPoint['unkeptLandscape'],
+      unwantedGraffiti: dataPoint['unwantedGraffiti'],
+      other: dataPoint['other'],
     );
   }
 
+  /// Returns a new Json-type object containing all properties of this
+  /// [MaintenancePoint].
+  ///
+  /// Converts the [location] to [GeoPoint] since that is the type
+  /// used in Firestore. This leads to [location] not being as easily
+  /// converted to a String as the rest of the properties.
   Map<String, Object?> toJson() {
     return {
       'location': location?.toGeoPoint(),
@@ -629,12 +641,20 @@ class MaintenancePoint extends DataPoint {
   }
 }
 
+/// Class representing the data format used for [AbsenceOfOrderTest].
+///
+/// This is used as the generic type in the definition
+/// of [AbsenceOfOrderTest].
 class AbsenceOfOrderData {
   List<BehaviorPoint> behaviorList = [];
   List<MaintenancePoint> maintenanceList = [];
 
   AbsenceOfOrderData();
 
+  /// Creates an [AbsenceOfOrderData] object from a Json-type object.
+  ///
+  /// Used for recreating data instances from existing
+  /// [AbsenceOfOrderTest] instances in Firestore.
   AbsenceOfOrderData.fromJson(Map<String, dynamic> data) {
     if (data.containsKey('behaviorPoints') &&
         (data['behaviorPoints'] as List).isNotEmpty) {
@@ -650,6 +670,12 @@ class AbsenceOfOrderData {
     }
   }
 
+  /// Returns a new Json-type object containing all data from this
+  /// [AbsenceOfOrderData] object.
+  ///
+  /// Used when submitting a new [AbsenceOfOrderData] object from
+  /// a completed [AbsenceOfOrderTest] to get the correct format for
+  /// Firestore.
   Map<String, Object> toJson() {
     Map<String, List<Map<String, dynamic>?>> json = {
       'behaviorPoints': [],
@@ -698,9 +724,15 @@ class AbsenceOfOrderData {
   }
 }
 
+/// Class for Absence of Order Test info and methods.
 class AbsenceOfOrderTest extends Test<AbsenceOfOrderData> {
   static const String collectionIDStatic = 'absence_of_order_tests';
 
+  /// Creates a new [AbsenceOfOrderTest] instance from the given arguments.
+  ///
+  /// This is private because the intended usage of this is through the
+  /// 'factory constructor' in [Test] via [Test]'s various static methods
+  /// imitating factory constructors.
   AbsenceOfOrderTest._({
     required super.title,
     required super.testID,
@@ -713,6 +745,7 @@ class AbsenceOfOrderTest extends Test<AbsenceOfOrderData> {
     super.isComplete,
   }) : super._();
 
+  /// Registers this class within the Maps required by class [Test].
   static void register() {
     // Register for creating new Absence of Order Tests
     Test._newTestConstructors[collectionIDStatic] = ({
@@ -772,6 +805,12 @@ class AbsenceOfOrderTest extends Test<AbsenceOfOrderData> {
     }
   }
 
+  /// Returns a new [AbsenceOfOrderTest] instance created from Json-type
+  /// object [doc].
+  ///
+  /// Typically, [doc] is a representation of an existing
+  /// [AbsenceOfOrderTest] in Firestore and this is used for recreating
+  /// that [Test] object.
   static AbsenceOfOrderTest fromJson(Map<String, dynamic> doc) {
     return AbsenceOfOrderTest._(
       title: doc['title'],
@@ -786,6 +825,11 @@ class AbsenceOfOrderTest extends Test<AbsenceOfOrderData> {
     );
   }
 
+  /// Returns a Json-type object representing this [AbsenceOfOrderTest]
+  /// object.
+  ///
+  /// Typically used when saving or updating this object to get the
+  /// correct format for Firestore.
   Map<String, Object> toJson() {
     return {
       'title': title,
