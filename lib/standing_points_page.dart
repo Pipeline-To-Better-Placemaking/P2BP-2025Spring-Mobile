@@ -4,15 +4,14 @@ import 'package:flutter/material.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:p2bp_2025spring_mobile/theme.dart';
 import 'google_maps_functions.dart';
-import 'package:p2bp_2025spring_mobile/widgets.dart';
 import 'db_schema_classes.dart';
-import 'dart:math';
 import 'firestore_functions.dart';
 
 class StandingPointsPage extends StatefulWidget {
-  // TODO: add test data for adding standing points to test
   final Project activeProject;
-  const StandingPointsPage({super.key, required this.activeProject});
+  final List? currentStandingPoints;
+  const StandingPointsPage(
+      {super.key, required this.activeProject, this.currentStandingPoints});
 
   @override
   State<StandingPointsPage> createState() => _StandingPointsPageState();
@@ -36,15 +35,14 @@ class _StandingPointsPageState extends State<StandingPointsPage> {
   LatLng _location = defaultLocation; // Default location
   bool _isLoading = true;
   String _directions =
-      "Select the standing points you want to use in this test.";
-  List<LatLng> _standingPoints = [];
+      "Select the standing points you want to use in this test. Then click confirm.";
   Set<Polygon> _polygons = {}; // Set of polygons
   Set<Marker> _markers = {}; // Set of markers for points
-  List<Marker> _markerList = [];
-  Marker? _tappedMarker;
+  List _standingPoints = [];
+  Marker? _currentMarker;
   double _bottomSheetHeight = 300;
   MapType _currentMapType = MapType.satellite; // Default map type
-
+  final List<bool> _checkboxValues = [];
   Project? project;
 
   @override
@@ -62,27 +60,40 @@ class _StandingPointsPageState extends State<StandingPointsPage> {
       // Take some latitude away to center considering bottom sheet.
       _location = LatLng(_location.latitude * .999999, _location.longitude);
       // TODO: dynamic zooming
-      _standingPoints = widget.activeProject.standingPoints.toLatLngList();
-      _markers = _setMarkersFromPoints(_standingPoints);
-      _markerList = _markers.toList(growable: true);
+      _markers = _setMarkersFromPoints(widget.activeProject.standingPoints);
+      _standingPoints = widget.activeProject.standingPoints;
+      if (widget.currentStandingPoints != null) {
+        final List? currentStandingPoints = widget.currentStandingPoints;
+        _loadCurrentStandingPoints(currentStandingPoints);
+      }
       _isLoading = false;
     });
   }
 
-  Set<Marker> _setMarkersFromPoints(List<LatLng> points) {
+  /// Takes a list of points and creates the default markers from their title
+  /// and position.
+  Set<Marker> _setMarkersFromPoints(List points) {
     Set<Marker> markers = {};
-    for (LatLng point in points) {
+    for (Map point in points) {
       final markerId = MarkerId(point.toString());
+      _checkboxValues.add(false);
       markers.add(
         Marker(
             markerId: markerId,
-            position: point,
+            position: (point['point'] as GeoPoint).toLatLng(),
             icon: disabledIcon,
-            consumeTapEvents: true,
+            infoWindow: InfoWindow(
+              title: point['title'],
+              snippet:
+                  '${point['point'].latitude.toStringAsFixed(5)}, ${point['point'].latitude.toStringAsFixed(5)}',
+            ),
             onTap: () {
               final Marker thisMarker =
-                  _markers.firstWhere((marker) => marker.markerId == markerId);
-              _tappedMarker = thisMarker;
+                  _markers.singleWhere((marker) => marker.markerId == markerId);
+              final int listIndex = _standingPoints.indexWhere((namePointMap) =>
+                  namePointMap['point'] == thisMarker.position.toGeoPoint());
+              _currentMarker = thisMarker;
+              _checkboxValues[listIndex] = !_checkboxValues[listIndex];
               _toggleMarker();
             }),
       );
@@ -90,33 +101,46 @@ class _StandingPointsPageState extends State<StandingPointsPage> {
     return markers;
   }
 
+  /// Toggles the [_currentMarker] on or off.
   void _toggleMarker() {
-    if (_tappedMarker == null) return;
-    if (_tappedMarker?.icon == enabledIcon) {
+    if (_currentMarker == null) return;
+    // Adds either an enabled or disabled marker based on whether _currentMarker
+    // is disabled or enabled.
+    if (_currentMarker?.icon == enabledIcon) {
       setState(() {
-        _markers.add(_tappedMarker!.copyWith(iconParam: disabledIcon));
+        _markers.add(_currentMarker!.copyWith(iconParam: disabledIcon));
       });
-      _markerList.add(_tappedMarker!.copyWith(iconParam: enabledIcon));
-    } else if (_tappedMarker?.icon == disabledIcon) {
-      print("\n\n\nPL");
+    } else if (_currentMarker?.icon == disabledIcon) {
       setState(() {
-        _markers.add(_tappedMarker!.copyWith(iconParam: enabledIcon));
+        _markers.add(_currentMarker!.copyWith(iconParam: enabledIcon));
       });
-      _markerList.add(_tappedMarker!.copyWith(iconParam: enabledIcon));
     }
+    // Remove the old outdated marker after the new marker has been added.
     setState(() {
-      _markers.remove(_tappedMarker);
+      _markers.remove(_currentMarker);
     });
-    _markerList.remove(_tappedMarker);
-    _tappedMarker = null;
+    _currentMarker = null;
+  }
+
+  void _loadCurrentStandingPoints(List? currentStandingPoints) {
+    if (currentStandingPoints == null) return;
+    for (Map point in currentStandingPoints) {
+      final Marker thisMarker = _markers.singleWhere(
+          (marker) => point['point'] == marker.position.toGeoPoint());
+      final int listIndex = _standingPoints.indexWhere((namePointMap) =>
+          namePointMap['point'] == thisMarker.position.toGeoPoint());
+      _currentMarker = thisMarker;
+      _checkboxValues[listIndex] = !_checkboxValues[listIndex];
+      _toggleMarker();
+    }
   }
 
   void _onMapCreated(GoogleMapController controller) {
     mapController = controller;
-    _moveToCurrentLocation(); // Ensure the map is centered on the current location
+    _moveToLocation(); // Ensure the map is centered on the current location
   }
 
-  void _moveToCurrentLocation() {
+  void _moveToLocation() {
     if (mapController == null) return;
     mapController!.animateCamera(
       CameraUpdate.newCameraPosition(
@@ -146,6 +170,7 @@ class _StandingPointsPageState extends State<StandingPointsPage> {
                     child: Stack(
                       children: [
                         GoogleMap(
+                          padding: EdgeInsets.only(bottom: _bottomSheetHeight),
                           onMapCreated: _onMapCreated,
                           initialCameraPosition:
                               CameraPosition(target: _location, zoom: 14.0),
@@ -190,8 +215,8 @@ class _StandingPointsPageState extends State<StandingPointsPage> {
                         Align(
                           alignment: Alignment.bottomLeft,
                           child: Padding(
-                            padding:
-                                const EdgeInsets.only(left: 10.0, bottom: 50.0),
+                            padding: EdgeInsets.only(
+                                left: 10.0, bottom: _bottomSheetHeight + 50),
                             child: FloatingActionButton(
                               heroTag: null,
                               onPressed: _toggleMapType,
@@ -203,89 +228,120 @@ class _StandingPointsPageState extends State<StandingPointsPage> {
                       ],
                     ),
                   ),
-                  Padding(
-                    padding: EdgeInsets.symmetric(vertical: 15),
-                    child: Align(
-                      alignment: Alignment.bottomCenter,
-                      child: EditButton(
-                        text: 'Next',
-                        foregroundColor: Colors.white,
-                        backgroundColor: const Color(0xFF4871AE),
-                        icon: const Icon(Icons.chevron_right),
-                        onPressed: _isLoading ? null : () {},
-                      ),
-                    ),
-                  ),
-                  Align(
-                    alignment: Alignment.bottomCenter,
-                    child: Padding(
-                      padding: const EdgeInsets.symmetric(
-                          vertical: 30.0, horizontal: 100.0),
-                      child: Container(
-                        padding:
-                            EdgeInsets.symmetric(horizontal: 15, vertical: 10),
-                        decoration: BoxDecoration(
-                          color: Colors.red[900],
-                          borderRadius:
-                              const BorderRadius.all(Radius.circular(10)),
-                          boxShadow: [
-                            BoxShadow(
-                              color: Colors.black.withValues(alpha: 0.1),
-                              blurRadius: 6,
-                              offset: const Offset(0, 2),
-                            ),
-                          ],
-                        ),
-                        child: Text(
-                          'You tried to place a point outside of the project area!',
-                          maxLines: 3,
-                          overflow: TextOverflow.ellipsis,
-                          style: TextStyle(
-                            fontSize: 18,
-                            fontWeight: FontWeight.w500,
-                            color: Colors.red[50],
-                          ),
-                        ),
-                      ),
-                    ),
-                  ),
                 ],
               ),
-        bottomSheet: SizedBox(
+        bottomSheet: Container(
           height: _bottomSheetHeight,
-          child: ListView.separated(
-            padding: const EdgeInsets.only(
-              left: 15,
-              right: 15,
-              top: 25,
-              bottom: 25,
-            ),
-            itemCount: _markers.length,
-            itemBuilder: (BuildContext context, int index) {
-              return Row(
-                children: <Widget>[
-                  Checkbox(
-                    onChanged: (bool? value) {
-                      setState(() {
-                        value = value!;
-                      });
+          decoration: BoxDecoration(
+            border: Border.all(color: Colors.black, width: 1.5),
+            borderRadius: BorderRadius.vertical(top: Radius.circular(25.0)),
+          ),
+          child: Stack(
+            children: [
+              Padding(
+                padding:
+                    const EdgeInsets.only(left: 15.0, right: 15.0, top: 15.0),
+                child: SizedBox(
+                  height: _bottomSheetHeight,
+                  child: ListView.separated(
+                    padding: const EdgeInsets.only(
+                      left: 15.0,
+                      right: 15.0,
+                      bottom: 50.0,
+                    ),
+                    itemCount: _markers.length,
+                    itemBuilder: (BuildContext context, int index) {
+                      return Column(
+                        children: [
+                          index == 0 ? Divider() : SizedBox(),
+                          CheckboxListTile(
+                            title: Text(
+                              "${_standingPoints[index]['title']}",
+                              style: TextStyle(
+                                  fontWeight: FontWeight.bold,
+                                  overflow: TextOverflow.fade),
+                            ),
+                            subtitle: Text(
+                                "${_standingPoints[index]['point'].latitude.toStringAsFixed(5)}, ${_standingPoints[index]['point'].longitude.toStringAsFixed(5)}"),
+                            value: _checkboxValues[index],
+                            onChanged: _isLoading
+                                ? null
+                                : (bool? value) {
+                                    setState(() {
+                                      _checkboxValues[index] =
+                                          !_checkboxValues[index];
+                                    });
+                                    _currentMarker = _markers.singleWhere(
+                                        (marker) =>
+                                            marker.position ==
+                                            (_standingPoints[index]['point']
+                                                    as GeoPoint)
+                                                .toLatLng());
+                                    _location = _currentMarker!.position;
+                                    _moveToLocation();
+                                    _toggleMarker();
+                                  },
+                          ),
+                          Divider(),
+                        ],
+                      );
                     },
-                    value: true,
+                    separatorBuilder: (BuildContext context, int index) =>
+                        const SizedBox(
+                      height: 10,
+                    ),
                   ),
-                  Column(
-                    children: [
-                      Text("Title"),
-                      Text(
-                          "${_markerList[index].position.latitude}, ${_markerList[index].position.longitude}"),
-                    ],
+                ),
+              ),
+              Padding(
+                padding: EdgeInsets.only(bottom: 5),
+                child: Align(
+                  alignment: Alignment.bottomCenter,
+                  child: FilledButton.icon(
+                    style: FilledButton.styleFrom(
+                      padding: const EdgeInsets.only(left: 15, right: 15),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(15.0),
+                      ),
+                      elevation: 3.0,
+                      shadowColor: Colors.black,
+                      foregroundColor: Colors.white,
+                      backgroundColor: Colors.black,
+                      iconColor: Colors.white,
+                      disabledBackgroundColor: disabledGrey,
+                    ),
+                    onPressed: _isLoading
+                        ? null
+                        : () {
+                            try {
+                              if (_checkboxValues.length !=
+                                  _standingPoints.length) {
+                                throw Exception(
+                                    "Checkbox values and standing points do not match!");
+                              }
+                              setState(() {
+                                _isLoading = true;
+                              });
+                              List enabledPoints = [];
+                              for (int i = 0; i < _standingPoints.length; i++) {
+                                if (_checkboxValues[i]) {
+                                  enabledPoints.add(_standingPoints[i]);
+                                }
+                              }
+                              Navigator.pop(context, enabledPoints);
+                            } catch (e, stacktrace) {
+                              print(
+                                  "Exception in confirming standing points (standing_points_page.dart): $e");
+                              print("Stacktrace: $stacktrace");
+                            }
+                          },
+                    label: Text('Confirm'),
+                    icon: const Icon(Icons.check),
+                    iconAlignment: IconAlignment.end,
                   ),
-                ],
-              );
-            },
-            separatorBuilder: (BuildContext context, int index) =>
-                const SizedBox(
-              height: 50,
-            ),
+                ),
+              ),
+            ],
           ),
         ),
       ),

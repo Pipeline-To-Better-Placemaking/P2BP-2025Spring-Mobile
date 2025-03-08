@@ -28,17 +28,21 @@ class _ProjectMapCreationState extends State<ProjectMapCreation> {
   late DocumentReference teamRef;
   late GoogleMapController mapController;
   LatLng _currentLocation = defaultLocation; // Default location
+  bool _deleteMode = false;
   bool _isLoading = true;
   bool _pointMode = false;
   bool _polygonMode = true;
   bool _outsidePoint = false;
+  String? _pointName;
   String _directions =
       "Place points for your polygon, and click the check to confirm it. When you're satisfied click next.";
+  String _errorText = 'You tried to place a point outside of the project area!';
   List<LatLng> _polygonPoints = []; // Points for the polygon
-  List<LatLng> _standingPoints = [];
+  List<Map> _standingPoints = [];
   List<mp.LatLng> _mapToolsPolygonPoints = [];
   Set<Polygon> _polygon = {}; // Set of polygons
   Set<Marker> _markers = {}; // Set of markers for points
+  final _formKey = GlobalKey<FormState>();
 
   MapType _currentMapType = MapType.satellite; // Default map type
 
@@ -85,41 +89,49 @@ class _ProjectMapCreationState extends State<ProjectMapCreation> {
 
   void _togglePoint(LatLng point) {
     if (_pointMode == true) {
-      _pointTap(point);
+      if (_deleteMode) return;
+      if (!mp.PolygonUtil.containsLocationAtLatLng(
+          point.latitude, point.longitude, _mapToolsPolygonPoints, true)) {
+        setState(() {
+          _outsidePoint = true;
+        });
+        // TODO: change logic for this
+        Future.delayed(Duration(seconds: 2), () {
+          setState(() {
+            _outsidePoint = false;
+          });
+        });
+        return;
+      }
+      _showDialog(point);
     } else if (_polygonMode == true) {
       _polygonTap(point);
     }
   }
 
-  void _pointTap(LatLng point) {
-    if (!mp.PolygonUtil.containsLocationAtLatLng(
-        point.latitude, point.longitude, _mapToolsPolygonPoints, true)) {
-      setState(() {
-        _outsidePoint = true;
-      });
-      // TODO: change logic for this
-      Future.delayed(Duration(seconds: 2), () {
-        setState(() {
-          _outsidePoint = false;
-        });
-      });
-      return;
-    }
+  void _pointTap(LatLng point, String? title) {
+    if (title == null) return;
     final markerId = MarkerId(point.toString());
-    _standingPoints.add(point);
+    _standingPoints.add({'title': title, 'point': point.toGeoPoint()});
     setState(() {
       _markers.add(
         Marker(
           markerId: markerId,
           position: point,
-          consumeTapEvents: true,
+          infoWindow: InfoWindow(
+              title: title,
+              snippet:
+                  '${point.latitude.toStringAsFixed(5)}, ${point.latitude.toStringAsFixed(5)}',
+              onTap: () {}),
           icon: BitmapDescriptor.defaultMarkerWithHue(100),
           onTap: () {
-            // If the marker is tapped again, it will be removed
-            setState(() {
-              _markers.removeWhere((marker) => marker.markerId == markerId);
-              _standingPoints.remove(point);
-            });
+            if (_deleteMode) {
+              setState(() {
+                _markers.removeWhere((marker) => marker.markerId == markerId);
+                _standingPoints.removeWhere((standingPoint) =>
+                    standingPoint.containsValue(point.toGeoPoint()));
+              });
+            }
           },
         ),
       );
@@ -268,7 +280,38 @@ class _ProjectMapCreationState extends State<ProjectMapCreation> {
                                   ),
                                 ),
                               )
-                            : SizedBox(),
+                            : Align(
+                                alignment: Alignment.bottomLeft,
+                                child: Padding(
+                                  padding: const EdgeInsets.only(
+                                      left: 10.0, bottom: 130.0),
+                                  child: FloatingActionButton(
+                                    heroTag: null,
+                                    onPressed: () {
+                                      setState(() {
+                                        _deleteMode = !_deleteMode;
+                                        if (_deleteMode == true) {
+                                          _outsidePoint = false;
+                                          _errorText =
+                                              'You are in delete mode.';
+                                        } else {
+                                          _outsidePoint = false;
+                                          _errorText =
+                                              'You tried to place a point outside of the project area!';
+                                        }
+                                      });
+                                    },
+                                    backgroundColor:
+                                        _deleteMode ? Colors.blue : Colors.red,
+                                    child: Icon(
+                                      _deleteMode
+                                          ? Icons.location_on
+                                          : Icons.delete,
+                                      size: 30,
+                                    ),
+                                  ),
+                                ),
+                              ),
                       ],
                     ),
                   ),
@@ -337,8 +380,7 @@ class _ProjectMapCreationState extends State<ProjectMapCreation> {
                                               mp.SphericalUtil.computeArea(
                                                       _mapToolsPolygonPoints) *
                                                   pow(feetPerMeter, 2),
-                                          standingPoints:
-                                              _standingPoints.toGeoPointList(),
+                                          standingPoints: _standingPoints,
                                         );
                                         if (!context.mounted) return;
                                         Navigator.pushReplacement(
@@ -366,7 +408,7 @@ class _ProjectMapCreationState extends State<ProjectMapCreation> {
                             ),
                           ),
                         ),
-                  _outsidePoint
+                  _outsidePoint || _deleteMode
                       ? Align(
                           alignment: Alignment.bottomCenter,
                           child: Padding(
@@ -388,7 +430,7 @@ class _ProjectMapCreationState extends State<ProjectMapCreation> {
                                 ],
                               ),
                               child: Text(
-                                'You tried to place a point outside of the project area!',
+                                _errorText,
                                 maxLines: 3,
                                 overflow: TextOverflow.ellipsis,
                                 style: TextStyle(
@@ -404,6 +446,62 @@ class _ProjectMapCreationState extends State<ProjectMapCreation> {
                 ],
               ),
       ),
+    );
+  }
+
+  void _showDialog(LatLng point) {
+    showDialog(
+      context: context,
+      builder: (context) {
+        return AlertDialog(
+          scrollable: true,
+          title: Column(
+            children: [
+              Text(
+                'Enter Standing Point Title',
+                style: TextStyle(
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+            ],
+          ),
+          content: Form(
+            key: _formKey,
+            child: DialogTextBox(
+              maxLength: 60,
+              labelText: 'Enter the name of the standing point',
+              errorMessage: 'Please enter at least 3 characters.',
+              onChanged: (inputText) {
+                setState(() {
+                  _pointName = inputText;
+                });
+              },
+            ),
+          ),
+          actions: <Widget>[
+            TextButton(
+              onPressed: () {
+                Navigator.pop(context, 'Cancel');
+                {
+                  _pointName = null;
+                }
+              },
+              child: const Text('Cancel'),
+            ),
+            TextButton(
+              onPressed: () {
+                if (_formKey.currentState!.validate() &&
+                    _pointName != null &&
+                    _pointName!.characters.length > 2) {
+                  _pointTap(point, _pointName);
+                  Navigator.pop(context, 'Next');
+                }
+              },
+              child: const Text('Next'),
+            ),
+          ],
+        );
+      },
     );
   }
 }

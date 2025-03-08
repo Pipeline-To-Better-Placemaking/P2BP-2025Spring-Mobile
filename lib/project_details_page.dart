@@ -248,15 +248,7 @@ class _ProjectDetailsPageState extends State<ProjectDetailsPage> {
                         // foregroundColor: foregroundColor,
                         // backgroundColor: backgroundColor,
                       ),
-                      onPressed: () {
-                        Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                              builder: (context) => StandingPointsPage(
-                                  activeProject: widget.projectData)),
-                        );
-                        // _showCreateTestModal
-                      },
+                      onPressed: _showCreateTestModal,
                       label: Text('Create'),
                       icon: Icon(Icons.add),
                       iconAlignment: IconAlignment.end,
@@ -289,7 +281,7 @@ class _ProjectDetailsPageState extends State<ProjectDetailsPage> {
   }
 
   void _showCreateTestModal() async {
-    final Map<String, dynamic> newTestInfo = await showModalBottomSheet(
+    final Map<String, dynamic>? newTestInfo = await showModalBottomSheet(
       context: context,
       isScrollControlled: true, // allows the sheet to be fully draggable
       backgroundColor:
@@ -308,13 +300,16 @@ class _ProjectDetailsPageState extends State<ProjectDetailsPage> {
                   topRight: Radius.circular(16.0),
                 ),
               ),
-              child: CreateTestForm(),
+              child: CreateTestForm(
+                activeProject: widget.projectData,
+              ),
               // Replace this ListView with your desired content
             );
           },
         );
       },
     );
+    if (newTestInfo == null) return;
     final Test test = await saveTest(
       title: newTestInfo['title'],
       scheduledTime: newTestInfo['scheduledTime'],

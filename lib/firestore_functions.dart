@@ -79,7 +79,7 @@ Future<Project> saveProject({
   required String description,
   required DocumentReference? teamRef,
   required List<GeoPoint> polygonPoints,
-  required List<GeoPoint> standingPoints,
+  required List<Map> standingPoints,
   required num polygonArea,
 }) async {
   Project tempProject;
