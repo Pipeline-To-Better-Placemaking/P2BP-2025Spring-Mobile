@@ -25,6 +25,7 @@ void registerTestTypes() {
   LightingProfileTest.register();
   SectionCutterTest.register();
   IdentifyingAccessTest.register();
+  NaturePrevalenceTest.register();
 }
 
 void main() async {
@@ -78,7 +79,7 @@ class MyApp extends StatelessWidget {
         '/compare_projects': (context) => const ProjectComparisonPage(),
         // Commented out since you need project data to create page.
         // '/search': (context) => const SearchScreen(),
-        '/teams_settings': (context) => TeamSettingsScreen(),
+        // '/teams_settings': (context) => TeamSettingsScreen(),
       },
     );
   }

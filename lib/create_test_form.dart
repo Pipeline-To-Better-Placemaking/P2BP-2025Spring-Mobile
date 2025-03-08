@@ -192,6 +192,13 @@ class _CreateTestFormState extends State<CreateTestForm> {
                     style: TextStyle(color: Color(0xFF2F6DCF)),
                   ),
                 ),
+                DropdownMenuItem(
+                  value: NaturePrevalenceTest.collectionIDStatic,
+                  child: Text(
+                    'Nature Prevalence',
+                    style: TextStyle(color: Color(0xFF2F6DCF)),
+                  ),
+                ),
               ],
               onChanged: (value) {
                 _selectedTest = value;
