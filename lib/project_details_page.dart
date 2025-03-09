@@ -342,6 +342,7 @@ class _ProjectDetailsPageState extends State<ProjectDetailsPage> {
 }
 
 const Map<Type, String> _testInitialsMap = {
+  AbsenceOfOrderTest: 'AO',
   LightingProfileTest: 'LP',
   SectionCutterTest: 'SC',
   IdentifyingAccessTest: 'IA',
