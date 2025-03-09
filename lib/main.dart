@@ -24,6 +24,7 @@ import 'lighting_profile_test.dart';
 void registerTestTypes() {
   LightingProfileTest.register();
   SectionCutterTest.register();
+  AbsenceOfOrderTest.register();
   IdentifyingAccessTest.register();
   NaturePrevalenceTest.register();
 }
