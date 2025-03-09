@@ -369,13 +369,14 @@ class LightingProfileTest extends Test<LightToLatLngMap> {
   /// Registers this class within the Maps required by class [Test].
   static void register() {
     // Register for creating new Lighting Profile Tests
-    Test._newTestConstructors[collectionIDStatic] = (
-            {required String title,
-            required String testID,
-            required Timestamp scheduledTime,
-            required DocumentReference projectRef,
-            required String collectionID,
-            List? standingPoints}) =>
+    Test._newTestConstructors[collectionIDStatic] = ({
+      required String title,
+      required String testID,
+      required Timestamp scheduledTime,
+      required DocumentReference projectRef,
+      required String collectionID,
+      List? standingPoints,
+    }) =>
         LightingProfileTest._(
           title: title,
           testID: testID,
@@ -1159,7 +1160,7 @@ class IdentifyingAccessTest extends Test<Map> {
           data: newInitialDataDeepCopy(),
           standingPoints: standingPoints ?? [],
         );
-    // Register for recreating a Lighting Profile Test from Firestore
+    // Register for recreating a Identifying Access Test from Firestore
     Test._recreateTestConstructors[collectionIDStatic] = (testDoc) {
       print(testDoc['data']);
       return IdentifyingAccessTest._(
@@ -1175,7 +1176,7 @@ class IdentifyingAccessTest extends Test<Map> {
         standingPoints: testDoc['standingPoints'],
       );
     };
-    // Register for building a Lighting Profile Test page
+    // Register for building a Identifying Access Test page
     Test._pageBuilders[IdentifyingAccessTest] =
         (project, test) => IdentifyingAccess(
               activeProject: project,
