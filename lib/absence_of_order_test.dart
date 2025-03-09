@@ -5,19 +5,6 @@ import 'package:p2bp_2025spring_mobile/widgets.dart';
 import 'google_maps_functions.dart';
 import 'db_schema_classes.dart';
 
-// Style used for buttons that don't need custom toggleable color values
-final ButtonStyle _testButtonStyle = FilledButton.styleFrom(
-  padding: const EdgeInsets.symmetric(horizontal: 15),
-  foregroundColor: Colors.black,
-  backgroundColor: Colors.white,
-  disabledBackgroundColor: Color(0xCD6C6C6C),
-  iconColor: Colors.black,
-  shape: RoundedRectangleBorder(
-    borderRadius: BorderRadius.circular(10),
-  ),
-  textStyle: TextStyle(fontSize: 14),
-);
-
 /// Returns a `List<TextButton>` using [options] as `Text` child.
 /// [selectedList] should be a reference to a list containing the values
 /// from [options] that should be selected by default (typically none).
@@ -238,7 +225,7 @@ class _AbsenceOfOrderTestPageState extends State<AbsenceOfOrderTestPage> {
                   children: <Widget>[
                     Center(
                       child: Text(
-                        'Absence of Order',
+                        'Absence of Order Locator',
                         style: TextStyle(
                           fontSize: 20,
                           fontWeight: FontWeight.bold,
@@ -265,7 +252,7 @@ class _AbsenceOfOrderTestPageState extends State<AbsenceOfOrderTestPage> {
                       children: <Widget>[
                         Expanded(
                           child: FilledButton(
-                            style: _testButtonStyle,
+                            style: testButtonStyle,
                             onPressed: isDescriptionReady
                                 ? null
                                 : () {
@@ -276,7 +263,7 @@ class _AbsenceOfOrderTestPageState extends State<AbsenceOfOrderTestPage> {
                         ),
                         Expanded(
                           child: FilledButton(
-                            style: _testButtonStyle,
+                            style: testButtonStyle,
                             onPressed: isDescriptionReady
                                 ? null
                                 : () {
@@ -294,7 +281,7 @@ class _AbsenceOfOrderTestPageState extends State<AbsenceOfOrderTestPage> {
                       children: <Widget>[
                         Flexible(
                           child: FilledButton.icon(
-                            style: _testButtonStyle,
+                            style: testButtonStyle,
                             onPressed: () => Navigator.pop(context),
                             label: Text('Back'),
                             icon: Icon(Icons.chevron_left),
@@ -303,7 +290,7 @@ class _AbsenceOfOrderTestPageState extends State<AbsenceOfOrderTestPage> {
                         ),
                         Flexible(
                           child: FilledButton.icon(
-                            style: _testButtonStyle,
+                            style: testButtonStyle,
                             onPressed: () {
                               // TODO: check isComplete either before submitting or probably before starting test
                               widget.activeTest.submitData(_newData);
@@ -536,7 +523,7 @@ class _BehaviorDescriptionFormState extends State<_BehaviorDescriptionForm> {
                   children: <Widget>[
                     Flexible(
                       child: FilledButton(
-                        style: _testButtonStyle,
+                        style: testButtonStyle,
                         onPressed: () {
                           Navigator.pop(context);
                         },
@@ -545,7 +532,7 @@ class _BehaviorDescriptionFormState extends State<_BehaviorDescriptionForm> {
                     ),
                     Flexible(
                       child: FilledButton(
-                        style: _testButtonStyle,
+                        style: testButtonStyle,
                         // Confirm button disabled when no option selected
                         onPressed: (_selectedTypes.isNotEmpty || _otherSelected)
                             ? _submitDescription
@@ -778,7 +765,7 @@ class _MaintenanceDescriptionFormState
                   children: <Widget>[
                     Flexible(
                       child: FilledButton(
-                        style: _testButtonStyle,
+                        style: testButtonStyle,
                         onPressed: () {
                           Navigator.pop(context);
                         },
@@ -787,7 +774,7 @@ class _MaintenanceDescriptionFormState
                     ),
                     Flexible(
                       child: FilledButton(
-                        style: _testButtonStyle,
+                        style: testButtonStyle,
                         // Confirm button disabled when no option selected
                         onPressed: (_selectedTypes.isNotEmpty || _otherSelected)
                             ? _submitDescription

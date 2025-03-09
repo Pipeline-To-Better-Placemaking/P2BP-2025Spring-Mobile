@@ -1,41 +1,34 @@
-import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
-import 'package:geolocator/geolocator.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
-import 'package:p2bp_2025spring_mobile/theme.dart';
-import 'google_maps_functions.dart';
+import 'theme.dart';
 import 'db_schema_classes.dart';
+import 'google_maps_functions.dart';
+import 'widgets.dart';
 
-class LightingProfileTestPage extends StatefulWidget {
+class SpatialBoundariesTestPage extends StatefulWidget {
   final Project activeProject;
-  final LightingProfileTest activeTest;
+  // final Test activeTest;
 
-  const LightingProfileTestPage({
+  const SpatialBoundariesTestPage({
     super.key,
     required this.activeProject,
-    required this.activeTest,
+    // required this.activeTest,
   });
 
   @override
-  State<StatefulWidget> createState() => _LightingProfileTestPageState();
+  State<SpatialBoundariesTestPage> createState() =>
+      _SpatialBoundariesTestPageState();
 }
 
-final FirebaseFirestore _firestore = FirebaseFirestore.instance;
-
-class _LightingProfileTestPageState extends State<LightingProfileTestPage> {
+class _SpatialBoundariesTestPageState extends State<SpatialBoundariesTestPage> {
   bool _isLoading = true;
-  bool _isTypeSelected = false;
-  LightType? _selectedType;
-
   late GoogleMapController mapController;
   LatLng _location = defaultLocation;
   MapType _currentMapType = MapType.satellite; // Default map type
   final Set<Marker> _markers = {}; // Set of markers visible on map
   Set<Polygon> _polygons = {}; // Set of polygons
 
-  final LightToLatLngMap _allPointsMap =
-      LightingProfileTest.newInitialDataDeepCopy();
-
+  String _directions = 'Select a type of boundary.';
   static const double _bottomSheetHeight = 250;
 
   @override
@@ -49,6 +42,7 @@ class _LightingProfileTestPageState extends State<LightingProfileTestPage> {
   void _initProjectArea() {
     setState(() {
       _polygons = getProjectPolygon(widget.activeProject.polygonPoints);
+      print(_polygons);
       _location = getPolygonCentroid(_polygons.first);
       // Take some latitude away to center considering bottom sheet.
       _location = LatLng(_location.latitude * .999999, _location.longitude);
@@ -62,55 +56,13 @@ class _LightingProfileTestPageState extends State<LightingProfileTestPage> {
     _moveToLocation(); // Ensure the map is centered on the current location
   }
 
+  /// Moves camera to project location.
   void _moveToLocation() {
     mapController.animateCamera(
       CameraUpdate.newCameraPosition(
-        CameraPosition(target: _location, zoom: 14.0),
+        CameraPosition(target: _location, zoom: 17.0),
       ),
     );
-  }
-
-  /// Adds a `Marker` to the map and stores that same point in
-  /// `_allPointsMap` to be submitted as test data later.
-  ///
-  /// This also resets the fields for selecting type so another can be
-  /// selected after this point is placed.
-  void _togglePoint(LatLng point) {
-    _allPointsMap[_selectedType]?.add(point);
-    final markerId = MarkerId(point.toString());
-
-    setState(() {
-      // Create marker
-      _markers.add(
-        Marker(
-          markerId: markerId,
-          position: point,
-          consumeTapEvents: true,
-          onTap: () {
-            // If the marker is tapped again, it will be removed
-            _allPointsMap.updateAll((key, value) {
-              value.remove(point);
-              return value;
-            });
-            setState(() {
-              _markers.removeWhere((marker) => marker.markerId == markerId);
-            });
-          },
-        ),
-      );
-
-      // Reset selected light type
-      _setLightType(null);
-    });
-  }
-
-  /// Sets [_selectedType] to parameter `type` and [_isTypeSelected] to
-  /// true if [type] is non-null and false otherwise.
-  void _setLightType(LightType? type) {
-    setState(() {
-      _selectedType = type;
-      _isTypeSelected = _selectedType != null;
-    });
   }
 
   /// Toggles map type between satellite and normal
@@ -126,8 +78,6 @@ class _LightingProfileTestPageState extends State<LightingProfileTestPage> {
   Widget build(BuildContext context) {
     return SafeArea(
       child: Scaffold(
-        resizeToAvoidBottomInset: false,
-        extendBody: true,
         body: _isLoading
             ? const Center(child: CircularProgressIndicator())
             : Center(
@@ -139,10 +89,10 @@ class _LightingProfileTestPageState extends State<LightingProfileTestPage> {
                         padding: EdgeInsets.only(bottom: _bottomSheetHeight),
                         onMapCreated: _onMapCreated,
                         initialCameraPosition:
-                            CameraPosition(target: _location, zoom: 14),
+                            CameraPosition(target: _location, zoom: 15),
                         markers: _markers,
                         polygons: _polygons,
-                        onTap: _isTypeSelected ? _togglePoint : null,
+                        onTap: null,
                         mapType: _currentMapType,
                       ),
                     ),
@@ -186,68 +136,54 @@ class _LightingProfileTestPageState extends State<LightingProfileTestPage> {
                   ],
                 ),
                 child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
                   children: <Widget>[
                     Center(
                       child: Text(
-                        'Lighting Profile',
+                        'Spatial Boundaries',
                         style: TextStyle(
                           fontSize: 20,
                           fontWeight: FontWeight.bold,
-                          color: Colors.yellow[600],
+                          color: placeYellow,
                         ),
                       ),
                     ),
                     SizedBox(height: 5),
                     Center(
                       child: Text(
-                        !_isTypeSelected
-                            ? 'Select a type of light.'
-                            : 'Drop a pin where the light is.',
+                        _directions,
                         style: TextStyle(
-                          fontSize: 24,
+                          fontSize: 20,
                           color: Colors.white,
                         ),
                       ),
                     ),
                     SizedBox(height: 5),
-                    Text(
-                      'Light Types',
-                      style: TextStyle(
-                        fontSize: 16,
-                        fontWeight: FontWeight.bold,
-                        color: Colors.white,
-                      ),
-                    ),
-                    SizedBox(height: 5),
                     Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                       spacing: 10,
                       children: <Widget>[
-                        Flexible(
+                        Expanded(
+                          flex: 11,
                           child: FilledButton(
                             style: testButtonStyle,
-                            onPressed: (_isTypeSelected)
-                                ? null
-                                : () => _setLightType(LightType.rhythmic),
-                            child: Text('Rhythmic'),
+                            onPressed: () {},
+                            child: Text('Constructed'),
                           ),
                         ),
-                        Flexible(
+                        Expanded(
+                          flex: 8,
                           child: FilledButton(
                             style: testButtonStyle,
-                            onPressed: (_isTypeSelected)
-                                ? null
-                                : () => _setLightType(LightType.building),
-                            child: Text('Building'),
+                            onPressed: () {},
+                            child: Text('Material'),
                           ),
                         ),
-                        Flexible(
+                        Expanded(
+                          flex: 7,
                           child: FilledButton(
                             style: testButtonStyle,
-                            onPressed: (_isTypeSelected)
-                                ? null
-                                : () => _setLightType(LightType.task),
-                            child: Text('Task'),
+                            onPressed: () {},
+                            child: Text('Shelter'),
                           ),
                         ),
                       ],
@@ -257,21 +193,34 @@ class _LightingProfileTestPageState extends State<LightingProfileTestPage> {
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       spacing: 10,
                       children: <Widget>[
-                        Flexible(
-                          child: FilledButton.icon(
-                            style: testButtonStyle,
-                            onPressed: () => Navigator.pop(context),
-                            label: Text('Back'),
-                            icon: Icon(Icons.chevron_left),
-                            iconAlignment: IconAlignment.start,
+                        Expanded(
+                          flex: 7,
+                          child: EditButton(
+                            text: 'Confirm Shape',
+                            foregroundColor: Colors.green,
+                            backgroundColor: Colors.white,
+                            icon: const Icon(Icons.check),
+                            iconColor: Colors.green,
+                            onPressed: () {},
                           ),
                         ),
-                        Flexible(
+                        Expanded(
+                          flex: 6,
+                          child: EditButton(
+                            text: 'Cancel',
+                            foregroundColor: Colors.red,
+                            backgroundColor: Colors.white,
+                            icon: const Icon(Icons.cancel),
+                            iconColor: Colors.red,
+                            onPressed: () {},
+                          ),
+                        ),
+                        Expanded(
+                          flex: 6,
                           child: FilledButton.icon(
                             style: testButtonStyle,
                             onPressed: () {
                               // TODO: check isComplete either before submitting or probably before starting test
-                              widget.activeTest.submitData(_allPointsMap);
                               Navigator.pop(context);
                             },
                             label: Text('Finish'),
