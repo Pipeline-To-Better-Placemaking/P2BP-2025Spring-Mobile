@@ -310,12 +310,16 @@ class _ProjectDetailsPageState extends State<ProjectDetailsPage> {
       },
     );
     if (newTestInfo == null) return;
-    final Test test = await saveTest(
+    final Test test;
+    test = await saveTest(
       title: newTestInfo['title'],
       scheduledTime: newTestInfo['scheduledTime'],
       projectRef:
           _firestore.collection('projects').doc(widget.projectData.projectID),
       collectionID: newTestInfo['collectionID'],
+      standingPoints: newTestInfo.containsKey('standingPoints')
+          ? newTestInfo['standingPoints']
+          : null,
     );
     setState(() {
       widget.projectData.tests?.add(test);

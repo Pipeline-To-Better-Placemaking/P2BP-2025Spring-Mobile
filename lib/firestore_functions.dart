@@ -440,9 +440,8 @@ Future<Test> saveTest({
     scheduledTime: scheduledTime,
     projectRef: projectRef,
     collectionID: collectionID,
+    standingPoints: standingPoints,
   );
-
-  if (standingPoints != null) {}
 
   tempTest.saveToFirestore();
 

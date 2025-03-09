@@ -315,6 +315,11 @@ class _CreateTestFormState extends State<CreateTestForm> {
                       'scheduledTime': Timestamp.fromDate(_selectedDateTime!),
                       'collectionID': _selectedTest,
                     };
+                    if (_standingPointsTest) {
+                      newTestInfo.update(
+                          'standingPoints', (value) => _standingPoints,
+                          ifAbsent: () => _standingPoints);
+                    }
                     // Handle form submission
                     Navigator.of(context).pop(newTestInfo);
                   }

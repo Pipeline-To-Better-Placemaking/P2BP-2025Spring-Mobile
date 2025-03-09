@@ -204,6 +204,7 @@ abstract class Test<T> {
         required Timestamp scheduledTime,
         required DocumentReference projectRef,
         required String collectionID,
+        List? standingPoints,
       })> _newTestConstructors = {};
 
   /// Maps from collection ID to a function which should use a constructor
@@ -228,14 +229,15 @@ abstract class Test<T> {
   /// any newly created tests.
   ///
   /// Utilizes values registered to [Test._newTestConstructors].
-  static Test createNew({
-    required String title,
-    required String testID,
-    required Timestamp scheduledTime,
-    required DocumentReference projectRef,
-    required String collectionID,
-  }) {
+  static Test createNew(
+      {required String title,
+      required String testID,
+      required Timestamp scheduledTime,
+      required DocumentReference projectRef,
+      required String collectionID,
+      List? standingPoints}) {
     final constructor = _newTestConstructors[collectionID];
+
     if (constructor != null) {
       return constructor(
         title: title,
@@ -243,6 +245,7 @@ abstract class Test<T> {
         scheduledTime: scheduledTime,
         projectRef: projectRef,
         collectionID: collectionID,
+        standingPoints: standingPoints,
       );
     }
     throw Exception('Unregistered Test type for collection: $collectionID');
@@ -366,13 +369,13 @@ class LightingProfileTest extends Test<LightToLatLngMap> {
   /// Registers this class within the Maps required by class [Test].
   static void register() {
     // Register for creating new Lighting Profile Tests
-    Test._newTestConstructors[collectionIDStatic] = ({
-      required String title,
-      required String testID,
-      required Timestamp scheduledTime,
-      required DocumentReference projectRef,
-      required String collectionID,
-    }) =>
+    Test._newTestConstructors[collectionIDStatic] = (
+            {required String title,
+            required String testID,
+            required Timestamp scheduledTime,
+            required DocumentReference projectRef,
+            required String collectionID,
+            List? standingPoints}) =>
         LightingProfileTest._(
           title: title,
           testID: testID,
@@ -746,6 +749,7 @@ class AbsenceOfOrderTest extends Test<AbsenceOfOrderData> {
       required Timestamp scheduledTime,
       required DocumentReference projectRef,
       required String collectionID,
+      List? standingPoints,
     }) =>
         AbsenceOfOrderTest._(
           title: title,
@@ -877,6 +881,7 @@ class SectionCutterTest extends Test<Map<String, String>> {
       required Timestamp scheduledTime,
       required DocumentReference projectRef,
       required String collectionID,
+      List? standingPoints,
     }) =>
         SectionCutterTest._(
           title: title,
@@ -944,10 +949,9 @@ class SectionCutterTest extends Test<Map<String, String>> {
   Future<Map<String, String>> saveXFile(XFile data) async {
     Map<String, String> storageLocation = newInitialDataDeepCopy();
     try {
-      if (projectRef == null) return storageLocation;
       final storageRef = FirebaseStorage.instance.ref();
       final sectionRef = storageRef.child(
-          "project_uploads/${projectRef?.id}/section_cutter_files/$testID");
+          "project_uploads/${projectRef.id}/section_cutter_files/$testID");
       final File sectionFile = File(data.path);
 
       print(sectionRef.fullPath);
@@ -1118,6 +1122,9 @@ class IdentifyingAccessTest extends Test<Map> {
   /// Static constant definition of collection ID for this test type.
   static const String collectionIDStatic = 'identifying_access_tests';
 
+  /// Temporary list of standing points for testing purposes (TODO)
+  List standingPoints;
+
   /// Creates a new [IdentifyingAccessTest] instance from the given arguments.
   IdentifyingAccessTest._({
     required super.title,
@@ -1126,6 +1133,7 @@ class IdentifyingAccessTest extends Test<Map> {
     required super.projectRef,
     required super.collectionID,
     required super.data,
+    required this.standingPoints,
     super.creationTime,
     super.maxResearchers,
     super.isComplete,
@@ -1133,13 +1141,14 @@ class IdentifyingAccessTest extends Test<Map> {
 
   /// Registers this class within the Maps required by class [Test].
   static void register() {
-    // Register for creating new Lighting Profile Tests
+    // Register for creating new Identifying Access Tests
     Test._newTestConstructors[collectionIDStatic] = ({
       required String title,
       required String testID,
       required Timestamp scheduledTime,
       required DocumentReference projectRef,
       required String collectionID,
+      List? standingPoints,
     }) =>
         IdentifyingAccessTest._(
           title: title,
@@ -1148,6 +1157,7 @@ class IdentifyingAccessTest extends Test<Map> {
           projectRef: projectRef,
           collectionID: collectionID,
           data: newInitialDataDeepCopy(),
+          standingPoints: standingPoints ?? [],
         );
     // Register for recreating a Lighting Profile Test from Firestore
     Test._recreateTestConstructors[collectionIDStatic] = (testDoc) {
@@ -1162,6 +1172,7 @@ class IdentifyingAccessTest extends Test<Map> {
         creationTime: testDoc['creationTime'],
         maxResearchers: testDoc['maxResearchers'],
         isComplete: testDoc['isComplete'],
+        standingPoints: testDoc['standingPoints'],
       );
     };
     // Register for building a Lighting Profile Test page
@@ -1181,6 +1192,7 @@ class IdentifyingAccessTest extends Test<Map> {
         'creationTime': test.creationTime,
         'maxResearchers': test.maxResearchers,
         'isComplete': false,
+        'standingPoints': (test as IdentifyingAccessTest).standingPoints,
       }, SetOptions(merge: true));
     };
   }
@@ -1621,6 +1633,7 @@ class NaturePrevalenceTest extends Test<NatureData> {
       required Timestamp scheduledTime,
       required DocumentReference projectRef,
       required String collectionID,
+      List? standingPoints,
     }) =>
         NaturePrevalenceTest._(
           title: title,
