@@ -99,8 +99,21 @@ class Project {
 // | Important: When adding a test, make sure to implement the requisite      |
 // | fields and functions. When done, make sure to implement it in the        |
 // | dropdown on create_test_form.dart, register it on main.dart, and add it  |
-// | to the initials list on project_details.dart.                            |
+// | to the initials list on project_details.dart. If it it implements        |
+// | standing points and a timer, add it to the following lists.              |
 // *--------------------------------------------------------------------------*
+
+/// List containing all tests that make use of standing points.
+///
+/// Used to check for test creation and saving.
+const Set<String> standingPointsTests = {
+  IdentifyingAccessTest.collectionIDStatic
+};
+
+/// List containing all tests that make use of standing points.
+///
+/// Used to check for test creation and saving.
+const Set<String> timerTests = {NaturePrevalenceTest.collectionIDStatic};
 
 /// Parent class extended by every specific test class.
 ///
@@ -171,11 +184,9 @@ abstract class Test<T> {
     Timestamp? creationTime,
     int? maxResearchers,
     bool? isComplete,
-  }) {
-    this.creationTime = creationTime ?? Timestamp.now();
-    this.maxResearchers = maxResearchers ?? 1;
-    this.isComplete = isComplete ?? false;
-  }
+  })  : creationTime = creationTime ?? Timestamp.now(),
+        maxResearchers = maxResearchers ?? 1,
+        isComplete = isComplete ?? false;
 
   // The below Maps must have values registered for each subclass of Test.
   // Thus each subclass should have a method `static void register()`

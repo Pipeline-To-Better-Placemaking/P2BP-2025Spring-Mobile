@@ -21,16 +21,7 @@ class _CreateTestFormState extends State<CreateTestForm> {
   DateTime? _selectedDateTime;
   String? _selectedTest;
 
-  final List<String> _standingPointsTests = [
-    IdentifyingAccessTest.collectionIDStatic
-  ];
-
   List _standingPoints = [];
-
-  final List<String> _timerTests = [
-    IdentifyingAccessTest.collectionIDStatic,
-    NaturePrevalenceTest.collectionIDStatic
-  ];
 
   bool _standingPointsTest = false;
   bool _standingPointsError = false;
@@ -221,7 +212,7 @@ class _CreateTestFormState extends State<CreateTestForm> {
                 _selectedTest = value;
                 setState(() {
                   _standingPointsTest =
-                      _standingPointsTests.contains(_selectedTest);
+                      standingPointsTests.contains(_selectedTest);
                 });
               },
               autovalidateMode: AutovalidateMode.onUserInteraction,
