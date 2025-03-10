@@ -842,6 +842,10 @@ class AbsenceOfOrderTest extends Test<AbsenceOfOrderData> {
   }
 }
 
+enum BoundaryType { constructed, material, shelter }
+
+enum ConstructedBoundaryType { curb, buildingWall, fence, planter, partialWall }
+
 class ConstructedBoundaries {
   List<LatLng> curbBoundaries = [];
   List<LatLng> buildingWallBoundaries = [];
@@ -891,6 +895,8 @@ class ConstructedBoundaries {
   }
 }
 
+enum MaterialBoundaryType { paver, concrete, tile, natural, wood }
+
 class MaterialBoundaries {
   List<LatLng> paverBoundaries = [];
   List<LatLng> concreteBoundaries = [];
@@ -938,6 +944,14 @@ class MaterialBoundaries {
     };
     return json;
   }
+}
+
+enum ShelterBoundaryType {
+  canopy,
+  tree,
+  umbrellaDining,
+  temporary,
+  constructedCeiling
 }
 
 class ShelterBoundaries {
@@ -1066,6 +1080,7 @@ class SpatialBoundariesTest extends Test<SpatialBoundariesData> {
     Test._pageBuilders[SpatialBoundariesTest] =
         (project, test) => SpatialBoundariesTestPage(
               activeProject: project,
+              activeTest: test,
             );
     // Register a function for saving to Firestore
     Test._saveToFirestoreFunctions[SpatialBoundariesTest] = (test) async {

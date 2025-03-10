@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
+import 'package:maps_toolkit/maps_toolkit.dart' as mp;
+import 'firestore_functions.dart';
 import 'theme.dart';
 import 'db_schema_classes.dart';
 import 'google_maps_functions.dart';
@@ -7,12 +9,12 @@ import 'widgets.dart';
 
 class SpatialBoundariesTestPage extends StatefulWidget {
   final Project activeProject;
-  // final Test activeTest;
+  final Test activeTest;
 
   const SpatialBoundariesTestPage({
     super.key,
     required this.activeProject,
-    // required this.activeTest,
+    required this.activeTest,
   });
 
   @override
@@ -22,19 +24,38 @@ class SpatialBoundariesTestPage extends StatefulWidget {
 
 class _SpatialBoundariesTestPageState extends State<SpatialBoundariesTestPage> {
   bool _isLoading = true;
+  bool _polygonMode = false;
+  bool _polylineMode = false;
+  bool _outsidePoint = false;
   late GoogleMapController mapController;
   LatLng _location = defaultLocation;
   MapType _currentMapType = MapType.satellite; // Default map type
+  List<mp.LatLng> _projectArea = [];
   final Set<Marker> _markers = {}; // Set of markers visible on map
+  Set<Polyline> _polylines = {};
   Set<Polygon> _polygons = {}; // Set of polygons
+  List<LatLng> _polylinePoints = [];
+  List<LatLng> _polygonPoints = []; // Points for the polygon
+  Set<Marker> _polygonMarkers = {}; // Set of markers for polygon creation
+  final SpatialBoundariesData _newData = SpatialBoundariesData();
+  LatLng? _tempPoint;
+  BoundaryType? _boundaryType;
+  ConstructedBoundaryType? _constructedBoundaryType;
+  MaterialBoundaryType? _materialBoundaryType;
+  ShelterBoundaryType? _shelterBoundaryType;
 
-  String _directions = 'Select a type of boundary.';
+  static const List<String> _directions = [
+    'Select a type of boundary.',
+    'Outline the shape of the boundary with points, then click confirm shape when you are done.',
+  ];
+  late String _direction;
   static const double _bottomSheetHeight = 250;
 
   @override
   void initState() {
     super.initState();
     _initProjectArea();
+    _direction = _directions[0];
   }
 
   /// Gets the project polygon, adds it to the current polygon list, and
@@ -46,6 +67,7 @@ class _SpatialBoundariesTestPageState extends State<SpatialBoundariesTestPage> {
       _location = getPolygonCentroid(_polygons.first);
       // Take some latitude away to center considering bottom sheet.
       _location = LatLng(_location.latitude * .999999, _location.longitude);
+      _projectArea = _polygons.first.toMPLatLngList();
       // TODO: dynamic zooming
       _isLoading = false;
     });
@@ -74,32 +96,158 @@ class _SpatialBoundariesTestPageState extends State<SpatialBoundariesTestPage> {
     });
   }
 
+  void _clearTemps() {
+    _tempPoint = null;
+    _boundaryType = null;
+    _constructedBoundaryType = null;
+    _materialBoundaryType = null;
+    _shelterBoundaryType = null;
+    _direction = _directions[0];
+  }
+
+  Future<void> _togglePoint(LatLng point) async {
+    try {
+      if (!mp.PolygonUtil.containsLocation(
+          mp.LatLng(point.latitude, point.longitude), _projectArea, true)) {
+        setState(() {
+          _outsidePoint = true;
+        });
+      }
+      if (_polylineMode) _polylineTap(point);
+      if (_polygonMode) _polygonTap(point);
+      if (_outsidePoint) {
+        // TODO: fix delay. delay will overlap with consecutive taps. this means taps do not necessarily refresh the timer and will end prematurely
+        await Future.delayed(const Duration(seconds: 2));
+        setState(() {
+          _outsidePoint = false;
+        });
+      }
+    } catch (e, stacktrace) {
+      print('Error in nature_prevalence_test.dart, _togglePoint(): $e');
+      print('Stacktrace: $stacktrace');
+    }
+  }
+
+  void _polylineTap(LatLng point) {
+    final markerId = MarkerId(point.toString());
+    setState(() {
+      _polygonPoints.add(point);
+      _polygonMarkers.add(
+        Marker(
+          markerId: markerId,
+          position: point,
+          consumeTapEvents: true,
+          onTap: () {
+            // If the marker is tapped again, it will be removed
+            setState(() {
+              _polygonPoints.remove(point);
+              _polygonMarkers
+                  .removeWhere((marker) => marker.markerId == markerId);
+            });
+          },
+        ),
+      );
+    });
+  }
+
+  void _polygonTap(LatLng point) {
+    final markerId = MarkerId(point.toString());
+    setState(() {
+      _polygonPoints.add(point);
+      _polygonMarkers.add(
+        Marker(
+          markerId: markerId,
+          position: point,
+          consumeTapEvents: true,
+          onTap: () {
+            // If the marker is tapped again, it will be removed
+            setState(() {
+              _polygonPoints.remove(point);
+              _polygonMarkers
+                  .removeWhere((marker) => marker.markerId == markerId);
+            });
+          },
+        ),
+      );
+    });
+  }
+
+  void _finalizePolygon() {
+    Set<Polygon> tempPolygon;
+    try {
+      tempPolygon = finalizePolygon(_polygonPoints);
+      // Create polygon.
+      _polygons = {..._polygons, ...tempPolygon};
+
+      if (_boundaryType == BoundaryType.material) {
+      } else if (_boundaryType == BoundaryType.shelter) {}
+
+      // Clears polygon points and enter add points mode.
+      _polygonPoints = [];
+
+      // Clear markers from screen.
+      setState(() {
+        _polygonMarkers.clear();
+        _polygonMode = false;
+        _clearTemps();
+      });
+    } catch (e, stacktrace) {
+      print('Exception in _finalize_polygon(): $e');
+      print('Stacktrace: $stacktrace');
+    }
+  }
+
   void _doConstructedModal(BuildContext context) async {
-    await showModalBottomSheet(
+    final ConstructedBoundaryType? constructed = await showModalBottomSheet(
       isScrollControlled: true,
       context: context,
       builder: (context) => _ConstructedDescriptionForm(),
     );
+    if (constructed != null) {
+      setState(() {
+        _boundaryType = BoundaryType.constructed;
+        _constructedBoundaryType = constructed;
+        _polylineMode = true;
+        _direction = _directions[1];
+      });
+    }
   }
 
   void _doMaterialModal(BuildContext context) async {
-    await showModalBottomSheet(
+    final MaterialBoundaryType? material = await showModalBottomSheet(
       isScrollControlled: true,
       context: context,
       builder: (context) => _MaterialDescriptionForm(),
     );
+    if (material != null) {
+      setState(() {
+        _boundaryType = BoundaryType.material;
+        _materialBoundaryType = material;
+        _polygonMode = true;
+        _direction = _directions[1];
+      });
+    }
   }
 
   void _doShelterModal(BuildContext context) async {
-    await showModalBottomSheet(
+    final ShelterBoundaryType? shelter = await showModalBottomSheet(
       isScrollControlled: true,
       context: context,
       builder: (context) => _ShelterDescriptionForm(),
     );
+    if (shelter != null) {
+      setState(() {
+        _boundaryType = BoundaryType.shelter;
+        _shelterBoundaryType = shelter;
+        _polygonMode = true;
+        _direction = _directions[1];
+      });
+    }
   }
 
   @override
   Widget build(BuildContext context) {
+    bool isDescriptionReady = (_boundaryType != null);
     return SafeArea(
       child: Scaffold(
         body: _isLoading
@@ -116,7 +264,7 @@ class _SpatialBoundariesTestPageState extends State<SpatialBoundariesTestPage> {
                             CameraPosition(target: _location, zoom: 15),
                         markers: _markers,
                         polygons: _polygons,
-                        onTap: null,
+                        onTap: isDescriptionReady ? _togglePoint : null,
                         mapType: _currentMapType,
                       ),
                     ),
@@ -174,7 +322,7 @@ class _SpatialBoundariesTestPageState extends State<SpatialBoundariesTestPage> {
                     SizedBox(height: 5),
                     Center(
                       child: Text(
-                        _directions,
+                        _direction,
                         style: TextStyle(
                           fontSize: 20,
                           color: Colors.white,
@@ -332,7 +480,12 @@ class _ConstructedDescriptionFormState
                       flex: 1,
                       child: TextButton(
                         style: testButtonStyle,
-                        onPressed: () {},
+                        onPressed: () {
+                          Navigator.pop(
+                            context,
+                            ConstructedBoundaryType.curb,
+                          );
+                        },
                         child: Text(
                           'Curbs',
                           textAlign: TextAlign.center,
@@ -343,7 +496,12 @@ class _ConstructedDescriptionFormState
                       flex: 1,
                       child: TextButton(
                         style: testButtonStyle,
-                        onPressed: () {},
+                        onPressed: () {
+                          Navigator.pop(
+                            context,
+                            ConstructedBoundaryType.buildingWall,
+                          );
+                        },
                         child: Text(
                           'Building Wall',
                           textAlign: TextAlign.center,
@@ -360,7 +518,12 @@ class _ConstructedDescriptionFormState
                       flex: 1,
                       child: TextButton(
                         style: testButtonStyle,
-                        onPressed: () {},
+                        onPressed: () {
+                          Navigator.pop(
+                            context,
+                            ConstructedBoundaryType.fence,
+                          );
+                        },
                         child: Text(
                           'Fences',
                           textAlign: TextAlign.center,
@@ -371,7 +534,12 @@ class _ConstructedDescriptionFormState
                       flex: 1,
                       child: TextButton(
                         style: testButtonStyle,
-                        onPressed: () {},
+                        onPressed: () {
+                          Navigator.pop(
+                            context,
+                            ConstructedBoundaryType.planter,
+                          );
+                        },
                         child: Text(
                           'Planter',
                           textAlign: TextAlign.center,
@@ -389,7 +557,12 @@ class _ConstructedDescriptionFormState
                       flex: 2,
                       child: TextButton(
                         style: testButtonStyle,
-                        onPressed: () {},
+                        onPressed: () {
+                          Navigator.pop(
+                            context,
+                            ConstructedBoundaryType.partialWall,
+                          );
+                        },
                         child: Text(
                           'Partial Wall',
                           textAlign: TextAlign.center,
@@ -495,7 +668,12 @@ class _MaterialDescriptionFormState extends State<_MaterialDescriptionForm> {
                       flex: 1,
                       child: TextButton(
                         style: testButtonStyle,
-                        onPressed: () {},
+                        onPressed: () {
+                          Navigator.pop(
+                            context,
+                            MaterialBoundaryType.paver,
+                          );
+                        },
                         child: Text(
                           'Bricks (pavers)',
                           textAlign: TextAlign.center,
@@ -506,7 +684,12 @@ class _MaterialDescriptionFormState extends State<_MaterialDescriptionForm> {
                       flex: 1,
                       child: TextButton(
                         style: testButtonStyle,
-                        onPressed: () {},
+                        onPressed: () {
+                          Navigator.pop(
+                            context,
+                            MaterialBoundaryType.concrete,
+                          );
+                        },
                         child: Text(
                           'Concrete',
                           textAlign: TextAlign.center,
@@ -523,7 +706,12 @@ class _MaterialDescriptionFormState extends State<_MaterialDescriptionForm> {
                       flex: 1,
                       child: TextButton(
                         style: testButtonStyle,
-                        onPressed: () {},
+                        onPressed: () {
+                          Navigator.pop(
+                            context,
+                            MaterialBoundaryType.tile,
+                          );
+                        },
                         child: Text(
                           'Tile',
                           textAlign: TextAlign.center,
@@ -534,7 +722,12 @@ class _MaterialDescriptionFormState extends State<_MaterialDescriptionForm> {
                       flex: 1,
                       child: TextButton(
                         style: testButtonStyle,
-                        onPressed: () {},
+                        onPressed: () {
+                          Navigator.pop(
+                            context,
+                            MaterialBoundaryType.natural,
+                          );
+                        },
                         child: Text(
                           'Natural (grass)',
                           textAlign: TextAlign.center,
@@ -552,7 +745,12 @@ class _MaterialDescriptionFormState extends State<_MaterialDescriptionForm> {
                       flex: 2,
                       child: TextButton(
                         style: testButtonStyle,
-                        onPressed: () {},
+                        onPressed: () {
+                          Navigator.pop(
+                            context,
+                            MaterialBoundaryType.wood,
+                          );
+                        },
                         child: Text(
                           'Wood (deck)',
                           textAlign: TextAlign.center,
@@ -658,7 +856,12 @@ class _ShelterDescriptionFormState extends State<_ShelterDescriptionForm> {
                       flex: 1,
                       child: TextButton(
                         style: testButtonStyle,
-                        onPressed: () {},
+                        onPressed: () {
+                          Navigator.pop(
+                            context,
+                            ShelterBoundaryType.canopy,
+                          );
+                        },
                         child: Text(
                           'Canopy',
                           textAlign: TextAlign.center,
@@ -669,7 +872,12 @@ class _ShelterDescriptionFormState extends State<_ShelterDescriptionForm> {
                       flex: 1,
                       child: TextButton(
                         style: testButtonStyle,
-                        onPressed: () {},
+                        onPressed: () {
+                          Navigator.pop(
+                            context,
+                            ShelterBoundaryType.tree,
+                          );
+                        },
                         child: Text(
                           'Trees',
                           textAlign: TextAlign.center,
@@ -686,7 +894,12 @@ class _ShelterDescriptionFormState extends State<_ShelterDescriptionForm> {
                       flex: 1,
                       child: TextButton(
                         style: testButtonStyle,
-                        onPressed: () {},
+                        onPressed: () {
+                          Navigator.pop(
+                            context,
+                            ShelterBoundaryType.umbrellaDining,
+                          );
+                        },
                         child: Text(
                           'Umbrella Dining',
                           textAlign: TextAlign.center,
@@ -697,7 +910,12 @@ class _ShelterDescriptionFormState extends State<_ShelterDescriptionForm> {
                       flex: 1,
                       child: TextButton(
                         style: testButtonStyle,
-                        onPressed: () {},
+                        onPressed: () {
+                          Navigator.pop(
+                            context,
+                            ShelterBoundaryType.temporary,
+                          );
+                        },
                         child: Text(
                           'Temporary',
                           textAlign: TextAlign.center,
@@ -715,7 +933,12 @@ class _ShelterDescriptionFormState extends State<_ShelterDescriptionForm> {
                       flex: 2,
                       child: TextButton(
                         style: testButtonStyle,
-                        onPressed: () {},
+                        onPressed: () {
+                          Navigator.pop(
+                            context,
+                            ShelterBoundaryType.constructedCeiling,
+                          );
+                        },
                         child: Text(
                           'Constructed Ceiling',
                           textAlign: TextAlign.center,
