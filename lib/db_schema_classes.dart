@@ -7,6 +7,7 @@ import 'package:p2bp_2025spring_mobile/absence_of_order_test.dart';
 import 'package:p2bp_2025spring_mobile/google_maps_functions.dart';
 import 'package:p2bp_2025spring_mobile/lighting_profile_test.dart';
 import 'package:p2bp_2025spring_mobile/section_cutter_test.dart';
+import 'package:p2bp_2025spring_mobile/spatial_boundaries_test.dart';
 import 'firestore_functions.dart';
 import 'package:flutter/material.dart';
 import 'package:firebase_storage/firebase_storage.dart';
@@ -678,10 +679,10 @@ class AbsenceOfOrderData {
       'maintenancePoints': [],
     };
     for (final behavior in behaviorList) {
-      json['behaviorPoints']?.add(behavior.toJson());
+      json['behaviorPoints']!.add(behavior.toJson());
     }
     for (final maintenance in maintenanceList) {
-      json['maintenancePoints']?.add(maintenance.toJson());
+      json['maintenancePoints']!.add(maintenance.toJson());
     }
     return json;
   }
@@ -827,6 +828,291 @@ class AbsenceOfOrderTest extends Test<AbsenceOfOrderData> {
   ///
   /// Typically used when saving or updating this object to get the
   /// correct format for Firestore.
+  Map<String, Object> toJson() {
+    return {
+      'title': title,
+      'id': testID,
+      'scheduledTime': scheduledTime,
+      'project': projectRef,
+      'data': data.toJson(),
+      'creationTime': creationTime,
+      'maxResearchers': maxResearchers,
+      'isComplete': isComplete,
+    };
+  }
+}
+
+class ConstructedBoundaries {
+  List<LatLng> curbBoundaries = [];
+  List<LatLng> buildingWallBoundaries = [];
+  List<LatLng> fenceBoundaries = [];
+  List<LatLng> planterBoundaries = [];
+  List<LatLng> partialWallBoundaries = [];
+
+  ConstructedBoundaries();
+
+  ConstructedBoundaries.fromJson(Map<String, dynamic> data) {
+    if (data.containsKey('curbBoundaries') &&
+        (data['curbBoundaries'] as List).isNotEmpty &&
+        (data['curbBoundaries'] as List).first is GeoPoint) {
+      curbBoundaries = data['curbBoundaries'].toLatLngList();
+    }
+    if (data.containsKey('buildingWallBoundaries') &&
+        (data['buildingWallBoundaries'] as List).isNotEmpty &&
+        (data['buildingWallBoundaries'] as List).first is GeoPoint) {
+      buildingWallBoundaries = data['buildingWallBoundaries'].toLatLngList();
+    }
+    if (data.containsKey('fenceBoundaries') &&
+        (data['fenceBoundaries'] as List).isNotEmpty &&
+        (data['fenceBoundaries'] as List).first is GeoPoint) {
+      fenceBoundaries = data['fenceBoundaries'].toLatLngList();
+    }
+    if (data.containsKey('planterBoundaries') &&
+        (data['planterBoundaries'] as List).isNotEmpty &&
+        (data['planterBoundaries'] as List).first is GeoPoint) {
+      planterBoundaries = data['planterBoundaries'].toLatLngList();
+    }
+    if (data.containsKey('partialWallBoundaries') &&
+        (data['partialWallBoundaries'] as List).isNotEmpty &&
+        (data['partialWallBoundaries'] as List).first is GeoPoint) {
+      partialWallBoundaries = data['partialWallBoundaries'].toLatLngList();
+    }
+  }
+
+  Map<String, List<GeoPoint>> toJson() {
+    Map<String, List<GeoPoint>> json = {
+      'curbBoundaries': curbBoundaries.toGeoPointList(),
+      'buildingWallBoundaries': buildingWallBoundaries.toGeoPointList(),
+      'fenceBoundaries': fenceBoundaries.toGeoPointList(),
+      'planterBoundaries': planterBoundaries.toGeoPointList(),
+      'partialWallBoundaries': partialWallBoundaries.toGeoPointList(),
+    };
+    return json;
+  }
+}
+
+class MaterialBoundaries {
+  List<LatLng> paverBoundaries = [];
+  List<LatLng> concreteBoundaries = [];
+  List<LatLng> tileBoundaries = [];
+  List<LatLng> naturalBoundaries = [];
+  List<LatLng> woodBoundaries = [];
+
+  MaterialBoundaries();
+
+  MaterialBoundaries.fromJson(Map<String, dynamic> data) {
+    if (data.containsKey('paverBoundaries') &&
+        (data['paverBoundaries'] as List).isNotEmpty &&
+        (data['paverBoundaries'] as List).first is GeoPoint) {
+      paverBoundaries = data['paverBoundaries'].toLatLngList();
+    }
+    if (data.containsKey('concreteBoundaries') &&
+        (data['concreteBoundaries'] as List).isNotEmpty &&
+        (data['concreteBoundaries'] as List).first is GeoPoint) {
+      concreteBoundaries = data['concreteBoundaries'].toLatLngList();
+    }
+    if (data.containsKey('tileBoundaries') &&
+        (data['tileBoundaries'] as List).isNotEmpty &&
+        (data['tileBoundaries'] as List).first is GeoPoint) {
+      tileBoundaries = data['tileBoundaries'].toLatLngList();
+    }
+    if (data.containsKey('naturalBoundaries') &&
+        (data['naturalBoundaries'] as List).isNotEmpty &&
+        (data['naturalBoundaries'] as List).first is GeoPoint) {
+      naturalBoundaries = data['naturalBoundaries'].toLatLngList();
+    }
+    if (data.containsKey('woodBoundaries') &&
+        (data['woodBoundaries'] as List).isNotEmpty &&
+        (data['woodBoundaries'] as List).first is GeoPoint) {
+      woodBoundaries = data['woodBoundaries'].toLatLngList();
+    }
+  }
+
+  Map<String, List<GeoPoint>> toJson() {
+    Map<String, List<GeoPoint>> json = {
+      'paverBoundaries': paverBoundaries.toGeoPointList(),
+      'concreteBoundaries': concreteBoundaries.toGeoPointList(),
+      'tileBoundaries': tileBoundaries.toGeoPointList(),
+      'naturalBoundaries': naturalBoundaries.toGeoPointList(),
+      'woodBoundaries': woodBoundaries.toGeoPointList(),
+    };
+    return json;
+  }
+}
+
+class ShelterBoundaries {
+  List<LatLng> canopyBoundaries = [];
+  List<LatLng> treeBoundaries = [];
+  List<LatLng> umbrellaDiningBoundaries = [];
+  List<LatLng> temporaryBoundaries = [];
+  List<LatLng> constructedCeilingBoundaries = [];
+
+  ShelterBoundaries();
+
+  ShelterBoundaries.fromJson(Map<String, dynamic> data) {
+    if (data.containsKey('canopyBoundaries') &&
+        (data['canopyBoundaries'] as List).isNotEmpty &&
+        (data['canopyBoundaries'] as List).first is GeoPoint) {
+      canopyBoundaries = data['canopyBoundaries'].toLatLngList();
+    }
+    if (data.containsKey('treeBoundaries') &&
+        (data['treeBoundaries'] as List).isNotEmpty &&
+        (data['treeBoundaries'] as List).first is GeoPoint) {
+      treeBoundaries = data['treeBoundaries'].toLatLngList();
+    }
+    if (data.containsKey('umbrellaDiningBoundaries') &&
+        (data['umbrellaDiningBoundaries'] as List).isNotEmpty &&
+        (data['umbrellaDiningBoundaries'] as List).first is GeoPoint) {
+      umbrellaDiningBoundaries =
+          data['umbrellaDiningBoundaries'].toLatLngList();
+    }
+    if (data.containsKey('temporaryBoundaries') &&
+        (data['temporaryBoundaries'] as List).isNotEmpty &&
+        (data['temporaryBoundaries'] as List).first is GeoPoint) {
+      temporaryBoundaries = data['temporaryBoundaries'].toLatLngList();
+    }
+    if (data.containsKey('constructedCeilingBoundaries') &&
+        (data['constructedCeilingBoundaries'] as List).isNotEmpty &&
+        (data['constructedCeilingBoundaries'] as List).first is GeoPoint) {
+      constructedCeilingBoundaries =
+          data['constructedCeilingBoundaries'].toLatLngList();
+    }
+  }
+
+  Map<String, List<GeoPoint>> toJson() {
+    Map<String, List<GeoPoint>> json = {
+      'canopyBoundaries': canopyBoundaries.toGeoPointList(),
+      'treeBoundaries': treeBoundaries.toGeoPointList(),
+      'umbrellaDiningBoundaries': umbrellaDiningBoundaries.toGeoPointList(),
+      'temporaryBoundaries': temporaryBoundaries.toGeoPointList(),
+      'constructedCeilingBoundaries':
+          constructedCeilingBoundaries.toGeoPointList(),
+    };
+    return json;
+  }
+}
+
+class SpatialBoundariesData {
+  late ConstructedBoundaries constructed;
+  late MaterialBoundaries material;
+  late ShelterBoundaries shelter;
+
+  SpatialBoundariesData()
+      : constructed = ConstructedBoundaries(),
+        material = MaterialBoundaries(),
+        shelter = ShelterBoundaries();
+
+  SpatialBoundariesData.fromJson(Map<String, dynamic> data) {
+    if (data.containsKey('constructed') &&
+        (data['constructed'] as Map).isNotEmpty) {
+      constructed = ConstructedBoundaries.fromJson(data['constructed']);
+    }
+    if (data.containsKey('material') && (data['material'] as Map).isNotEmpty) {
+      material = MaterialBoundaries.fromJson(data['material']);
+    }
+    if (data.containsKey('shelter') && (data['shelter'] as Map).isNotEmpty) {
+      shelter = ShelterBoundaries.fromJson(data['shelter']);
+    }
+  }
+
+  Map<String, Object> toJson() {
+    Map<String, Map<String, List<GeoPoint>>> json = {
+      'constructed': constructed.toJson(),
+      'material': material.toJson(),
+      'shelter': shelter.toJson(),
+    };
+    return json;
+  }
+}
+
+class SpatialBoundariesTest extends Test<SpatialBoundariesData> {
+  static const String collectionIDStatic = 'spatial_boundaries_tests';
+
+  SpatialBoundariesTest._({
+    required super.title,
+    required super.testID,
+    required super.scheduledTime,
+    required super.projectRef,
+    required super.collectionID,
+    required super.data,
+    super.creationTime,
+    super.maxResearchers,
+    super.isComplete,
+  }) : super._();
+
+  /// Registers this class within the Maps required by class [Test].
+  static void register() {
+    // Register for creating new Spatial Boundaries Tests
+    Test._newTestConstructors[collectionIDStatic] = ({
+      required String title,
+      required String testID,
+      required Timestamp scheduledTime,
+      required DocumentReference projectRef,
+      required String collectionID,
+    }) =>
+        SpatialBoundariesTest._(
+          title: title,
+          testID: testID,
+          scheduledTime: scheduledTime,
+          projectRef: projectRef,
+          collectionID: collectionID,
+          data: SpatialBoundariesData(),
+        );
+    // Register for recreating a Spatial Boundaries Test from Firestore
+    Test._recreateTestConstructors[collectionIDStatic] = (testDoc) {
+      return AbsenceOfOrderTest.fromJson(testDoc.data()!);
+    };
+    // Register for building a Spatial Boundaries Test page
+    Test._pageBuilders[SpatialBoundariesTest] =
+        (project, test) => SpatialBoundariesTestPage(
+              activeProject: project,
+            );
+    // Register a function for saving to Firestore
+    Test._saveToFirestoreFunctions[SpatialBoundariesTest] = (test) async {
+      final testRef = _firestore
+          .collection(test.collectionID)
+          .doc(test.testID)
+          .withConverter<SpatialBoundariesTest>(
+            fromFirestore: (snapshot, _) =>
+                SpatialBoundariesTest.fromJson(snapshot.data()!),
+            toFirestore: (test, _) => test.toJson(),
+          );
+      await testRef.set(test as SpatialBoundariesTest, SetOptions(merge: true));
+    };
+  }
+
+  @override
+  void submitData(SpatialBoundariesData data) async {
+    try {
+      await _firestore.collection(collectionID).doc(testID).update({
+        'data': data.toJson(),
+        'isComplete': true,
+      });
+
+      this.data = data;
+      isComplete = true;
+
+      print('Success! In SpatialBoundariesTest.submitData. data = $data');
+    } catch (e, stacktrace) {
+      print("Exception in SpatialBoundariesTest.submitData(): $e");
+      print("Stacktrace: $stacktrace");
+    }
+  }
+
+  static SpatialBoundariesTest fromJson(Map<String, dynamic> doc) {
+    return SpatialBoundariesTest._(
+      title: doc['title'],
+      testID: doc['id'],
+      scheduledTime: doc['scheduledTime'],
+      projectRef: doc['project'],
+      collectionID: collectionIDStatic,
+      data: SpatialBoundariesData.fromJson(doc['data']),
+      creationTime: doc['creationTime'],
+      maxResearchers: doc['maxResearchers'],
+      isComplete: doc['isComplete'],
+    );
+  }
+
   Map<String, Object> toJson() {
     return {
       'title': title,

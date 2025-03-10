@@ -74,6 +74,30 @@ class _SpatialBoundariesTestPageState extends State<SpatialBoundariesTestPage> {
     });
   }
 
+  void _doConstructedModal(BuildContext context) async {
+    await showModalBottomSheet(
+      isScrollControlled: true,
+      context: context,
+      builder: (context) => _ConstructedDescriptionForm(),
+    );
+  }
+
+  void _doMaterialModal(BuildContext context) async {
+    await showModalBottomSheet(
+      isScrollControlled: true,
+      context: context,
+      builder: (context) => _MaterialDescriptionForm(),
+    );
+  }
+
+  void _doShelterModal(BuildContext context) async {
+    await showModalBottomSheet(
+      isScrollControlled: true,
+      context: context,
+      builder: (context) => _ShelterDescriptionForm(),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return SafeArea(
@@ -166,7 +190,9 @@ class _SpatialBoundariesTestPageState extends State<SpatialBoundariesTestPage> {
                           flex: 11,
                           child: FilledButton(
                             style: testButtonStyle,
-                            onPressed: () {},
+                            onPressed: () {
+                              _doConstructedModal(context);
+                            },
                             child: Text('Constructed'),
                           ),
                         ),
@@ -174,7 +200,9 @@ class _SpatialBoundariesTestPageState extends State<SpatialBoundariesTestPage> {
                           flex: 8,
                           child: FilledButton(
                             style: testButtonStyle,
-                            onPressed: () {},
+                            onPressed: () {
+                              _doMaterialModal(context);
+                            },
                             child: Text('Material'),
                           ),
                         ),
@@ -182,7 +210,9 @@ class _SpatialBoundariesTestPageState extends State<SpatialBoundariesTestPage> {
                           flex: 7,
                           child: FilledButton(
                             style: testButtonStyle,
-                            onPressed: () {},
+                            onPressed: () {
+                              _doShelterModal(context);
+                            },
                             child: Text('Shelter'),
                           ),
                         ),
@@ -233,6 +263,496 @@ class _SpatialBoundariesTestPageState extends State<SpatialBoundariesTestPage> {
                   ],
                 ),
               ),
+      ),
+    );
+  }
+}
+
+class _ConstructedDescriptionForm extends StatefulWidget {
+  const _ConstructedDescriptionForm();
+
+  @override
+  State<_ConstructedDescriptionForm> createState() =>
+      _ConstructedDescriptionFormState();
+}
+
+class _ConstructedDescriptionFormState
+    extends State<_ConstructedDescriptionForm> {
+  @override
+  Widget build(BuildContext context) {
+    return SingleChildScrollView(
+      child: Padding(
+        padding: MediaQuery.of(context).viewInsets,
+        child: Container(
+          decoration: BoxDecoration(
+            gradient: defaultGrad,
+            borderRadius: const BorderRadius.only(
+              topLeft: Radius.circular(24.0),
+              topRight: Radius.circular(24.0),
+            ),
+          ),
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 10),
+            child: Column(
+              children: [
+                const BarIndicator(),
+                Center(
+                  child: Text(
+                    'Boundary Description',
+                    softWrap: true,
+                    textAlign: TextAlign.center,
+                    style: TextStyle(
+                      fontSize: 20,
+                      fontWeight: FontWeight.bold,
+                      color: placeYellow,
+                    ),
+                  ),
+                ),
+                SizedBox(height: 4),
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 25),
+                  child: Center(
+                    child: Text(
+                      'Select the best description for the boundary you marked.',
+                      softWrap: true,
+                      textAlign: TextAlign.center,
+                      style: TextStyle(
+                        fontSize: 16,
+                        fontStyle: FontStyle.italic,
+                        color: Colors.grey[400],
+                      ),
+                    ),
+                  ),
+                ),
+                SizedBox(height: 12),
+                Row(
+                  spacing: 20,
+                  children: <Widget>[
+                    Expanded(
+                      flex: 1,
+                      child: TextButton(
+                        style: testButtonStyle,
+                        onPressed: () {},
+                        child: Text(
+                          'Curbs',
+                          textAlign: TextAlign.center,
+                        ),
+                      ),
+                    ),
+                    Expanded(
+                      flex: 1,
+                      child: TextButton(
+                        style: testButtonStyle,
+                        onPressed: () {},
+                        child: Text(
+                          'Building Wall',
+                          textAlign: TextAlign.center,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+                SizedBox(height: 4),
+                Row(
+                  spacing: 20,
+                  children: <Widget>[
+                    Expanded(
+                      flex: 1,
+                      child: TextButton(
+                        style: testButtonStyle,
+                        onPressed: () {},
+                        child: Text(
+                          'Fences',
+                          textAlign: TextAlign.center,
+                        ),
+                      ),
+                    ),
+                    Expanded(
+                      flex: 1,
+                      child: TextButton(
+                        style: testButtonStyle,
+                        onPressed: () {},
+                        child: Text(
+                          'Planter',
+                          textAlign: TextAlign.center,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+                SizedBox(height: 4),
+                Row(
+                  spacing: 20,
+                  children: <Widget>[
+                    Spacer(flex: 1),
+                    Expanded(
+                      flex: 2,
+                      child: TextButton(
+                        style: testButtonStyle,
+                        onPressed: () {},
+                        child: Text(
+                          'Partial Wall',
+                          textAlign: TextAlign.center,
+                        ),
+                      ),
+                    ),
+                    Spacer(flex: 1),
+                  ],
+                ),
+                Padding(
+                  padding: const EdgeInsets.symmetric(vertical: 12),
+                  child: Divider(),
+                ),
+                Row(
+                  children: [
+                    Spacer(flex: 4),
+                    Expanded(
+                      flex: 3,
+                      child: FilledButton(
+                        style: testButtonStyle,
+                        onPressed: () {
+                          Navigator.pop(context);
+                        },
+                        child: Text(
+                          'Back',
+                          textAlign: TextAlign.center,
+                        ),
+                      ),
+                    ),
+                    Spacer(flex: 4),
+                  ],
+                ),
+                SizedBox(height: 30),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _MaterialDescriptionForm extends StatefulWidget {
+  const _MaterialDescriptionForm();
+
+  @override
+  State<_MaterialDescriptionForm> createState() =>
+      _MaterialDescriptionFormState();
+}
+
+class _MaterialDescriptionFormState extends State<_MaterialDescriptionForm> {
+  @override
+  Widget build(BuildContext context) {
+    return SingleChildScrollView(
+      child: Padding(
+        padding: MediaQuery.of(context).viewInsets,
+        child: Container(
+          decoration: BoxDecoration(
+            gradient: defaultGrad,
+            borderRadius: const BorderRadius.only(
+              topLeft: Radius.circular(24.0),
+              topRight: Radius.circular(24.0),
+            ),
+          ),
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 10),
+            child: Column(
+              children: [
+                const BarIndicator(),
+                Center(
+                  child: Text(
+                    'Boundary Description',
+                    softWrap: true,
+                    textAlign: TextAlign.center,
+                    style: TextStyle(
+                      fontSize: 20,
+                      fontWeight: FontWeight.bold,
+                      color: placeYellow,
+                    ),
+                  ),
+                ),
+                SizedBox(height: 4),
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 25),
+                  child: Center(
+                    child: Text(
+                      'Select the best description for the boundary you marked.',
+                      softWrap: true,
+                      textAlign: TextAlign.center,
+                      style: TextStyle(
+                        fontSize: 16,
+                        fontStyle: FontStyle.italic,
+                        color: Colors.grey[400],
+                      ),
+                    ),
+                  ),
+                ),
+                SizedBox(height: 12),
+                Row(
+                  spacing: 20,
+                  children: <Widget>[
+                    Expanded(
+                      flex: 1,
+                      child: TextButton(
+                        style: testButtonStyle,
+                        onPressed: () {},
+                        child: Text(
+                          'Bricks (pavers)',
+                          textAlign: TextAlign.center,
+                        ),
+                      ),
+                    ),
+                    Expanded(
+                      flex: 1,
+                      child: TextButton(
+                        style: testButtonStyle,
+                        onPressed: () {},
+                        child: Text(
+                          'Concrete',
+                          textAlign: TextAlign.center,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+                SizedBox(height: 4),
+                Row(
+                  spacing: 20,
+                  children: <Widget>[
+                    Expanded(
+                      flex: 1,
+                      child: TextButton(
+                        style: testButtonStyle,
+                        onPressed: () {},
+                        child: Text(
+                          'Tile',
+                          textAlign: TextAlign.center,
+                        ),
+                      ),
+                    ),
+                    Expanded(
+                      flex: 1,
+                      child: TextButton(
+                        style: testButtonStyle,
+                        onPressed: () {},
+                        child: Text(
+                          'Natural (grass)',
+                          textAlign: TextAlign.center,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+                SizedBox(height: 4),
+                Row(
+                  spacing: 20,
+                  children: <Widget>[
+                    Spacer(flex: 1),
+                    Expanded(
+                      flex: 2,
+                      child: TextButton(
+                        style: testButtonStyle,
+                        onPressed: () {},
+                        child: Text(
+                          'Wood (deck)',
+                          textAlign: TextAlign.center,
+                        ),
+                      ),
+                    ),
+                    Spacer(flex: 1),
+                  ],
+                ),
+                Padding(
+                  padding: const EdgeInsets.symmetric(vertical: 12),
+                  child: Divider(),
+                ),
+                Row(
+                  children: [
+                    Spacer(flex: 4),
+                    Expanded(
+                      flex: 3,
+                      child: FilledButton(
+                        style: testButtonStyle,
+                        onPressed: () {
+                          Navigator.pop(context);
+                        },
+                        child: Text(
+                          'Back',
+                          textAlign: TextAlign.center,
+                        ),
+                      ),
+                    ),
+                    Spacer(flex: 4),
+                  ],
+                ),
+                SizedBox(height: 30),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _ShelterDescriptionForm extends StatefulWidget {
+  const _ShelterDescriptionForm();
+
+  @override
+  State<_ShelterDescriptionForm> createState() =>
+      _ShelterDescriptionFormState();
+}
+
+class _ShelterDescriptionFormState extends State<_ShelterDescriptionForm> {
+  @override
+  Widget build(BuildContext context) {
+    return SingleChildScrollView(
+      child: Padding(
+        padding: MediaQuery.of(context).viewInsets,
+        child: Container(
+          decoration: BoxDecoration(
+            gradient: defaultGrad,
+            borderRadius: const BorderRadius.only(
+              topLeft: Radius.circular(24.0),
+              topRight: Radius.circular(24.0),
+            ),
+          ),
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 10),
+            child: Column(
+              children: [
+                const BarIndicator(),
+                Center(
+                  child: Text(
+                    'Boundary Description',
+                    softWrap: true,
+                    textAlign: TextAlign.center,
+                    style: TextStyle(
+                      fontSize: 20,
+                      fontWeight: FontWeight.bold,
+                      color: placeYellow,
+                    ),
+                  ),
+                ),
+                SizedBox(height: 4),
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 25),
+                  child: Center(
+                    child: Text(
+                      'Select the best description for the boundary you marked.',
+                      softWrap: true,
+                      textAlign: TextAlign.center,
+                      style: TextStyle(
+                        fontSize: 16,
+                        fontStyle: FontStyle.italic,
+                        color: Colors.grey[400],
+                      ),
+                    ),
+                  ),
+                ),
+                SizedBox(height: 12),
+                Row(
+                  spacing: 20,
+                  children: <Widget>[
+                    Expanded(
+                      flex: 1,
+                      child: TextButton(
+                        style: testButtonStyle,
+                        onPressed: () {},
+                        child: Text(
+                          'Canopy',
+                          textAlign: TextAlign.center,
+                        ),
+                      ),
+                    ),
+                    Expanded(
+                      flex: 1,
+                      child: TextButton(
+                        style: testButtonStyle,
+                        onPressed: () {},
+                        child: Text(
+                          'Trees',
+                          textAlign: TextAlign.center,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+                SizedBox(height: 4),
+                Row(
+                  spacing: 20,
+                  children: <Widget>[
+                    Expanded(
+                      flex: 1,
+                      child: TextButton(
+                        style: testButtonStyle,
+                        onPressed: () {},
+                        child: Text(
+                          'Umbrella Dining',
+                          textAlign: TextAlign.center,
+                        ),
+                      ),
+                    ),
+                    Expanded(
+                      flex: 1,
+                      child: TextButton(
+                        style: testButtonStyle,
+                        onPressed: () {},
+                        child: Text(
+                          'Temporary',
+                          textAlign: TextAlign.center,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+                SizedBox(height: 4),
+                Row(
+                  spacing: 20,
+                  children: <Widget>[
+                    Spacer(flex: 1),
+                    Expanded(
+                      flex: 2,
+                      child: TextButton(
+                        style: testButtonStyle,
+                        onPressed: () {},
+                        child: Text(
+                          'Constructed Ceiling',
+                          textAlign: TextAlign.center,
+                        ),
+                      ),
+                    ),
+                    Spacer(flex: 1),
+                  ],
+                ),
+                Padding(
+                  padding: const EdgeInsets.symmetric(vertical: 12),
+                  child: Divider(),
+                ),
+                Row(
+                  children: [
+                    Spacer(flex: 4),
+                    Expanded(
+                      flex: 3,
+                      child: FilledButton(
+                        style: testButtonStyle,
+                        onPressed: () {
+                          Navigator.pop(context);
+                        },
+                        child: Text(
+                          'Back',
+                          textAlign: TextAlign.center,
+                        ),
+                      ),
+                    ),
+                    Spacer(flex: 4),
+                  ],
+                ),
+                SizedBox(height: 30),
+              ],
+            ),
+          ),
+        ),
       ),
     );
   }
