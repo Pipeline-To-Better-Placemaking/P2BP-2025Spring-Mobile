@@ -477,6 +477,10 @@ extension LatLngConversion on LatLng {
   GeoPoint toGeoPoint() {
     return GeoPoint(latitude, longitude);
   }
+
+  mp.LatLng toMPLatLng() {
+    return mp.LatLng(latitude, longitude);
+  }
 }
 
 extension LatLngListConversion on List<LatLng> {
@@ -488,6 +492,13 @@ extension LatLngListConversion on List<LatLng> {
       newGeoPointList.add(GeoPoint(coordinate.latitude, coordinate.longitude));
     });
     return newGeoPointList;
+  }
+
+  List<mp.LatLng> toMPLatLng() {
+    List<mp.LatLng> newMPLatLngList = [];
+    forEach((point) =>
+        newMPLatLngList.add(mp.LatLng(point.latitude, point.longitude)));
+    return newMPLatLngList;
   }
 }
 

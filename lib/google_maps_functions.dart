@@ -3,6 +3,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
+import 'package:maps_toolkit/maps_toolkit.dart' as mp;
 
 /// Conversion used for length and area to convert from meters to feet.
 /// Make sure to multiply twice (or square) for use in area,
@@ -154,6 +155,18 @@ LatLng getPolygonCentroid(Polygon polygon) {
   }
 
   return LatLng(latSum / numPoints, lngSum / numPoints);
+}
+
+/// Finds the distance between given [centroid] and all [points] and returns
+/// the largest distance value.
+double getMaxDistanceFromCentroid(mp.LatLng centroid, List<mp.LatLng> points) {
+  double maxDistance = 0;
+  for (final point in points) {
+    final double distance =
+        mp.SphericalUtil.computeDistanceBetween(centroid, point).toDouble();
+    maxDistance = max(maxDistance, distance);
+  }
+  return maxDistance;
 }
 
 /// Creates a [Polyline] from a list of points. Returns that [Polyline]. If no

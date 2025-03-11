@@ -1,10 +1,14 @@
+import 'dart:math';
+
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
+import 'package:p2bp_2025spring_mobile/firestore_functions.dart';
 import 'package:p2bp_2025spring_mobile/theme.dart';
 import 'google_maps_functions.dart';
 import 'db_schema_classes.dart';
+import 'package:maps_toolkit/maps_toolkit.dart' as mp;
 
 class LightingProfileTestPage extends StatefulWidget {
   final Project activeProject;
@@ -29,6 +33,7 @@ class _LightingProfileTestPageState extends State<LightingProfileTestPage> {
 
   late GoogleMapController mapController;
   LatLng _location = defaultLocation;
+  double _zoom = 14;
   MapType _currentMapType = MapType.satellite; // Default map type
   final Set<Marker> _markers = {}; // Set of markers visible on map
   Set<Polygon> _polygons = {}; // Set of polygons
@@ -53,7 +58,18 @@ class _LightingProfileTestPageState extends State<LightingProfileTestPage> {
       _location = getPolygonCentroid(_polygons.first);
       // Take some latitude away to center considering bottom sheet.
       _location = LatLng(_location.latitude * .999999, _location.longitude);
-      // TODO: dynamic zooming
+
+      // Say we want the screen area to be a circle with radius of twice max distance from centroid
+      double desiredVisibleDiameter = 2 *
+          getMaxDistanceFromCentroid(
+              _location.toMPLatLng(), _polygons.first.toMPLatLngList());
+      // Convert from meters to kilometers
+      desiredVisibleDiameter = desiredVisibleDiameter / 1000;
+      // Convert desired visible area to zoom
+      _zoom = log(40000 / (desiredVisibleDiameter / 2)) / log(2);
+      // -1 because it feels too zoomed in otherwise
+      _zoom = _zoom - 1;
+
       _isLoading = false;
     });
   }
@@ -66,7 +82,7 @@ class _LightingProfileTestPageState extends State<LightingProfileTestPage> {
   void _moveToLocation() {
     mapController.animateCamera(
       CameraUpdate.newCameraPosition(
-        CameraPosition(target: _location, zoom: 14.0),
+        CameraPosition(target: _location, zoom: _zoom),
       ),
     );
   }
