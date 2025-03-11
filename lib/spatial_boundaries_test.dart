@@ -671,7 +671,7 @@ class _MaterialDescriptionFormState extends State<_MaterialDescriptionForm> {
                         onPressed: () {
                           Navigator.pop(
                             context,
-                            MaterialBoundaryType.paver,
+                            MaterialBoundaryType.brick,
                           );
                         },
                         child: Text(
