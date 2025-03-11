@@ -2,28 +2,26 @@ import 'package:flutter/material.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 
-Widget tracingInstructions() {
+Widget peopleInMotionInstructions() {
   return RichText(
     text: TextSpan(
-      style: TextStyle(fontSize: 15, color: Colors.black),
+      style: TextStyle(fontSize: 16, color: Colors.black),
       children: [
         TextSpan(text: "1. ", style: TextStyle(fontWeight: FontWeight.bold)),
         TextSpan(text: "Tap the "),
         WidgetSpan(
           alignment: PlaceholderAlignment.middle,
           child: Container(
-            width: 24, // Smaller than in the legend
+            width: 24,
             height: 24,
             decoration: BoxDecoration(
-              color: Colors.brown, // Same color as your tracing mode button
               shape: BoxShape.circle,
+              color: const Color(0xFFFF9800).withValues(alpha: 0.9),
+              border: Border.all(color: Color(0xFF8C2F00), width: 2),
             ),
             child: Center(
-              child: Icon(
-                FontAwesomeIcons.pen,
-                size: 14,
-                color: Colors.white,
-              ),
+              child: Icon(FontAwesomeIcons.pen,
+                  size: 14, color: Color(0xFF8C2F00)),
             ),
           ),
         ),
@@ -63,13 +61,37 @@ Widget tracingInstructions() {
           ),
         ),
         TextSpan(text: "3. ", style: TextStyle(fontWeight: FontWeight.bold)),
-        TextSpan(text: "Confirmed routes are color coded by activity type:"),
-        WidgetSpan(
-            child: Padding(
-                padding: EdgeInsets.symmetric(vertical: 10),
-                child: activityColorsRow())),
         TextSpan(
-          text: "\n4. ",
+            text:
+                "Confirmed routes are color coded by activity type; tap the "),
+        WidgetSpan(
+          alignment: PlaceholderAlignment.middle,
+          child: Container(
+            width: 24,
+            height: 24,
+            decoration: BoxDecoration(
+              shape: BoxShape.circle,
+              color: const Color(0xFFBD9FE4).withValues(alpha: 0.9),
+              border: Border.all(color: Color(0xFF5A3E85), width: 2),
+            ),
+            child: Center(
+              child: Icon(FontAwesomeIcons.locationDot,
+                  size: 14, color: Color(0xFF5A3E85)),
+            ),
+          ),
+        ),
+        TextSpan(
+            text:
+                " button to see the color legend and view your recorded routes.\n"),
+        WidgetSpan(
+          child: Padding(
+            padding: EdgeInsets.symmetric(
+                vertical: 13), // Creates a small "half newline" effect
+            child: SizedBox.shrink(), // Invisible spacing element
+          ),
+        ),
+        TextSpan(
+          text: "4. ",
           style: TextStyle(fontWeight: FontWeight.bold),
         ),
         TextSpan(
@@ -133,14 +155,41 @@ Widget buildLegends() {
             spacing: spacing,
             runSpacing: spacing,
             children: [
-              legendItem(Icons.layers, "Toggle Map View", Colors.green,
-                  BoxShape.circle, itemWidth),
-              legendItem(FontAwesomeIcons.info, "Toggle Instructions",
-                  Colors.blue, BoxShape.circle, itemWidth),
-              legendItem(FontAwesomeIcons.locationDot, "Recorded Routes",
-                  Colors.purple, BoxShape.circle, itemWidth),
-              legendItem(FontAwesomeIcons.pen, "Tracing Mode", Colors.brown,
-                  BoxShape.circle, itemWidth),
+              legendItem(
+                  Icons.layers,
+                  "Toggle Map View",
+                  Color.fromARGB(255, 126, 173, 128).withValues(alpha: 0.9),
+                  BoxShape.circle,
+                  Border.all(color: Color(0xFF2D6040), width: 2),
+                  Color(0xFF2D6040),
+                  itemWidth),
+              legendItem(
+                  FontAwesomeIcons.info,
+                  "Toggle Instructions",
+                  Color.fromARGB(255, 186, 207, 235).withValues(alpha: 0.9),
+                  BoxShape.circle,
+                  Border.all(
+                    color: Color(0xFF37597D),
+                    width: 2,
+                  ),
+                  Color(0xFF37597D),
+                  itemWidth),
+              legendItem(
+                  FontAwesomeIcons.locationDot,
+                  "Recorded Routes",
+                  Color.fromARGB(255, 189, 159, 228).withValues(alpha: 0.9),
+                  BoxShape.circle,
+                  Border.all(color: Color(0xFF5A3E85), width: 2),
+                  Color(0xFF5A3E85),
+                  itemWidth),
+              legendItem(
+                  FontAwesomeIcons.pen,
+                  "Tracing Mode",
+                  Color(0xFFFF9800).withValues(alpha: 0.9),
+                  BoxShape.circle,
+                  Border.all(color: Color(0xFF8C2F00), width: 2),
+                  Color(0xFF8C2F00),
+                  itemWidth),
             ],
           ),
         ],
@@ -150,7 +199,7 @@ Widget buildLegends() {
 }
 
 Widget legendItem(IconData icon, String label, Color buttonColor,
-    BoxShape buttonShape, double width) {
+    BoxShape buttonShape, Border border, Color iconColor, double width) {
   return Container(
     width: width,
     child: Row(
@@ -161,12 +210,13 @@ Widget legendItem(IconData icon, String label, Color buttonColor,
           decoration: BoxDecoration(
             color: buttonColor,
             shape: buttonShape,
+            border: border,
           ),
           child: Center(
             child: Icon(
               icon,
               size: 15,
-              color: Colors.white,
+              color: iconColor,
             ),
           ),
         ),

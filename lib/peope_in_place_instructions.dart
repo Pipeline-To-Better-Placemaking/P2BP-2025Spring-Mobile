@@ -49,24 +49,23 @@ Widget peopleInPlaceInstructions() {
         WidgetSpan(
           alignment: PlaceholderAlignment.middle,
           child: Container(
-            width: 24, // Smaller than in the legend
+            width: 24,
             height: 24,
             decoration: BoxDecoration(
-              color: Colors.purple, // Same color as your tracing mode button
               shape: BoxShape.circle,
+              color: const Color(0xFFBD9FE4).withValues(alpha: 0.9),
+              border: Border.all(color: Color(0xFF5A3E85), width: 2),
             ),
             child: Center(
-              child: Icon(
-                FontAwesomeIcons.locationDot,
-                size: 14,
-                color: Colors.white,
-              ),
+              child: Icon(FontAwesomeIcons.locationDot,
+                  size: 14, color: Color(0xFF5A3E85)),
             ),
           ),
         ),
         TextSpan(
             text:
-                " button will bring up a menu displaying each logged point. Here, you can delete indvidual points or all points on the map.\n"),
+                " button will bring up a menu displaying each logged point. Here, you can delete indvidual points or all points, "
+                "or view the marker color legend.\n"),
         WidgetSpan(
           child: Padding(
             padding: EdgeInsets.symmetric(
@@ -127,12 +126,33 @@ Widget buildLegends() {
             spacing: spacing,
             runSpacing: spacing,
             children: [
-              legendItem(Icons.layers, "Toggle Map View", Colors.green,
-                  BoxShape.circle, itemWidth),
-              legendItem(FontAwesomeIcons.info, "Toggle Instructions",
-                  Colors.blue, BoxShape.circle, itemWidth),
-              legendItem(FontAwesomeIcons.locationDot, "Logged Points",
-                  Colors.purple, BoxShape.circle, itemWidth),
+              legendItem(
+                  Icons.layers,
+                  "Toggle Map View",
+                  Color.fromARGB(255, 126, 173, 128).withValues(alpha: 0.9),
+                  BoxShape.circle,
+                  Border.all(color: Color(0xFF2D6040), width: 2),
+                  Color(0xFF2D6040),
+                  itemWidth),
+              legendItem(
+                  FontAwesomeIcons.info,
+                  "Toggle Instructions",
+                  Color.fromARGB(255, 186, 207, 235).withValues(alpha: 0.9),
+                  BoxShape.circle,
+                  Border.all(
+                    color: Color(0xFF37597D),
+                    width: 2,
+                  ),
+                  Color(0xFF37597D),
+                  itemWidth),
+              legendItem(
+                  FontAwesomeIcons.locationDot,
+                  "Recorded Points",
+                  Color.fromARGB(255, 189, 159, 228).withValues(alpha: 0.9),
+                  BoxShape.circle,
+                  Border.all(color: Color(0xFF5A3E85), width: 2),
+                  Color(0xFF5A3E85),
+                  itemWidth),
             ],
           ),
         ],
@@ -142,7 +162,7 @@ Widget buildLegends() {
 }
 
 Widget legendItem(IconData icon, String label, Color buttonColor,
-    BoxShape buttonShape, double width) {
+    BoxShape buttonShape, Border border, Color iconColor, double width) {
   return Container(
     width: width,
     child: Row(
@@ -153,12 +173,13 @@ Widget legendItem(IconData icon, String label, Color buttonColor,
           decoration: BoxDecoration(
             color: buttonColor,
             shape: buttonShape,
+            border: border,
           ),
           child: Center(
             child: Icon(
               icon,
               size: 15,
-              color: Colors.white,
+              color: iconColor,
             ),
           ),
         ),
@@ -179,11 +200,10 @@ Widget activityColorsRow() {
     spacing: 16,
     runSpacing: 8,
     children: [
-      buildActivityColorItem("Walking", Colors.teal),
-      buildActivityColorItem("Running", Colors.red),
-      buildActivityColorItem("Swimming", Colors.cyan),
-      buildActivityColorItem("On Wheels", Colors.orange),
-      buildActivityColorItem("Handicap Assisted", Colors.purple),
+      buildActivityColorItem("Standing", Color(0xFF4285f4)),
+      buildActivityColorItem("Sitting", Color(0xFF28a745)),
+      buildActivityColorItem("Laying Down", Color(0xFFc41484)),
+      buildActivityColorItem("Squatting", Color(0xFF6f42c1)),
     ],
   );
 }

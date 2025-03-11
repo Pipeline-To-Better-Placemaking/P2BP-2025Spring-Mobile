@@ -695,7 +695,8 @@ class _PeopleInPlaceTestPageState extends State<PeopleInPlaceTestPage> {
             child: Container(
               decoration: BoxDecoration(
                 shape: BoxShape.circle,
-                color: Colors.green,
+                color: const Color(0xFF7EAD80).withValues(alpha: 0.9),
+                border: Border.all(color: Color(0xFF2D6040), width: 2),
                 boxShadow: [
                   BoxShadow(
                     color: Colors.black26,
@@ -706,13 +707,13 @@ class _PeopleInPlaceTestPageState extends State<PeopleInPlaceTestPage> {
               ),
               child: IconButton(
                 icon: Center(
-                  child: Icon(Icons.layers, color: Colors.white),
+                  child: Icon(Icons.layers, color: Color(0xFF2D6040)),
                 ),
                 onPressed: _toggleMapType,
               ),
             ),
           ),
-          // Overlaid button for toggling tooltip popup to appear on the screen.
+          // Overlaid button for toggling instructions.
           if (!_isLoading)
             Positioned(
               top: MediaQuery.of(context).padding.top + kToolbarHeight + 70.0,
@@ -720,7 +721,8 @@ class _PeopleInPlaceTestPageState extends State<PeopleInPlaceTestPage> {
               child: Container(
                 decoration: BoxDecoration(
                   shape: BoxShape.circle,
-                  color: Colors.blue,
+                  color: Color(0xFFBACFEB).withValues(alpha: 0.9),
+                  border: Border.all(color: Color(0xFF37597D), width: 2),
                   boxShadow: [
                     BoxShadow(
                       color: Colors.black26,
@@ -730,7 +732,7 @@ class _PeopleInPlaceTestPageState extends State<PeopleInPlaceTestPage> {
                   ],
                 ),
                 child: IconButton(
-                  icon: Icon(FontAwesomeIcons.info, color: Colors.white),
+                  icon: Icon(FontAwesomeIcons.info, color: Color(0xFF37597D)),
                   onPressed: _showInstructionOverlay,
                 ),
               ),
@@ -742,7 +744,8 @@ class _PeopleInPlaceTestPageState extends State<PeopleInPlaceTestPage> {
             child: Container(
               decoration: BoxDecoration(
                 shape: BoxShape.circle,
-                color: Colors.purple,
+                color: Color(0xFFBD9FE4).withValues(alpha: 0.9),
+                border: Border.all(color: Color(0xFF5A3E85), width: 2),
                 boxShadow: [
                   BoxShadow(
                     color: Colors.black26,
@@ -752,12 +755,14 @@ class _PeopleInPlaceTestPageState extends State<PeopleInPlaceTestPage> {
                 ],
               ),
               child: IconButton(
-                  icon: Icon(FontAwesomeIcons.locationDot, color: Colors.white),
-                  onPressed: () {
-                    setState(() {
-                      _isPointsMenuVisible = !_isPointsMenuVisible;
-                    });
-                  }),
+                icon: Icon(FontAwesomeIcons.locationDot,
+                    color: Color(0xFF5A3E85)),
+                onPressed: () {
+                  setState(() {
+                    _isPointsMenuVisible = !_isPointsMenuVisible;
+                  });
+                },
+              ),
             ),
           ),
           if (_isPointsMenuVisible)
@@ -768,12 +773,34 @@ class _PeopleInPlaceTestPageState extends State<PeopleInPlaceTestPage> {
               child: Container(
                 height: MediaQuery.of(context).size.height * 0.4,
                 decoration: BoxDecoration(
-                  color: Colors.white.withValues(alpha: 0.9),
+                  color: Color(0xFFDDE6F2).withValues(alpha: 0.9),
                   borderRadius: BorderRadius.circular(20),
+                  border: Border.all(
+                    color: Color(0xFF2F6DCF),
+                    width: 2,
+                  ),
                 ),
-                padding: EdgeInsets.zero,
+                padding: EdgeInsets.only(bottom: 8),
                 child: Column(
                   children: [
+                    Padding(
+                      padding: const EdgeInsets.symmetric(vertical: 8.0),
+                      child: Text(
+                        "Marker Color Guide",
+                        textAlign: TextAlign.center,
+                        style: TextStyle(
+                            fontSize: 18, fontWeight: FontWeight.bold),
+                      ),
+                    ),
+                    Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 16.0),
+                      child: activityColorsRow(),
+                    ),
+                    Divider(
+                      height: 20,
+                      thickness: 2,
+                      color: Color(0xFF2F6DCF),
+                    ),
                     Expanded(
                       child: ListView.builder(
                         padding: EdgeInsets.zero,
@@ -793,7 +820,8 @@ class _PeopleInPlaceTestPageState extends State<PeopleInPlaceTestPage> {
                               textAlign: TextAlign.left,
                             ),
                             trailing: IconButton(
-                              icon: const Icon(Icons.delete, color: Colors.red),
+                              icon: const Icon(FontAwesomeIcons.trashCan,
+                                  color: Color(0xFFD32F2F)),
                               onPressed: () {
                                 setState(() {
                                   // Construct the markerId the same way it was created.
@@ -809,6 +837,43 @@ class _PeopleInPlaceTestPageState extends State<PeopleInPlaceTestPage> {
                           );
                         },
                       ),
+                    ),
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Container(
+                          decoration: BoxDecoration(
+                            color: Color(0xFFD32F2F),
+                            borderRadius: BorderRadius.circular(10),
+                          ),
+                          child: TextButton(
+                            onPressed: () {
+                              setState(() {
+                                // Clear all logged points.
+                                _loggedPoints.clear();
+                                // Remove all associated markers.
+                                _markers.clear();
+                              });
+                            },
+                            style: TextButton.styleFrom(
+                              padding: const EdgeInsets.symmetric(
+                                  horizontal: 10, vertical: 8),
+                              tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                            ),
+                            child: Row(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: const [
+                                Text(
+                                  'Clear All',
+                                  style: TextStyle(color: Colors.white),
+                                ),
+                                SizedBox(width: 8),
+                                Icon(Icons.close, color: Colors.white),
+                              ],
+                            ),
+                          ),
+                        ),
+                      ],
                     ),
                   ],
                 ),

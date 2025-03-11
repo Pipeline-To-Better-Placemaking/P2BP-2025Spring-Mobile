@@ -28,7 +28,7 @@ import 'package:geolocator/geolocator.dart';
 import 'package:maps_toolkit/maps_toolkit.dart' as mp;
 import 'package:p2bp_2025spring_mobile/db_schema_classes.dart';
 import 'package:p2bp_2025spring_mobile/project_details_page.dart';
-import 'package:p2bp_2025spring_mobile/tracing_instructions_widget.dart';
+import 'package:p2bp_2025spring_mobile/people_in_motion_instructions.dart';
 
 class TracedRoute {
   final List<LatLng> points;
@@ -213,7 +213,7 @@ class _PeopleInMotionTestPageState extends State<PeopleInMotionTestPage> {
           actionsPadding: EdgeInsets.zero,
           title: Text(
             'How It Works:',
-            style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+            style: TextStyle(fontSize: 22),
             textAlign: TextAlign.center,
           ),
           content: SingleChildScrollView(
@@ -222,7 +222,7 @@ class _PeopleInMotionTestPageState extends State<PeopleInMotionTestPage> {
               child: Column(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  tracingInstructions(),
+                  peopleInMotionInstructions(),
                   SizedBox(height: 10),
                   buildLegends(),
                 ],
@@ -755,7 +755,8 @@ class _PeopleInMotionTestPageState extends State<PeopleInMotionTestPage> {
             child: Container(
               decoration: BoxDecoration(
                 shape: BoxShape.circle,
-                color: Colors.green,
+                color: const Color(0xFF7EAD80).withValues(alpha: 0.9),
+                border: Border.all(color: Color(0xFF2D6040), width: 2),
                 boxShadow: [
                   BoxShadow(
                     color: Colors.black26,
@@ -766,7 +767,7 @@ class _PeopleInMotionTestPageState extends State<PeopleInMotionTestPage> {
               ),
               child: IconButton(
                 icon: Center(
-                  child: Icon(Icons.layers, color: Colors.white),
+                  child: Icon(Icons.layers, color: Color(0xFF2D6040)),
                 ),
                 onPressed: _toggleMapType,
               ),
@@ -780,7 +781,8 @@ class _PeopleInMotionTestPageState extends State<PeopleInMotionTestPage> {
               child: Container(
                 decoration: BoxDecoration(
                   shape: BoxShape.circle,
-                  color: Colors.blue,
+                  color: Color(0xFFBACFEB).withValues(alpha: 0.9),
+                  border: Border.all(color: Color(0xFF37597D), width: 2),
                   boxShadow: [
                     BoxShadow(
                       color: Colors.black26,
@@ -790,7 +792,7 @@ class _PeopleInMotionTestPageState extends State<PeopleInMotionTestPage> {
                   ],
                 ),
                 child: IconButton(
-                  icon: Icon(FontAwesomeIcons.info, color: Colors.white),
+                  icon: Icon(FontAwesomeIcons.info, color: Color(0xFF37597D)),
                   onPressed: _showInstructionOverlay,
                 ),
               ),
@@ -802,7 +804,8 @@ class _PeopleInMotionTestPageState extends State<PeopleInMotionTestPage> {
             child: Container(
               decoration: BoxDecoration(
                 shape: BoxShape.circle,
-                color: Colors.purple,
+                color: Color(0xFFBD9FE4).withValues(alpha: 0.9),
+                border: Border.all(color: Color(0xFF5A3E85), width: 2),
                 boxShadow: [
                   BoxShadow(
                     color: Colors.black26,
@@ -812,7 +815,8 @@ class _PeopleInMotionTestPageState extends State<PeopleInMotionTestPage> {
                 ],
               ),
               child: IconButton(
-                icon: Icon(FontAwesomeIcons.locationDot, color: Colors.white),
+                icon: Icon(FontAwesomeIcons.locationDot,
+                    color: Color(0xFF5A3E85)),
                 onPressed: () {
                   setState(() {
                     _isPointsMenuVisible = !_isPointsMenuVisible;
@@ -828,7 +832,8 @@ class _PeopleInMotionTestPageState extends State<PeopleInMotionTestPage> {
             child: Container(
               decoration: BoxDecoration(
                 shape: BoxShape.circle,
-                color: Colors.brown,
+                color: Color(0xFFFF9800).withValues(alpha: 0.9),
+                border: Border.all(color: Color(0xFF8C2F00), width: 2),
                 boxShadow: [
                   BoxShadow(
                     color: Colors.black26,
@@ -838,7 +843,7 @@ class _PeopleInMotionTestPageState extends State<PeopleInMotionTestPage> {
                 ],
               ),
               child: IconButton(
-                icon: Icon(FontAwesomeIcons.pen, color: Colors.white),
+                icon: Icon(FontAwesomeIcons.pen, color: Color(0xFF8C2F00)),
                 onPressed: _isTracingMode
                     ? null
                     : () {
@@ -857,46 +862,71 @@ class _PeopleInMotionTestPageState extends State<PeopleInMotionTestPage> {
           // Points menu bottom sheet.
           if (_isPointsMenuVisible)
             Positioned(
-              bottom: 220.0,
+              bottom: 135.0,
               left: 20.0,
               right: 20.0,
               child: Container(
                 // Set a fixed or dynamic height as needed.
-                height: MediaQuery.of(context).size.height * 0.4,
+                height: MediaQuery.of(context).size.height * 0.5,
                 decoration: BoxDecoration(
-                  color: Colors.white.withValues(alpha: 0.9),
-                  borderRadius: BorderRadius.circular(20),
-                ),
-                padding: EdgeInsets.zero,
+                    color: Color(0xFFDDE6F2).withValues(alpha: 0.9),
+                    borderRadius: BorderRadius.circular(20),
+                    border: Border.all(
+                      color: Color(0xFF2F6DCF),
+                      width: 2,
+                    )),
+                padding: EdgeInsets.only(bottom: 8),
                 child: Column(
                   children: [
+                    Padding(
+                      padding: const EdgeInsets.symmetric(vertical: 8.0),
+                      child: Text("Route Color Guide",
+                          textAlign: TextAlign.center,
+                          style: TextStyle(
+                              fontSize: 18, fontWeight: FontWeight.bold)),
+                    ),
+                    Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 16.0),
+                      child: activityColorsRow(),
+                    ),
+                    SizedBox(height: 16),
+                    Divider(
+                      height: 1,
+                      thickness: 1.5,
+                      color: Color(0xFF2F6DCF),
+                    ),
                     Expanded(
                       child: ListView.builder(
                         padding: EdgeInsets.zero,
                         itemCount: _confirmedPolylines.length,
                         itemBuilder: (context, index) {
-                          // Convert the set to a list for indexing.
-                          List<Polyline> polylineList =
-                              _confirmedPolylines.toList();
-                          final polyline = polylineList[index];
+                          final route = _confirmedRoutes[index];
+                          final instanceNumber = _confirmedRoutes
+                              .take(index + 1)
+                              .where(
+                                  (r) => r.activityType == route.activityType)
+                              .length;
                           return ListTile(
                             contentPadding:
                                 const EdgeInsets.symmetric(horizontal: 20),
                             title: Text(
-                              'Route ${index + 1}',
+                              '${route.activityType} Route $instanceNumber',
                               style:
                                   const TextStyle(fontWeight: FontWeight.bold),
                             ),
                             subtitle: Text(
-                              'Points: ${polyline.points.length}',
+                              'Points: ${route.points.length}',
                               textAlign: TextAlign.left,
                             ),
                             trailing: IconButton(
-                              icon: const Icon(Icons.delete, color: Colors.red),
+                              icon: const Icon(FontAwesomeIcons.trashCan,
+                                  color: Color(0xFFD32F2F)),
                               onPressed: () {
                                 setState(() {
                                   // Retrieve the route ID from the polyline's id.
-                                  String routeId = polyline.polylineId.value;
+                                  // OLD: String routeId = polyline.polylineId.value; (Change back if necessary)
+                                  String routeId =
+                                      route.timestamp.toIso8601String();
                                   // Remove associated markers for this route.
                                   if (_routeMarkerIds.containsKey(routeId)) {
                                     for (var markerId
@@ -906,12 +936,12 @@ class _PeopleInMotionTestPageState extends State<PeopleInMotionTestPage> {
                                     }
                                     _routeMarkerIds.remove(routeId);
                                   }
-                                  // Remove the polyline.
-                                  _confirmedPolylines.remove(polyline);
-                                  // Optionally, remove from _confirmedRoutes as well.
-                                  _confirmedRoutes.removeWhere((route) =>
-                                      route.timestamp.toIso8601String() ==
-                                      routeId); // or use another unique field if available.
+
+                                  // Remove the associated polyline from _confirmedPolylines
+                                  _confirmedPolylines.removeWhere((polyline) =>
+                                      polyline.polylineId.value == routeId);
+
+                                  _confirmedRoutes.removeAt(index);
                                 });
                               },
                             ),
@@ -925,7 +955,7 @@ class _PeopleInMotionTestPageState extends State<PeopleInMotionTestPage> {
                       children: [
                         Container(
                           decoration: BoxDecoration(
-                            color: Colors.red,
+                            color: Color(0xFFD32F2F),
                             borderRadius: BorderRadius.circular(10),
                           ),
                           child: TextButton(
@@ -942,7 +972,7 @@ class _PeopleInMotionTestPageState extends State<PeopleInMotionTestPage> {
                             },
                             style: TextButton.styleFrom(
                               padding: const EdgeInsets.symmetric(
-                                  horizontal: 20, vertical: 16),
+                                  horizontal: 10, vertical: 8),
                               tapTargetSize: MaterialTapTargetSize.shrinkWrap,
                             ),
                             child: Row(
