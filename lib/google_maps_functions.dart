@@ -75,7 +75,7 @@ Set<Polygon> finalizePolygon(List<LatLng> polygonPoints) {
       ),
     };
   } catch (e, stacktrace) {
-    print('Excpetion in finalize_polygon(): $e');
+    print('Exception in finalize_polygon(): $e');
     print('Stacktrace: $stacktrace');
   }
   return polygon;
@@ -168,14 +168,37 @@ Polyline? createPolyline(List<LatLng> polylinePoints, Color color) {
 
     polyline = Polyline(
       polylineId: PolylineId(polylineID),
-      width: 3,
-      startCap: Cap.roundCap,
+      width: 4,
+      startCap: Cap.squareCap,
       points: polylinePoints,
       color: color,
     );
   } catch (e, stacktrace) {
-    print('Excpetion in finalize_polygon(): $e');
+    print('Exception in finalize_polygon(): $e');
     print('Stacktrace: $stacktrace');
   }
   return polyline;
+}
+
+/// Gets the the rectangle bounds enclosing a polygon.
+///
+/// Takes a list of [LatLng] points and returns a [LatLngBounds]. If bounds
+/// cannot be created (eg. points is empty) then returns null.
+LatLngBounds? getLatLngBounds(List<LatLng> points) {
+  LatLng southWest;
+  LatLng northEast;
+
+  if (points.isEmpty || points.firstOrNull == null) return null;
+
+  southWest = points.first;
+  northEast = points.first;
+
+  for (LatLng point in points) {
+    southWest = LatLng(min(point.latitude, southWest.latitude),
+        min(point.longitude, southWest.longitude));
+    northEast = LatLng(max(point.latitude, northEast.latitude),
+        max(point.longitude, northEast.longitude));
+  }
+
+  return LatLngBounds(southwest: southWest, northeast: northEast);
 }

@@ -107,8 +107,12 @@ class Project {
 /// List containing all tests that make use of standing points.
 ///
 /// Used to check for test creation and saving.
+///
+/// Note: Section Cutter is considered a standing points test even though
+/// it uses a section line, not points.
 const Set<String> standingPointsTests = {
-  IdentifyingAccessTest.collectionIDStatic
+  IdentifyingAccessTest.collectionIDStatic,
+  SectionCutterTest.collectionIDStatic,
 };
 
 /// List containing all tests that make use of standing points.
@@ -856,6 +860,9 @@ class SectionCutterTest extends Test<Map<String, String>> {
   /// Static constant definition of collection ID for this test type.
   static const String collectionIDStatic = 'section_cutter_tests';
 
+  /// Line used for taking section. Standing point equivalent for this test.
+  List linePoints;
+
   /// Creates a new [SectionCutterTest] instance from the given arguments.
   ///
   /// This is private because the intended usage of this is through the
@@ -868,6 +875,7 @@ class SectionCutterTest extends Test<Map<String, String>> {
     required super.projectRef,
     required super.collectionID,
     required super.data,
+    required this.linePoints,
     super.creationTime,
     super.maxResearchers,
     super.isComplete,
@@ -891,6 +899,7 @@ class SectionCutterTest extends Test<Map<String, String>> {
           projectRef: projectRef,
           collectionID: collectionID,
           data: newInitialDataDeepCopy(),
+          linePoints: standingPoints ?? [],
         );
     // Register for Map for Test.recreateFromDoc
     Test._recreateTestConstructors[collectionIDStatic] =
@@ -904,6 +913,7 @@ class SectionCutterTest extends Test<Map<String, String>> {
               creationTime: testDoc['creationTime'],
               maxResearchers: testDoc['maxResearchers'],
               isComplete: testDoc['isComplete'],
+              linePoints: testDoc['linePoints'],
             );
     // Register for Map for Test.getPage
     Test._pageBuilders[SectionCutterTest] = (project, test) => SectionCutter(
@@ -911,6 +921,8 @@ class SectionCutterTest extends Test<Map<String, String>> {
           activeTest: test as SectionCutterTest,
         );
     // Register for Map for Test.saveToFirestore
+    // Standing points are saved under line, as they will be made to create
+    // a polyline, instead of displayed as individual points.
     Test._saveToFirestoreFunctions[SectionCutterTest] = (test) async {
       await _firestore.collection(test.collectionID).doc(test.testID).set({
         'title': test.title,
@@ -921,6 +933,7 @@ class SectionCutterTest extends Test<Map<String, String>> {
         'creationTime': test.creationTime,
         'maxResearchers': test.maxResearchers,
         'isComplete': false,
+        'linePoints': (test as SectionCutterTest).linePoints,
       }, SetOptions(merge: true));
     };
   }

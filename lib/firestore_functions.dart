@@ -620,6 +620,9 @@ extension DynamicLatLngExtraction on List<dynamic> {
       if (coordinate.runtimeType == GeoPoint) {
         newLatLngList.add(LatLng(coordinate.latitude, coordinate.longitude));
       }
+      if (coordinate.runtimeType == LatLng) {
+        newLatLngList.add(coordinate);
+      }
     });
     return newLatLngList;
   }
