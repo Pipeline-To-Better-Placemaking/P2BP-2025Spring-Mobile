@@ -6,7 +6,6 @@ import 'package:p2bp_2025spring_mobile/theme.dart';
 import 'package:p2bp_2025spring_mobile/widgets.dart';
 import 'project_details_page.dart';
 import 'db_schema_classes.dart';
-import 'firestore_functions.dart';
 import 'google_maps_functions.dart';
 import 'home_screen.dart';
 
@@ -40,24 +39,17 @@ class _IdentifyingAccessState extends State<IdentifyingAccess> {
   late DocumentReference teamRef;
   late GoogleMapController mapController;
   LatLng _location = defaultLocation; // Default location
-  Map<AccessType, List> _accessData = {
-    AccessType.bikeRack: [],
-    AccessType.taxiAndRideShare: [],
-    AccessType.parking: [],
-    AccessType.transportStation: [],
-  };
+  final AccessData _accessData = AccessData();
 
   Polyline? _currentPolyline;
   List<LatLng> _currentPolylinePoints = [];
-  Set<Polyline> _polylines = {};
+  final Set<Polyline> _polylines = {};
   Set<Marker> _polylineMarkers = {};
   Set<Marker> _visiblePolylineMarkers = {};
   Set<Polygon> _currentPolygon = {};
   List<LatLng> _polygonPoints = []; // Points for the polygon
   Set<Polygon> _polygons = {}; // Set of polygons
-  List<GeoPoint> _polygonAsGeoPoints =
-      []; // The current polygon represented as points (for Firestore).
-  Set<Marker> _markers = {}; // Set of markers for points
+  final Set<Marker> _markers = {}; // Set of markers for points
   Set<Marker> _polygonMarkers = {}; // Set of markers for polygon creation
 
   MapType _currentMapType = MapType.satellite; // Default map type
@@ -230,7 +222,9 @@ class _IdentifyingAccessState extends State<IdentifyingAccess> {
     } else {
       print("Polyline is null. Nothing to finalize.");
     }
+    // Save data to its respective type list.
     _saveLocalData();
+    // Update widgets accordingly
     setState(() {
       _polylineMarkers = {};
       _currentPolylinePoints = [];
@@ -244,10 +238,6 @@ class _IdentifyingAccessState extends State<IdentifyingAccess> {
 
   void _saveLocalData() {
     try {
-      if (_accessData[_type] == null) {
-        throw Exception(
-            "Data map for given type ($_type) is null in _saveLocalData()");
-      }
       if (_currentPolyline == null) {
         throw Exception("Current polyline is null in _saveLocalData()");
       }
@@ -256,18 +246,18 @@ class _IdentifyingAccessState extends State<IdentifyingAccess> {
           throw Exception(
               "_type is null in saveLocalData(). Make sure that type is set correctly when invoking _finalizeShape().");
         case AccessType.bikeRack:
-          _accessData[_type]?.add(BikeRack(
+          _accessData.bikeRacks.add(BikeRack(
               spots: _currentSpotsOrRoute, polyline: _currentPolyline!));
         case AccessType.taxiAndRideShare:
-          _accessData[_type]
-              ?.add(TaxiAndRideShare(polyline: _currentPolyline!));
+          _accessData.taxisAndRideShares
+              .add(TaxiAndRideShare(polyline: _currentPolyline!));
         case AccessType.parking:
-          _accessData[_type]?.add(Parking(
+          _accessData.parkingStructures.add(Parking(
               spots: _currentSpotsOrRoute,
               polyline: _currentPolyline!,
               polygon: _currentPolygon.first));
         case AccessType.transportStation:
-          _accessData[_type]?.add(TransportStation(
+          _accessData.transportStations.add(TransportStation(
               routeNumber: _currentSpotsOrRoute, polyline: _currentPolyline!));
       }
     } catch (e, stacktrace) {
@@ -281,12 +271,6 @@ class _IdentifyingAccessState extends State<IdentifyingAccess> {
     try {
       // Create polygon.
       _currentPolygon = finalizePolygon(_polygonPoints);
-      // TODO: add to object;
-      // Cleans up current polygon representations.
-      _polygonAsGeoPoints = [];
-
-      // Gets list of polygon points for Firestore.
-      _polygonAsGeoPoints = _polygonPoints.toGeoPointList();
 
       // Clears polygon points and enter add points mode.
       _polygonPoints = [];
@@ -559,7 +543,7 @@ class _IdentifyingAccessState extends State<IdentifyingAccess> {
                                     _type = AccessType.transportStation;
                                     _polylineMode = true;
                                     _directions =
-                                        "Mark the spot of the bike rack. Then define the path to the project area.";
+                                        "Mark the spot of the transport station. Then define the path to the project area.";
                                   });
                                 },
                               );
