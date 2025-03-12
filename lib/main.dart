@@ -24,9 +24,11 @@ import 'lighting_profile_test.dart';
 void registerTestTypes() {
   LightingProfileTest.register();
   SectionCutterTest.register();
+  AbsenceOfOrderTest.register();
   IdentifyingAccessTest.register();
   PeopleInPlaceTest.register();
   PeopleInMotionTest.register();
+  NaturePrevalenceTest.register();
 }
 
 void main() async {
@@ -80,7 +82,7 @@ class MyApp extends StatelessWidget {
         '/compare_projects': (context) => const ProjectComparisonPage(),
         // Commented out since you need project data to create page.
         // '/search': (context) => const SearchScreen(),
-        '/teams_settings': (context) => TeamSettingsScreen(),
+        // '/teams_settings': (context) => TeamSettingsScreen(),
       },
     );
   }

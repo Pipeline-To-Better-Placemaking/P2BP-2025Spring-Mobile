@@ -172,6 +172,13 @@ class _CreateTestFormState extends State<CreateTestForm> {
               isExpanded: true,
               items: [
                 DropdownMenuItem(
+                  value: AbsenceOfOrderTest.collectionIDStatic,
+                  child: Text(
+                    'Absence of Order Locator',
+                    style: TextStyle(color: Color(0xFF2F6DCF)),
+                  ),
+                ),
+                DropdownMenuItem(
                   value: LightingProfileTest.collectionIDStatic,
                   child: Text(
                     'Lighting Profile',
@@ -203,6 +210,13 @@ class _CreateTestFormState extends State<CreateTestForm> {
                   value: PeopleInMotionTest.collectionIDStatic,
                   child: Text(
                     'People in Motion',
+                    style: TextStyle(color: Color(0xFF2F6DCF)),
+                  ),
+                ),
+                DropdownMenuItem(
+                  value: NaturePrevalenceTest.collectionIDStatic,
+                  child: Text(
+                    'Nature Prevalence',
                     style: TextStyle(color: Color(0xFF2F6DCF)),
                   ),
                 ),

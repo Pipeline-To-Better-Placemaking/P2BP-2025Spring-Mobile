@@ -30,14 +30,11 @@ class _LightingProfileTestPageState extends State<LightingProfileTestPage> {
   late GoogleMapController mapController;
   LatLng _location = defaultLocation;
   MapType _currentMapType = MapType.satellite; // Default map type
-  Set<Marker> _markers = {}; // Set of markers visible on map
+  final Set<Marker> _markers = {}; // Set of markers visible on map
   Set<Polygon> _polygons = {}; // Set of polygons
 
-  LightToLatLngMap _allPointsMap = {
-    LightType.rhythmic: {},
-    LightType.building: {},
-    LightType.task: {},
-  };
+  final LightToLatLngMap _allPointsMap =
+      LightingProfileTest.newInitialDataDeepCopy();
 
   ButtonStyle _testButtonStyle = FilledButton.styleFrom();
   static const double _bottomSheetHeight = 250;
@@ -53,7 +50,6 @@ class _LightingProfileTestPageState extends State<LightingProfileTestPage> {
   void _initProjectArea() {
     setState(() {
       _polygons = getProjectPolygon(widget.activeProject.polygonPoints);
-      print(_polygons);
       _location = getPolygonCentroid(_polygons.first);
       // Take some latitude away to center considering bottom sheet.
       _location = LatLng(_location.latitude * .999999, _location.longitude);
@@ -100,7 +96,6 @@ class _LightingProfileTestPageState extends State<LightingProfileTestPage> {
             setState(() {
               _markers.removeWhere((marker) => marker.markerId == markerId);
             });
-            print(_allPointsMap); // debug
           },
         ),
       );
@@ -108,8 +103,6 @@ class _LightingProfileTestPageState extends State<LightingProfileTestPage> {
       // Reset selected light type
       _setLightType(null);
     });
-
-    print(_allPointsMap); // debug
   }
 
   /// Sets [_selectedType] to parameter `type` and [_isTypeSelected] to

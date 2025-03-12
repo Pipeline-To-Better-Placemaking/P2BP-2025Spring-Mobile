@@ -358,11 +358,13 @@ class _ProjectDetailsPageState extends State<ProjectDetailsPage> {
 }
 
 const Map<Type, String> _testInitialsMap = {
+  AbsenceOfOrderTest: 'AO',
   LightingProfileTest: 'LP',
   SectionCutterTest: 'SC',
   IdentifyingAccessTest: 'IA',
   PeopleInPlaceTest: 'PP',
   PeopleInMotionTest: 'PM',
+  NaturePrevalenceTest: 'NP',
 };
 
 class TestCard extends StatelessWidget {

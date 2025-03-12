@@ -450,9 +450,9 @@ Future<Test> getTestInfo(
       test = Test.recreateFromDoc(testDoc);
     } else {
       if (!testDoc.exists) {
-        throw Exception('test-does-not-exist');
+        throw Exception('test-does-not-exist (testRef: ${testRef.path})');
       } else {
-        throw Exception('retrieved-test-is-invalid');
+        throw Exception('retrieved-test-is-invalid (testRef: ${testRef.path})');
       }
     }
   } catch (e, stacktrace) {
