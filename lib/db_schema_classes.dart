@@ -7,6 +7,7 @@ import 'package:p2bp_2025spring_mobile/absence_of_order_test.dart';
 import 'package:p2bp_2025spring_mobile/google_maps_functions.dart';
 import 'package:p2bp_2025spring_mobile/lighting_profile_test.dart';
 import 'package:p2bp_2025spring_mobile/section_cutter_test.dart';
+import 'package:p2bp_2025spring_mobile/theme.dart';
 import 'firestore_functions.dart';
 import 'package:flutter/material.dart';
 import 'package:firebase_storage/firebase_storage.dart';
@@ -993,20 +994,13 @@ class SectionCutterTest extends Test<Map<String, String>> {
 /// [bikeRack], [taxiAndRideShare], [parking], or [transportStation]
 enum AccessType { bikeRack, taxiAndRideShare, parking, transportStation }
 
-List<Object> accessObjects = [
-  List<BikeRack>,
-  List<TaxiAndRideShare>,
-  List<Parking>,
-  List<TransportStation>
-];
-
-// Realistically, these should all inherit from a parent class that has certain
-// constants, such as width, color, and cap. Also have an abstract method for
-// converting to Firestore.
-
 /// Interface for Access Types. All Access Types must implement this interface
 /// and its functions.
 abstract class AccessTypes {
+  // Constants for all access types:
+  static const Cap startCap = Cap.roundCap;
+  static const int polylineWidth = 3;
+
   /// Uses the class fields to create a [Map] that is able to be stored in
   /// Firestore easily.
   Map<String, dynamic> convertToFirestoreData();
@@ -1052,9 +1046,7 @@ class AccessData implements AccessTypes {
 /// Bike rack type for Identifying Access test. Enum type [bikeRack].
 class BikeRack implements AccessTypes {
   static const AccessType type = AccessType.bikeRack;
-  static const int polylineWidth = 3;
   static const Color color = Colors.black;
-  static const Cap startCap = Cap.roundCap;
   final int spots;
   final Polyline polyline;
   final double pathLength;
@@ -1080,9 +1072,7 @@ class BikeRack implements AccessTypes {
 /// [taxiAndRideShare].
 class TaxiAndRideShare implements AccessTypes {
   static const AccessType type = AccessType.taxiAndRideShare;
-  static const int polylineWidth = 3;
   static const Color color = Colors.black;
-  static const Cap startCap = Cap.roundCap;
   final Polyline polyline;
   final double pathLength;
 
@@ -1105,9 +1095,7 @@ class TaxiAndRideShare implements AccessTypes {
 /// Parking type for Identifying Access test. Enum type [parking].
 class Parking implements AccessTypes {
   static const AccessType type = AccessType.parking;
-  static const int polylineWidth = 3;
   static const Color color = Colors.black;
-  static const Cap startCap = Cap.roundCap;
   final int spots;
   final Polygon polygon;
   final Polyline polyline;
@@ -1142,9 +1130,7 @@ class Parking implements AccessTypes {
 /// [transportStation].
 class TransportStation implements AccessTypes {
   static const AccessType type = AccessType.transportStation;
-  static const int polylineWidth = 3;
   static const Color color = Colors.black;
-  static const Cap startCap = Cap.roundCap;
   final int routeNumber;
   final Polyline polyline;
   final double pathLength;
@@ -1294,8 +1280,8 @@ class IdentifyingAccessTest extends Test<AccessData> {
                       polylineId: PolylineId(
                           DateTime.now().millisecondsSinceEpoch.toString()),
                       color: BikeRack.color,
-                      width: BikeRack.polylineWidth,
-                      startCap: BikeRack.startCap,
+                      width: AccessTypes.polylineWidth,
+                      startCap: AccessTypes.startCap,
                       points: polylinePoints.toLatLngList(),
                     ),
                   ),
@@ -1313,8 +1299,8 @@ class IdentifyingAccessTest extends Test<AccessData> {
                       polylineId: PolylineId(
                           DateTime.now().millisecondsSinceEpoch.toString()),
                       color: TaxiAndRideShare.color,
-                      width: TaxiAndRideShare.polylineWidth,
-                      startCap: TaxiAndRideShare.startCap,
+                      width: AccessTypes.polylineWidth,
+                      startCap: AccessTypes.startCap,
                       points: polylinePoints.toLatLngList(),
                     ),
                   ),
@@ -1336,8 +1322,8 @@ class IdentifyingAccessTest extends Test<AccessData> {
                         polylineId: PolylineId(
                             DateTime.now().millisecondsSinceEpoch.toString()),
                         color: Parking.color,
-                        width: Parking.polylineWidth,
-                        startCap: Parking.startCap,
+                        width: AccessTypes.polylineWidth,
+                        startCap: AccessTypes.startCap,
                         points: polylinePoints.toLatLngList()),
                     polygon: Polygon(
                       polygonId: PolygonId(
@@ -1361,8 +1347,8 @@ class IdentifyingAccessTest extends Test<AccessData> {
                         polylineId: PolylineId(
                             DateTime.now().millisecondsSinceEpoch.toString()),
                         color: TransportStation.color,
-                        width: TransportStation.polylineWidth,
-                        startCap: TransportStation.startCap,
+                        width: AccessTypes.polylineWidth,
+                        startCap: AccessTypes.startCap,
                         points: polylinePoints.toLatLngList()),
                   ),
                 );
@@ -1502,7 +1488,13 @@ class NatureData implements NatureTypes {
 /// [vegetation].
 class Vegetation implements NatureTypes {
   static const NatureType natureType = NatureType.vegetation;
-  static const Color polygonColor = Color(0x6510FF30);
+  static const Map<VegetationType, Color> vegetationTypeToColor = {
+    VegetationType.native: VegetationColors.nativeGreen,
+    VegetationType.design: VegetationColors.designGreen,
+    VegetationType.openField: VegetationColors.openFieldGreen,
+    VegetationType.other: VegetationColors.otherGreen,
+  };
+  final Color polygonColor;
   final VegetationType vegetationType;
   final String? otherType;
   final Polygon polygon;
@@ -1518,7 +1510,9 @@ class Vegetation implements NatureTypes {
       required this.otherType})
       : polygonArea = (mp.SphericalUtil.computeArea(polygon.toMPLatLngList()) *
                 pow(feetPerMeter, 2))
-            .toDouble();
+            .toDouble(),
+        polygonColor = vegetationTypeToColor[vegetationType] ??
+            VegetationColors.otherGreen;
 
   @override
   Map<String, dynamic> convertToFirestoreData() {
@@ -1554,7 +1548,13 @@ class Vegetation implements NatureTypes {
 /// [waterBody].
 class WaterBody implements NatureTypes {
   static const NatureType natureType = NatureType.waterBody;
-  static const Color polygonColor = Color(0x651020FF);
+  static const Map<WaterBodyType, Color> waterBodyTypeToColor = {
+    WaterBodyType.ocean: WaterBodyColors.oceanBlue,
+    WaterBodyType.river: WaterBodyColors.riverBlue,
+    WaterBodyType.lake: WaterBodyColors.lakeBlue,
+    WaterBodyType.swamp: WaterBodyColors.swampBlue,
+  };
+  final Color polygonColor;
   final WaterBodyType waterBodyType;
   final Polygon polygon;
   final double polygonArea;
@@ -1562,7 +1562,8 @@ class WaterBody implements NatureTypes {
   WaterBody({required this.waterBodyType, required this.polygon})
       : polygonArea = (mp.SphericalUtil.computeArea(polygon.toMPLatLngList()) *
                 pow(feetPerMeter, 2))
-            .toDouble();
+            .toDouble(),
+        polygonColor = waterBodyTypeToColor[waterBodyType] ?? Colors.blue;
 
   @override
   Map<String, dynamic> convertToFirestoreData() {
@@ -1792,7 +1793,8 @@ class NaturePrevalenceTest extends Test<NatureData> {
                       polygonId: PolygonId(
                           DateTime.now().millisecondsSinceEpoch.toString()),
                       points: map['polygon'].toLatLngList(),
-                      fillColor: Vegetation.polygonColor,
+                      fillColor: Vegetation.vegetationTypeToColor[vegetation] ??
+                          VegetationColors.otherGreen,
                     ),
                   ),
                 );
@@ -1809,7 +1811,8 @@ class NaturePrevalenceTest extends Test<NatureData> {
                       polygonId: PolygonId(
                           DateTime.now().millisecondsSinceEpoch.toString()),
                       points: map['polygon'].toLatLngList(),
-                      fillColor: Vegetation.polygonColor,
+                      fillColor: Vegetation.vegetationTypeToColor[vegetation] ??
+                          VegetationColors.otherGreen,
                     ),
                   ),
                 );
@@ -1832,7 +1835,8 @@ class NaturePrevalenceTest extends Test<NatureData> {
                     polygonId: PolygonId(
                         DateTime.now().millisecondsSinceEpoch.toString()),
                     points: map['polygon'].toLatLngList(),
-                    fillColor: Vegetation.polygonColor,
+                    fillColor: WaterBody.waterBodyTypeToColor[waterBody] ??
+                        WaterBodyColors.nullBlue,
                   ),
                 ),
               );
