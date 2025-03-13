@@ -2,6 +2,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:p2bp_2025spring_mobile/show_project_options_dialog.dart';
+import 'package:p2bp_2025spring_mobile/standing_points_page.dart';
 import 'db_schema_classes.dart';
 import 'package:flutter/services.dart';
 import 'package:p2bp_2025spring_mobile/create_test_form.dart';
@@ -280,7 +281,7 @@ class _ProjectDetailsPageState extends State<ProjectDetailsPage> {
   }
 
   void _showCreateTestModal() async {
-    final Map<String, dynamic> newTestInfo = await showModalBottomSheet(
+    final Map<String, dynamic>? newTestInfo = await showModalBottomSheet(
       context: context,
       isScrollControlled: true, // allows the sheet to be fully draggable
       backgroundColor:
@@ -299,19 +300,26 @@ class _ProjectDetailsPageState extends State<ProjectDetailsPage> {
                   topRight: Radius.circular(16.0),
                 ),
               ),
-              child: CreateTestForm(),
+              child: CreateTestForm(
+                activeProject: widget.projectData,
+              ),
               // Replace this ListView with your desired content
             );
           },
         );
       },
     );
-    final Test test = await saveTest(
+    if (newTestInfo == null) return;
+    final Test test;
+    test = await saveTest(
       title: newTestInfo['title'],
       scheduledTime: newTestInfo['scheduledTime'],
       projectRef:
           _firestore.collection('projects').doc(widget.projectData.projectID),
       collectionID: newTestInfo['collectionID'],
+      standingPoints: newTestInfo.containsKey('standingPoints')
+          ? newTestInfo['standingPoints']
+          : null,
     );
     setState(() {
       widget.projectData.tests?.add(test);

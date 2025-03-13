@@ -58,7 +58,7 @@ Future<String> saveTeam(
   });
   // Currently: invites team members only once team is created.
   for (Member members in membersList) {
-    await _firestore.collection('users').doc(members.getUserID()).update({
+    await _firestore.collection('users').doc(members.userID).update({
       'invites': FieldValue.arrayUnion([_firestore.doc('/teams/$teamID')])
     });
   }
@@ -69,6 +69,7 @@ Future<String> saveTeam(
   return teamID;
 }
 
+// TODO: try catch
 /// Saves project after project creation in create_project_and_teams.dart. Takes
 /// fields for project: `String` projectTitle, `String` description,
 /// `DocumentReference` teamRef, and `List<GeoPoint>` polygonPoints. Saves it in
@@ -78,6 +79,7 @@ Future<Project> saveProject({
   required String description,
   required DocumentReference? teamRef,
   required List<GeoPoint> polygonPoints,
+  required List<Map> standingPoints,
   required num polygonArea,
 }) async {
   Project tempProject;
@@ -95,6 +97,7 @@ Future<Project> saveProject({
     'team': teamRef,
     'description': description,
     'polygonPoints': polygonPoints,
+    'standingPoints': standingPoints,
     'polygonArea': polygonArea,
     'tests': [],
   });
@@ -110,6 +113,7 @@ Future<Project> saveProject({
     description: description,
     polygonPoints: polygonPoints,
     polygonArea: polygonArea,
+    standingPoints: standingPoints,
     testRefs: [],
   );
 
@@ -136,17 +140,32 @@ Future<Project> getProjectInfo(String projectID) async {
           testRefs.add(ref);
         }
       }
-
-      project = Project(
-        teamRef: projectDoc['team'],
-        projectID: projectDoc['id'],
-        title: projectDoc['title'],
-        description: projectDoc['description'],
-        polygonPoints: projectDoc['polygonPoints'],
-        polygonArea: projectDoc['polygonArea'],
-        creationTime: projectDoc['creationTime'],
-        testRefs: testRefs,
-      );
+      // TODO: Remove logic once confirmed standing points for all projects
+      if (projectDoc.data()!.containsKey('standingPoints')) {
+        project = Project(
+          teamRef: projectDoc['team'],
+          projectID: projectDoc['id'],
+          title: projectDoc['title'],
+          description: projectDoc['description'],
+          polygonPoints: projectDoc['polygonPoints'],
+          polygonArea: projectDoc['polygonArea'],
+          standingPoints: projectDoc['standingPoints'],
+          creationTime: projectDoc['creationTime'],
+          testRefs: testRefs,
+        );
+      } else {
+        project = Project(
+          teamRef: projectDoc['team'],
+          projectID: projectDoc['id'],
+          title: projectDoc['title'],
+          description: projectDoc['description'],
+          polygonPoints: projectDoc['polygonPoints'],
+          polygonArea: projectDoc['polygonArea'],
+          standingPoints: [],
+          creationTime: projectDoc['creationTime'],
+          testRefs: testRefs,
+        );
+      }
     } else {
       print(
           'Error in firestore_functions: Either project does not exist in Firestore or polygonArea is not initialized');
@@ -403,6 +422,7 @@ Future<Test> saveTest({
   required Timestamp scheduledTime,
   required DocumentReference? projectRef,
   required String collectionID,
+  List? standingPoints,
 }) async {
   Test tempTest;
 
@@ -420,6 +440,7 @@ Future<Test> saveTest({
     scheduledTime: scheduledTime,
     projectRef: projectRef,
     collectionID: collectionID,
+    standingPoints: standingPoints,
   );
 
   tempTest.saveToFirestore();

@@ -54,6 +54,7 @@ class _HomeScreenState extends State<HomeScreen> {
       }
       setState(() {
         _projectsCount = _projectList.length;
+        _projectList;
         _isLoading = false;
       });
     } catch (e) {
