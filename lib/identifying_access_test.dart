@@ -32,7 +32,7 @@ class _IdentifyingAccessState extends State<IdentifyingAccess> {
   bool _pointMode = false;
   bool _polylineMode = false;
   bool _oldPolylinesToggle = true;
-  int _currentSpotsOrRoute = 0;
+  int? _currentSpotsOrRoute;
   AccessType? _type;
   String _directions = "Choose a category.";
   final double _bottomSheetHeight = 300;
@@ -233,11 +233,15 @@ class _IdentifyingAccessState extends State<IdentifyingAccess> {
       _directions = 'Choose a category. Or, click finish if done.';
     });
     _polylineMode = false;
-    _currentSpotsOrRoute = 0;
+    _currentSpotsOrRoute = null;
   }
 
   void _saveLocalData() {
     try {
+      if (_currentSpotsOrRoute == null) {
+        throw Exception("Current spots/routes not set in _saveLocalData(). "
+            "Make sure a value is entered before continuing.");
+      }
       if (_currentPolyline == null) {
         throw Exception("Current polyline is null in _saveLocalData()");
       }
@@ -247,18 +251,18 @@ class _IdentifyingAccessState extends State<IdentifyingAccess> {
               "_type is null in saveLocalData(). Make sure that type is set correctly when invoking _finalizeShape().");
         case AccessType.bikeRack:
           _accessData.bikeRacks.add(BikeRack(
-              spots: _currentSpotsOrRoute, polyline: _currentPolyline!));
+              spots: _currentSpotsOrRoute!, polyline: _currentPolyline!));
         case AccessType.taxiAndRideShare:
           _accessData.taxisAndRideShares
               .add(TaxiAndRideShare(polyline: _currentPolyline!));
         case AccessType.parking:
           _accessData.parkingStructures.add(Parking(
-              spots: _currentSpotsOrRoute,
+              spots: _currentSpotsOrRoute!,
               polyline: _currentPolyline!,
               polygon: _currentPolygon.first));
         case AccessType.transportStation:
           _accessData.transportStations.add(TransportStation(
-              routeNumber: _currentSpotsOrRoute, polyline: _currentPolyline!));
+              routeNumber: _currentSpotsOrRoute!, polyline: _currentPolyline!));
       }
     } catch (e, stacktrace) {
       print(
@@ -587,7 +591,13 @@ class _IdentifyingAccessState extends State<IdentifyingAccess> {
                                     backgroundColor: Colors.white,
                                     icon: const Icon(Icons.check),
                                     iconColor: Colors.green,
-                                    onPressed: (_polylineMode || _polygonMode)
+                                    onPressed: ((_polylineMode &&
+                                                (_currentPolyline != null &&
+                                                    _currentPolyline!
+                                                            .points.length >
+                                                        2)) ||
+                                            (_polygonMode &&
+                                                _polygonPoints.length >= 3))
                                         ? _finalizeShape
                                         : null,
                                   ),
@@ -679,12 +689,6 @@ class _IdentifyingAccessState extends State<IdentifyingAccess> {
                   fontWeight: FontWeight.bold,
                 ),
               ),
-              Text(
-                "Leave blank if unknown.",
-                style: TextStyle(
-                  fontSize: 15,
-                ),
-              ),
             ],
           ),
           content: TextField(
@@ -697,9 +701,11 @@ class _IdentifyingAccessState extends State<IdentifyingAccess> {
               if (parsedInt == null) {
                 print(
                     "Error: Could not parse int in _showDialog with type $_type");
-                print("Invalid input: defaulting to 0.");
+                print("Invalid input: defaulting to null.");
               }
-              _currentSpotsOrRoute = parsedInt ?? 0;
+              setState(() {
+                _currentSpotsOrRoute = parsedInt;
+              });
             },
           ),
           actions: <Widget>[
@@ -719,8 +725,8 @@ class _IdentifyingAccessState extends State<IdentifyingAccess> {
                     _currentPolygon = {};
                     _directions =
                         'Choose a category. Or, click finish if done.';
+                    _currentSpotsOrRoute = null;
                   });
-                  _currentSpotsOrRoute = 0;
                   _polygonPoints = [];
                 }
               },
@@ -728,6 +734,7 @@ class _IdentifyingAccessState extends State<IdentifyingAccess> {
             ),
             TextButton(
               onPressed: () {
+                if (_currentSpotsOrRoute == null) return;
                 onNext!();
                 Navigator.pop(context, 'Next');
               },
