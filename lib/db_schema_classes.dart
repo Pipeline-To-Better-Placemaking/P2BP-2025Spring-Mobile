@@ -846,16 +846,25 @@ class AbsenceOfOrderTest extends Test<AbsenceOfOrderData> {
   }
 }
 
+/// Simple class for Section Cutter Test.
+///
+/// Contains a [sectionLink] variable which refers to the section drawing
+/// stored in Firebase. Contains a function for converting to Firebase.
+class Section {
+  final String sectionLink;
+
+  Section({required this.sectionLink});
+}
+
 /// Class for section cutter test info and methods.
-class SectionCutterTest extends Test<Map<String, String>> {
+class SectionCutterTest extends Test<Section> {
   /// Default structure for Section Cutter test. Simply a [Map<String, String>],
   /// where the first string is the field and the second is the reference which
   /// refers to the path of the section drawing.
   static const Map<String, String> initialDataStructure = {"sectionLink": " "};
-  static Map<String, String> newInitialDataDeepCopy() {
-    Map<String, String> newInitial = {};
-    newInitial['sectionLink'] = '';
-    return newInitial;
+  static Section newInitialDataDeepCopy() {
+    return Section(
+        sectionLink: 'Empty sectionLink. SectionLink has not been set yet.');
   }
 
   /// Static constant definition of collection ID for this test type.
@@ -940,11 +949,12 @@ class SectionCutterTest extends Test<Map<String, String>> {
   }
 
   @override
-  void submitData(Map<String, String> data) async {
+  void submitData(Section data) async {
     try {
+      Map<String, String> firestoreData = convertDataToFirestore(data);
       // Updates data in Firestore
       await _firestore.collection(collectionID).doc(testID).update({
-        'data': data,
+        'data': firestoreData,
         'isComplete': true,
       });
 
@@ -958,11 +968,17 @@ class SectionCutterTest extends Test<Map<String, String>> {
     }
   }
 
-  /// Saves given [XFile]. Takes in the given data and saves it according to
-  /// its corresponding project reference, under its given test id. Then,
-  /// returns a [Map] where the path to the file is mapped to "sectionLink".
-  Future<Map<String, String>> saveXFile(XFile data) async {
-    Map<String, String> storageLocation = newInitialDataDeepCopy();
+  static Map<String, String> convertDataToFirestore(Section data) {
+    return {'sectionLink': data.sectionLink};
+  }
+
+  /// Saves given [XFile] under the test's project reference.
+  ///
+  /// Takes in the given data and saves it according to its corresponding
+  /// project reference, under its given test id. Then, returns a [Section]
+  /// where the path to the file is saved in the [sectionLink] field.
+  Future<Section> saveXFile(XFile data) async {
+    Section? section;
     try {
       final storageRef = FirebaseStorage.instance.ref();
       final sectionRef = storageRef.child(
@@ -970,23 +986,25 @@ class SectionCutterTest extends Test<Map<String, String>> {
       final File sectionFile = File(data.path);
 
       print(sectionRef.fullPath);
-      storageLocation = {"sectionLink": sectionRef.fullPath};
+      section = Section(sectionLink: sectionRef.fullPath);
       await sectionRef.putFile(sectionFile);
     } catch (e, stacktrace) {
       print("Error in SectionCutterTest.saveXFile(): $e");
       print("Stacktrace: $stacktrace");
     }
 
-    return storageLocation;
+    // Section should only be null if the file fails to save to Firebase.
+    return section ??
+        Section(sectionLink: 'Error saving file. File not saved.');
   }
 
-  static Map<String, String> convertDataFromFirestore(
-      Map<String, dynamic> data) {
-    Map<String, String> output = newInitialDataDeepCopy();
+  static Section convertDataFromFirestore(Map<String, dynamic> data) {
+    Section? output;
     if (data.containsKey('sectionLink') && data['sectionLink'] is String) {
-      output['sectionLink'] = data['sectionLink'];
+      output = Section(sectionLink: data['sectionLink']);
     }
-    return output;
+    return output ??
+        Section(sectionLink: 'Error retrieving file. File not retrieved.');
   }
 }
 

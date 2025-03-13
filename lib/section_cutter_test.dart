@@ -375,8 +375,7 @@ class _SectionCutterState extends State<SectionCutter> {
                                         setState(() {
                                           _isLoadingUpload = true;
                                         });
-                                        Map<String, String> data = await widget
-                                            .activeTest!
+                                        Section data = await widget.activeTest!
                                             .saveXFile(sectionCutterFile!);
                                         widget.activeTest!.submitData(data);
                                         if (!context.mounted) return;
