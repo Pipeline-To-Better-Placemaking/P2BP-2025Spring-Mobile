@@ -1191,6 +1191,7 @@ class SpatialBoundariesTest extends Test<SpatialBoundariesData> {
       required Timestamp scheduledTime,
       required DocumentReference projectRef,
       required String collectionID,
+      List? standingPoints,
     }) =>
         SpatialBoundariesTest._(
           title: title,
@@ -1202,7 +1203,7 @@ class SpatialBoundariesTest extends Test<SpatialBoundariesData> {
         );
     // Register for recreating a Spatial Boundaries Test from Firestore
     Test._recreateTestConstructors[collectionIDStatic] = (testDoc) {
-      return AbsenceOfOrderTest.fromJson(testDoc.data()!);
+      return SpatialBoundariesTest.fromJson(testDoc.data()!);
     };
     // Register for building a Spatial Boundaries Test page
     Test._pageBuilders[SpatialBoundariesTest] =

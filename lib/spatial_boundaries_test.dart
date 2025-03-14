@@ -96,7 +96,7 @@ class _SpatialBoundariesTestPageState extends State<SpatialBoundariesTestPage> {
     });
   }
 
-  void _clearTemps() {
+  void _clearTempVars() {
     _tempPoint = null;
     _boundaryType = null;
     _constructedBoundaryType = null;
@@ -189,7 +189,7 @@ class _SpatialBoundariesTestPageState extends State<SpatialBoundariesTestPage> {
       setState(() {
         _polygonMarkers.clear();
         _polygonMode = false;
-        _clearTemps();
+        _clearTempVars();
       });
     } catch (e, stacktrace) {
       print('Exception in _finalize_polygon(): $e');
