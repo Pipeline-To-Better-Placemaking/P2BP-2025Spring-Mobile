@@ -64,8 +64,7 @@ class _ProjectDetailsPageState extends State<ProjectDetailsPage> {
                   padding: EdgeInsets
                       .zero, // Removes internal padding from IconButton
                   constraints: BoxConstraints(),
-                  icon: Icon(Icons.arrow_back,
-                      color: Color(0xFF2F6DCF), size: 20),
+                  icon: Icon(Icons.arrow_back, color: p2bpBlue, size: 20),
                   onPressed: () {
                     Navigator.pop(context);
                   },
@@ -92,7 +91,7 @@ class _ProjectDetailsPageState extends State<ProjectDetailsPage> {
                         constraints: BoxConstraints(),
                         icon: Icon(
                           Icons.more_vert,
-                          color: Color(0xFF2F6DCF),
+                          color: p2bpBlue,
                         ),
                         onPressed: () => showProjectOptionsDialog(context),
                       ),
@@ -365,6 +364,7 @@ const Map<Type, String> _testInitialsMap = {
   PeopleInPlaceTest: 'PP',
   PeopleInMotionTest: 'PM',
   NaturePrevalenceTest: 'NP',
+  AcousticProfileTestPage: 'AP',
 };
 
 class TestCard extends StatelessWidget {

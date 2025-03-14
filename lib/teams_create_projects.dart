@@ -40,7 +40,7 @@
 //             elevation: 0,
 //             leading: IconButton(
 //               icon:
-//                   Icon(FontAwesomeIcons.chevronLeft, color: Color(0xFF2F6DCF)),
+//                   Icon(FontAwesomeIcons.chevronLeft, color: p2bpBlue),
 //               onPressed: () {
 //                 Navigator.pop(context); // Navigate back to the previous screen;
 //               },
@@ -108,7 +108,7 @@
 //                               style: TextStyle(
 //                                 fontWeight: FontWeight.bold,
 //                                 fontSize: 16.0,
-//                                 color: Color(0xFF2F6DCF),
+//                                 color: p2bpBlue,
 //                               ),
 //                             ),
 //                           ),
@@ -141,7 +141,7 @@
 //                               style: TextStyle(
 //                                 fontWeight: FontWeight.bold,
 //                                 fontSize: 16.0,
-//                                 color: Color(0xFF2F6DCF),
+//                                 color: p2bpBlue,
 //                               ),
 //                             ),
 //                           ),
@@ -161,7 +161,7 @@
 //                               style: TextStyle(
 //                                 fontWeight: FontWeight.bold,
 //                                 fontSize: 16.0,
-//                                 color: Color(0xFF2F6DCF),
+//                                 color: p2bpBlue,
 //                               ),
 //                             ),
 //                           ),
@@ -178,7 +178,7 @@
 //                             child: EditButton(
 //                               text: 'Next',
 //                               foregroundColor: Colors.white,
-//                               backgroundColor: const Color(0xFF2F6DCF),
+//                               backgroundColor: const p2bpBlue,
 //                               icon: const Icon(Icons.chevron_right),
 //                               onPressed: () async {
 //                                 if (await getCurrentTeam() == null) {

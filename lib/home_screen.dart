@@ -12,6 +12,7 @@ import 'edit_project_panel.dart';
 import 'main.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'firestore_functions.dart';
+import 'package:p2bp_2025spring_mobile/theme.dart';
 
 List<String> navIcons2 = [
   'assets/Home_Icon.png',
@@ -430,7 +431,7 @@ class _HomeScreenState extends State<HomeScreen> {
       height: 60,
       margin: const EdgeInsets.only(right: 24, left: 24, bottom: 24),
       decoration: BoxDecoration(
-        color: const Color(0xFF2F6DCF),
+        color: p2bpBlue,
         borderRadius: BorderRadius.circular(120),
         boxShadow: [
           BoxShadow(
@@ -468,9 +469,7 @@ class _HomeScreenState extends State<HomeScreen> {
                     iconPath,
                     width: 30,
                     height: 30,
-                    color: isSelected
-                        ? const Color(0xFF2F6DCF)
-                        : const Color(0xFFFFCC00),
+                    color: isSelected ? p2bpBlue : const Color(0xFFFFCC00),
                   ),
                 ),
               ],

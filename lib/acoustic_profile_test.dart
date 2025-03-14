@@ -20,8 +20,9 @@ import 'package:maps_toolkit/maps_toolkit.dart' as mp;
 import 'package:p2bp_2025spring_mobile/db_schema_classes.dart';
 import 'package:p2bp_2025spring_mobile/firestore_functions.dart';
 import 'package:p2bp_2025spring_mobile/google_maps_functions.dart';
-import 'package:p2bp_2025spring_mobile/peope_in_place_instructions.dart'; // for _showInstructionOverlay
 import 'package:p2bp_2025spring_mobile/project_details_page.dart';
+import 'package:p2bp_2025spring_mobile/theme.dart';
+import 'package:p2bp_2025spring_mobile/acoustic_instructions.dart'; // for _showInstructionOverlay
 
 // Data model to store one acoustic measurement
 class AcousticMeasurement {
@@ -150,25 +151,51 @@ class _AcousticProfileTestPageState extends State<AcousticProfileTestPage> {
 
   /// Starts the interval timer. Every [_intervalDuration] seconds, this timer
   /// pauses and launches the acoustic measurement sequence.
-  void _startIntervalTimer() {
+  void _startAcousticTest() {
     setState(() {
       _isTestRunning = true;
       _currentInterval = 0;
+      _remainingSeconds =
+          _intervalDuration; // Start the countdown at the interval duration.
     });
-    _intervalTimer =
-        Timer.periodic(Duration(seconds: _intervalDuration), (timer) async {
-      // Pause timer at the end of each interval to record acoustic data.
-      timer.cancel();
-      await _showAcousticBottomSheetSequence();
-      _currentInterval++;
-      // If we haven't reached the maximum intervals, restart the timer.
-      if (_currentInterval < _maxIntervals) {
-        _startIntervalTimer();
-      } else {
-        // Test complete.
-        await _endTest();
+
+    _executeIntervalCycle();
+  }
+
+  void _executeIntervalCycle() {
+    // Record the exact start time for this interval.
+    final DateTime intervalStart = DateTime.now();
+    // Set the initial remaining time.
+    setState(() {
+      _remainingSeconds = _intervalDuration;
+    });
+
+    // Create a periodic timer that fires every second.
+    _intervalTimer = Timer.periodic(Duration(seconds: 1), (timer) async {
+      // Calculate elapsed seconds using the stored start time.
+      final int elapsed = DateTime.now().difference(intervalStart).inSeconds;
+      final int remaining = _intervalDuration - elapsed;
+
+      // Update the remaining seconds for the UI.
+      setState(() {
+        _remainingSeconds = remaining;
+      });
+
+      // When the countdown reaches 0 or less, stop the timer and launch the measurement sequence.
+      if (remaining <= 0) {
+        timer.cancel();
+        // Proceed with the asynchronous bottom sheet sequence.
+        await _showAcousticBottomSheetSequence();
+        _currentInterval++;
+
+        // If there are still intervals left, restart the next inerval.
+        if (_currentInterval < _maxIntervals) {
+          _executeIntervalCycle();
+        } else {
+          // Test is complete.
+          await _endTest();
+        }
       }
-      setState(() {});
     });
   }
 
@@ -207,14 +234,23 @@ class _AcousticProfileTestPageState extends State<AcousticProfileTestPage> {
                   style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
                 ),
                 const SizedBox(height: 12),
-                TextField(
-                  controller: decibelController,
-                  keyboardType: TextInputType.number,
-                  decoration:
-                      const InputDecoration(labelText: 'Enter decibel value'),
+                Center(
+                  child: Container(
+                    width: 250,
+                    child: TextField(
+                      textAlign: TextAlign.center,
+                      controller: decibelController,
+                      keyboardType: TextInputType.number,
+                      style: const TextStyle(fontSize: 24),
+                      decoration: InputDecoration(
+                        label: Center(child: Text('Enter decibel value')),
+                      ),
+                    ),
+                  ),
                 ),
                 const SizedBox(height: 12),
                 ElevatedButton(
+                  style: ElevatedButton.styleFrom(backgroundColor: p2bpBlue),
                   onPressed: () {
                     double? value =
                         double.tryParse(decibelController.text.trim());
@@ -222,7 +258,10 @@ class _AcousticProfileTestPageState extends State<AcousticProfileTestPage> {
                       Navigator.pop(context, value);
                     }
                   },
-                  child: const Text('Submit'),
+                  child: const Text(
+                    'Submit',
+                    style: TextStyle(color: Colors.white),
+                  ),
                 ),
               ],
             ),
@@ -256,6 +295,14 @@ class _AcousticProfileTestPageState extends State<AcousticProfileTestPage> {
             ];
             // Use a local set to track selection.
             final Set<String> selections = {};
+            // Tracks user input for the other section.
+            final TextEditingController _otherController =
+                TextEditingController();
+            bool isOtherSelected = false;
+            _otherController.addListener(() {
+              setState(() {});
+            });
+
             return StatefulBuilder(
               builder: (context, setState) {
                 return Padding(
@@ -305,16 +352,16 @@ class _AcousticProfileTestPageState extends State<AcousticProfileTestPage> {
                                     BorderRadius.circular(20), // Pill shape
                                 side: BorderSide(
                                   color: isSelected
-                                      ? Colors.blue
-                                      : Colors
-                                          .grey, // Distinct border when selected
+                                      ? p2bpBlue
+                                      : Color(
+                                          0xFFB0C4DE), // Distinct border when selected
                                   width: 2.0,
                                 ),
                               ),
-                              selectedColor: Colors.blue
+                              selectedColor: p2bpBlue
                                   .shade100, // Background color when selected
-                              backgroundColor: Colors
-                                  .grey.shade200, // Default background color
+                              backgroundColor:
+                                  Color(0xFFE3EBF4), // Default background color
                             );
                           }).toList(),
                         ),
@@ -323,31 +370,70 @@ class _AcousticProfileTestPageState extends State<AcousticProfileTestPage> {
                           children: [
                             Expanded(
                               child: TextField(
-                                decoration: const InputDecoration(
-                                  labelText: 'Other',
-                                ),
-                                onSubmitted: (value) {
-                                  if (value.isNotEmpty) {
-                                    selections.add(value);
-                                  }
-                                },
-                              ),
+                                  controller: _otherController,
+                                  decoration: InputDecoration(
+                                    labelText: 'Other',
+                                    suffixIcon: _otherController.text.isNotEmpty
+                                        ? IconButton(
+                                            icon: Icon(Icons.clear),
+                                            onPressed: () {
+                                              setState(() {
+                                                _otherController.clear();
+                                              });
+                                            },
+                                          )
+                                        : null,
+                                  ),
+                                  onChanged: (value) {
+                                    setState(() {});
+                                  }),
                             ),
                             const SizedBox(width: 8),
-                            ElevatedButton(
-                              onPressed: () {
-                                // For simplicity, just do nothing extra here.
-                              },
-                              child: const Text('Select'),
-                            )
+                            // Always display the chip; disable it if there's no text.
+                            ChoiceChip(
+                                label: Text(
+                                  _otherController.text.trim().isEmpty
+                                      ? "Other"
+                                      : _otherController.text.trim(),
+                                ),
+                                // Use the selections set to determine if the chip is selected.
+                                selected: isOtherSelected,
+                                onSelected: (selected) {
+                                  if (_otherController.text.trim().isNotEmpty) {
+                                    setState(() {
+                                      isOtherSelected = selected;
+                                      if (selected) {
+                                        selections
+                                            .add(_otherController.text.trim());
+                                      } else {
+                                        selections.remove(
+                                            _otherController.text.trim());
+                                      }
+                                    });
+                                  }
+                                },
+                                backgroundColor: Color(0xFFE3EBF4),
+                                disabledColor: Color(0xFFE3EBF4),
+                                selectedColor: p2bpBlue.shade100,
+                                shape: RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.circular(20),
+                                    side: BorderSide(
+                                      color: isOtherSelected
+                                          ? p2bpBlue
+                                          : Color(0xFFB0C4DE),
+                                      width: 2.0,
+                                    ))),
                           ],
                         ),
                         const SizedBox(height: 12),
                         ElevatedButton(
+                          style: ElevatedButton.styleFrom(
+                              backgroundColor: p2bpBlue),
                           onPressed: () {
                             Navigator.pop(context, selections.toList());
                           },
-                          child: const Text('Submit'),
+                          child: const Text('Submit',
+                              style: TextStyle(color: Colors.white)),
                         ),
                       ],
                     ),
@@ -368,14 +454,7 @@ class _AcousticProfileTestPageState extends State<AcousticProfileTestPage> {
       backgroundColor: const Color(0xFFDDE6F2),
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
       builder: (context) {
-        final List<String> soundOptions = [
-          'Water Feature',
-          'Traffic',
-          'People Sounds',
-          'Animals',
-          'Wind',
-          'Music'
-        ];
+        final List<String> soundOptions = selectedSoundTypes;
         String? selectedOption;
         return StatefulBuilder(
           builder: (context, setState) {
@@ -397,54 +476,54 @@ class _AcousticProfileTestPageState extends State<AcousticProfileTestPage> {
                       textAlign: TextAlign.center,
                     ),
                     const SizedBox(height: 12),
-                    Wrap(
-                      spacing: 8,
-                      runSpacing: 8,
+                    GridView.count(
+                      crossAxisCount: 3, // Three columns
+                      shrinkWrap: true,
+                      physics:
+                          const NeverScrollableScrollPhysics(), // Prevent scrolling inside the sheet
+                      mainAxisSpacing: 1,
+                      crossAxisSpacing: 2,
+                      padding: const EdgeInsets.only(bottom: 8),
+                      childAspectRatio:
+                          2, // Adjust to change the height/width ratio of each cell
                       children: soundOptions.map((option) {
+                        final bool isSelected = selectedOption == option;
                         return ChoiceChip(
                           label: Text(option),
-                          selected: selectedOption == option,
+                          selected: isSelected,
                           onSelected: (selected) {
                             setState(() {
                               selectedOption = selected ? option : null;
                             });
                           },
+                          shape: RoundedRectangleBorder(
+                            borderRadius:
+                                BorderRadius.circular(20), // Pill shape
+                            side: BorderSide(
+                              color: isSelected
+                                  ? p2bpBlue
+                                  : Color(
+                                      0xFFB0C4DE), // Distinct border when selected
+                              width: 2.0,
+                            ),
+                          ),
+                          selectedColor: p2bpBlue
+                              .shade100, // Background color when selected
+                          backgroundColor: Color(0xFFE3EBF4),
                         );
                       }).toList(),
                     ),
-                    const SizedBox(height: 12),
-                    // Other option row.
-                    Row(
-                      children: [
-                        Expanded(
-                          child: TextField(
-                            decoration: const InputDecoration(
-                              labelText: 'Other',
-                            ),
-                            onSubmitted: (value) {
-                              if (value.isNotEmpty) {
-                                setState(() {
-                                  selectedOption = value;
-                                });
-                              }
-                            },
-                          ),
-                        ),
-                        const SizedBox(width: 8),
-                        ElevatedButton(
-                          onPressed: () {},
-                          child: const Text('Select'),
-                        )
-                      ],
-                    ),
-                    const SizedBox(height: 12),
+                    const SizedBox(height: 24),
                     ElevatedButton(
+                      style:
+                          ElevatedButton.styleFrom(backgroundColor: p2bpBlue),
                       onPressed: () {
                         if (selectedOption != null) {
                           Navigator.pop(context, selectedOption);
                         }
                       },
-                      child: const Text('Submit'),
+                      child: const Text('Submit',
+                          style: TextStyle(color: Colors.white)),
                     ),
                   ],
                 ),
@@ -522,9 +601,9 @@ class _AcousticProfileTestPageState extends State<AcousticProfileTestPage> {
               child: Column(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  peopleInPlaceInstructions(),
-                  const SizedBox(height: 10),
+                  acousticInstructions(),
                   buildLegends(),
+                  const SizedBox(height: 10),
                 ],
               ),
             ),
@@ -602,7 +681,7 @@ class _AcousticProfileTestPageState extends State<AcousticProfileTestPage> {
               if (!_isTestRunning) {
                 setState(() {
                   _isTestRunning = true;
-                  _startIntervalTimer(); // Start the countdown timer when pressed
+                  _startAcousticTest(); // Start the countdown timer when pressed
                 });
               } else {
                 Navigator.pop(context); // Exit the test if End is displayed

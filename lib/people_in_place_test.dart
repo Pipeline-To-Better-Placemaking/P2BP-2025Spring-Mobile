@@ -27,6 +27,7 @@ import 'package:p2bp_2025spring_mobile/firestore_functions.dart';
 import 'package:p2bp_2025spring_mobile/db_schema_classes.dart';
 import 'package:p2bp_2025spring_mobile/project_details_page.dart';
 import 'package:p2bp_2025spring_mobile/peope_in_place_instructions.dart';
+import 'theme.dart';
 
 // Class to represent a logged data point for backend storage.
 class LoggedDataPoint {
@@ -776,7 +777,7 @@ class _PeopleInPlaceTestPageState extends State<PeopleInPlaceTestPage> {
                   color: Color(0xFFDDE6F2).withValues(alpha: 0.9),
                   borderRadius: BorderRadius.circular(20),
                   border: Border.all(
-                    color: Color(0xFF2F6DCF),
+                    color: p2bpBlue,
                     width: 2,
                   ),
                 ),
@@ -799,7 +800,7 @@ class _PeopleInPlaceTestPageState extends State<PeopleInPlaceTestPage> {
                     Divider(
                       height: 20,
                       thickness: 2,
-                      color: Color(0xFF2F6DCF),
+                      color: p2bpBlue,
                     ),
                     Expanded(
                       child: ListView.builder(

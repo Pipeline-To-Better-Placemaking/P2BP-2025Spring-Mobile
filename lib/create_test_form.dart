@@ -2,6 +2,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:dropdown_button2/dropdown_button2.dart';
 import 'package:p2bp_2025spring_mobile/db_schema_classes.dart';
+import 'theme.dart';
 
 class CreateTestForm extends StatefulWidget {
   const CreateTestForm({super.key});
@@ -93,10 +94,10 @@ class _CreateTestFormState extends State<CreateTestForm> {
               decoration: InputDecoration(
                 labelText: "Activity Name",
                 floatingLabelBehavior: FloatingLabelBehavior.always,
-                labelStyle: TextStyle(color: Color(0xFF2F6DCF)),
+                labelStyle: TextStyle(color: p2bpBlue),
                 floatingLabelStyle: TextStyle(color: Color(0xFF1A3C70)),
-                enabledBorder: OutlineInputBorder(
-                    borderSide: BorderSide(color: Color(0xFF2F6DCF))),
+                enabledBorder:
+                    OutlineInputBorder(borderSide: BorderSide(color: p2bpBlue)),
                 focusedBorder: OutlineInputBorder(
                     borderSide: BorderSide(color: Color(0xFF1A3C70))),
                 border: OutlineInputBorder(),
@@ -117,10 +118,10 @@ class _CreateTestFormState extends State<CreateTestForm> {
               decoration: InputDecoration(
                 labelText: 'Scheduled Time',
                 floatingLabelBehavior: FloatingLabelBehavior.always,
-                labelStyle: TextStyle(color: Color(0xFF2F6DCF)),
+                labelStyle: TextStyle(color: p2bpBlue),
                 floatingLabelStyle: TextStyle(color: Color(0xFF1A3C70)),
-                enabledBorder: OutlineInputBorder(
-                    borderSide: BorderSide(color: Color(0xFF2F6DCF))),
+                enabledBorder:
+                    OutlineInputBorder(borderSide: BorderSide(color: p2bpBlue)),
                 focusedBorder: OutlineInputBorder(
                     borderSide: BorderSide(color: Color(0xFF1A3C70))),
                 border: OutlineInputBorder(),
@@ -153,10 +154,10 @@ class _CreateTestFormState extends State<CreateTestForm> {
                 floatingLabelBehavior: FloatingLabelBehavior.never,
                 // filled: true,
                 // fillColor: Color.fromRGBO(47, 109, 207, 0.1),
-                labelStyle: TextStyle(color: Color(0xFF2F6DCF)),
+                labelStyle: TextStyle(color: p2bpBlue),
                 floatingLabelStyle: TextStyle(color: Color(0xFF1A3C70)),
-                enabledBorder: OutlineInputBorder(
-                    borderSide: BorderSide(color: Color(0xFF2F6DCF))),
+                enabledBorder:
+                    OutlineInputBorder(borderSide: BorderSide(color: p2bpBlue)),
                 focusedBorder: OutlineInputBorder(
                     borderSide: BorderSide(color: Color(0xFF1A3C70))),
                 border: OutlineInputBorder(),
@@ -175,49 +176,56 @@ class _CreateTestFormState extends State<CreateTestForm> {
                   value: AbsenceOfOrderTest.collectionIDStatic,
                   child: Text(
                     'Absence of Order Locator',
-                    style: TextStyle(color: Color(0xFF2F6DCF)),
+                    style: TextStyle(color: p2bpBlue),
                   ),
                 ),
                 DropdownMenuItem(
                   value: LightingProfileTest.collectionIDStatic,
                   child: Text(
                     'Lighting Profile',
-                    style: TextStyle(color: Color(0xFF2F6DCF)),
+                    style: TextStyle(color: p2bpBlue),
                   ),
                 ),
                 DropdownMenuItem(
                   value: SectionCutterTest.collectionIDStatic,
                   child: Text(
                     'Section Cutter',
-                    style: TextStyle(color: Color(0xFF2F6DCF)),
+                    style: TextStyle(color: p2bpBlue),
                   ),
                 ),
                 DropdownMenuItem(
                   value: IdentifyingAccessTest.collectionIDStatic,
                   child: Text(
                     'Identifying Access',
-                    style: TextStyle(color: Color(0xFF2F6DCF)),
+                    style: TextStyle(color: p2bpBlue),
                   ),
                 ),
                 DropdownMenuItem(
                   value: PeopleInPlaceTest.collectionIDStatic,
                   child: Text(
                     'People in Place',
-                    style: TextStyle(color: Color(0xFF2F6DCF)),
+                    style: TextStyle(color: p2bpBlue),
                   ),
                 ),
                 DropdownMenuItem(
                   value: PeopleInMotionTest.collectionIDStatic,
                   child: Text(
                     'People in Motion',
-                    style: TextStyle(color: Color(0xFF2F6DCF)),
+                    style: TextStyle(color: p2bpBlue),
                   ),
                 ),
                 DropdownMenuItem(
                   value: NaturePrevalenceTest.collectionIDStatic,
                   child: Text(
                     'Nature Prevalence',
-                    style: TextStyle(color: Color(0xFF2F6DCF)),
+                    style: TextStyle(color: p2bpBlue),
+                  ),
+                ),
+                DropdownMenuItem(
+                  value: AcousticProfileTest.collectionIDStatic,
+                  child: Text(
+                    'Acoustic Profile',
+                    style: TextStyle(color: p2bpBlue),
                   ),
                 ),
               ],
@@ -264,7 +272,7 @@ class _CreateTestFormState extends State<CreateTestForm> {
                   }
                 },
                 style: ElevatedButton.styleFrom(
-                  backgroundColor: Color(0xFF2F6DCF),
+                  backgroundColor: p2bpBlue,
                 ),
                 child: Text(
                   "Save Activity",

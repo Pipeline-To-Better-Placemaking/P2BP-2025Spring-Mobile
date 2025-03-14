@@ -29,6 +29,7 @@ import 'package:maps_toolkit/maps_toolkit.dart' as mp;
 import 'package:p2bp_2025spring_mobile/db_schema_classes.dart';
 import 'package:p2bp_2025spring_mobile/project_details_page.dart';
 import 'package:p2bp_2025spring_mobile/people_in_motion_instructions.dart';
+import 'theme.dart';
 
 class TracedRoute {
   final List<LatLng> points;
@@ -872,7 +873,7 @@ class _PeopleInMotionTestPageState extends State<PeopleInMotionTestPage> {
                     color: Color(0xFFDDE6F2).withValues(alpha: 0.9),
                     borderRadius: BorderRadius.circular(20),
                     border: Border.all(
-                      color: Color(0xFF2F6DCF),
+                      color: p2bpBlue,
                       width: 2,
                     )),
                 padding: EdgeInsets.only(bottom: 8),
@@ -893,7 +894,7 @@ class _PeopleInMotionTestPageState extends State<PeopleInMotionTestPage> {
                     Divider(
                       height: 1,
                       thickness: 1.5,
-                      color: Color(0xFF2F6DCF),
+                      color: p2bpBlue,
                     ),
                     Expanded(
                       child: ListView.builder(

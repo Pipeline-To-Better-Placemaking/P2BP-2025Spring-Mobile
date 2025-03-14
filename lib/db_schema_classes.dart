@@ -9,6 +9,7 @@ import 'package:p2bp_2025spring_mobile/lighting_profile_test.dart';
 import 'package:p2bp_2025spring_mobile/section_cutter_test.dart';
 import 'package:p2bp_2025spring_mobile/people_in_place_test.dart';
 import 'package:p2bp_2025spring_mobile/people_in_motion_test.dart';
+import 'package:p2bp_2025spring_mobile/acoustic_profile_test.dart';
 import 'firestore_functions.dart';
 import 'package:flutter/material.dart';
 import 'package:firebase_storage/firebase_storage.dart';
@@ -2068,5 +2069,122 @@ class NaturePrevalenceTest extends Test<NatureData> {
   /// the appropriate Firestore representation.
   static Map<String, Map> convertDataToFirestore(NatureData data) {
     return data.convertToFirestoreData();
+  }
+}
+
+/// Class for Acoustic Profile Test info and methods.
+class AcousticProfileTest extends Test<List<AcousticMeasurement>> {
+  /// Returns a new instance of the initial data structure used for Acoustic Profile Test.
+  static List<AcousticMeasurement> newInitialDataDeepCopy() {
+    return [];
+  }
+
+  /// Static constant definition of collection ID for this test type.
+  static const String collectionIDStatic = 'acoustic_profile_tests';
+
+  /// Private constructor for AcousticProfileTest.
+  AcousticProfileTest._({
+    required super.title,
+    required super.testID,
+    required super.scheduledTime,
+    required super.projectRef,
+    required super.collectionID,
+    required super.data,
+    super.creationTime,
+    super.maxResearchers,
+    super.isComplete,
+  }) : super._();
+
+  /// Registers this test type in the Test class system.
+  static void register() {
+    // Register for creating new instances.
+    Test._newTestConstructors[collectionIDStatic] = ({
+      required String title,
+      required String testID,
+      required Timestamp scheduledTime,
+      required DocumentReference projectRef,
+      required String collectionID,
+    }) =>
+        AcousticProfileTest._(
+          title: title,
+          testID: testID,
+          scheduledTime: scheduledTime,
+          projectRef: projectRef,
+          collectionID: collectionID,
+          data: newInitialDataDeepCopy(),
+        );
+
+    // Register for recreating an instance from Firestore.
+    Test._recreateTestConstructors[collectionIDStatic] = (testDoc) {
+      return AcousticProfileTest._(
+        title: testDoc['title'],
+        testID: testDoc['id'],
+        scheduledTime: testDoc['scheduledTime'],
+        projectRef: testDoc['project'],
+        collectionID: testDoc.reference.parent.id,
+        data: convertDataFromFirestore(testDoc['data']),
+        creationTime: testDoc['creationTime'],
+        maxResearchers: testDoc['maxResearchers'],
+        isComplete: testDoc['isComplete'],
+      );
+    };
+
+    // Register for building the UI page for AcousticProfileTest.
+    Test._pageBuilders[AcousticProfileTest] =
+        (project, test) => AcousticProfileTestPage(
+              activeProject: project,
+              activeTest: test as AcousticProfileTest,
+            );
+
+    // Register a function for saving the test data to Firestore.
+    Test._saveToFirestoreFunctions[AcousticProfileTest] = (test) async {
+      await _firestore.collection(test.collectionID).doc(test.testID).set({
+        'title': test.title,
+        'id': test.testID,
+        'scheduledTime': test.scheduledTime,
+        'project': test.projectRef,
+        'data': convertDataToFirestore(test.data),
+        'creationTime': test.creationTime,
+        'maxResearchers': test.maxResearchers,
+        'isComplete': false,
+      }, SetOptions(merge: true));
+    };
+  }
+
+  /// Submits the test data to Firestore when the test is complete.
+  @override
+  void submitData(List<AcousticMeasurement> data) async {
+    try {
+      List<Map<String, dynamic>> firestoreData = convertDataToFirestore(data);
+      await _firestore.collection(collectionID).doc(testID).update({
+        'data': firestoreData,
+        'isComplete': true,
+      });
+      this.data = data;
+      isComplete = true;
+      print('Success! AcousticProfileTest data submitted: $firestoreData');
+    } catch (e, stacktrace) {
+      print("Exception in AcousticProfileTest.submitData(): $e");
+      print("Stacktrace: $stacktrace");
+    }
+  }
+
+  /// Converts Firestore data into a List<AcousticMeasurement> for local use.
+  static List<AcousticMeasurement> convertDataFromFirestore(
+      List<dynamic> data) {
+    return data.map((entry) {
+      return AcousticMeasurement(
+        decibel: entry['decibel'],
+        soundTypes: List<String>.from(entry['soundTypes']),
+        mainSoundType: entry['mainSoundType'],
+        timestamp: DateTime.parse(entry['timestamp']),
+      );
+    }).toList();
+  }
+
+  /// Converts local AcousticMeasurement data into Firestore format.
+  static List<Map<String, dynamic>> convertDataToFirestore(
+      List<AcousticMeasurement> data) {
+    return data.map((measurement) => measurement.toJson()).toList();
   }
 }

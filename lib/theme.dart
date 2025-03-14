@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:p2bp_2025spring_mobile/custom_material_colors.dart';
 
 // Color constants:
 /// Default color used when test buttons are disabled.
@@ -10,6 +11,8 @@ const Color directionsTransparency = Color(0xDFDDE6F2);
 
 /// Default yellow color, used mainly for text on blue gradient background.
 const Color placeYellow = Color(0xFFFFD31F);
+
+final MaterialColor p2bpBlue = generateMaterialColor(const Color(0xFF2F6DCF));
 
 const LinearGradient defaultGrad = LinearGradient(
   begin: Alignment.topLeft,
