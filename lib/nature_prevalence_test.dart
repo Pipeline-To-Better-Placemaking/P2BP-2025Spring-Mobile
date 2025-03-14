@@ -888,16 +888,20 @@ class _NaturePrevalenceState extends State<NaturePrevalence> {
   void _finalizePolygon() {
     Set<Polygon> tempPolygon;
     try {
-      tempPolygon = finalizePolygon(_polygonPoints);
-      // Create polygon.
-      _polygons = {..._polygons, ...tempPolygon};
-
       if (_natureType == NatureType.vegetation) {
+        tempPolygon = finalizePolygon(
+            _polygonPoints, Vegetation.vegetationTypeToColor[_vegetationType]);
+        // Create polygon.
+        _polygons = {..._polygons, ...tempPolygon};
         vegetationData.add(Vegetation(
             vegetationType: _vegetationType!,
             polygon: tempPolygon.first,
             otherType: _otherType));
       } else if (_natureType == NatureType.waterBody) {
+        tempPolygon = finalizePolygon(
+            _polygonPoints, WaterBody.waterBodyTypeToColor[_waterBodyType]);
+        // Create polygon.
+        _polygons = {..._polygons, ...tempPolygon};
         waterBodyData.add(WaterBody(
             waterBodyType: _waterBodyType!, polygon: tempPolygon.first));
       } else {
