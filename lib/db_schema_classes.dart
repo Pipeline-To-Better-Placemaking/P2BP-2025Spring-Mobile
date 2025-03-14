@@ -861,7 +861,6 @@ class SectionCutterTest extends Test<Section> {
   /// Default structure for Section Cutter test. Simply a [Map<String, String>],
   /// where the first string is the field and the second is the reference which
   /// refers to the path of the section drawing.
-  static const Map<String, String> initialDataStructure = {"sectionLink": " "};
   static Section newInitialDataDeepCopy() {
     return Section(
         sectionLink: 'Empty sectionLink. SectionLink has not been set yet.');
@@ -939,7 +938,7 @@ class SectionCutterTest extends Test<Section> {
         'id': test.testID,
         'scheduledTime': test.scheduledTime,
         'project': test.projectRef,
-        'data': test.data,
+        'data': convertDataToFirestore(test.data),
         'creationTime': test.creationTime,
         'maxResearchers': test.maxResearchers,
         'isComplete': false,
