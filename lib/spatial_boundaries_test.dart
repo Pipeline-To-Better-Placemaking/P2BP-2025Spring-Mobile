@@ -9,7 +9,7 @@ import 'widgets.dart';
 
 class SpatialBoundariesTestPage extends StatefulWidget {
   final Project activeProject;
-  final Test activeTest;
+  final SpatialBoundariesTest activeTest;
 
   const SpatialBoundariesTestPage({
     super.key,
@@ -27,35 +27,37 @@ class _SpatialBoundariesTestPageState extends State<SpatialBoundariesTestPage> {
   bool _polygonMode = false;
   bool _polylineMode = false;
   bool _outsidePoint = false;
+
   late GoogleMapController mapController;
   LatLng _location = defaultLocation;
   MapType _currentMapType = MapType.satellite; // Default map type
   List<mp.LatLng> _projectArea = [];
-  final Set<Marker> _markers = {}; // Set of markers visible on map
-  Set<Polyline> _polylines = {};
+
   Set<Polygon> _polygons = {}; // Set of polygons
-  List<LatLng> _polylinePoints = [];
   List<LatLng> _polygonPoints = []; // Points for the polygon
   Set<Marker> _polygonMarkers = {}; // Set of markers for polygon creation
-  final SpatialBoundariesData _newData = SpatialBoundariesData();
-  LatLng? _tempPoint;
-  BoundaryType? _boundaryType;
-  ConstructedBoundaryType? _constructedBoundaryType;
-  MaterialBoundaryType? _materialBoundaryType;
-  ShelterBoundaryType? _shelterBoundaryType;
+  Set<Polyline> _polylines = {};
+  Set<Marker> _polylineMarkers = {};
+  List<LatLng> _polylinePoints = [];
 
-  static const List<String> _directions = [
+  final SpatialBoundariesData _newData = SpatialBoundariesData();
+  BoundaryType? _boundaryType;
+  ConstructedBoundaryType? _constructedType;
+  MaterialBoundaryType? _materialType;
+  ShelterBoundaryType? _shelterType;
+
+  static const List<String> _directionsList = [
     'Select a type of boundary.',
     'Outline the shape of the boundary with points, then click confirm shape when you are done.',
   ];
-  late String _direction;
-  static const double _bottomSheetHeight = 250;
+  late String _directionsActive;
+  static const double _bottomSheetHeight = 300;
 
   @override
   void initState() {
     super.initState();
     _initProjectArea();
-    _direction = _directions[0];
+    _directionsActive = _directionsList[0];
   }
 
   /// Gets the project polygon, adds it to the current polygon list, and
@@ -96,15 +98,7 @@ class _SpatialBoundariesTestPageState extends State<SpatialBoundariesTestPage> {
     });
   }
 
-  void _clearTempVars() {
-    _tempPoint = null;
-    _boundaryType = null;
-    _constructedBoundaryType = null;
-    _materialBoundaryType = null;
-    _shelterBoundaryType = null;
-    _direction = _directions[0];
-  }
-
+  /// Called whenever map is tapped
   Future<void> _togglePoint(LatLng point) async {
     try {
       if (!mp.PolygonUtil.containsLocation(
@@ -113,8 +107,8 @@ class _SpatialBoundariesTestPageState extends State<SpatialBoundariesTestPage> {
           _outsidePoint = true;
         });
       }
-      if (_polylineMode) _polylineTap(point);
       if (_polygonMode) _polygonTap(point);
+      if (_polylineMode) _polylineTap(point);
       if (_outsidePoint) {
         // TODO: fix delay. delay will overlap with consecutive taps. this means taps do not necessarily refresh the timer and will end prematurely
         await Future.delayed(const Duration(seconds: 2));
@@ -123,33 +117,12 @@ class _SpatialBoundariesTestPageState extends State<SpatialBoundariesTestPage> {
         });
       }
     } catch (e, stacktrace) {
-      print('Error in nature_prevalence_test.dart, _togglePoint(): $e');
+      print('Error in spatial_boundaries_test.dart, _togglePoint(): $e');
       print('Stacktrace: $stacktrace');
     }
   }
 
-  void _polylineTap(LatLng point) {
-    final markerId = MarkerId(point.toString());
-    setState(() {
-      _polygonPoints.add(point);
-      _polygonMarkers.add(
-        Marker(
-          markerId: markerId,
-          position: point,
-          consumeTapEvents: true,
-          onTap: () {
-            // If the marker is tapped again, it will be removed
-            setState(() {
-              _polygonPoints.remove(point);
-              _polygonMarkers
-                  .removeWhere((marker) => marker.markerId == markerId);
-            });
-          },
-        ),
-      );
-    });
-  }
-
+  /// Place marker to be used in making polygon.
   void _polygonTap(LatLng point) {
     final markerId = MarkerId(point.toString());
     setState(() {
@@ -172,31 +145,113 @@ class _SpatialBoundariesTestPageState extends State<SpatialBoundariesTestPage> {
     });
   }
 
+  /// Convert markers to polygon and save the data to be submitted later.
   void _finalizePolygon() {
     Set<Polygon> tempPolygon;
     try {
+      // Create polygon and add it to the visible set of polygons.
       tempPolygon = finalizePolygon(_polygonPoints);
-      // Create polygon.
-      _polygons = {..._polygons, ...tempPolygon};
+      _polygons.add(tempPolygon.first);
 
-      if (_boundaryType == BoundaryType.material) {
-      } else if (_boundaryType == BoundaryType.shelter) {}
+      if (_boundaryType == BoundaryType.material && _materialType != null) {
+        _newData.material.add(MaterialBoundary(
+          polygon: tempPolygon.first,
+          materialType: _materialType!,
+        ));
+      } else if (_boundaryType == BoundaryType.shelter &&
+          _shelterType != null) {
+        _newData.shelter.add(ShelterBoundary(
+          polygon: tempPolygon.first,
+          shelterType: _shelterType!,
+        ));
+      } else {
+        throw Exception('Invalid boundary type in _finalizePolygon(), '
+            '_boundaryType = $_boundaryType');
+      }
 
-      // Clears polygon points and enter add points mode.
-      _polygonPoints = [];
-
-      // Clear markers from screen.
-      setState(() {
-        _polygonMarkers.clear();
-        _polygonMode = false;
-        _clearTempVars();
-      });
+      // Reset everything to be able to make new boundary.
+      _resetPlacementVariables();
     } catch (e, stacktrace) {
-      print('Exception in _finalize_polygon(): $e');
+      print('Exception in _finalizePolygon(): $e');
       print('Stacktrace: $stacktrace');
     }
   }
 
+  /// Place marker to be used in making polyline.
+  void _polylineTap(LatLng point) {
+    final markerId = MarkerId(point.toString());
+    setState(() {
+      _polylinePoints.add(point);
+      _polylineMarkers.add(
+        Marker(
+          markerId: markerId,
+          position: point,
+          consumeTapEvents: true,
+          onTap: () {
+            // If the marker is tapped again, it will be removed
+            setState(() {
+              _polylinePoints.remove(point);
+              _polylineMarkers
+                  .removeWhere((marker) => marker.markerId == markerId);
+            });
+          },
+        ),
+      );
+    });
+  }
+
+  /// Convert markers to polyline and save the data to be submitted later.
+  void _finalizePolyline() {
+    Polyline? tempPolyline;
+    try {
+      // Create polyline and add it to the visible set of polylines.
+      tempPolyline = createPolyline(
+        _polylinePoints,
+        ConstructedBoundary.polylineColor,
+      );
+      if (tempPolyline == null) {
+        throw Exception('Failed to create Polyline from given points.');
+      }
+      _polylines.add(tempPolyline);
+
+      if (_boundaryType == BoundaryType.constructed &&
+          _constructedType != null) {
+        _newData.constructed.add(ConstructedBoundary(
+          polyline: tempPolyline,
+          constructedType: _constructedType!,
+        ));
+      } else {
+        throw Exception('Invalid boundary type in _finalizePolyline(),'
+            '_boundaryType = $_boundaryType');
+      }
+
+      // Reset everything to be able to make new boundary.
+      _resetPlacementVariables();
+    } catch (e, stacktrace) {
+      print('Exception in _finalizePolyline(): $e');
+      print('Stacktrace: $stacktrace');
+    }
+  }
+
+  /// Resets all state variables relevant to placing boundaries to default.
+  void _resetPlacementVariables() {
+    setState(() {
+      _polylinePoints.clear();
+      _polylineMarkers.clear();
+      _polylineMode = false;
+      _polygonPoints.clear();
+      _polygonMarkers.clear();
+      _polygonMode = false;
+
+      _boundaryType = null;
+      _constructedType = null;
+      _materialType = null;
+      _shelterType = null;
+      _directionsActive = _directionsList[0];
+    });
+  }
+
+  /// Display constructed modal and use result to adjust state variables.
   void _doConstructedModal(BuildContext context) async {
     final ConstructedBoundaryType? constructed = await showModalBottomSheet(
       isScrollControlled: true,
@@ -206,13 +261,14 @@ class _SpatialBoundariesTestPageState extends State<SpatialBoundariesTestPage> {
     if (constructed != null) {
       setState(() {
         _boundaryType = BoundaryType.constructed;
-        _constructedBoundaryType = constructed;
+        _constructedType = constructed;
         _polylineMode = true;
-        _direction = _directions[1];
+        _directionsActive = _directionsList[1];
       });
     }
   }
 
+  /// Display material modal and use result to adjust state variables.
   void _doMaterialModal(BuildContext context) async {
     final MaterialBoundaryType? material = await showModalBottomSheet(
       isScrollControlled: true,
@@ -222,13 +278,14 @@ class _SpatialBoundariesTestPageState extends State<SpatialBoundariesTestPage> {
     if (material != null) {
       setState(() {
         _boundaryType = BoundaryType.material;
-        _materialBoundaryType = material;
+        _materialType = material;
         _polygonMode = true;
-        _direction = _directions[1];
+        _directionsActive = _directionsList[1];
       });
     }
   }
 
+  /// Display shelter modal and use result to adjust state variables.
   void _doShelterModal(BuildContext context) async {
     final ShelterBoundaryType? shelter = await showModalBottomSheet(
       isScrollControlled: true,
@@ -238,16 +295,15 @@ class _SpatialBoundariesTestPageState extends State<SpatialBoundariesTestPage> {
     if (shelter != null) {
       setState(() {
         _boundaryType = BoundaryType.shelter;
-        _shelterBoundaryType = shelter;
+        _shelterType = shelter;
         _polygonMode = true;
-        _direction = _directions[1];
+        _directionsActive = _directionsList[1];
       });
     }
   }
 
   @override
   Widget build(BuildContext context) {
-    bool isDescriptionReady = (_boundaryType != null);
     return SafeArea(
       child: Scaffold(
         body: _isLoading
@@ -262,9 +318,10 @@ class _SpatialBoundariesTestPageState extends State<SpatialBoundariesTestPage> {
                         onMapCreated: _onMapCreated,
                         initialCameraPosition:
                             CameraPosition(target: _location, zoom: 15),
-                        markers: _markers,
+                        markers: {..._polygonMarkers, ..._polylineMarkers},
                         polygons: _polygons,
-                        onTap: isDescriptionReady ? _togglePoint : null,
+                        polylines: _polylines,
+                        onTap: _togglePoint,
                         mapType: _currentMapType,
                       ),
                     ),
@@ -289,125 +346,179 @@ class _SpatialBoundariesTestPageState extends State<SpatialBoundariesTestPage> {
               ),
         bottomSheet: _isLoading
             ? SizedBox()
-            : Container(
+            : SizedBox(
                 height: _bottomSheetHeight,
-                padding: const EdgeInsets.symmetric(
-                    horizontal: 12.0, vertical: 10.0),
-                decoration: BoxDecoration(
-                  gradient: defaultGrad,
-                  borderRadius: const BorderRadius.only(
-                    topLeft: Radius.circular(24.0),
-                    topRight: Radius.circular(24.0),
-                  ),
-                  boxShadow: [
-                    BoxShadow(
-                      color: Colors.black,
-                      offset: Offset(0.0, 1.0), //(x,y)
-                      blurRadius: 6.0,
-                    ),
-                  ],
-                ),
-                child: Column(
-                  children: <Widget>[
-                    Center(
-                      child: Text(
-                        'Spatial Boundaries',
-                        style: TextStyle(
-                          fontSize: 20,
-                          fontWeight: FontWeight.bold,
-                          color: placeYellow,
+                child: Stack(
+                  children: [
+                    Container(
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 12.0, vertical: 10.0),
+                      decoration: BoxDecoration(
+                        gradient: defaultGrad,
+                        borderRadius: const BorderRadius.only(
+                          topLeft: Radius.circular(24.0),
+                          topRight: Radius.circular(24.0),
                         ),
+                        boxShadow: [
+                          BoxShadow(
+                            color: Colors.black,
+                            offset: Offset(0.0, 1.0), //(x,y)
+                            blurRadius: 6.0,
+                          ),
+                        ],
+                      ),
+                      child: Column(
+                        children: <Widget>[
+                          Center(
+                            child: Text(
+                              'Spatial Boundaries',
+                              softWrap: true,
+                              textAlign: TextAlign.center,
+                              style: TextStyle(
+                                fontSize: 20,
+                                fontWeight: FontWeight.bold,
+                                color: placeYellow,
+                              ),
+                            ),
+                          ),
+                          SizedBox(height: 5),
+                          Center(
+                            child: Text(
+                              _directionsActive,
+                              softWrap: true,
+                              textAlign: TextAlign.center,
+                              style: TextStyle(
+                                fontSize: 18,
+                                color: Colors.white,
+                              ),
+                            ),
+                          ),
+                          SizedBox(height: 5),
+                          Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                            spacing: 10,
+                            children: <Widget>[
+                              Expanded(
+                                flex: 11,
+                                child: FilledButton(
+                                  style: testButtonStyle,
+                                  onPressed: () {
+                                    _doConstructedModal(context);
+                                  },
+                                  child: Text('Constructed'),
+                                ),
+                              ),
+                              Expanded(
+                                flex: 8,
+                                child: FilledButton(
+                                  style: testButtonStyle,
+                                  onPressed: () {
+                                    _doMaterialModal(context);
+                                  },
+                                  child: Text('Material'),
+                                ),
+                              ),
+                              Expanded(
+                                flex: 7,
+                                child: FilledButton(
+                                  style: testButtonStyle,
+                                  onPressed: () {
+                                    _doShelterModal(context);
+                                  },
+                                  child: Text('Shelter'),
+                                ),
+                              ),
+                            ],
+                          ),
+                          SizedBox(height: 15),
+                          Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                            spacing: 10,
+                            children: <Widget>[
+                              Expanded(
+                                flex: 7,
+                                child: EditButton(
+                                  text: 'Confirm Shape',
+                                  foregroundColor: Colors.green,
+                                  backgroundColor: Colors.white,
+                                  icon: const Icon(Icons.check),
+                                  iconColor: Colors.green,
+                                  onPressed: (_polygonMode &&
+                                          _polygonPoints.length >= 3)
+                                      ? _finalizePolygon
+                                      : (_polylineMode &&
+                                              _polylinePoints.length >= 2)
+                                          ? _finalizePolyline
+                                          : null,
+                                ),
+                              ),
+                              Expanded(
+                                flex: 6,
+                                child: EditButton(
+                                  text: 'Cancel',
+                                  foregroundColor: Colors.red,
+                                  backgroundColor: Colors.white,
+                                  icon: const Icon(Icons.cancel),
+                                  iconColor: Colors.red,
+                                  onPressed: (_polygonMode || _polylineMode)
+                                      ? _resetPlacementVariables
+                                      : null,
+                                ),
+                              ),
+                              Expanded(
+                                flex: 6,
+                                child: FilledButton.icon(
+                                  style: testButtonStyle,
+                                  onPressed: () {
+                                    widget.activeTest.submitData(_newData);
+                                    Navigator.pop(context);
+                                  },
+                                  label: Text('Finish'),
+                                  icon: Icon(Icons.chevron_right),
+                                  iconAlignment: IconAlignment.end,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ],
                       ),
                     ),
-                    SizedBox(height: 5),
-                    Center(
-                      child: Text(
-                        _direction,
-                        style: TextStyle(
-                          fontSize: 20,
-                          color: Colors.white,
-                        ),
-                      ),
-                    ),
-                    SizedBox(height: 5),
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                      spacing: 10,
-                      children: <Widget>[
-                        Expanded(
-                          flex: 11,
-                          child: FilledButton(
-                            style: testButtonStyle,
-                            onPressed: () {
-                              _doConstructedModal(context);
-                            },
-                            child: Text('Constructed'),
-                          ),
-                        ),
-                        Expanded(
-                          flex: 8,
-                          child: FilledButton(
-                            style: testButtonStyle,
-                            onPressed: () {
-                              _doMaterialModal(context);
-                            },
-                            child: Text('Material'),
-                          ),
-                        ),
-                        Expanded(
-                          flex: 7,
-                          child: FilledButton(
-                            style: testButtonStyle,
-                            onPressed: () {
-                              _doShelterModal(context);
-                            },
-                            child: Text('Shelter'),
-                          ),
-                        ),
-                      ],
-                    ),
-                    SizedBox(height: 15),
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      spacing: 10,
-                      children: <Widget>[
-                        Expanded(
-                          flex: 7,
-                          child: EditButton(
-                            text: 'Confirm Shape',
-                            foregroundColor: Colors.green,
-                            backgroundColor: Colors.white,
-                            icon: const Icon(Icons.check),
-                            iconColor: Colors.green,
-                            onPressed: () {},
-                          ),
-                        ),
-                        Expanded(
-                          flex: 6,
-                          child: EditButton(
-                            text: 'Cancel',
-                            foregroundColor: Colors.red,
-                            backgroundColor: Colors.white,
-                            icon: const Icon(Icons.cancel),
-                            iconColor: Colors.red,
-                            onPressed: () {},
-                          ),
-                        ),
-                        Expanded(
-                          flex: 6,
-                          child: FilledButton.icon(
-                            style: testButtonStyle,
-                            onPressed: () {
-                              // TODO: check isComplete either before submitting or probably before starting test
-                              Navigator.pop(context);
-                            },
-                            label: Text('Finish'),
-                            icon: Icon(Icons.chevron_right),
-                            iconAlignment: IconAlignment.end,
-                          ),
-                        ),
-                      ],
-                    ),
+                    _outsidePoint
+                        ? Align(
+                            alignment: Alignment.bottomCenter,
+                            child: Padding(
+                              padding: const EdgeInsets.symmetric(
+                                  vertical: 30.0, horizontal: 100.0),
+                              child: Container(
+                                padding: EdgeInsets.symmetric(
+                                    horizontal: 15, vertical: 10),
+                                decoration: BoxDecoration(
+                                  color: Colors.red[900],
+                                  borderRadius: const BorderRadius.all(
+                                      Radius.circular(10)),
+                                  boxShadow: [
+                                    BoxShadow(
+                                      color:
+                                          Colors.black.withValues(alpha: 0.1),
+                                      blurRadius: 6,
+                                      offset: const Offset(0, 2),
+                                    ),
+                                  ],
+                                ),
+                                child: Text(
+                                  'You have placed a point outside of the project area!',
+                                  maxLines: 3,
+                                  overflow: TextOverflow.ellipsis,
+                                  style: TextStyle(
+                                    fontSize: 18,
+                                    fontWeight: FontWeight.w500,
+                                    color: Colors.red[50],
+                                  ),
+                                ),
+                              ),
+                            ),
+                          )
+                        : SizedBox(),
                   ],
                 ),
               ),

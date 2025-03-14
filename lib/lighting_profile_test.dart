@@ -1,6 +1,4 @@
-import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
-import 'package:geolocator/geolocator.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:p2bp_2025spring_mobile/theme.dart';
 import 'google_maps_functions.dart';
@@ -19,8 +17,6 @@ class LightingProfileTestPage extends StatefulWidget {
   @override
   State<StatefulWidget> createState() => _LightingProfileTestPageState();
 }
-
-final FirebaseFirestore _firestore = FirebaseFirestore.instance;
 
 class _LightingProfileTestPageState extends State<LightingProfileTestPage> {
   bool _isLoading = true;
