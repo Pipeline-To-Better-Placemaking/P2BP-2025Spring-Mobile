@@ -22,41 +22,11 @@ final FirebaseFirestore _firestore = FirebaseFirestore.instance;
 
 // User class for create_project_and_teams.dart
 class Member {
-  String _userID = '';
-  String _fullName = '';
-  bool _invited = false;
+  String userID = '';
+  String fullName = '';
+  bool invited = false;
 
-  Member(
-      {required String userID,
-      required String fullName,
-      bool invited = false}) {
-    _userID = userID;
-    _fullName = fullName;
-    _invited = invited;
-  }
-  void setUserID(String userID) {
-    _userID = userID;
-  }
-
-  void setFullName(String fullName) {
-    _fullName = fullName;
-  }
-
-  void setInvited(bool invited) {
-    _invited = invited;
-  }
-
-  String getUserID() {
-    return _userID;
-  }
-
-  String getFullName() {
-    return _fullName;
-  }
-
-  bool getInvited() {
-    return _invited;
-  }
+  Member({required this.userID, required this.fullName, this.invited = false});
 }
 
 // Team class for teams_and_invites_page.dart
@@ -96,6 +66,7 @@ class Project {
   num polygonArea = 0;
   List<DocumentReference> testRefs = [];
   List<Test>? tests;
+  List standingPoints = [];
 
   Project({
     this.creationTime,
@@ -105,6 +76,7 @@ class Project {
     required this.description,
     required this.polygonPoints,
     required this.polygonArea,
+    required this.standingPoints,
     required this.testRefs,
     this.tests,
   });
@@ -131,8 +103,21 @@ class Project {
 // | Important: When adding a test, make sure to implement the requisite      |
 // | fields and functions. When done, make sure to implement it in the        |
 // | dropdown on create_test_form.dart, register it on main.dart, and add it  |
-// | to the initials list on project_details.dart.                            |
+// | to the initials list on project_details.dart. If it it implements        |
+// | standing points and a timer, add it to the following lists.              |
 // *--------------------------------------------------------------------------*
+
+/// List containing all tests that make use of standing points.
+///
+/// Used to check for test creation and saving.
+const Set<String> standingPointsTests = {
+  IdentifyingAccessTest.collectionIDStatic
+};
+
+/// List containing all tests that make use of standing points.
+///
+/// Used to check for test creation and saving.
+const Set<String> timerTests = {NaturePrevalenceTest.collectionIDStatic};
 
 /// Parent class extended by every specific test class.
 ///
@@ -203,11 +188,9 @@ abstract class Test<T> {
     Timestamp? creationTime,
     int? maxResearchers,
     bool? isComplete,
-  }) {
-    this.creationTime = creationTime ?? Timestamp.now();
-    this.maxResearchers = maxResearchers ?? 1;
-    this.isComplete = isComplete ?? false;
-  }
+  })  : creationTime = creationTime ?? Timestamp.now(),
+        maxResearchers = maxResearchers ?? 1,
+        isComplete = isComplete ?? false;
 
   // The below Maps must have values registered for each subclass of Test.
   // Thus each subclass should have a method `static void register()`
@@ -224,6 +207,7 @@ abstract class Test<T> {
         required Timestamp scheduledTime,
         required DocumentReference projectRef,
         required String collectionID,
+        List? standingPoints,
       })> _newTestConstructors = {};
 
   /// Maps from collection ID to a function which should use a constructor
@@ -248,14 +232,15 @@ abstract class Test<T> {
   /// any newly created tests.
   ///
   /// Utilizes values registered to [Test._newTestConstructors].
-  static Test createNew({
-    required String title,
-    required String testID,
-    required Timestamp scheduledTime,
-    required DocumentReference projectRef,
-    required String collectionID,
-  }) {
+  static Test createNew(
+      {required String title,
+      required String testID,
+      required Timestamp scheduledTime,
+      required DocumentReference projectRef,
+      required String collectionID,
+      List? standingPoints}) {
     final constructor = _newTestConstructors[collectionID];
+
     if (constructor != null) {
       return constructor(
         title: title,
@@ -263,6 +248,7 @@ abstract class Test<T> {
         scheduledTime: scheduledTime,
         projectRef: projectRef,
         collectionID: collectionID,
+        standingPoints: standingPoints,
       );
     }
     throw Exception('Unregistered Test type for collection: $collectionID');
@@ -392,6 +378,7 @@ class LightingProfileTest extends Test<LightToLatLngMap> {
       required Timestamp scheduledTime,
       required DocumentReference projectRef,
       required String collectionID,
+      List? standingPoints,
     }) =>
         LightingProfileTest._(
           title: title,
@@ -766,6 +753,7 @@ class AbsenceOfOrderTest extends Test<AbsenceOfOrderData> {
       required Timestamp scheduledTime,
       required DocumentReference projectRef,
       required String collectionID,
+      List? standingPoints,
     }) =>
         AbsenceOfOrderTest._(
           title: title,
@@ -897,6 +885,7 @@ class SectionCutterTest extends Test<Map<String, String>> {
       required Timestamp scheduledTime,
       required DocumentReference projectRef,
       required String collectionID,
+      List? standingPoints,
     }) =>
         SectionCutterTest._(
           title: title,
@@ -964,10 +953,9 @@ class SectionCutterTest extends Test<Map<String, String>> {
   Future<Map<String, String>> saveXFile(XFile data) async {
     Map<String, String> storageLocation = newInitialDataDeepCopy();
     try {
-      if (projectRef == null) return storageLocation;
       final storageRef = FirebaseStorage.instance.ref();
       final sectionRef = storageRef.child(
-          "project_uploads/${projectRef?.id}/section_cutter_files/$testID");
+          "project_uploads/${projectRef.id}/section_cutter_files/$testID");
       final File sectionFile = File(data.path);
 
       print(sectionRef.fullPath);
@@ -1138,6 +1126,9 @@ class IdentifyingAccessTest extends Test<Map> {
   /// Static constant definition of collection ID for this test type.
   static const String collectionIDStatic = 'identifying_access_tests';
 
+  /// Temporary list of standing points for testing purposes (TODO)
+  List standingPoints;
+
   /// Creates a new [IdentifyingAccessTest] instance from the given arguments.
   IdentifyingAccessTest._({
     required super.title,
@@ -1146,6 +1137,7 @@ class IdentifyingAccessTest extends Test<Map> {
     required super.projectRef,
     required super.collectionID,
     required super.data,
+    required this.standingPoints,
     super.creationTime,
     super.maxResearchers,
     super.isComplete,
@@ -1153,13 +1145,14 @@ class IdentifyingAccessTest extends Test<Map> {
 
   /// Registers this class within the Maps required by class [Test].
   static void register() {
-    // Register for creating new Lighting Profile Tests
+    // Register for creating new Identifying Access Tests
     Test._newTestConstructors[collectionIDStatic] = ({
       required String title,
       required String testID,
       required Timestamp scheduledTime,
       required DocumentReference projectRef,
       required String collectionID,
+      List? standingPoints,
     }) =>
         IdentifyingAccessTest._(
           title: title,
@@ -1168,8 +1161,9 @@ class IdentifyingAccessTest extends Test<Map> {
           projectRef: projectRef,
           collectionID: collectionID,
           data: newInitialDataDeepCopy(),
+          standingPoints: standingPoints ?? [],
         );
-    // Register for recreating a Lighting Profile Test from Firestore
+    // Register for recreating a Identifying Access Test from Firestore
     Test._recreateTestConstructors[collectionIDStatic] = (testDoc) {
       print(testDoc['data']);
       return IdentifyingAccessTest._(
@@ -1182,9 +1176,10 @@ class IdentifyingAccessTest extends Test<Map> {
         creationTime: testDoc['creationTime'],
         maxResearchers: testDoc['maxResearchers'],
         isComplete: testDoc['isComplete'],
+        standingPoints: testDoc['standingPoints'],
       );
     };
-    // Register for building a Lighting Profile Test page
+    // Register for building a Identifying Access Test page
     Test._pageBuilders[IdentifyingAccessTest] =
         (project, test) => IdentifyingAccess(
               activeProject: project,
@@ -1201,6 +1196,7 @@ class IdentifyingAccessTest extends Test<Map> {
         'creationTime': test.creationTime,
         'maxResearchers': test.maxResearchers,
         'isComplete': false,
+        'standingPoints': (test as IdentifyingAccessTest).standingPoints,
       }, SetOptions(merge: true));
     };
   }
@@ -1873,6 +1869,7 @@ class NaturePrevalenceTest extends Test<NatureData> {
       required Timestamp scheduledTime,
       required DocumentReference projectRef,
       required String collectionID,
+      List? standingPoints,
     }) =>
         NaturePrevalenceTest._(
           title: title,

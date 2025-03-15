@@ -282,3 +282,83 @@ class PasswordTextFormField extends StatelessWidget {
     );
   }
 }
+
+/// Text form field used for dialog boxes.
+///
+/// Enter an [errorMessage] for error validation. Put in a form for validation.
+/// Takes a [maxLength], [labelText] and optional [error message], [icon], and
+/// [onChanged].
+class DialogTextBox extends StatelessWidget {
+  final int maxLength;
+  final String labelText;
+  final ValueChanged? onChanged;
+  final Icon? icon;
+  final String? errorMessage;
+
+  const DialogTextBox({
+    super.key,
+    required this.maxLength,
+    required this.labelText,
+    this.onChanged,
+    this.icon,
+    this.errorMessage,
+  });
+  @override
+  Widget build(BuildContext context) {
+    return SizedBox(
+      child: Theme(
+        data: Theme.of(context).copyWith(
+          textSelectionTheme: const TextSelectionThemeData(
+              selectionColor: Colors.blue, selectionHandleColor: Colors.blue),
+        ),
+        child: TextFormField(
+          onChanged: onChanged,
+          style: const TextStyle(color: Colors.black),
+          maxLength: maxLength,
+          cursorColor: const Color(0xFF585A6A),
+          validator: (value) {
+            if (errorMessage != null && (value == null || value.length < 3)) {
+              return errorMessage ??
+                  'Error, insufficient input (validator error message not set)';
+            }
+            return null;
+          },
+          decoration: InputDecoration(
+            prefixIcon: icon,
+            alignLabelWithHint: true,
+            counterStyle: const TextStyle(color: Colors.black),
+            errorBorder: UnderlineInputBorder(
+              borderSide: const BorderSide(
+                color: Color(0xFFD32F2F),
+                width: 1.5,
+              ),
+            ),
+            focusedErrorBorder: const UnderlineInputBorder(
+              borderSide: BorderSide(
+                color: Color(0xFFD32F2F),
+                width: 2,
+              ),
+            ),
+            enabledBorder: const UnderlineInputBorder(
+              borderSide: BorderSide(
+                width: 1.5,
+                color: Color(0xFF6A89B8),
+              ),
+            ),
+            focusedBorder: const UnderlineInputBorder(
+              borderSide: BorderSide(
+                width: 2,
+                color: Color(0xFF5C78A1),
+              ),
+            ),
+            hintText: labelText,
+            hintStyle: const TextStyle(
+              fontWeight: FontWeight.w300,
+              color: Color(0xA9000000),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}

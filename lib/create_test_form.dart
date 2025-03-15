@@ -2,10 +2,12 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:dropdown_button2/dropdown_button2.dart';
 import 'package:p2bp_2025spring_mobile/db_schema_classes.dart';
+import 'package:p2bp_2025spring_mobile/standing_points_page.dart';
 import 'theme.dart';
 
 class CreateTestForm extends StatefulWidget {
-  const CreateTestForm({super.key});
+  final Project activeProject;
+  const CreateTestForm({super.key, required this.activeProject});
 
   @override
   State<CreateTestForm> createState() => _CreateTestFormState();
@@ -19,6 +21,12 @@ class _CreateTestFormState extends State<CreateTestForm> {
 
   DateTime? _selectedDateTime;
   String? _selectedTest;
+
+  List _standingPoints = [];
+
+  bool _standingPointsTest = false;
+  bool _standingPointsError = false;
+  bool _timerTest = false;
 
   Future<DateTime?> showDateTimePicker({
     required BuildContext context,
@@ -231,6 +239,10 @@ class _CreateTestFormState extends State<CreateTestForm> {
               ],
               onChanged: (value) {
                 _selectedTest = value;
+                setState(() {
+                  _standingPointsTest =
+                      standingPointsTests.contains(_selectedTest);
+                });
               },
               autovalidateMode: AutovalidateMode.onUserInteraction,
               validator: (value) {
@@ -241,32 +253,95 @@ class _CreateTestFormState extends State<CreateTestForm> {
               },
             ),
             SizedBox(height: 32),
-            // Placeholder for an interactable map
-            Container(
-              height: 200,
-              decoration: BoxDecoration(
-                color: Colors.grey[300],
-                borderRadius: BorderRadius.circular(10),
-              ),
-              child: Center(
-                child: Text(
-                  "Interactable Map Placeholder",
-                  style: TextStyle(color: Colors.black54),
-                ),
-              ),
-            ),
+            _standingPointsTest
+                ? Row(
+                    children: [
+                      Expanded(flex: 1, child: SizedBox()),
+                      Expanded(
+                        flex: 2,
+                        child: ElevatedButton(
+                          onPressed: () async {
+                            final List tempPoints = await Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                builder: (context) => StandingPointsPage(
+                                  activeProject: widget.activeProject,
+                                  currentStandingPoints:
+                                      _standingPoints.isNotEmpty
+                                          ? _standingPoints
+                                          : null,
+                                ),
+                              ),
+                            );
+                            setState(() {
+                              _standingPoints = tempPoints;
+                            });
+                          },
+                          style: ElevatedButton.styleFrom(
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(10.0),
+                              side: (_standingPointsError)
+                                  ? BorderSide(color: Color(0xFFB3261E))
+                                  : BorderSide(color: Colors.transparent),
+                            ),
+                            backgroundColor: Color(0xFF2F6DCF),
+                          ),
+                          child: Text(
+                            _standingPoints.isEmpty
+                                ? 'Add Standing Points'
+                                : 'Edit Standing Points',
+                            style: TextStyle(color: Colors.white),
+                          ),
+                        ),
+                      ),
+                      Expanded(
+                          flex: 1,
+                          child: SizedBox(
+                            child: Align(
+                                alignment: Alignment.centerLeft,
+                                child: Padding(
+                                  padding: const EdgeInsets.only(left: 8.0),
+                                  child: _standingPoints.isNotEmpty
+                                      ? Icon(Icons.check_circle,
+                                          color: Colors.green)
+                                      : SizedBox(),
+                                )),
+                          )),
+                    ],
+                  )
+                : SizedBox(),
+            (_standingPointsError)
+                ? Center(
+                    child: Text('Please add standing points first.',
+                        style: TextStyle(color: Color(0xFFB3261E))),
+                  )
+                : SizedBox(),
             SizedBox(height: 32),
             // Optional: A button to submit the form
             Align(
               alignment: Alignment.center,
               child: ElevatedButton(
                 onPressed: () {
-                  if (_formKey.currentState!.validate()) {
+                  final bool validated = _formKey.currentState!.validate();
+                  if (_standingPointsTest) {
+                    if (_standingPoints.isEmpty) {
+                      setState(() {
+                        _standingPointsError = true;
+                      });
+                      return;
+                    }
+                  }
+                  if (validated) {
                     final Map<String, dynamic> newTestInfo = {
                       'title': _activityNameController.text,
                       'scheduledTime': Timestamp.fromDate(_selectedDateTime!),
                       'collectionID': _selectedTest,
                     };
+                    if (_standingPointsTest) {
+                      newTestInfo.update(
+                          'standingPoints', (value) => _standingPoints,
+                          ifAbsent: () => _standingPoints);
+                    }
                     // Handle form submission
                     Navigator.of(context).pop(newTestInfo);
                   }
