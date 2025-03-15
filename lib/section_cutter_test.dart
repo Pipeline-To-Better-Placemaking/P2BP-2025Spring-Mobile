@@ -1,6 +1,7 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
+import 'package:p2bp_2025spring_mobile/firestore_functions.dart';
 import 'package:p2bp_2025spring_mobile/theme.dart';
 import 'package:p2bp_2025spring_mobile/widgets.dart';
 import 'project_details_page.dart';
@@ -44,10 +45,14 @@ class _SectionCutterState extends State<SectionCutter> {
   LatLng _location = defaultLocation; // Default location
   SectionCutterTest? currentTest;
   Set<Polygon> _polygons = {}; // Set of polygons
+  Set<Polyline> _polyline = {};
+  List<LatLng> _sectionPoints = [];
 
   MapType _currentMapType = MapType.satellite; // Default map type
 
   Project? project;
+
+  double _zoom = 14;
 
   @override
   void initState() {
@@ -64,7 +69,16 @@ class _SectionCutterState extends State<SectionCutter> {
       // Take some lattitude away to center considering bottom sheet.
       _location = LatLng(_location.latitude * .999999, _location.longitude);
       // TODO: dynamic zooming
-      // get test polyline
+      _sectionPoints = widget.activeTest!.linePoints.toLatLngList();
+      _polyline = {
+        Polyline(
+          polylineId:
+              PolylineId(DateTime.now().millisecondsSinceEpoch.toString()),
+          points: _sectionPoints,
+          color: Colors.green,
+          width: 4,
+        )
+      };
     });
   }
 
@@ -76,7 +90,7 @@ class _SectionCutterState extends State<SectionCutter> {
   void _moveToLocation() {
     mapController.animateCamera(
       CameraUpdate.newCameraPosition(
-        CameraPosition(target: _location, zoom: 14),
+        CameraPosition(target: _location, zoom: _zoom),
       ),
     );
   }
@@ -107,8 +121,11 @@ class _SectionCutterState extends State<SectionCutter> {
                         padding: EdgeInsets.only(bottom: _bottomSheetHeight),
                         onMapCreated: _onMapCreated,
                         initialCameraPosition:
-                            CameraPosition(target: _location, zoom: 14),
+                            CameraPosition(target: _location, zoom: _zoom),
+                        cameraTargetBounds: CameraTargetBounds(
+                            getLatLngBounds(_polyline.single.points)),
                         polygons: _polygons,
+                        polylines: _polyline,
                         mapType: _currentMapType, // Use current map type
                       ),
                     ),
@@ -358,8 +375,7 @@ class _SectionCutterState extends State<SectionCutter> {
                                         setState(() {
                                           _isLoadingUpload = true;
                                         });
-                                        Map<String, String> data = await widget
-                                            .activeTest!
+                                        Section data = await widget.activeTest!
                                             .saveXFile(sectionCutterFile!);
                                         widget.activeTest!.submitData(data);
                                         if (!context.mounted) return;

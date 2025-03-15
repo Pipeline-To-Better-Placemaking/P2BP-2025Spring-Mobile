@@ -2,6 +2,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:dropdown_button2/dropdown_button2.dart';
 import 'package:p2bp_2025spring_mobile/db_schema_classes.dart';
+import 'package:p2bp_2025spring_mobile/section_creation_page.dart';
 import 'package:p2bp_2025spring_mobile/standing_points_page.dart';
 
 class CreateTestForm extends StatefulWidget {
@@ -24,6 +25,7 @@ class _CreateTestFormState extends State<CreateTestForm> {
   List _standingPoints = [];
 
   bool _standingPointsTest = false;
+  String _standingPointType = '';
   bool _standingPointsError = false;
   bool _timerTest = false;
 
@@ -218,8 +220,16 @@ class _CreateTestFormState extends State<CreateTestForm> {
               onChanged: (value) {
                 _selectedTest = value;
                 setState(() {
+                  _standingPoints = [];
                   _standingPointsTest =
                       standingPointsTests.contains(_selectedTest);
+                  if (_selectedTest
+                          ?.compareTo(SectionCutterTest.collectionIDStatic) ==
+                      0) {
+                    _standingPointType = 'A Section Line';
+                  } else if (_standingPointsTest) {
+                    _standingPointType = 'Standing Points';
+                  }
                 });
               },
               autovalidateMode: AutovalidateMode.onUserInteraction,
@@ -239,16 +249,28 @@ class _CreateTestFormState extends State<CreateTestForm> {
                         flex: 2,
                         child: ElevatedButton(
                           onPressed: () async {
-                            final List tempPoints = await Navigator.push(
+                            final List tempPoints;
+                            tempPoints = await Navigator.push(
                               context,
                               MaterialPageRoute(
-                                builder: (context) => StandingPointsPage(
-                                  activeProject: widget.activeProject,
-                                  currentStandingPoints:
-                                      _standingPoints.isNotEmpty
-                                          ? _standingPoints
-                                          : null,
-                                ),
+                                builder: (context) => (_selectedTest?.compareTo(
+                                            SectionCutterTest
+                                                .collectionIDStatic) ==
+                                        0)
+                                    ? SectionCreationPage(
+                                        activeProject: widget.activeProject,
+                                        currentSection:
+                                            _standingPoints.isNotEmpty
+                                                ? _standingPoints
+                                                : null,
+                                      )
+                                    : StandingPointsPage(
+                                        activeProject: widget.activeProject,
+                                        currentStandingPoints:
+                                            _standingPoints.isNotEmpty
+                                                ? _standingPoints
+                                                : null,
+                                      ),
                               ),
                             );
                             setState(() {
@@ -266,8 +288,8 @@ class _CreateTestFormState extends State<CreateTestForm> {
                           ),
                           child: Text(
                             _standingPoints.isEmpty
-                                ? 'Add Standing Points'
-                                : 'Edit Standing Points',
+                                ? 'Add $_standingPointType'
+                                : 'Edit $_standingPointType',
                             style: TextStyle(color: Colors.white),
                           ),
                         ),
@@ -290,7 +312,8 @@ class _CreateTestFormState extends State<CreateTestForm> {
                 : SizedBox(),
             (_standingPointsError)
                 ? Center(
-                    child: Text('Please add standing points first.',
+                    child: Text(
+                        'Please add ${_standingPointType.toLowerCase()} first.',
                         style: TextStyle(color: Color(0xFFB3261E))),
                   )
                 : SizedBox(),
