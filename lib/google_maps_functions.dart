@@ -56,7 +56,8 @@ Future<LocationPermission> _checkLocationPermissions() async {
 /// polygon out of those points (makes sure the polygon is logical). Returns
 /// the singular polygon as a Set so it can be used directly on the GoogleMap
 /// widget.
-Set<Polygon> finalizePolygon(List<LatLng> polygonPoints) {
+Set<Polygon> finalizePolygon(List<LatLng> polygonPoints,
+    [Color? polygonColor]) {
   Set<Polygon> polygon = {};
   List<LatLng> polygonPointsCopy = List.of(polygonPoints);
   try {
@@ -70,9 +71,9 @@ Set<Polygon> finalizePolygon(List<LatLng> polygonPoints) {
       Polygon(
         polygonId: PolygonId(polygonId),
         points: sortedPoints,
-        strokeColor: Colors.blue,
+        strokeColor: polygonColor ?? Colors.blue,
         strokeWidth: 2,
-        fillColor: Colors.blue.withValues(alpha: 0.2),
+        fillColor: polygonColor ?? Colors.blue.withValues(alpha: 0.2),
       ),
     };
   } catch (e, stacktrace) {
@@ -173,8 +174,8 @@ Polyline? createPolyline(List<LatLng> polylinePoints, Color color) {
 
     polyline = Polyline(
       polylineId: PolylineId(polylineID),
-      width: 3,
-      startCap: Cap.roundCap,
+      width: 4,
+      startCap: Cap.squareCap,
       points: List.of(polylinePoints),
       color: color,
     );
@@ -183,4 +184,27 @@ Polyline? createPolyline(List<LatLng> polylinePoints, Color color) {
     print('Stacktrace: $stacktrace');
   }
   return polyline;
+}
+
+/// Gets the the rectangle bounds enclosing a polygon.
+///
+/// Takes a list of [LatLng] points and returns a [LatLngBounds]. If bounds
+/// cannot be created (eg. points is empty) then returns null.
+LatLngBounds? getLatLngBounds(List<LatLng> points) {
+  LatLng southWest;
+  LatLng northEast;
+
+  if (points.isEmpty || points.firstOrNull == null) return null;
+
+  southWest = points.first;
+  northEast = points.first;
+
+  for (LatLng point in points) {
+    southWest = LatLng(min(point.latitude, southWest.latitude),
+        min(point.longitude, southWest.longitude));
+    northEast = LatLng(max(point.latitude, northEast.latitude),
+        max(point.longitude, northEast.longitude));
+  }
+
+  return LatLngBounds(southwest: southWest, northeast: northEast);
 }

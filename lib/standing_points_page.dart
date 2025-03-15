@@ -1,5 +1,4 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:p2bp_2025spring_mobile/theme.dart';
@@ -17,7 +16,6 @@ class StandingPointsPage extends StatefulWidget {
   State<StandingPointsPage> createState() => _StandingPointsPageState();
 }
 
-final User? loggedInUser = FirebaseAuth.instance.currentUser;
 final AssetMapBitmap disabledIcon = AssetMapBitmap(
   'assets/standing_point_disabled_marker.png',
   width: 45,
@@ -34,7 +32,7 @@ class _StandingPointsPageState extends State<StandingPointsPage> {
   GoogleMapController? mapController;
   LatLng _location = defaultLocation; // Default location
   bool _isLoading = true;
-  String _directions =
+  final String _directions =
       "Select the standing points you want to use in this test. Then click confirm.";
   Set<Polygon> _polygons = {}; // Set of polygons
   Set<Marker> _markers = {}; // Set of markers for points
