@@ -319,11 +319,14 @@ class _AbsenceOfOrderTestPageState extends State<AbsenceOfOrderTestPage> {
                               Flexible(
                                 child: FilledButton.icon(
                                   style: testButtonStyle,
-                                  onPressed: () {
-                                    // TODO: check isComplete either before submitting or probably before starting test
-                                    widget.activeTest.submitData(_newData);
-                                    Navigator.pop(context);
-                                  },
+                                  onPressed: (isDescriptionReady)
+                                      ? null
+                                      : () {
+                                          // TODO: check isComplete either before submitting or probably before starting test
+                                          widget.activeTest
+                                              .submitData(_newData);
+                                          Navigator.pop(context);
+                                        },
                                   label: Text('Finish'),
                                   icon: Icon(Icons.chevron_right),
                                   iconAlignment: IconAlignment.end,

@@ -96,7 +96,6 @@ class _LightingProfileTestPageState extends State<LightingProfileTestPage> {
 
       _allPointsMap[_selectedType]?.add(point);
       final markerId = MarkerId(point.toString());
-
       setState(() {
         // Create marker
         _markers.add(
@@ -116,9 +115,6 @@ class _LightingProfileTestPageState extends State<LightingProfileTestPage> {
             },
           ),
         );
-
-        // Reset selected light type
-        _setLightType(null);
       });
 
       if (_outsidePoint) {
@@ -235,15 +231,6 @@ class _LightingProfileTestPageState extends State<LightingProfileTestPage> {
                             ),
                           ),
                           SizedBox(height: 5),
-                          Text(
-                            'Light Types',
-                            style: TextStyle(
-                              fontSize: 16,
-                              fontWeight: FontWeight.bold,
-                              color: Colors.white,
-                            ),
-                          ),
-                          SizedBox(height: 5),
                           Row(
                             spacing: 10,
                             children: <Widget>[
@@ -279,7 +266,26 @@ class _LightingProfileTestPageState extends State<LightingProfileTestPage> {
                               ),
                             ],
                           ),
-                          SizedBox(height: 15),
+                          SizedBox(height: 5),
+                          Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                            spacing: 10,
+                            children: <Widget>[
+                              Spacer(flex: 1),
+                              Expanded(
+                                flex: 8,
+                                child: FilledButton(
+                                  style: testButtonStyle,
+                                  onPressed: (_isTypeSelected)
+                                      ? () => _setLightType(null)
+                                      : null,
+                                  child: Text('Select New Light Type'),
+                                ),
+                              ),
+                              Spacer(flex: 1),
+                            ],
+                          ),
+                          SizedBox(height: 10),
                           Row(
                             mainAxisAlignment: MainAxisAlignment.spaceBetween,
                             spacing: 10,
@@ -296,11 +302,14 @@ class _LightingProfileTestPageState extends State<LightingProfileTestPage> {
                               Flexible(
                                 child: FilledButton.icon(
                                   style: testButtonStyle,
-                                  onPressed: () {
-                                    // TODO: check isComplete either before submitting or probably before starting test
-                                    widget.activeTest.submitData(_allPointsMap);
-                                    Navigator.pop(context);
-                                  },
+                                  onPressed: (_isTypeSelected)
+                                      ? null
+                                      : () {
+                                          // TODO: check isComplete either before submitting or probably before starting test
+                                          widget.activeTest
+                                              .submitData(_allPointsMap);
+                                          Navigator.pop(context);
+                                        },
                                   label: Text('Finish'),
                                   icon: Icon(Icons.chevron_right),
                                   iconAlignment: IconAlignment.end,
