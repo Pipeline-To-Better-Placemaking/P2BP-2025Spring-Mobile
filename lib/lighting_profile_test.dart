@@ -33,8 +33,7 @@ class _LightingProfileTestPageState extends State<LightingProfileTestPage> {
 
   final Set<Marker> _markers = {}; // Set of markers visible on map
   Set<Polygon> _polygons = {}; // Set of polygons
-  final LightToLatLngMap _allPointsMap =
-      LightingProfileTest.newInitialDataDeepCopy();
+  final LightingProfileData _newData = LightingProfileData();
 
   static const double _bottomSheetHeight = 300;
 
@@ -94,7 +93,10 @@ class _LightingProfileTestPageState extends State<LightingProfileTestPage> {
         });
       }
 
-      _allPointsMap[_selectedType]?.add(point);
+      _newData.lights.add(Light(
+        point: point,
+        lightType: _selectedType!,
+      ));
       final markerId = MarkerId(point.toString());
       setState(() {
         // Create marker
@@ -105,10 +107,7 @@ class _LightingProfileTestPageState extends State<LightingProfileTestPage> {
             consumeTapEvents: true,
             onTap: () {
               // If the marker is tapped again, it will be removed
-              _allPointsMap.updateAll((key, value) {
-                value.remove(point);
-                return value;
-              });
+              _newData.lights.removeWhere((light) => light.point == point);
               setState(() {
                 _markers.removeWhere((marker) => marker.markerId == markerId);
               });
@@ -307,7 +306,7 @@ class _LightingProfileTestPageState extends State<LightingProfileTestPage> {
                                       : () {
                                           // TODO: check isComplete either before submitting or probably before starting test
                                           widget.activeTest
-                                              .submitData(_allPointsMap);
+                                              .submitData(_newData);
                                           Navigator.pop(context);
                                         },
                                   label: Text('Finish'),
