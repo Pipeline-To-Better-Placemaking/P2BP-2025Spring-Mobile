@@ -853,19 +853,19 @@ enum ConstructedBoundaryType {
 }
 
 enum MaterialBoundaryType {
-  brick,
+  pavers,
   concrete,
   tile,
   natural,
-  wood,
+  decking,
 }
 
 enum ShelterBoundaryType {
   canopy,
   tree,
-  umbrellaDining,
+  furniture,
   temporary,
-  constructedCeiling,
+  constructed,
 }
 
 class ConstructedBoundary {

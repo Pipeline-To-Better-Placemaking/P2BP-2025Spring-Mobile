@@ -51,7 +51,7 @@ class _SpatialBoundariesTestPageState extends State<SpatialBoundariesTestPage> {
     'Outline the shape of the boundary with points, then click confirm shape when you are done.',
   ];
   late String _directionsActive;
-  static const double _bottomSheetHeight = 300;
+  static const double _bottomSheetHeight = 320;
 
   @override
   void initState() {
@@ -65,7 +65,6 @@ class _SpatialBoundariesTestPageState extends State<SpatialBoundariesTestPage> {
   void _initProjectArea() {
     setState(() {
       _polygons = getProjectPolygon(widget.activeProject.polygonPoints);
-      print(_polygons);
       _location = getPolygonCentroid(_polygons.first);
       // Take some latitude away to center considering bottom sheet.
       _location = LatLng(_location.latitude * .999999, _location.longitude);
@@ -402,9 +401,11 @@ class _SpatialBoundariesTestPageState extends State<SpatialBoundariesTestPage> {
                                 flex: 11,
                                 child: FilledButton(
                                   style: testButtonStyle,
-                                  onPressed: () {
-                                    _doConstructedModal(context);
-                                  },
+                                  onPressed: (_polygonMode || _polylineMode)
+                                      ? null
+                                      : () {
+                                          _doConstructedModal(context);
+                                        },
                                   child: Text('Constructed'),
                                 ),
                               ),
@@ -412,9 +413,11 @@ class _SpatialBoundariesTestPageState extends State<SpatialBoundariesTestPage> {
                                 flex: 8,
                                 child: FilledButton(
                                   style: testButtonStyle,
-                                  onPressed: () {
-                                    _doMaterialModal(context);
-                                  },
+                                  onPressed: (_polygonMode || _polylineMode)
+                                      ? null
+                                      : () {
+                                          _doMaterialModal(context);
+                                        },
                                   child: Text('Material'),
                                 ),
                               ),
@@ -422,9 +425,11 @@ class _SpatialBoundariesTestPageState extends State<SpatialBoundariesTestPage> {
                                 flex: 7,
                                 child: FilledButton(
                                   style: testButtonStyle,
-                                  onPressed: () {
-                                    _doShelterModal(context);
-                                  },
+                                  onPressed: (_polygonMode || _polylineMode)
+                                      ? null
+                                      : () {
+                                          _doShelterModal(context);
+                                        },
                                   child: Text('Shelter'),
                                 ),
                               ),
@@ -433,10 +438,10 @@ class _SpatialBoundariesTestPageState extends State<SpatialBoundariesTestPage> {
                           SizedBox(height: 15),
                           Row(
                             mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                            spacing: 10,
+                            spacing: 15,
                             children: <Widget>[
                               Expanded(
-                                flex: 7,
+                                flex: 9,
                                 child: EditButton(
                                   text: 'Confirm Shape',
                                   foregroundColor: Colors.green,
@@ -465,14 +470,34 @@ class _SpatialBoundariesTestPageState extends State<SpatialBoundariesTestPage> {
                                       : null,
                                 ),
                               ),
-                              Expanded(
-                                flex: 6,
+                            ],
+                          ),
+                          SizedBox(height: 15),
+                          Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                            spacing: 10,
+                            children: <Widget>[
+                              Flexible(
                                 child: FilledButton.icon(
                                   style: testButtonStyle,
                                   onPressed: () {
-                                    widget.activeTest.submitData(_newData);
                                     Navigator.pop(context);
                                   },
+                                  label: Text('Back'),
+                                  icon: Icon(Icons.chevron_left),
+                                  iconAlignment: IconAlignment.start,
+                                ),
+                              ),
+                              Flexible(
+                                child: FilledButton.icon(
+                                  style: testButtonStyle,
+                                  onPressed: (_polygonMode || _polylineMode)
+                                      ? null
+                                      : () {
+                                          widget.activeTest
+                                              .submitData(_newData);
+                                          Navigator.pop(context);
+                                        },
                                   label: Text('Finish'),
                                   icon: Icon(Icons.chevron_right),
                                   iconAlignment: IconAlignment.end,
@@ -782,11 +807,11 @@ class _MaterialDescriptionFormState extends State<_MaterialDescriptionForm> {
                         onPressed: () {
                           Navigator.pop(
                             context,
-                            MaterialBoundaryType.brick,
+                            MaterialBoundaryType.pavers,
                           );
                         },
                         child: Text(
-                          'Bricks (pavers)',
+                          'Pavers',
                           textAlign: TextAlign.center,
                         ),
                       ),
@@ -840,7 +865,7 @@ class _MaterialDescriptionFormState extends State<_MaterialDescriptionForm> {
                           );
                         },
                         child: Text(
-                          'Natural (grass)',
+                          'Natural',
                           textAlign: TextAlign.center,
                         ),
                       ),
@@ -859,11 +884,11 @@ class _MaterialDescriptionFormState extends State<_MaterialDescriptionForm> {
                         onPressed: () {
                           Navigator.pop(
                             context,
-                            MaterialBoundaryType.wood,
+                            MaterialBoundaryType.decking,
                           );
                         },
                         child: Text(
-                          'Wood (deck)',
+                          'Decking',
                           textAlign: TextAlign.center,
                         ),
                       ),
@@ -1008,11 +1033,11 @@ class _ShelterDescriptionFormState extends State<_ShelterDescriptionForm> {
                         onPressed: () {
                           Navigator.pop(
                             context,
-                            ShelterBoundaryType.umbrellaDining,
+                            ShelterBoundaryType.furniture,
                           );
                         },
                         child: Text(
-                          'Umbrella Dining',
+                          'Furniture',
                           textAlign: TextAlign.center,
                         ),
                       ),
@@ -1047,11 +1072,11 @@ class _ShelterDescriptionFormState extends State<_ShelterDescriptionForm> {
                         onPressed: () {
                           Navigator.pop(
                             context,
-                            ShelterBoundaryType.constructedCeiling,
+                            ShelterBoundaryType.constructed,
                           );
                         },
                         child: Text(
-                          'Constructed Ceiling',
+                          'Constructed',
                           textAlign: TextAlign.center,
                         ),
                       ),
