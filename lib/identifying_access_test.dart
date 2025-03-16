@@ -41,6 +41,7 @@ class _IdentifyingAccessState extends State<IdentifyingAccess> {
   LatLng _location = defaultLocation; // Default location
   final AccessData _accessData = AccessData();
 
+  Set<Polygon> _projectArea = {};
   Polyline? _currentPolyline;
   List<LatLng> _currentPolylinePoints = [];
   final Set<Polyline> _polylines = {};
@@ -51,7 +52,7 @@ class _IdentifyingAccessState extends State<IdentifyingAccess> {
   Set<Polygon> _polygons = {}; // Set of polygons
   final Set<Marker> _markers = {}; // Set of markers for points
   Set<Marker> _polygonMarkers = {}; // Set of markers for polygon creation
-
+  bool _directionsVisible = true;
   MapType _currentMapType = MapType.satellite; // Default map type
 
   Project? project;
@@ -66,8 +67,8 @@ class _IdentifyingAccessState extends State<IdentifyingAccess> {
   /// centers the map over it.
   void initProjectArea() {
     setState(() {
-      _polygons = getProjectPolygon(widget.activeProject.polygonPoints);
-      _location = getPolygonCentroid(_polygons.first);
+      _projectArea = getProjectPolygon(widget.activeProject.polygonPoints);
+      _location = getPolygonCentroid(_projectArea.first);
       // Take some latitude away to center considering bottom sheet.
       _location = LatLng(_location.latitude * .999999, _location.longitude);
       // TODO: dynamic zooming
@@ -230,6 +231,7 @@ class _IdentifyingAccessState extends State<IdentifyingAccess> {
       _currentPolylinePoints = [];
       _currentPolyline = null;
       _visiblePolylineMarkers = {};
+      _currentPolygon = {};
       _directions = 'Choose a category. Or, click finish if done.';
     });
     _polylineMode = false;
@@ -335,7 +337,13 @@ class _IdentifyingAccessState extends State<IdentifyingAccess> {
                         onMapCreated: _onMapCreated,
                         initialCameraPosition:
                             CameraPosition(target: _location, zoom: 14),
-                        polygons: {..._polygons, ..._currentPolygon},
+                        polygons: _oldPolylinesToggle
+                            ? {
+                                ..._projectArea,
+                                ..._polygons,
+                                ..._currentPolygon
+                              }
+                            : {..._projectArea, ..._currentPolygon},
                         markers: {
                           ..._markers,
                           ..._polygonMarkers,
@@ -345,40 +353,14 @@ class _IdentifyingAccessState extends State<IdentifyingAccess> {
                         mapType: _currentMapType, // Use current map type
                       ),
                     ),
-                    Align(
-                      alignment: Alignment.topCenter,
-                      child: Padding(
-                        padding: const EdgeInsets.symmetric(
-                            vertical: 20.0, horizontal: 25.0),
-                        child: Container(
-                          padding: EdgeInsets.symmetric(
-                              horizontal: 15, vertical: 10),
-                          decoration: BoxDecoration(
-                            color: directionsTransparency,
-                            gradient: defaultGrad,
-                            borderRadius:
-                                const BorderRadius.all(Radius.circular(10)),
-                            boxShadow: [
-                              BoxShadow(
-                                color: Colors.black.withValues(alpha: 0.1),
-                                blurRadius: 6,
-                                offset: const Offset(0, 2),
-                              ),
-                            ],
-                          ),
-                          child: Text(
-                            _directions,
-                            maxLines: 3,
-                            overflow: TextOverflow.ellipsis,
-                            style: TextStyle(
-                              fontSize: 18,
-                              fontWeight: FontWeight.w500,
-                              color: Colors.white,
-                            ),
-                          ),
-                        ),
-                      ),
-                    ),
+                    DirectionsWidget(
+                        onTap: () {
+                          setState(() {
+                            _directionsVisible = !_directionsVisible;
+                          });
+                        },
+                        text: _directions,
+                        visibility: _directionsVisible),
                     Align(
                       alignment: Alignment.bottomLeft,
                       child: Padding(
@@ -410,13 +392,13 @@ class _IdentifyingAccessState extends State<IdentifyingAccess> {
                               mainAxisSize: MainAxisSize.min,
                               children: [
                                 Text(
-                                  "Previous Lines:",
+                                  "Visibility:",
                                   style: TextStyle(
                                       fontWeight: FontWeight.bold,
                                       color: Colors.white),
                                 ),
                                 Tooltip(
-                                  message: "Toggle Old Polylines",
+                                  message: "Toggle Visibility of Old Shapes",
                                   child: Switch(
                                     // This bool value toggles the switch.
                                     value: _oldPolylinesToggle,
@@ -498,24 +480,24 @@ class _IdentifyingAccessState extends State<IdentifyingAccess> {
                       spacing: 10,
                       children: <Widget>[
                         Flexible(
-                          flex: 2,
+                          flex: 4,
                           child: buildTestButton(
                             onPressed: (BuildContext context) {
                               _showDialog(
-                                text: 'How Many Bikes Can Fit?',
+                                text: 'How Many Bikes/Scooters Can Fit?',
                                 hintText: 'Enter number of spots.',
                                 onNext: () {
                                   setState(() {
                                     _type = AccessType.bikeRack;
                                     _polylineMode = true;
                                     _directions =
-                                        "Mark the spot of the bike rack. Then define the path to the project area.";
+                                        "Mark the spot of the bike/scooter rack. Then define the path to the project area.";
                                   });
                                 },
                               );
                             },
                             context: context,
-                            text: 'Bike Rack',
+                            text: 'Bike or Scooter Rack',
                           ),
                         ),
                         Flexible(
@@ -534,7 +516,7 @@ class _IdentifyingAccessState extends State<IdentifyingAccess> {
                           ),
                         ),
                         Flexible(
-                          flex: 3,
+                          flex: 4,
                           child: buildTestButton(
                             text: 'Public Transport',
                             context: context,
@@ -554,7 +536,7 @@ class _IdentifyingAccessState extends State<IdentifyingAccess> {
                             },
                           ),
                         ),
-                        Flexible(flex: 1, child: SizedBox())
+                        Flexible(flex: 0, child: SizedBox())
                       ],
                     ),
                     Row(
@@ -642,23 +624,34 @@ class _IdentifyingAccessState extends State<IdentifyingAccess> {
                                 backgroundColor: Colors.white,
                                 icon: const Icon(Icons.chevron_right,
                                     color: Colors.black),
-                                onPressed: () {
-                                  // TODO: check isComplete either before submitting or probably before starting test
-                                  widget.activeTest.submitData(_accessData);
-                                  Navigator.pushReplacement(
-                                      context,
-                                      MaterialPageRoute(
-                                        builder: (context) => HomeScreen(),
-                                      ));
-                                  Navigator.push(
-                                      context,
-                                      MaterialPageRoute(
-                                        builder: (context) =>
-                                            ProjectDetailsPage(
-                                                projectData:
-                                                    widget.activeProject),
-                                      ));
-                                },
+                                onPressed: (_polygonMode || _polylineMode)
+                                    ? null
+                                    : () {
+                                        showDialog(
+                                            context: context,
+                                            builder: (context) {
+                                              return TestFinishDialog(
+                                                onNext: () {
+                                                  widget.activeTest
+                                                      .submitData(_accessData);
+                                                  Navigator.pushReplacement(
+                                                      context,
+                                                      MaterialPageRoute(
+                                                        builder: (context) =>
+                                                            HomeScreen(),
+                                                      ));
+                                                  Navigator.push(
+                                                      context,
+                                                      MaterialPageRoute(
+                                                        builder: (context) =>
+                                                            ProjectDetailsPage(
+                                                                projectData: widget
+                                                                    .activeProject),
+                                                      ));
+                                                },
+                                              );
+                                            });
+                                      },
                               ),
                             ),
                           ),

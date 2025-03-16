@@ -31,6 +31,7 @@ class _NaturePrevalenceState extends State<NaturePrevalence> {
   bool _outsidePoint = false;
   List<mp.LatLng> _projectArea = [];
   String _directions = "Choose a category.";
+  bool _directionsVisible = true;
   double _bottomSheetHeight = 300;
   late DocumentReference teamRef;
   late GoogleMapController mapController;
@@ -956,40 +957,14 @@ class _NaturePrevalenceState extends State<NaturePrevalence> {
                         mapType: _currentMapType, // Use current map type
                       ),
                     ),
-                    Align(
-                      alignment: Alignment.topCenter,
-                      child: Padding(
-                        padding: const EdgeInsets.symmetric(
-                            vertical: 20.0, horizontal: 25.0),
-                        child: Container(
-                          padding: EdgeInsets.symmetric(
-                              horizontal: 15, vertical: 10),
-                          decoration: BoxDecoration(
-                            color: directionsTransparency,
-                            gradient: defaultGrad,
-                            borderRadius:
-                                const BorderRadius.all(Radius.circular(10)),
-                            boxShadow: [
-                              BoxShadow(
-                                color: Colors.black.withValues(alpha: 0.1),
-                                blurRadius: 6,
-                                offset: const Offset(0, 2),
-                              ),
-                            ],
-                          ),
-                          child: Text(
-                            _directions,
-                            maxLines: 3,
-                            overflow: TextOverflow.ellipsis,
-                            style: TextStyle(
-                              fontSize: 18,
-                              fontWeight: FontWeight.w500,
-                              color: Colors.white,
-                            ),
-                          ),
-                        ),
-                      ),
-                    ),
+                    DirectionsWidget(
+                        onTap: () {
+                          setState(() {
+                            _directionsVisible = !_directionsVisible;
+                          });
+                        },
+                        text: _directions,
+                        visibility: _directionsVisible),
                     Align(
                       alignment: Alignment.bottomLeft,
                       child: Padding(
@@ -1166,27 +1141,41 @@ class _NaturePrevalenceState extends State<NaturePrevalence> {
                                       backgroundColor: Colors.white,
                                       icon: const Icon(Icons.chevron_right,
                                           color: Colors.black),
-                                      onPressed: () async {
-                                        natureData.animals = animalData;
-                                        natureData.vegetation = vegetationData;
-                                        natureData.waterBodies = waterBodyData;
-                                        widget.activeTest
-                                            .submitData(natureData);
-                                        Navigator.pushReplacement(
-                                            context,
-                                            MaterialPageRoute(
-                                              builder: (context) =>
-                                                  HomeScreen(),
-                                            ));
-                                        Navigator.push(
-                                            context,
-                                            MaterialPageRoute(
-                                              builder: (context) =>
-                                                  ProjectDetailsPage(
-                                                      projectData:
-                                                          widget.activeProject),
-                                            ));
-                                      },
+                                      onPressed: (_pointMode || _polygonMode)
+                                          ? null
+                                          : () {
+                                              showDialog(
+                                                  context: context,
+                                                  builder: (context) {
+                                                    return TestFinishDialog(
+                                                        onNext: () {
+                                                      natureData.animals =
+                                                          animalData;
+                                                      natureData.vegetation =
+                                                          vegetationData;
+                                                      natureData.waterBodies =
+                                                          waterBodyData;
+                                                      widget.activeTest
+                                                          .submitData(
+                                                              natureData);
+                                                      Navigator.pushReplacement(
+                                                          context,
+                                                          MaterialPageRoute(
+                                                            builder: (context) =>
+                                                                HomeScreen(),
+                                                          ));
+                                                      Navigator.push(
+                                                          context,
+                                                          MaterialPageRoute(
+                                                            builder: (context) =>
+                                                                ProjectDetailsPage(
+                                                                    projectData:
+                                                                        widget
+                                                                            .activeProject),
+                                                          ));
+                                                    });
+                                                  });
+                                            },
                                     ),
                                   ),
                                 ),

@@ -2,9 +2,11 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:p2bp_2025spring_mobile/theme.dart';
+import 'package:p2bp_2025spring_mobile/widgets.dart';
 import 'google_maps_functions.dart';
 import 'db_schema_classes.dart';
 import 'firestore_functions.dart';
+import 'package:maps_toolkit/maps_toolkit.dart' as mp;
 
 class SectionCreationPage extends StatefulWidget {
   final Project activeProject;
@@ -21,14 +23,18 @@ class _SectionCreationPageState extends State<SectionCreationPage> {
   GoogleMapController? mapController;
   LatLng _location = defaultLocation; // Default location
   bool _isLoading = true;
-  String _directions = "Create your section by marking two points.";
-  Set<Polygon> _polygons = {}; // Set of polygons
+  String _directions =
+      "Create your section by marking your points. Then click confirm.";
+  Set<Polygon> _polygons = {}; // Set of polygons (project area polygon)
   Set<Marker> _markers = {}; // Set of markers for points
+  List<LatLng> _linePoints = [];
   MapType _currentMapType = MapType.satellite; // Default map type
   Project? project;
   Set<Polyline> _polyline = {};
-  LatLng? _currentPoint;
+  List<mp.LatLng> _projectArea = [];
   bool _sectionSet = false;
+  bool _directionsVisible = true;
+  bool _outsidePoint = false;
 
   @override
   void initState() {
@@ -41,6 +47,7 @@ class _SectionCreationPageState extends State<SectionCreationPage> {
   void initProjectArea() {
     setState(() {
       _polygons = getProjectPolygon(widget.activeProject.polygonPoints);
+      _projectArea = _polygons.first.toMPLatLngList();
       _location = getPolygonCentroid(_polygons.first);
       // Take some latitude away to center considering bottom sheet.
       _location = LatLng(_location.latitude * .999999, _location.longitude);
@@ -62,35 +69,44 @@ class _SectionCreationPageState extends State<SectionCreationPage> {
     });
   }
 
-  void _polylineTap(LatLng point) {
+  Future<void> _polylineTap(LatLng point) async {
     if (_sectionSet) return;
+    if (!mp.PolygonUtil.containsLocation(
+        mp.LatLng(point.latitude, point.longitude), _projectArea, true)) {
+      setState(() {
+        _outsidePoint = true;
+      });
+    }
     final MarkerId markerId = MarkerId('marker_${point.toString()}');
+    _linePoints.add(point);
     setState(() {
       _markers.add(
         Marker(
           markerId: markerId,
           position: point,
           consumeTapEvents: true,
+          icon: BitmapDescriptor.defaultMarkerWithHue(125),
           onTap: () {
             // If the marker is tapped again, it will be removed
             setState(() {
-              _currentPoint = null;
+              _linePoints.remove(point);
               _markers.removeWhere((marker) => marker.markerId == markerId);
             });
           },
         ),
       );
-      if (_currentPoint == null) return;
       final Polyline? polyline =
-          createPolyline([_currentPoint!, point], Colors.green[600]!);
+          createPolyline(_linePoints, Colors.green[600]!);
       if (polyline == null) return;
-      if (_markers.length == 2) _markers = {};
       _polyline = {polyline};
-      _sectionSet = true;
-      _directions =
-          'Section set. Click confirm to save, or delete and start over.';
     });
-    _currentPoint = point;
+    if (_outsidePoint) {
+      // TODO: fix delay. delay will overlap with consecutive taps. this means taps do not necessarily refresh the timer and will end prematurely
+      await Future.delayed(const Duration(seconds: 2));
+      setState(() {
+        _outsidePoint = false;
+      });
+    }
   }
 
   void _onMapCreated(GoogleMapController controller) {
@@ -133,43 +149,20 @@ class _SectionCreationPageState extends State<SectionCreationPage> {
                               CameraPosition(target: _location, zoom: 14.0),
                           polygons: _polygons,
                           polylines: _polyline,
-                          markers: _markers,
+                          markers: (_markers.isNotEmpty)
+                              ? {_markers.first, _markers.last}
+                              : {},
                           mapType: _currentMapType, // Use current map type
                           onTap: _polylineTap,
                         ),
-                        Align(
-                          alignment: Alignment.topCenter,
-                          child: Padding(
-                            padding: const EdgeInsets.symmetric(
-                                vertical: 20.0, horizontal: 25.0),
-                            child: Container(
-                              padding: EdgeInsets.symmetric(
-                                  horizontal: 15, vertical: 10),
-                              decoration: BoxDecoration(
-                                color: directionsTransparency,
-                                gradient: defaultGrad,
-                                borderRadius:
-                                    const BorderRadius.all(Radius.circular(10)),
-                                boxShadow: [
-                                  BoxShadow(
-                                    color: Colors.black.withValues(alpha: 0.1),
-                                    blurRadius: 6,
-                                    offset: const Offset(0, 2),
-                                  ),
-                                ],
-                              ),
-                              child: Text(
-                                _directions,
-                                maxLines: 3,
-                                overflow: TextOverflow.ellipsis,
-                                style: TextStyle(
-                                  fontSize: 18,
-                                  fontWeight: FontWeight.w500,
-                                  color: Colors.white,
-                                ),
-                              ),
-                            ),
-                          ),
+                        DirectionsWidget(
+                          onTap: () {
+                            setState(() {
+                              _directionsVisible = !_directionsVisible;
+                            });
+                          },
+                          text: _directions,
+                          visibility: _directionsVisible,
                         ),
                         Align(
                           alignment: Alignment.bottomLeft,
@@ -182,11 +175,11 @@ class _SectionCreationPageState extends State<SectionCreationPage> {
                               onPressed: () {
                                 setState(() {
                                   _markers = {};
-                                  _currentPoint = null;
+                                  _linePoints = [];
                                   _polyline = {};
                                   _sectionSet = false;
                                   _directions =
-                                      "Create your section by marking two points. Then click the check to confirm.";
+                                      "Create your section by marking your points. Then click confirm.";
                                 });
                               },
                               backgroundColor: Colors.red,
@@ -252,6 +245,42 @@ class _SectionCreationPageState extends State<SectionCreationPage> {
                             ),
                           ),
                         ),
+                        _outsidePoint
+                            ? Align(
+                                alignment: Alignment.bottomCenter,
+                                child: Padding(
+                                  padding: const EdgeInsets.symmetric(
+                                      vertical: 30.0, horizontal: 100.0),
+                                  child: Container(
+                                    padding: EdgeInsets.symmetric(
+                                        horizontal: 15, vertical: 10),
+                                    decoration: BoxDecoration(
+                                      color: Colors.red[900],
+                                      borderRadius: const BorderRadius.all(
+                                          Radius.circular(10)),
+                                      boxShadow: [
+                                        BoxShadow(
+                                          color: Colors.black
+                                              .withValues(alpha: 0.1),
+                                          blurRadius: 6,
+                                          offset: const Offset(0, 2),
+                                        ),
+                                      ],
+                                    ),
+                                    child: Text(
+                                      'You have placed a point outside of the project area!',
+                                      maxLines: 3,
+                                      overflow: TextOverflow.ellipsis,
+                                      style: TextStyle(
+                                        fontSize: 18,
+                                        fontWeight: FontWeight.w500,
+                                        color: Colors.red[50],
+                                      ),
+                                    ),
+                                  ),
+                                ),
+                              )
+                            : SizedBox(),
                       ],
                     ),
                   ),

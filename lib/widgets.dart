@@ -362,3 +362,132 @@ class DialogTextBox extends StatelessWidget {
     );
   }
 }
+
+/// Dialog for test finish confirmation.
+///
+/// Takes only an [onNext] parameter. This should contain the function to be
+/// called when finish the test (i.e. saving the data, pushing to the next
+/// page).
+class TestFinishDialog extends StatelessWidget {
+  const TestFinishDialog({
+    super.key,
+    required this.onNext,
+  });
+
+  final VoidCallback? onNext;
+
+  @override
+  Widget build(BuildContext context) {
+    return AlertDialog(
+      scrollable: true,
+      title: Column(
+        children: [
+          Text(
+            "Finish",
+            style: TextStyle(
+              fontWeight: FontWeight.bold,
+            ),
+          ),
+        ],
+      ),
+      content: Text(
+        "This will leave the test. Only continue if you are finished with this test.",
+        style: TextStyle(fontWeight: FontWeight.bold),
+        overflow: TextOverflow.clip,
+      ),
+      actions: <Widget>[
+        TextButton(
+            onPressed: () {
+              Navigator.pop(context);
+            },
+            child: Text("Cancel")),
+        TextButton(onPressed: onNext, child: Text("Next"))
+      ],
+    );
+  }
+}
+
+/// Directions widget used for tests.
+///
+/// Pass through a [visibility] variable. This should be of type [bool] and
+/// control the visibility of the directions. The [onTap] function passed
+/// should toggle the [visibility] boolean in a [setState]. It may do other
+/// things on top of this if desired. The [text] should be the directions
+/// variable which controls the text to display.
+class DirectionsWidget extends StatelessWidget {
+  const DirectionsWidget({
+    super.key,
+    required this.onTap,
+    required this.text,
+    required this.visibility,
+  });
+
+  final VoidCallback? onTap;
+  final String text;
+  final bool visibility;
+
+  @override
+  Widget build(BuildContext context) {
+    return visibility
+        ? Align(
+            alignment: Alignment.topCenter,
+            child: Padding(
+              padding:
+                  const EdgeInsets.symmetric(vertical: 20.0, horizontal: 25.0),
+              child: InkWell(
+                onTap: onTap,
+                child: Container(
+                    padding: EdgeInsets.symmetric(horizontal: 15, vertical: 10),
+                    decoration: BoxDecoration(
+                      color: directionsTransparency,
+                      gradient: defaultGrad,
+                      borderRadius: const BorderRadius.all(Radius.circular(10)),
+                      boxShadow: [
+                        BoxShadow(
+                          color: Colors.black.withValues(alpha: 0.1),
+                          blurRadius: 6,
+                          offset: const Offset(0, 2),
+                        ),
+                      ],
+                    ),
+                    child: Text(
+                      text,
+                      maxLines: 3,
+                      overflow: TextOverflow.ellipsis,
+                      style: TextStyle(
+                        fontSize: 18,
+                        fontWeight: FontWeight.w500,
+                        color: Colors.white,
+                      ),
+                    )),
+              ),
+            ),
+          )
+        : Align(
+            alignment: Alignment.topRight,
+            child: Padding(
+              padding: const EdgeInsets.all(20.0),
+              child: Container(
+                decoration: BoxDecoration(
+                    borderRadius: const BorderRadius.all(Radius.circular(50)),
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.black.withValues(alpha: 0.1),
+                        blurRadius: 6,
+                        offset: const Offset(0, 2),
+                      ),
+                    ],
+                    gradient: defaultGrad,
+                    color: directionsTransparency),
+                child: IconButton(
+                    color: Colors.white,
+                    onPressed: onTap,
+                    icon: Icon(
+                      Icons.help_outline,
+                      size: 35,
+                    )),
+              ),
+            ),
+          );
+  }
+}

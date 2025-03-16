@@ -1070,7 +1070,8 @@ class BikeRack implements AccessTypes {
 
   BikeRack({required this.spots, required this.polyline})
       : pathLength = mp.SphericalUtil.computeLength(polyline.toMPLatLngList())
-            .toDouble();
+                .toDouble() *
+            feetPerMeter;
 
   @override
   Map<String, dynamic> convertToFirestoreData() {
@@ -1095,7 +1096,8 @@ class TaxiAndRideShare implements AccessTypes {
 
   TaxiAndRideShare({required this.polyline})
       : pathLength = mp.SphericalUtil.computeLength(polyline.toMPLatLngList())
-            .toDouble();
+                .toDouble() *
+            feetPerMeter;
 
   @override
   Map<String, dynamic> convertToFirestoreData() {
@@ -1121,7 +1123,8 @@ class Parking implements AccessTypes {
 
   Parking({required this.spots, required this.polyline, required this.polygon})
       : pathLength = mp.SphericalUtil.computeLength(polyline.toMPLatLngList())
-            .toDouble(),
+                .toDouble() *
+            feetPerMeter,
         polygonArea = (mp.SphericalUtil.computeArea(polygon.toMPLatLngList()) *
                 pow(feetPerMeter, 2))
             .toDouble();
@@ -1154,7 +1157,8 @@ class TransportStation implements AccessTypes {
 
   TransportStation({required this.routeNumber, required this.polyline})
       : pathLength = mp.SphericalUtil.computeLength(polyline.toMPLatLngList())
-            .toDouble();
+                .toDouble() *
+            feetPerMeter;
 
   @override
   Map<String, dynamic> convertToFirestoreData() {
