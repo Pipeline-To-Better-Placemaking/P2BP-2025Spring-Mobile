@@ -379,42 +379,14 @@ class _IdentifyingAccessState extends State<IdentifyingAccess> {
                       child: Padding(
                         padding: EdgeInsets.only(
                             bottom: _bottomSheetHeight + 35, left: 5),
-                        child: Container(
-                          decoration: BoxDecoration(
-                              gradient: defaultGrad,
-                              color: directionsTransparency,
-                              borderRadius:
-                                  BorderRadius.all(Radius.circular(15))),
-                          child: Padding(
-                            padding: const EdgeInsets.symmetric(
-                                horizontal: 10.0, vertical: 7.0),
-                            child: Column(
-                              mainAxisSize: MainAxisSize.min,
-                              children: [
-                                Text(
-                                  "Visibility:",
-                                  style: TextStyle(
-                                      fontWeight: FontWeight.bold,
-                                      color: Colors.white),
-                                ),
-                                Tooltip(
-                                  message: "Toggle Visibility of Old Shapes",
-                                  child: Switch(
-                                    // This bool value toggles the switch.
-                                    value: _oldPolylinesToggle,
-                                    activeTrackColor: placeYellow,
-                                    inactiveThumbColor: placeYellow,
-                                    onChanged: (bool value) {
-                                      // This is called when the user toggles the switch.
-                                      setState(() {
-                                        _oldPolylinesToggle = value;
-                                      });
-                                    },
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ),
+                        child: VisibilitySwitch(
+                          visibility: _oldPolylinesToggle,
+                          onChanged: (value) {
+                            // This is called when the user toggles the switch.
+                            setState(() {
+                              _oldPolylinesToggle = value;
+                            });
+                          },
                         ),
                       ),
                     ),

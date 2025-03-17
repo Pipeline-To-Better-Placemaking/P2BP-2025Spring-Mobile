@@ -491,3 +491,227 @@ class DirectionsWidget extends StatelessWidget {
           );
   }
 }
+
+/// Visibility switch widget for tests page.
+///
+/// Toggles visibility for the old shapes on test pages. Takes in a [visibility]
+/// variable and an [onChanged] function. The [onChanged] function is of type
+/// [Function(bool)?]. It takes a [bool] parameter and should change the
+/// [visibility] variable to the value of the [bool] parameter. Should be in a
+/// [setState].
+class VisibilitySwitch extends StatelessWidget {
+  const VisibilitySwitch({
+    super.key,
+    required bool visibility,
+    this.onChanged,
+  }) : _visibility = visibility;
+
+  final bool _visibility;
+  final Function(bool)? onChanged;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      decoration: BoxDecoration(
+          gradient: defaultGrad,
+          color: directionsTransparency,
+          borderRadius: BorderRadius.all(Radius.circular(15))),
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 10.0, vertical: 7.0),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Text(
+              "Visibility:",
+              style:
+                  TextStyle(fontWeight: FontWeight.bold, color: Colors.white),
+            ),
+            Tooltip(
+              message: "Toggle Visibility of Old Shapes",
+              child: Switch(
+                // This bool value toggles the switch.
+                value: _visibility,
+                activeTrackColor: placeYellow,
+                inactiveThumbColor: placeYellow,
+                onChanged: onChanged,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+/// Test button used for test bottom sheets.
+///
+/// Takes a [buttonText] parameter for the button text and [onPressed]
+/// parameter for the function. Takes an optional [flex] parameter for flex of
+/// button. Defaults to a flex of 1 if null.
+class TestButton extends StatelessWidget {
+  const TestButton({
+    this.flex,
+    required this.buttonText,
+    required this.onPressed,
+    super.key,
+  });
+
+  final int? flex;
+  final String buttonText;
+  final VoidCallback? onPressed;
+
+  @override
+  Widget build(BuildContext context) {
+    return Expanded(
+      flex: flex ?? 1,
+      child: FilledButton(
+        style: FilledButton.styleFrom(
+          backgroundColor: Colors.white,
+          foregroundColor: Colors.black,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(10.0),
+          ),
+        ),
+        onPressed: onPressed,
+        child: Text(buttonText),
+      ),
+    );
+  }
+}
+
+/// Generic modal bottom sheet for tests.
+///
+/// Takes a [title] and [subtitle] to display above the [contentList].
+/// The [subtitle] is optional, and will default to none.
+/// The format starts with a centered title, then subtitle under that. Then,
+/// some spacing, and then [contentList] is rendered under this. This
+/// [contentList] should contain all buttons and categories needed for the
+/// sheet. Then a cancel inkwell, which will use the [onCancel] parameter.
+void showTestModalGeneric(BuildContext context,
+    {required VoidCallback? onCancel,
+    required String title,
+    required String? subtitle,
+    required List<Widget> contentList}) {
+  showModalBottomSheet<void>(
+      sheetAnimationStyle:
+          AnimationStyle(reverseDuration: Duration(milliseconds: 100)),
+      context: context,
+      isScrollControlled: true,
+      useSafeArea: true,
+      builder: (BuildContext context) {
+        return SingleChildScrollView(
+          child: Padding(
+            padding: MediaQuery.of(context).viewInsets,
+            child: Container(
+              // Container decoration- rounded corners and gradient
+              decoration: BoxDecoration(
+                gradient: defaultGrad,
+                borderRadius: const BorderRadius.only(
+                  topLeft: Radius.circular(24.0),
+                  topRight: Radius.circular(24.0),
+                ),
+              ),
+              child: Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 10.0),
+                child: Column(
+                  spacing: 5,
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: <Widget>[
+                    const BarIndicator(),
+                    Center(
+                      child: Text(
+                        title,
+                        style: TextStyle(
+                          fontSize: 20,
+                          fontWeight: FontWeight.bold,
+                          color: placeYellow,
+                        ),
+                      ),
+                    ),
+                    subtitle != null
+                        ? Center(
+                            child: Text(
+                              subtitle,
+                              style: TextStyle(
+                                fontSize: 16,
+                                fontStyle: FontStyle.italic,
+                                color: Colors.grey[400],
+                              ),
+                            ),
+                          )
+                        : SizedBox(),
+                    subtitle != null ? SizedBox(height: 10) : SizedBox(),
+                    ...contentList,
+                    SizedBox(height: 15),
+                    Align(
+                      alignment: Alignment.bottomRight,
+                      child: InkWell(
+                        onTap: onCancel,
+                        child: const Padding(
+                          padding: EdgeInsets.only(right: 20, bottom: 0),
+                          child: Text(
+                            'Cancel',
+                            style: TextStyle(
+                                fontSize: 16,
+                                fontWeight: FontWeight.w500,
+                                color: Color(0xFFFFD700)),
+                          ),
+                        ),
+                      ),
+                    ),
+                    SizedBox(height: 20),
+                  ],
+                ),
+              ),
+            ),
+          ),
+        );
+      });
+}
+
+/// Error text for test pages.
+///
+/// Displays a text error at bottom of screen with the text specified by the
+/// [text] parameter. Defaults to point placed outside of polygon error text.
+class TestErrorText extends StatelessWidget {
+  const TestErrorText({
+    this.text,
+    super.key,
+  });
+
+  final String? text;
+
+  @override
+  Widget build(BuildContext context) {
+    return Align(
+      alignment: Alignment.bottomCenter,
+      child: Padding(
+        padding: const EdgeInsets.symmetric(vertical: 30.0, horizontal: 100.0),
+        child: Container(
+          padding: EdgeInsets.symmetric(horizontal: 15, vertical: 10),
+          decoration: BoxDecoration(
+            color: Colors.red[900],
+            borderRadius: const BorderRadius.all(Radius.circular(10)),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withValues(alpha: 0.1),
+                blurRadius: 6,
+                offset: const Offset(0, 2),
+              ),
+            ],
+          ),
+          child: Text(
+            text ?? 'You have placed a point outside of the project area!',
+            maxLines: 3,
+            overflow: TextOverflow.ellipsis,
+            style: TextStyle(
+              fontSize: 18,
+              fontWeight: FontWeight.w500,
+              color: Colors.red[50],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
