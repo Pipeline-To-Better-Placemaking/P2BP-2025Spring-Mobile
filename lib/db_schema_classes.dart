@@ -1384,20 +1384,115 @@ class IdentifyingAccessTest extends Test<AccessData> {
   }
 }
 
-enum AgeRangeType {
-  age0to14,
-  age15to21,
-  age22to30,
-  age31to50,
-  age51to65,
-  age66toInfinity,
+abstract interface class DisplayNameEnum {
+  final String displayName;
+
+  DisplayNameEnum({required this.displayName});
+
+  /// Returns the enumerated type with the matching displayName.
+  factory DisplayNameEnum.byDisplayName(String displayName) {
+    throw UnimplementedError();
+  }
 }
 
-enum GenderType { male, female, nonbinary, unspecified }
+enum AgeRangeType implements DisplayNameEnum {
+  age0to14(displayName: '0-14'),
+  age15to21(displayName: '15-21'),
+  age22to30(displayName: '22-30'),
+  age31to50(displayName: '31-50'),
+  age51to65(displayName: '51-65'),
+  age66andAbove(displayName: '66+');
 
-enum ActivityType { socializing, waiting, recreation, eating, solitary }
+  const AgeRangeType({required this.displayName});
 
-enum PostureType { standing, sitting, layingDown, squatting }
+  @override
+  final String displayName;
+
+  /// Returns the enumerated type with the matching displayName.
+  factory AgeRangeType.byDisplayName(String displayName) {
+    try {
+      for (final type in AgeRangeType.values) {
+        if (type.displayName == displayName) return type;
+      }
+      throw Exception('Invalid AgeRangeType displayName');
+    } catch (e, s) {
+      throw Exception('Error: $e\nStacktrace: $s');
+    }
+  }
+}
+
+enum GenderType implements DisplayNameEnum {
+  male(displayName: 'Male'),
+  female(displayName: 'Female'),
+  nonbinary(displayName: 'Nonbinary'),
+  unspecified(displayName: 'Unspecified');
+
+  const GenderType({required this.displayName});
+
+  @override
+  final String displayName;
+
+  /// Returns the enumerated type with the matching displayName.
+  factory GenderType.byDisplayName(String displayName) {
+    try {
+      for (final type in GenderType.values) {
+        if (type.displayName == displayName) return type;
+      }
+      throw Exception('Invalid GenderType displayName');
+    } catch (e, s) {
+      throw Exception('Error: $e\nStacktrace: $s');
+    }
+  }
+}
+
+enum ActivityType implements DisplayNameEnum {
+  socializing(displayName: 'Socializing'),
+  waiting(displayName: 'Waiting'),
+  recreation(displayName: 'Recreation'),
+  eating(displayName: 'Eating'),
+  solitary(displayName: 'Solitary');
+
+  const ActivityType({required this.displayName});
+
+  @override
+  final String displayName;
+
+  /// Returns the enumerated type with the matching displayName.
+  factory ActivityType.byDisplayName(String displayName) {
+    try {
+      for (final type in ActivityType.values) {
+        if (type.displayName == displayName) return type;
+      }
+      throw Exception('Invalid ActivityType displayName');
+    } catch (e, s) {
+      throw Exception('Error: $e\nStacktrace: $s');
+    }
+  }
+}
+
+enum PostureType implements DisplayNameEnum {
+  standing(displayName: 'Standing'),
+  sitting(displayName: 'Sitting'),
+  layingDown(displayName: 'Laying Down'),
+  squatting(displayName: 'Squatting');
+
+  const PostureType({required this.displayName});
+
+  @override
+  final String displayName;
+
+  /// Returns the enumerated type with the matching displayName.
+  factory PostureType.byDisplayName(String displayName) {
+    try {
+      for (final type in PostureType.values) {
+        if (type.displayName == displayName) return type;
+      }
+      throw Exception('Invalid PostureType displayName');
+    } catch (e, s) {
+      throw Exception('Error: $e\nStacktrace: $s');
+    }
+  }
+}
 
 class PersonInPlace {
   late final LatLng location;
@@ -1426,10 +1521,10 @@ class PersonInPlace {
       String genderString = data['gender'] as String;
       gender = GenderType.values.firstWhere((e) => e.name == genderString);
     }
-    if (data.containsKey('activity') &&
-        data['activity'] is List &&
-        data['activity'].first is String) {
-      List activitiesList = data['activity'];
+    if (data.containsKey('activities') &&
+        data['activities'] is List &&
+        data['activities'].first is String) {
+      List activitiesList = data['activities'];
       activities = {
         for (final activity in activitiesList)
           ActivityType.values.firstWhere((e) => e.name == activity)
@@ -1446,7 +1541,7 @@ class PersonInPlace {
       'location': location.toGeoPoint(),
       'ageRange': ageRange.name,
       'gender': gender.name,
-      'activity': <String>[for (final activity in activities) activity.name],
+      'activities': <String>[for (final activity in activities) activity.name],
       'posture': posture.name,
     };
   }
@@ -1551,7 +1646,7 @@ class PeopleInPlaceTest extends Test<PeopleInPlaceData> {
       this.data = data;
       isComplete = true;
 
-      print('Success! In PeopleInPlaceTest.submitData.');
+      print('Success! In PeopleInPlaceTest.submitData. data = $data');
     } catch (e, stacktrace) {
       print("Exception in PeopleInPlaceTest.submitData(): $e");
       print("Stacktrace: $stacktrace");

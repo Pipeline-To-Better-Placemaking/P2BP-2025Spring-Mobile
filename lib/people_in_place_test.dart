@@ -1,5 +1,4 @@
 import 'dart:async';
-import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
@@ -8,7 +7,6 @@ import 'google_maps_functions.dart';
 import 'package:maps_toolkit/maps_toolkit.dart' as mp;
 import 'package:p2bp_2025spring_mobile/firestore_functions.dart';
 import 'package:p2bp_2025spring_mobile/db_schema_classes.dart';
-import 'package:p2bp_2025spring_mobile/project_details_page.dart';
 import 'package:p2bp_2025spring_mobile/people_in_place_instructions.dart';
 
 class PeopleInPlaceTestPage extends StatefulWidget {
@@ -25,39 +23,7 @@ class PeopleInPlaceTestPage extends StatefulWidget {
   State<PeopleInPlaceTestPage> createState() => _PeopleInPlaceTestPageState();
 }
 
-// IMPORTANT!!!
-// The amount and order of strings in each category below MUST match exactly
-// with those in the enumerated types for each defined in db_schema_classes.
-const List<String> _ageRangeStrings = [
-  '0-14',
-  '15-21',
-  '22-30',
-  '30-50',
-  '50-65',
-  '65+',
-];
-const List<String> _genderStrings = [
-  'Male',
-  'Female',
-  'Nonbinary',
-  'Unspecified',
-];
-const List<String> _activityStrings = [
-  'Socializing',
-  'Waiting',
-  'Recreation',
-  'Eating',
-  'Solitary'
-];
-const List<String> _postureStrings = [
-  'Standing',
-  'Sitting',
-  'Laying Down',
-  'Squatting',
-];
-
 class _PeopleInPlaceTestPageState extends State<PeopleInPlaceTestPage> {
-  final FirebaseFirestore _firestore = FirebaseFirestore.instance;
   late GoogleMapController mapController;
   LatLng _currentLocation = defaultLocation; // Default location
   bool _isLoading = true;
@@ -437,14 +403,12 @@ class _PeopleInPlaceTestPageState extends State<PeopleInPlaceTestPage> {
           position: point,
           icon: markerIcon,
           infoWindow: InfoWindow(
-              title:
-                  'Age: ${_ageRangeStrings[person.ageRange.index]}', // for example
-              snippet: 'Gender: ${_genderStrings[person.gender.index]}\n'
-                  'Activity: ${[
-                for (final activity in person.activities)
-                  _activityStrings[activity.index]
+              title: 'Age: ${person.ageRange.displayName}', // for example
+              snippet: 'Gender: ${person.gender.displayName}\n'
+                  'Activities: ${[
+                for (final activity in person.activities) activity.displayName
               ]}\n'
-                  'Posture: ${_postureStrings[person.posture.index]}'),
+                  'Posture: ${person.posture.displayName}'),
           onTap: () {
             // Print for debugging:
             print("Marker tapped: $markerId");
@@ -805,7 +769,7 @@ class _PeopleInPlaceTestPageState extends State<PeopleInPlaceTestPage> {
 class _DescriptionForm extends StatefulWidget {
   final LatLng location;
 
-  const _DescriptionForm({super.key, required this.location});
+  const _DescriptionForm({required this.location});
 
   @override
   State<_DescriptionForm> createState() => _DescriptionFormState();
@@ -817,7 +781,7 @@ class _DescriptionFormState extends State<_DescriptionForm> {
   int? _selectedAgeRange;
   int? _selectedGender;
   final List<bool> _selectedActivities =
-      List.of([for (final _ in _activityStrings) false], growable: false);
+      List.of([for (final _ in ActivityType.values) false], growable: false);
   int? _selectedPosture;
 
   void _submitDescription() {
@@ -901,10 +865,10 @@ class _DescriptionFormState extends State<_DescriptionForm> {
                     spacing: 8,
                     runSpacing: 8,
                     children: List<Widget>.generate(
-                      _ageRangeStrings.length,
+                      AgeRangeType.values.length,
                       (index) {
                         return ChoiceChip(
-                          label: Text(_ageRangeStrings[index]),
+                          label: Text(AgeRangeType.values[index].displayName),
                           selected: _selectedAgeRange == index,
                           onSelected: (selected) {
                             setState(() {
@@ -925,10 +889,10 @@ class _DescriptionFormState extends State<_DescriptionForm> {
                   Wrap(
                     spacing: 8,
                     children: List<Widget>.generate(
-                      _genderStrings.length,
+                      GenderType.values.length,
                       (index) {
                         return ChoiceChip(
-                          label: Text(_genderStrings[index]),
+                          label: Text(GenderType.values[index].displayName),
                           selected: _selectedGender == index,
                           onSelected: (selected) {
                             setState(() {
@@ -942,17 +906,17 @@ class _DescriptionFormState extends State<_DescriptionForm> {
                   const SizedBox(height: 4),
                   // Activity group.
                   Text(
-                    'Activity',
+                    'Activities',
                     style: boldTextStyle.copyWith(fontSize: 16),
                   ),
                   const SizedBox(height: 4),
                   Wrap(
                     spacing: 8,
                     children: List<Widget>.generate(
-                      _activityStrings.length,
+                      ActivityType.values.length,
                       (index) {
                         return FilterChip(
-                          label: Text(_activityStrings[index]),
+                          label: Text(ActivityType.values[index].displayName),
                           selected: _selectedActivities[index],
                           onSelected: (selected) {
                             setState(() {
@@ -974,10 +938,10 @@ class _DescriptionFormState extends State<_DescriptionForm> {
                   Wrap(
                     spacing: 8,
                     children: List<Widget>.generate(
-                      _postureStrings.length,
+                      PostureType.values.length,
                       (index) {
                         return ChoiceChip(
-                          label: Text(_postureStrings[index]),
+                          label: Text(PostureType.values[index].displayName),
                           selected: _selectedPosture == index,
                           onSelected: (selected) {
                             setState(() {
