@@ -9,6 +9,7 @@ import 'package:p2bp_2025spring_mobile/lighting_profile_test.dart';
 import 'package:p2bp_2025spring_mobile/section_cutter_test.dart';
 import 'package:p2bp_2025spring_mobile/people_in_place_test.dart';
 import 'package:p2bp_2025spring_mobile/people_in_motion_test.dart';
+import 'package:p2bp_2025spring_mobile/theme.dart';
 import 'firestore_functions.dart';
 import 'package:flutter/material.dart';
 import 'package:firebase_storage/firebase_storage.dart';
@@ -21,41 +22,11 @@ final FirebaseFirestore _firestore = FirebaseFirestore.instance;
 
 // User class for create_project_and_teams.dart
 class Member {
-  String _userID = '';
-  String _fullName = '';
-  bool _invited = false;
+  String userID = '';
+  String fullName = '';
+  bool invited = false;
 
-  Member(
-      {required String userID,
-      required String fullName,
-      bool invited = false}) {
-    _userID = userID;
-    _fullName = fullName;
-    _invited = invited;
-  }
-  void setUserID(String userID) {
-    _userID = userID;
-  }
-
-  void setFullName(String fullName) {
-    _fullName = fullName;
-  }
-
-  void setInvited(bool invited) {
-    _invited = invited;
-  }
-
-  String getUserID() {
-    return _userID;
-  }
-
-  String getFullName() {
-    return _fullName;
-  }
-
-  bool getInvited() {
-    return _invited;
-  }
+  Member({required this.userID, required this.fullName, this.invited = false});
 }
 
 // Team class for teams_and_invites_page.dart
@@ -95,6 +66,7 @@ class Project {
   num polygonArea = 0;
   List<DocumentReference> testRefs = [];
   List<Test>? tests;
+  List standingPoints = [];
 
   Project({
     this.creationTime,
@@ -104,6 +76,7 @@ class Project {
     required this.description,
     required this.polygonPoints,
     required this.polygonArea,
+    required this.standingPoints,
     required this.testRefs,
     this.tests,
   });
@@ -130,8 +103,25 @@ class Project {
 // | Important: When adding a test, make sure to implement the requisite      |
 // | fields and functions. When done, make sure to implement it in the        |
 // | dropdown on create_test_form.dart, register it on main.dart, and add it  |
-// | to the initials list on project_details.dart.                            |
+// | to the initials list on project_details.dart. If it it implements        |
+// | standing points and a timer, add it to the following lists.              |
 // *--------------------------------------------------------------------------*
+
+/// Set containing all tests that make use of standing points.
+///
+/// Used to check for test creation and saving.
+///
+/// Note: Section Cutter is considered a standing points test even though
+/// it uses a section line, not points.
+const Set<String> standingPointsTests = {
+  IdentifyingAccessTest.collectionIDStatic,
+  SectionCutterTest.collectionIDStatic,
+};
+
+/// Set containing all tests that make use of timers.
+///
+/// Used to check for test creation and saving.
+const Set<String> timerTests = {NaturePrevalenceTest.collectionIDStatic};
 
 /// Parent class extended by every specific test class.
 ///
@@ -202,11 +192,9 @@ abstract class Test<T> {
     Timestamp? creationTime,
     int? maxResearchers,
     bool? isComplete,
-  }) {
-    this.creationTime = creationTime ?? Timestamp.now();
-    this.maxResearchers = maxResearchers ?? 1;
-    this.isComplete = isComplete ?? false;
-  }
+  })  : creationTime = creationTime ?? Timestamp.now(),
+        maxResearchers = maxResearchers ?? 1,
+        isComplete = isComplete ?? false;
 
   // The below Maps must have values registered for each subclass of Test.
   // Thus each subclass should have a method `static void register()`
@@ -223,6 +211,7 @@ abstract class Test<T> {
         required Timestamp scheduledTime,
         required DocumentReference projectRef,
         required String collectionID,
+        List? standingPoints,
       })> _newTestConstructors = {};
 
   /// Maps from collection ID to a function which should use a constructor
@@ -247,14 +236,15 @@ abstract class Test<T> {
   /// any newly created tests.
   ///
   /// Utilizes values registered to [Test._newTestConstructors].
-  static Test createNew({
-    required String title,
-    required String testID,
-    required Timestamp scheduledTime,
-    required DocumentReference projectRef,
-    required String collectionID,
-  }) {
+  static Test createNew(
+      {required String title,
+      required String testID,
+      required Timestamp scheduledTime,
+      required DocumentReference projectRef,
+      required String collectionID,
+      List? standingPoints}) {
     final constructor = _newTestConstructors[collectionID];
+
     if (constructor != null) {
       return constructor(
         title: title,
@@ -262,6 +252,7 @@ abstract class Test<T> {
         scheduledTime: scheduledTime,
         projectRef: projectRef,
         collectionID: collectionID,
+        standingPoints: standingPoints,
       );
     }
     throw Exception('Unregistered Test type for collection: $collectionID');
@@ -391,6 +382,7 @@ class LightingProfileTest extends Test<LightToLatLngMap> {
       required Timestamp scheduledTime,
       required DocumentReference projectRef,
       required String collectionID,
+      List? standingPoints,
     }) =>
         LightingProfileTest._(
           title: title,
@@ -765,6 +757,7 @@ class AbsenceOfOrderTest extends Test<AbsenceOfOrderData> {
       required Timestamp scheduledTime,
       required DocumentReference projectRef,
       required String collectionID,
+      List? standingPoints,
     }) =>
         AbsenceOfOrderTest._(
           title: title,
@@ -855,20 +848,31 @@ class AbsenceOfOrderTest extends Test<AbsenceOfOrderData> {
   }
 }
 
+/// Simple class for Section Cutter Test.
+///
+/// Contains a [sectionLink] variable which refers to the section drawing
+/// stored in Firebase. Contains a function for converting to Firebase.
+class Section {
+  final String sectionLink;
+
+  Section({required this.sectionLink});
+}
+
 /// Class for section cutter test info and methods.
-class SectionCutterTest extends Test<Map<String, String>> {
+class SectionCutterTest extends Test<Section> {
   /// Default structure for Section Cutter test. Simply a [Map<String, String>],
   /// where the first string is the field and the second is the reference which
   /// refers to the path of the section drawing.
-  static const Map<String, String> initialDataStructure = {"sectionLink": " "};
-  static Map<String, String> newInitialDataDeepCopy() {
-    Map<String, String> newInitial = {};
-    newInitial['sectionLink'] = '';
-    return newInitial;
+  static Section newInitialDataDeepCopy() {
+    return Section(
+        sectionLink: 'Empty sectionLink. SectionLink has not been set yet.');
   }
 
   /// Static constant definition of collection ID for this test type.
   static const String collectionIDStatic = 'section_cutter_tests';
+
+  /// Line used for taking section. Standing point equivalent for this test.
+  List linePoints;
 
   /// Creates a new [SectionCutterTest] instance from the given arguments.
   ///
@@ -882,6 +886,7 @@ class SectionCutterTest extends Test<Map<String, String>> {
     required super.projectRef,
     required super.collectionID,
     required super.data,
+    required this.linePoints,
     super.creationTime,
     super.maxResearchers,
     super.isComplete,
@@ -896,6 +901,7 @@ class SectionCutterTest extends Test<Map<String, String>> {
       required Timestamp scheduledTime,
       required DocumentReference projectRef,
       required String collectionID,
+      List? standingPoints,
     }) =>
         SectionCutterTest._(
           title: title,
@@ -904,6 +910,7 @@ class SectionCutterTest extends Test<Map<String, String>> {
           projectRef: projectRef,
           collectionID: collectionID,
           data: newInitialDataDeepCopy(),
+          linePoints: standingPoints ?? [],
         );
     // Register for Map for Test.recreateFromDoc
     Test._recreateTestConstructors[collectionIDStatic] =
@@ -917,6 +924,7 @@ class SectionCutterTest extends Test<Map<String, String>> {
               creationTime: testDoc['creationTime'],
               maxResearchers: testDoc['maxResearchers'],
               isComplete: testDoc['isComplete'],
+              linePoints: testDoc['linePoints'],
             );
     // Register for Map for Test.getPage
     Test._pageBuilders[SectionCutterTest] = (project, test) => SectionCutter(
@@ -924,26 +932,30 @@ class SectionCutterTest extends Test<Map<String, String>> {
           activeTest: test as SectionCutterTest,
         );
     // Register for Map for Test.saveToFirestore
+    // Standing points are saved under line, as they will be made to create
+    // a polyline, instead of displayed as individual points.
     Test._saveToFirestoreFunctions[SectionCutterTest] = (test) async {
       await _firestore.collection(test.collectionID).doc(test.testID).set({
         'title': test.title,
         'id': test.testID,
         'scheduledTime': test.scheduledTime,
         'project': test.projectRef,
-        'data': test.data,
+        'data': convertDataToFirestore(test.data),
         'creationTime': test.creationTime,
         'maxResearchers': test.maxResearchers,
         'isComplete': false,
+        'linePoints': (test as SectionCutterTest).linePoints,
       }, SetOptions(merge: true));
     };
   }
 
   @override
-  void submitData(Map<String, String> data) async {
+  void submitData(Section data) async {
     try {
+      Map<String, String> firestoreData = convertDataToFirestore(data);
       // Updates data in Firestore
       await _firestore.collection(collectionID).doc(testID).update({
-        'data': data,
+        'data': firestoreData,
         'isComplete': true,
       });
 
@@ -957,36 +969,43 @@ class SectionCutterTest extends Test<Map<String, String>> {
     }
   }
 
-  /// Saves given [XFile]. Takes in the given data and saves it according to
-  /// its corresponding project reference, under its given test id. Then,
-  /// returns a [Map] where the path to the file is mapped to "sectionLink".
-  Future<Map<String, String>> saveXFile(XFile data) async {
-    Map<String, String> storageLocation = newInitialDataDeepCopy();
+  static Map<String, String> convertDataToFirestore(Section data) {
+    return {'sectionLink': data.sectionLink};
+  }
+
+  /// Saves given [XFile] under the test's project reference.
+  ///
+  /// Takes in the given data and saves it according to its corresponding
+  /// project reference, under its given test id. Then, returns a [Section]
+  /// where the path to the file is saved in the [sectionLink] field.
+  Future<Section> saveXFile(XFile data) async {
+    Section? section;
     try {
-      if (projectRef == null) return storageLocation;
       final storageRef = FirebaseStorage.instance.ref();
       final sectionRef = storageRef.child(
-          "project_uploads/${projectRef?.id}/section_cutter_files/$testID");
+          "project_uploads/${projectRef.id}/section_cutter_files/$testID");
       final File sectionFile = File(data.path);
 
       print(sectionRef.fullPath);
-      storageLocation = {"sectionLink": sectionRef.fullPath};
+      section = Section(sectionLink: sectionRef.fullPath);
       await sectionRef.putFile(sectionFile);
     } catch (e, stacktrace) {
       print("Error in SectionCutterTest.saveXFile(): $e");
       print("Stacktrace: $stacktrace");
     }
 
-    return storageLocation;
+    // Section should only be null if the file fails to save to Firebase.
+    return section ??
+        Section(sectionLink: 'Error saving file. File not saved.');
   }
 
-  static Map<String, String> convertDataFromFirestore(
-      Map<String, dynamic> data) {
-    Map<String, String> output = newInitialDataDeepCopy();
+  static Section convertDataFromFirestore(Map<String, dynamic> data) {
+    Section? output;
     if (data.containsKey('sectionLink') && data['sectionLink'] is String) {
-      output['sectionLink'] = data['sectionLink'];
+      output = Section(sectionLink: data['sectionLink']);
     }
-    return output;
+    return output ??
+        Section(sectionLink: 'Error retrieving file. File not retrieved.');
   }
 }
 
@@ -994,22 +1013,59 @@ class SectionCutterTest extends Test<Map<String, String>> {
 /// [bikeRack], [taxiAndRideShare], [parking], or [transportStation]
 enum AccessType { bikeRack, taxiAndRideShare, parking, transportStation }
 
-List<Object> accessObjects = [
-  List<BikeRack>,
-  List<TaxiAndRideShare>,
-  List<Parking>,
-  List<TransportStation>
-];
-
-// Realistically, these should all inherit from a parent class that has certain
-// constants, such as width, color, and cap. Also have an abstract method for
-// converting to Firestore.
-/// Bike rack type for Identifying Access test. Enum type [bikeRack].
-class BikeRack {
-  static const AccessType type = AccessType.bikeRack;
-  static const int polylineWidth = 3;
-  static const Color color = Colors.black;
+/// Interface for Access Types. All Access Types must implement this interface
+/// and its functions.
+abstract class AccessTypes {
+  // Constants for all access types:
   static const Cap startCap = Cap.roundCap;
+  static const int polylineWidth = 3;
+
+  /// Uses the class fields to create a [Map] that is able to be stored in
+  /// Firestore easily.
+  Map<String, dynamic> convertToFirestoreData();
+}
+
+class AccessData implements AccessTypes {
+  List<BikeRack> bikeRacks = [];
+  List<TaxiAndRideShare> taxisAndRideShares = [];
+  List<Parking> parkingStructures = [];
+  List<TransportStation> transportStations = [];
+
+  @override
+
+  /// Transforms data stored locally as a [List]s of access type objects to
+  /// Firestore format (represented by a [Map])
+  /// with String keys and any other needed changes.
+  Map<String, dynamic> convertToFirestoreData() {
+    Map<String, List> output = {
+      AccessType.bikeRack.name: [],
+      AccessType.taxiAndRideShare.name: [],
+      AccessType.parking.name: [],
+      AccessType.transportStation.name: [],
+    };
+
+    for (BikeRack bikeRack in bikeRacks) {
+      output[AccessType.bikeRack.name]?.add(bikeRack.convertToFirestoreData());
+    }
+    for (TaxiAndRideShare taxisAndRideShare in taxisAndRideShares) {
+      output[AccessType.taxiAndRideShare.name]
+          ?.add(taxisAndRideShare.convertToFirestoreData());
+    }
+    for (TransportStation transportStation in transportStations) {
+      output[AccessType.transportStation.name]
+          ?.add(transportStation.convertToFirestoreData());
+    }
+    for (Parking parking in parkingStructures) {
+      output[AccessType.parking.name]?.add(parking.convertToFirestoreData());
+    }
+    return output;
+  }
+}
+
+/// Bike rack type for Identifying Access test. Enum type [bikeRack].
+class BikeRack implements AccessTypes {
+  static const AccessType type = AccessType.bikeRack;
+  static const Color color = Colors.black;
   final int spots;
   final Polyline polyline;
   final double pathLength;
@@ -1018,7 +1074,7 @@ class BikeRack {
       : pathLength = mp.SphericalUtil.computeLength(polyline.toMPLatLngList())
             .toDouble();
 
-  /// Returns a map with data that can be stored in Firestore easily.
+  @override
   Map<String, dynamic> convertToFirestoreData() {
     Map<String, dynamic> firestoreData = {
       'spots': spots,
@@ -1033,11 +1089,9 @@ class BikeRack {
 
 /// Taxi/ride share type for Identifying Access test. Enum type
 /// [taxiAndRideShare].
-class TaxiAndRideShare {
+class TaxiAndRideShare implements AccessTypes {
   static const AccessType type = AccessType.taxiAndRideShare;
-  static const int polylineWidth = 3;
   static const Color color = Colors.black;
-  static const Cap startCap = Cap.roundCap;
   final Polyline polyline;
   final double pathLength;
 
@@ -1045,7 +1099,7 @@ class TaxiAndRideShare {
       : pathLength = mp.SphericalUtil.computeLength(polyline.toMPLatLngList())
             .toDouble();
 
-  /// Returns a map with data that can be stored in Firestore easily.
+  @override
   Map<String, dynamic> convertToFirestoreData() {
     Map<String, dynamic> firestoreData = {
       'pathInfo': {
@@ -1058,11 +1112,9 @@ class TaxiAndRideShare {
 }
 
 /// Parking type for Identifying Access test. Enum type [parking].
-class Parking {
+class Parking implements AccessTypes {
   static const AccessType type = AccessType.parking;
-  static const int polylineWidth = 3;
   static const Color color = Colors.black;
-  static const Cap startCap = Cap.roundCap;
   final int spots;
   final Polygon polygon;
   final Polyline polyline;
@@ -1076,7 +1128,7 @@ class Parking {
                 pow(feetPerMeter, 2))
             .toDouble();
 
-  /// Returns a map with data that can be stored in Firestore easily.
+  @override
   Map<String, dynamic> convertToFirestoreData() {
     Map<String, dynamic> firestoreData = {
       'spots': spots,
@@ -1086,7 +1138,7 @@ class Parking {
       },
       'polygonInfo': {
         'polygon': polygon.points.toGeoPointList(),
-        'polygonArea': pathLength,
+        'polygonArea': polygonArea,
       }
     };
     return firestoreData;
@@ -1095,11 +1147,9 @@ class Parking {
 
 /// Transport station type for Identifying Access test. Enum type
 /// [transportStation].
-class TransportStation {
+class TransportStation implements AccessTypes {
   static const AccessType type = AccessType.transportStation;
-  static const int polylineWidth = 3;
   static const Color color = Colors.black;
-  static const Cap startCap = Cap.roundCap;
   final int routeNumber;
   final Polyline polyline;
   final double pathLength;
@@ -1108,7 +1158,7 @@ class TransportStation {
       : pathLength = mp.SphericalUtil.computeLength(polyline.toMPLatLngList())
             .toDouble();
 
-  /// Returns a map with data that can be stored in Firestore easily.
+  @override
   Map<String, dynamic> convertToFirestoreData() {
     Map<String, dynamic> firestoreData = {
       'routeNumber': routeNumber,
@@ -1122,20 +1172,18 @@ class TransportStation {
 }
 
 /// Class for identifying access test info and methods.
-class IdentifyingAccessTest extends Test<Map> {
+class IdentifyingAccessTest extends Test<AccessData> {
   /// Returns a new instance of the initial data structure used for
   /// Identifying Access Test.
-  static Map<AccessType, List> newInitialDataDeepCopy() {
-    Map<AccessType, List> accessData = {};
-    accessData[AccessType.bikeRack] = [];
-    accessData[AccessType.taxiAndRideShare] = [];
-    accessData[AccessType.transportStation] = [];
-    accessData[AccessType.parking] = [];
-    return accessData;
+  static AccessData newInitialDataDeepCopy() {
+    return AccessData();
   }
 
   /// Static constant definition of collection ID for this test type.
   static const String collectionIDStatic = 'identifying_access_tests';
+
+  /// Temporary list of standing points for testing purposes (TODO)
+  List standingPoints;
 
   /// Creates a new [IdentifyingAccessTest] instance from the given arguments.
   IdentifyingAccessTest._({
@@ -1145,6 +1193,7 @@ class IdentifyingAccessTest extends Test<Map> {
     required super.projectRef,
     required super.collectionID,
     required super.data,
+    required this.standingPoints,
     super.creationTime,
     super.maxResearchers,
     super.isComplete,
@@ -1152,13 +1201,14 @@ class IdentifyingAccessTest extends Test<Map> {
 
   /// Registers this class within the Maps required by class [Test].
   static void register() {
-    // Register for creating new Lighting Profile Tests
+    // Register for creating new Identifying Access Tests
     Test._newTestConstructors[collectionIDStatic] = ({
       required String title,
       required String testID,
       required Timestamp scheduledTime,
       required DocumentReference projectRef,
       required String collectionID,
+      List? standingPoints,
     }) =>
         IdentifyingAccessTest._(
           title: title,
@@ -1167,8 +1217,9 @@ class IdentifyingAccessTest extends Test<Map> {
           projectRef: projectRef,
           collectionID: collectionID,
           data: newInitialDataDeepCopy(),
+          standingPoints: standingPoints ?? [],
         );
-    // Register for recreating a Lighting Profile Test from Firestore
+    // Register for recreating a Identifying Access Test from Firestore
     Test._recreateTestConstructors[collectionIDStatic] = (testDoc) {
       print(testDoc['data']);
       return IdentifyingAccessTest._(
@@ -1181,9 +1232,10 @@ class IdentifyingAccessTest extends Test<Map> {
         creationTime: testDoc['creationTime'],
         maxResearchers: testDoc['maxResearchers'],
         isComplete: testDoc['isComplete'],
+        standingPoints: testDoc['standingPoints'],
       );
     };
-    // Register for building a Lighting Profile Test page
+    // Register for building a Identifying Access Test page
     Test._pageBuilders[IdentifyingAccessTest] =
         (project, test) => IdentifyingAccess(
               activeProject: project,
@@ -1200,12 +1252,13 @@ class IdentifyingAccessTest extends Test<Map> {
         'creationTime': test.creationTime,
         'maxResearchers': test.maxResearchers,
         'isComplete': false,
+        'standingPoints': (test as IdentifyingAccessTest).standingPoints,
       }, SetOptions(merge: true));
     };
   }
 
   @override
-  void submitData(Map data) async {
+  void submitData(AccessData data) async {
     // Adds all points of each type from submitted data to overall data
     Map firestoreData = convertDataToFirestore(data);
 
@@ -1225,14 +1278,12 @@ class IdentifyingAccessTest extends Test<Map> {
   /// Transforms data retrieved from Firestore test instance to
   /// a list of AccessType objects, with data accessed through the fields of
   /// the respective objects.
-  static Map<AccessType, dynamic> convertDataFromFirestore(
-      Map<String, dynamic> data) {
-    Map<AccessType, dynamic> output = newInitialDataDeepCopy();
+  static AccessData convertDataFromFirestore(Map<String, dynamic> data) {
+    AccessData accessData = newInitialDataDeepCopy();
     List<AccessType> types = AccessType.values;
     List dataList;
     // Adds all data to output one type at a time
     for (final type in types) {
-      output[type] = [];
       if (data.containsKey(type.name)) {
         dataList = data[type.name];
         switch (type) {
@@ -1241,15 +1292,15 @@ class IdentifyingAccessTest extends Test<Map> {
               if (bikeRackMap.containsKey('pathInfo') &&
                   bikeRackMap['pathInfo'].containsKey('path')) {
                 List polylinePoints = bikeRackMap['pathInfo']['path'];
-                output[type]?.add(
+                accessData.bikeRacks.add(
                   BikeRack(
                     spots: bikeRackMap['spots'],
                     polyline: Polyline(
                       polylineId: PolylineId(
                           DateTime.now().millisecondsSinceEpoch.toString()),
                       color: BikeRack.color,
-                      width: BikeRack.polylineWidth,
-                      startCap: BikeRack.startCap,
+                      width: AccessTypes.polylineWidth,
+                      startCap: AccessTypes.startCap,
                       points: polylinePoints.toLatLngList(),
                     ),
                   ),
@@ -1261,14 +1312,14 @@ class IdentifyingAccessTest extends Test<Map> {
               if (taxiRideShareMap.containsKey('pathInfo') &&
                   taxiRideShareMap['pathInfo'].containsKey('path')) {
                 List polylinePoints = taxiRideShareMap['pathInfo']['path'];
-                output[type]?.add(
+                accessData.taxisAndRideShares.add(
                   TaxiAndRideShare(
                     polyline: Polyline(
                       polylineId: PolylineId(
                           DateTime.now().millisecondsSinceEpoch.toString()),
                       color: TaxiAndRideShare.color,
-                      width: TaxiAndRideShare.polylineWidth,
-                      startCap: TaxiAndRideShare.startCap,
+                      width: AccessTypes.polylineWidth,
+                      startCap: AccessTypes.startCap,
                       points: polylinePoints.toLatLngList(),
                     ),
                   ),
@@ -1283,15 +1334,15 @@ class IdentifyingAccessTest extends Test<Map> {
                       parkingMap['polygonInfo'].containsKey('polygon'))) {
                 List polylinePoints = parkingMap['pathInfo']['path'];
                 List polygonPoints = parkingMap['polygonInfo']['polygon'];
-                output[type]?.add(
+                accessData.parkingStructures.add(
                   Parking(
                     spots: parkingMap['spots'],
                     polyline: Polyline(
                         polylineId: PolylineId(
                             DateTime.now().millisecondsSinceEpoch.toString()),
                         color: Parking.color,
-                        width: Parking.polylineWidth,
-                        startCap: Parking.startCap,
+                        width: AccessTypes.polylineWidth,
+                        startCap: AccessTypes.startCap,
                         points: polylinePoints.toLatLngList()),
                     polygon: Polygon(
                       polygonId: PolygonId(
@@ -1308,15 +1359,15 @@ class IdentifyingAccessTest extends Test<Map> {
               if (transportStationMap.containsKey('pathInfo') &&
                   transportStationMap['pathInfo'].containsKey('path')) {
                 List polylinePoints = transportStationMap['pathInfo']['path'];
-                output[type]?.add(
+                accessData.transportStations.add(
                   TransportStation(
                     routeNumber: transportStationMap['routeNumber'],
                     polyline: Polyline(
                         polylineId: PolylineId(
                             DateTime.now().millisecondsSinceEpoch.toString()),
                         color: TransportStation.color,
-                        width: TransportStation.polylineWidth,
-                        startCap: TransportStation.startCap,
+                        width: AccessTypes.polylineWidth,
+                        startCap: AccessTypes.startCap,
                         points: polylinePoints.toLatLngList()),
                   ),
                 );
@@ -1325,39 +1376,11 @@ class IdentifyingAccessTest extends Test<Map> {
         }
       }
     }
-    return output;
+    return accessData;
   }
 
-  /// Transforms data stored locally as a [List] of access type objects to
-  /// Firestore format (represented by a [Map])
-  /// with String keys and any other needed changes.
-  static Map<String, List> convertDataToFirestore(Map data) {
-    Map<String, List> output = {};
-    List<AccessType> types = AccessType.values;
-    for (final type in types) {
-      output[type.name] = [];
-      if (data.containsKey(type)) {
-        switch (type) {
-          case AccessType.bikeRack:
-            for (BikeRack accessObject in data[type]!) {
-              output[type.name]?.add(accessObject.convertToFirestoreData());
-            }
-          case AccessType.taxiAndRideShare:
-            for (TaxiAndRideShare accessObject in data[type]!) {
-              output[type.name]?.add(accessObject.convertToFirestoreData());
-            }
-          case AccessType.parking:
-            for (Parking accessObject in data[type]!) {
-              output[type.name]?.add(accessObject.convertToFirestoreData());
-            }
-          case AccessType.transportStation:
-            for (TransportStation accessObject in data[type]!) {
-              output[type.name]?.add(accessObject.convertToFirestoreData());
-            }
-        }
-      }
-    }
-    return output;
+  static Map convertDataToFirestore(AccessData accessData) {
+    return accessData.convertToFirestoreData();
   }
 }
 
@@ -1387,6 +1410,7 @@ class PeopleInPlaceTest extends Test<List<LoggedDataPoint>> {
       required Timestamp scheduledTime,
       required DocumentReference projectRef,
       required String collectionID,
+      List? standingPoints,
     }) =>
         PeopleInPlaceTest._(
           title: title,
@@ -1495,6 +1519,7 @@ class PeopleInMotionTest extends Test<List<TracedRoute>> {
       required Timestamp scheduledTime,
       required DocumentReference projectRef,
       required String collectionID,
+      List? standingPoints,
     }) =>
         PeopleInMotionTest._(
           title: title,
@@ -1716,7 +1741,13 @@ class NatureData implements NatureTypes {
 /// [vegetation].
 class Vegetation implements NatureTypes {
   static const NatureType natureType = NatureType.vegetation;
-  static const Color polygonColor = Color(0x6510FF30);
+  static const Map<VegetationType, Color> vegetationTypeToColor = {
+    VegetationType.native: VegetationColors.nativeGreen,
+    VegetationType.design: VegetationColors.designGreen,
+    VegetationType.openField: VegetationColors.openFieldGreen,
+    VegetationType.other: VegetationColors.otherGreen,
+  };
+  final Color polygonColor;
   final VegetationType vegetationType;
   final String? otherType;
   final Polygon polygon;
@@ -1732,7 +1763,9 @@ class Vegetation implements NatureTypes {
       required this.otherType})
       : polygonArea = (mp.SphericalUtil.computeArea(polygon.toMPLatLngList()) *
                 pow(feetPerMeter, 2))
-            .toDouble();
+            .toDouble(),
+        polygonColor = vegetationTypeToColor[vegetationType] ??
+            VegetationColors.otherGreen;
 
   @override
   Map<String, dynamic> convertToFirestoreData() {
@@ -1768,7 +1801,13 @@ class Vegetation implements NatureTypes {
 /// [waterBody].
 class WaterBody implements NatureTypes {
   static const NatureType natureType = NatureType.waterBody;
-  static const Color polygonColor = Color(0x651020FF);
+  static const Map<WaterBodyType, Color> waterBodyTypeToColor = {
+    WaterBodyType.ocean: WaterBodyColors.oceanBlue,
+    WaterBodyType.river: WaterBodyColors.riverBlue,
+    WaterBodyType.lake: WaterBodyColors.lakeBlue,
+    WaterBodyType.swamp: WaterBodyColors.swampBlue,
+  };
+  final Color polygonColor;
   final WaterBodyType waterBodyType;
   final Polygon polygon;
   final double polygonArea;
@@ -1776,7 +1815,8 @@ class WaterBody implements NatureTypes {
   WaterBody({required this.waterBodyType, required this.polygon})
       : polygonArea = (mp.SphericalUtil.computeArea(polygon.toMPLatLngList()) *
                 pow(feetPerMeter, 2))
-            .toDouble();
+            .toDouble(),
+        polygonColor = waterBodyTypeToColor[waterBodyType] ?? Colors.blue;
 
   @override
   Map<String, dynamic> convertToFirestoreData() {
@@ -1872,6 +1912,7 @@ class NaturePrevalenceTest extends Test<NatureData> {
       required Timestamp scheduledTime,
       required DocumentReference projectRef,
       required String collectionID,
+      List? standingPoints,
     }) =>
         NaturePrevalenceTest._(
           title: title,
@@ -2004,8 +2045,9 @@ class NaturePrevalenceTest extends Test<NatureData> {
                     polygon: Polygon(
                       polygonId: PolygonId(
                           DateTime.now().millisecondsSinceEpoch.toString()),
-                      points: map['points'].toLatLngList(),
-                      fillColor: Vegetation.polygonColor,
+                      points: map['polygon'].toLatLngList(),
+                      fillColor: Vegetation.vegetationTypeToColor[vegetation] ??
+                          VegetationColors.otherGreen,
                     ),
                   ),
                 );
@@ -2021,8 +2063,9 @@ class NaturePrevalenceTest extends Test<NatureData> {
                     polygon: Polygon(
                       polygonId: PolygonId(
                           DateTime.now().millisecondsSinceEpoch.toString()),
-                      points: map['points'].toLatLngList(),
-                      fillColor: Vegetation.polygonColor,
+                      points: map['polygon'].toLatLngList(),
+                      fillColor: Vegetation.vegetationTypeToColor[vegetation] ??
+                          VegetationColors.otherGreen,
                     ),
                   ),
                 );
@@ -2044,8 +2087,9 @@ class NaturePrevalenceTest extends Test<NatureData> {
                   polygon: Polygon(
                     polygonId: PolygonId(
                         DateTime.now().millisecondsSinceEpoch.toString()),
-                    points: map['points'].toLatLngList(),
-                    fillColor: Vegetation.polygonColor,
+                    points: map['polygon'].toLatLngList(),
+                    fillColor: WaterBody.waterBodyTypeToColor[waterBody] ??
+                        WaterBodyColors.nullBlue,
                   ),
                 ),
               );

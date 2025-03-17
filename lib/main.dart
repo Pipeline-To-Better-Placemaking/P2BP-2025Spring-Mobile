@@ -1,7 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_core/firebase_core.dart';
-// import 'firebase_options.dart';
-import 'package:firebase_auth/firebase_auth.dart';
 import 'package:p2bp_2025spring_mobile/db_schema_classes.dart';
 import 'project_details_page.dart';
 import 'results_panel.dart';
@@ -16,9 +14,6 @@ import 'signup_screen.dart';
 import 'home_screen.dart';
 import 'new_home_page.dart';
 import 'project_comparison_page.dart';
-import 'teams_settings_screen.dart';
-import 'search_location_screen.dart';
-import 'lighting_profile_test.dart';
 
 /// All [Test] subclass's register methods should be called here.
 void registerTestTypes() {

@@ -3,25 +3,8 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
-import 'package:google_maps_flutter/google_maps_flutter.dart'
-    show
-        AssetMapBitmap,
-        BitmapDescriptor,
-        CameraPosition,
-        CameraUpdate,
-        GoogleMap,
-        GoogleMapController,
-        InfoWindow,
-        LatLng,
-        LatLngBounds,
-        MapType,
-        Marker,
-        MarkerId,
-        Polygon,
-        createLocalImageConfiguration;
-import 'package:shared_preferences/shared_preferences.dart';
+import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'google_maps_functions.dart';
-import 'package:geolocator/geolocator.dart';
 import 'package:maps_toolkit/maps_toolkit.dart' as mp;
 import 'package:p2bp_2025spring_mobile/firestore_functions.dart';
 import 'package:p2bp_2025spring_mobile/db_schema_classes.dart';
