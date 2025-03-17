@@ -33,7 +33,7 @@ Widget peopleInPlaceInstructions() {
         TextSpan(text: "3. ", style: TextStyle(fontWeight: FontWeight.bold)),
         TextSpan(
             text:
-                "Once logged, this invidual will be represented on the map via a color coded marker based on posture type.\n"),
+                "Once logged, this individual will be represented on the map via a color coded marker based on posture type.\n"),
         WidgetSpan(
           child: Padding(
             padding: EdgeInsets.symmetric(
@@ -64,7 +64,7 @@ Widget peopleInPlaceInstructions() {
         ),
         TextSpan(
             text:
-                " button will bring up a menu displaying each logged point. Here, you can delete indvidual points or all points, "
+                " button will bring up a menu displaying each logged point. Here, you can delete individual points or all points, "
                 "or view the marker color legend.\n"),
         WidgetSpan(
           child: Padding(

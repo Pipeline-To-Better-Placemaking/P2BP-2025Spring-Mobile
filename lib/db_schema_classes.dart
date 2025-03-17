@@ -1384,12 +1384,108 @@ class IdentifyingAccessTest extends Test<AccessData> {
   }
 }
 
-class PeopleInPlaceTest extends Test<List<LoggedDataPoint>> {
-  static const String collectionIDStatic = 'people_in_place_tests';
+enum AgeRangeType {
+  age0to14,
+  age15to21,
+  age22to30,
+  age31to50,
+  age51to65,
+  age66toInfinity,
+}
 
-  static List<LoggedDataPoint> newInitialDataDeepCopy() {
-    return [];
+enum GenderType { male, female, nonbinary, unspecified }
+
+enum ActivityType { socializing, waiting, recreation, eating, solitary }
+
+enum PostureType { standing, sitting, layingDown, squatting }
+
+class PersonInPlace {
+  late final LatLng location;
+  late final AgeRangeType ageRange;
+  late final GenderType gender;
+  late final Set<ActivityType> activities;
+  late final PostureType posture;
+
+  PersonInPlace({
+    required this.location,
+    required this.ageRange,
+    required this.gender,
+    required this.activities,
+    required this.posture,
+  });
+
+  PersonInPlace.fromJson(Map<String, dynamic> data) {
+    if (data.containsKey('location') && data['location'] is GeoPoint) {
+      location = (data['location'] as GeoPoint).toLatLng();
+    }
+    if (data.containsKey('ageRange') && data['ageRange'] is String) {
+      String ageString = data['ageRange'] as String;
+      ageRange = AgeRangeType.values.firstWhere((e) => e.name == ageString);
+    }
+    if (data.containsKey('gender') && data['gender'] is String) {
+      String genderString = data['gender'] as String;
+      gender = GenderType.values.firstWhere((e) => e.name == genderString);
+    }
+    if (data.containsKey('activity') &&
+        data['activity'] is List &&
+        data['activity'].first is String) {
+      List activitiesList = data['activity'];
+      activities = {
+        for (final activity in activitiesList)
+          ActivityType.values.firstWhere((e) => e.name == activity)
+      };
+    }
+    if (data.containsKey('posture') && data['posture'] is String) {
+      String postureString = data['posture'] as String;
+      posture = PostureType.values.firstWhere((e) => e.name == postureString);
+    }
   }
+
+  Map<String, Object> toJson() {
+    return {
+      'location': location.toGeoPoint(),
+      'ageRange': ageRange.name,
+      'gender': gender.name,
+      'activity': <String>[for (final activity in activities) activity.name],
+      'posture': posture.name,
+    };
+  }
+
+  @override
+  String toString() {
+    return toJson().toString();
+  }
+}
+
+class PeopleInPlaceData {
+  List<PersonInPlace> persons = [];
+
+  PeopleInPlaceData();
+
+  PeopleInPlaceData.fromJson(Map<String, dynamic> data) {
+    if (data.containsKey('persons') &&
+        (data['persons'] as List).isNotEmpty &&
+        data['persons'].first is Map) {
+      List personsJsonList = data['persons'];
+      for (final personJson in personsJsonList) {
+        persons.add(PersonInPlace.fromJson(personJson));
+      }
+    }
+    print(this);
+  }
+
+  Map<String, Object> toJson() {
+    return {'persons': persons.map((person) => person.toJson()).toList()};
+  }
+
+  @override
+  String toString() {
+    return toJson().toString();
+  }
+}
+
+class PeopleInPlaceTest extends Test<PeopleInPlaceData> {
+  static const String collectionIDStatic = 'people_in_place_tests';
 
   PeopleInPlaceTest._({
     required super.title,
@@ -1418,34 +1514,11 @@ class PeopleInPlaceTest extends Test<List<LoggedDataPoint>> {
           scheduledTime: scheduledTime,
           projectRef: projectRef,
           collectionID: collectionID,
-          data: newInitialDataDeepCopy(),
+          data: PeopleInPlaceData(),
         );
 
     Test._recreateTestConstructors[collectionIDStatic] = (testDoc) {
-      List<dynamic> dataList = testDoc['data'] ?? [];
-
-      List<LoggedDataPoint> loggedDataPoints = dataList.map((item) {
-        return LoggedDataPoint(
-          location: LatLng(item['location']['lat'], item['location']['lng']),
-          age: item['age'] ?? '',
-          gender: item['gender'] ?? '',
-          activityType: item['activityType'] ?? '',
-          posture: item['posture'] ?? '',
-          timestamp: DateTime.parse(item['timestamp']),
-        );
-      }).toList();
-
-      return PeopleInPlaceTest._(
-        title: testDoc['title'],
-        testID: testDoc['id'],
-        scheduledTime: testDoc['scheduledTime'],
-        projectRef: testDoc['project'],
-        collectionID: testDoc.reference.parent.id,
-        data: loggedDataPoints,
-        creationTime: testDoc['creationTime'],
-        maxResearchers: testDoc['maxResearchers'],
-        isComplete: testDoc['isComplete'],
-      );
+      return PeopleInPlaceTest.fromJson(testDoc.data()!);
     };
 
     Test._pageBuilders[PeopleInPlaceTest] =
@@ -1455,36 +1528,66 @@ class PeopleInPlaceTest extends Test<List<LoggedDataPoint>> {
             );
 
     Test._saveToFirestoreFunctions[PeopleInPlaceTest] = (test) async {
-      await _firestore.collection(test.collectionID).doc(test.testID).set({
-        'title': test.title,
-        'id': test.testID,
-        'scheduledTime': test.scheduledTime,
-        'project': test.projectRef,
-        'data': test.data.map((dp) => dp.toJson()).toList(),
-        'creationTime': test.creationTime,
-        'maxResearchers': test.maxResearchers,
-        'isComplete': test.isComplete,
-      }, SetOptions(merge: true));
+      final testRef = _firestore
+          .collection(test.collectionID)
+          .doc(test.testID)
+          .withConverter(
+            fromFirestore: (snapshot, _) =>
+                PeopleInPlaceTest.fromJson(snapshot.data()!),
+            toFirestore: (test, _) => test.toJson(),
+          );
+      await testRef.set(test as PeopleInPlaceTest, SetOptions(merge: true));
     };
   }
 
   @override
-  void submitData(List<LoggedDataPoint> data) async {
+  void submitData(PeopleInPlaceData data) async {
     try {
-      List<Map<String, dynamic>> firestoreData =
-          data.map((dp) => dp.toJson()).toList();
-
-      await _firestore.collection(collectionIDStatic).doc(testID).update({
-        'data': firestoreData,
+      await _firestore.collection(collectionID).doc(testID).update({
+        'data': data.toJson(),
         'isComplete': true,
       });
+
       this.data = data;
       isComplete = true;
+
       print('Success! In PeopleInPlaceTest.submitData.');
     } catch (e, stacktrace) {
       print("Exception in PeopleInPlaceTest.submitData(): $e");
       print("Stacktrace: $stacktrace");
     }
+  }
+
+  static PeopleInPlaceTest fromJson(Map<String, dynamic> doc) {
+    return PeopleInPlaceTest._(
+      title: doc['title'],
+      testID: doc['id'],
+      scheduledTime: doc['scheduledTime'],
+      projectRef: doc['project'],
+      collectionID: collectionIDStatic,
+      data: PeopleInPlaceData.fromJson(doc['data']),
+      creationTime: doc['creationTime'],
+      maxResearchers: doc['maxResearchers'],
+      isComplete: doc['isComplete'],
+    );
+  }
+
+  Map<String, Object> toJson() {
+    return {
+      'title': title,
+      'id': testID,
+      'scheduledTime': scheduledTime,
+      'project': projectRef,
+      'data': data.toJson(),
+      'creationTime': creationTime,
+      'maxResearchers': maxResearchers,
+      'isComplete': isComplete,
+    };
+  }
+
+  @override
+  String toString() {
+    return toJson().toString();
   }
 }
 

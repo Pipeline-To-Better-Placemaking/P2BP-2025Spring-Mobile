@@ -9,44 +9,7 @@ import 'package:maps_toolkit/maps_toolkit.dart' as mp;
 import 'package:p2bp_2025spring_mobile/firestore_functions.dart';
 import 'package:p2bp_2025spring_mobile/db_schema_classes.dart';
 import 'package:p2bp_2025spring_mobile/project_details_page.dart';
-import 'package:p2bp_2025spring_mobile/peope_in_place_instructions.dart';
-
-// Class to represent a logged data point for backend storage.
-class LoggedDataPoint {
-  final LatLng location;
-  final String age;
-  final String gender;
-  final String activityType;
-  final String posture;
-  final DateTime timestamp;
-
-  LoggedDataPoint({
-    required this.location,
-    required this.age,
-    required this.gender,
-    required this.activityType,
-    required this.posture,
-    required this.timestamp,
-  });
-
-  // Convert the data point into a JSON‑compatible map.
-  Map<String, dynamic> toJson() {
-    return {
-      'location': {'lat': location.latitude, 'lng': location.longitude},
-      'age': age,
-      'gender': gender,
-      'activityType': activityType,
-      'posture': posture,
-      'timestamp': timestamp.toIso8601String(),
-    };
-  }
-}
-
-// Conversion method to convert the list of LoggedDataPoint objects to a Firestore-friendly list
-List<Map<String, dynamic>> loggedDataPointsToJson(
-    List<LoggedDataPoint> dataPoints) {
-  return dataPoints.map((point) => point.toJson()).toList();
-}
+import 'package:p2bp_2025spring_mobile/people_in_place_instructions.dart';
 
 class PeopleInPlaceTestPage extends StatefulWidget {
   final Project activeProject;
@@ -61,6 +24,37 @@ class PeopleInPlaceTestPage extends StatefulWidget {
   @override
   State<PeopleInPlaceTestPage> createState() => _PeopleInPlaceTestPageState();
 }
+
+// IMPORTANT!!!
+// The amount and order of strings in each category below MUST match exactly
+// with those in the enumerated types for each defined in db_schema_classes.
+const List<String> _ageRangeStrings = [
+  '0-14',
+  '15-21',
+  '22-30',
+  '30-50',
+  '50-65',
+  '65+',
+];
+const List<String> _genderStrings = [
+  'Male',
+  'Female',
+  'Nonbinary',
+  'Unspecified',
+];
+const List<String> _activityStrings = [
+  'Socializing',
+  'Waiting',
+  'Recreation',
+  'Eating',
+  'Solitary'
+];
+const List<String> _postureStrings = [
+  'Standing',
+  'Sitting',
+  'Laying Down',
+  'Squatting',
+];
 
 class _PeopleInPlaceTestPageState extends State<PeopleInPlaceTestPage> {
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
@@ -80,7 +74,7 @@ class _PeopleInPlaceTestPageState extends State<PeopleInPlaceTestPage> {
   List<LatLng> _loggedPoints = [];
 
   // List to store backend‑compatible logged data points.
-  List<LoggedDataPoint> _loggedDataPoints = [];
+  final PeopleInPlaceData _newData = PeopleInPlaceData();
 
   // Custom marker icons
 
@@ -123,56 +117,89 @@ class _PeopleInPlaceTestPageState extends State<PeopleInPlaceTestPage> {
     super.dispose();
   }
 
-  // Helper method to format elapsed seconds into mm:ss
-  String _formatTime(int seconds) {
-    final minutes = seconds ~/ 60;
-    final secs = seconds % 60;
-    return '${minutes.toString().padLeft(2, '0')}:${secs.toString().padLeft(2, '0')}';
-  }
-
-  // Method to start the test and timer
-  void _startTest() {
-    setState(() {
-      _isTestRunning = true;
-      _remainingSeconds = 300;
-    });
-    _timer = Timer.periodic(Duration(seconds: 1), (timer) {
-      setState(() {
-        if (_remainingSeconds > 0) {
-          _remainingSeconds--;
-          timer.cancel();
-          _endTest();
-        }
-      });
-    });
-  }
-
-  // Method to end the test and cancel the timer
-  Future<void> _endTest() async {
-    setState(() {
-      _isTestRunning = false;
-      Navigator.pushReplacement(
-        context,
-        MaterialPageRoute(
-          builder: (context) => ProjectDetailsPage(
-            projectData: widget.activeProject,
-          ),
-        ),
-      );
-    });
-
+  // Function to load custom marker icons using AssetMapBitmap.
+  Future<void> _loadCustomMarkers() async {
+    final ImageConfiguration configuration =
+        createLocalImageConfiguration(context);
     try {
-      await _firestore
-          .collection(widget.activeTest.collectionID)
-          .doc(widget.activeTest.testID)
-          .update({
-        'data': loggedDataPointsToJson(_loggedDataPoints),
-        'isComplete': true,
+      standingMaleMarker = await AssetMapBitmap.create(
+        configuration,
+        'assets/custom_icons/test_specific/people_in_place/standing_male_marker.png',
+        width: 36,
+        height: 36,
+      );
+      sittingMaleMarker = await AssetMapBitmap.create(
+        configuration,
+        'assets/custom_icons/test_specific/people_in_place/sitting_male_marker.png',
+        width: 36,
+        height: 36,
+      );
+      layingMaleMarker = await AssetMapBitmap.create(
+        configuration,
+        'assets/custom_icons/test_specific/people_in_place/laying_male_marker.png',
+        width: 36,
+        height: 36,
+      );
+      squattingMaleMarker = await AssetMapBitmap.create(
+        configuration,
+        'assets/custom_icons/test_specific/people_in_place/squatting_male_marker.png',
+        width: 36,
+        height: 36,
+      );
+      standingFemaleMarker = await AssetMapBitmap.create(
+        configuration,
+        'assets/custom_icons/test_specific/people_in_place/standing_female_marker.png',
+        width: 36,
+        height: 36,
+      );
+      sittingFemaleMarker = await AssetMapBitmap.create(
+        configuration,
+        'assets/custom_icons/test_specific/people_in_place/sitting_female_marker.png',
+        width: 36,
+        height: 36,
+      );
+      layingFemaleMarker = await AssetMapBitmap.create(
+        configuration,
+        'assets/custom_icons/test_specific/people_in_place/laying_female_marker.png',
+        width: 36,
+        height: 36,
+      );
+      squattingFemaleMarker = await AssetMapBitmap.create(
+        configuration,
+        'assets/custom_icons/test_specific/people_in_place/squatting_female_marker.png',
+        width: 36,
+        height: 36,
+      );
+      standingNAMarker = await AssetMapBitmap.create(
+        configuration,
+        'assets/custom_icons/test_specific/people_in_place/standing_na_marker.png',
+        width: 36,
+        height: 36,
+      );
+      sittingNAMarker = await AssetMapBitmap.create(
+        configuration,
+        'assets/custom_icons/test_specific/people_in_place/sitting_na_marker.png',
+        width: 36,
+        height: 36,
+      );
+      layingNAMarker = await AssetMapBitmap.create(
+        configuration,
+        'assets/custom_icons/test_specific/people_in_place/laying_na_marker.png',
+        width: 36,
+        height: 36,
+      );
+      squattingNAMarker = await AssetMapBitmap.create(
+        configuration,
+        'assets/custom_icons/test_specific/people_in_place/squatting_na_marker.png',
+        width: 36,
+        height: 36,
+      );
+      setState(() {
+        _customMarkersLoaded = true;
       });
-      print("PeopleInPlace test data submitted successfully.");
-    } catch (e, stacktrace) {
-      print("Error submitting PeopleInPlace test data: $e");
-      print("Stacktrace: $stacktrace");
+      print("Custom markers loaded successfully.");
+    } catch (e) {
+      print("Error loading custom markers: $e");
     }
   }
 
@@ -309,13 +336,11 @@ class _PeopleInPlaceTestPageState extends State<PeopleInPlaceTestPage> {
   }
 
   void _moveToCurrentLocation() {
-    if (mapController != null) {
-      mapController.animateCamera(
-        CameraUpdate.newCameraPosition(
-          CameraPosition(target: _currentLocation, zoom: 14.0),
-        ),
-      );
-    }
+    mapController.animateCamera(
+      CameraUpdate.newCameraPosition(
+        CameraPosition(target: _currentLocation, zoom: 14.0),
+      ),
+    );
   }
 
   void _toggleMapType() {
@@ -336,6 +361,35 @@ class _PeopleInPlaceTestPageState extends State<PeopleInPlaceTestPage> {
       mpPolygon,
       false, // Edge considered outside; change as needed.
     );
+  }
+
+  BitmapDescriptor _getMarkerIcon(String key) {
+    switch (key) {
+      case 'standing_male':
+        return standingMaleMarker ?? BitmapDescriptor.defaultMarker;
+      case 'sitting_male':
+        return sittingMaleMarker ?? BitmapDescriptor.defaultMarker;
+      case 'layingDown_male':
+        return layingMaleMarker ?? BitmapDescriptor.defaultMarker;
+      case 'squatting_male':
+        return squattingMaleMarker ?? BitmapDescriptor.defaultMarker;
+      case 'standing_female':
+        return standingFemaleMarker ?? BitmapDescriptor.defaultMarker;
+      case 'sitting_female':
+        return sittingFemaleMarker ?? BitmapDescriptor.defaultMarker;
+      case 'layingDown_female':
+        return layingFemaleMarker ?? BitmapDescriptor.defaultMarker;
+      case 'squatting_female':
+        return squattingFemaleMarker ?? BitmapDescriptor.defaultMarker;
+      case 'standing_nonbinary' || 'standing_unspecified':
+        return standingNAMarker ?? BitmapDescriptor.defaultMarker;
+      case 'sitting_nonbinary' || 'sitting_unspecified':
+        return sittingNAMarker ?? BitmapDescriptor.defaultMarker;
+      case 'layingDown_nonbinary' || 'layingDown_unspecified':
+        return layingNAMarker ?? BitmapDescriptor.defaultMarker;
+      default:
+        return squattingNAMarker ?? BitmapDescriptor.defaultMarker;
+    }
   }
 
   // Tap handler for People In Place
@@ -362,206 +416,88 @@ class _PeopleInPlaceTestPageState extends State<PeopleInPlaceTestPage> {
       return; // Prevent creating markers if not loaded
     }
     // Show bottom sheet for classification
-    showModalBottomSheet(
+    final PersonInPlace? person = await showModalBottomSheet(
       context: context,
       isScrollControlled: true,
       backgroundColor: Color(0xFFDDE6F2),
-      constraints: const BoxConstraints(
-        maxWidth: double.infinity,
-      ), // Make bottom sheet full-width.
-      builder: (BuildContext bottomSheetContext) {
-        return PeopleInPlaceClassificationSheet(
-          onSubmit: (classificationData) {
-            // Marker ID values
-            final String markerIdStr =
-                DateTime.now().millisecondsSinceEpoch.toString();
-            final MarkerId markerId = MarkerId(markerIdStr);
-
-            final key =
-                '${classificationData['posture']}_${classificationData['gender']}';
-            BitmapDescriptor markerIcon;
-            switch (key) {
-              case 'Standing_Male':
-                markerIcon =
-                    standingMaleMarker ?? BitmapDescriptor.defaultMarker;
-                break;
-              case 'Sitting_Male':
-                markerIcon =
-                    sittingMaleMarker ?? BitmapDescriptor.defaultMarker;
-                break;
-              case 'Laying Down_Male':
-                markerIcon = layingMaleMarker ?? BitmapDescriptor.defaultMarker;
-                break;
-              case 'Squatting_Male':
-                markerIcon =
-                    squattingMaleMarker ?? BitmapDescriptor.defaultMarker;
-                break;
-              case 'Standing_Female':
-                markerIcon =
-                    standingFemaleMarker ?? BitmapDescriptor.defaultMarker;
-                break;
-              case 'Sitting_Female':
-                markerIcon =
-                    sittingFemaleMarker ?? BitmapDescriptor.defaultMarker;
-                break;
-              case 'Laying Down_Female':
-                markerIcon =
-                    layingFemaleMarker ?? BitmapDescriptor.defaultMarker;
-                break;
-              case 'Squatting_Female':
-                markerIcon =
-                    squattingFemaleMarker ?? BitmapDescriptor.defaultMarker;
-                break;
-              case 'Standing_N/A':
-                markerIcon = standingNAMarker ?? BitmapDescriptor.defaultMarker;
-                break;
-              case 'Sitting_N/A':
-                markerIcon = sittingNAMarker ?? BitmapDescriptor.defaultMarker;
-                break;
-              case 'Laying Down_N/A':
-                markerIcon = layingNAMarker ?? BitmapDescriptor.defaultMarker;
-              default:
-                markerIcon =
-                    squattingNAMarker ?? BitmapDescriptor.defaultMarker;
-            }
-            // Once classification data is provided, add the marker with an info window.
-            setState(() {
-              _markers.add(
-                Marker(
-                  markerId: markerId,
-                  position: point,
-                  icon: markerIcon,
-                  infoWindow: InfoWindow(
-                      title: 'Age: ${classificationData['age']}', // for example
-                      snippet:
-                          'Gender: ${classificationData['gender']}\nActivity: ${classificationData['activityType']}\nPosture: ${classificationData['posture']}'),
-                  onTap: () {
-                    // Print for debugging:
-                    print("Marker tapped: $markerIdStr");
-                    // Use a short delay to ensure the marker is rendered,
-                    // then show its info window using the same markerId.
-                    if (_openMarkerId == markerId) {
-                      mapController.hideMarkerInfoWindow(markerId);
-                      setState(() {
-                        _openMarkerId = null;
-                      });
-                    } else {
-                      Future.delayed(Duration(milliseconds: 300), () {
-                        mapController.showMarkerInfoWindow(markerId);
-                        setState(() {
-                          _openMarkerId = markerId;
-                        });
-                      });
-                    }
-                  },
-                ),
-              );
-              // Create a LoggedDataPoint from the classification data.
-              final loggedPoint = LoggedDataPoint(
-                location: point,
-                age: classificationData['age'] ?? '',
-                gender: classificationData['gender'] ?? '',
-                activityType: classificationData['activityType'] ?? '',
-                posture: classificationData['posture'] ?? '',
-                timestamp: DateTime.now(),
-              );
-              _loggedDataPoints.add(loggedPoint); // Store backend-ready data
-
-              // Log the point
-              _loggedPoints.add(point);
-            });
-
-            Navigator.pop(bottomSheetContext);
-          },
-        );
-      },
+      builder: (context) => _DescriptionForm(location: point),
     );
+    if (person == null) return;
+
+    final MarkerId markerId = MarkerId(point.toString());
+
+    final key = '${person.posture.name}_${person.gender.name}';
+    BitmapDescriptor markerIcon = _getMarkerIcon(key);
+
+    // Once classification data is provided, add the marker with an info window.
+    setState(() {
+      _markers.add(
+        Marker(
+          markerId: markerId,
+          position: point,
+          icon: markerIcon,
+          infoWindow: InfoWindow(
+              title:
+                  'Age: ${_ageRangeStrings[person.ageRange.index]}', // for example
+              snippet: 'Gender: ${_genderStrings[person.gender.index]}\n'
+                  'Activity: ${[
+                for (final activity in person.activities)
+                  _activityStrings[activity.index]
+              ]}\n'
+                  'Posture: ${_postureStrings[person.posture.index]}'),
+          onTap: () {
+            // Print for debugging:
+            print("Marker tapped: $markerId");
+            // Use a short delay to ensure the marker is rendered,
+            // then show its info window using the same markerId.
+            if (_openMarkerId == markerId) {
+              mapController.hideMarkerInfoWindow(markerId);
+              setState(() {
+                _openMarkerId = null;
+              });
+            } else {
+              Future.delayed(Duration(milliseconds: 300), () {
+                mapController.showMarkerInfoWindow(markerId);
+                setState(() {
+                  _openMarkerId = markerId;
+                });
+              });
+            }
+          },
+        ),
+      );
+
+      _newData.persons.add(person);
+    });
   }
 
-  // Function to load custom marker icons using AssetMapBitmap.
-  Future<void> _loadCustomMarkers() async {
-    final ImageConfiguration configuration =
-        createLocalImageConfiguration(context);
-    try {
-      standingMaleMarker = await AssetMapBitmap.create(
-        configuration,
-        'assets/custom_icons/test_specific/people_in_place/standing_male_marker.png',
-        width: 36,
-        height: 36,
-      );
-      sittingMaleMarker = await AssetMapBitmap.create(
-        configuration,
-        'assets/custom_icons/test_specific/people_in_place/sitting_male_marker.png',
-        width: 36,
-        height: 36,
-      );
-      layingMaleMarker = await AssetMapBitmap.create(
-        configuration,
-        'assets/custom_icons/test_specific/people_in_place/laying_male_marker.png',
-        width: 36,
-        height: 36,
-      );
-      squattingMaleMarker = await AssetMapBitmap.create(
-        configuration,
-        'assets/custom_icons/test_specific/people_in_place/squatting_male_marker.png',
-        width: 36,
-        height: 36,
-      );
-      standingFemaleMarker = await AssetMapBitmap.create(
-        configuration,
-        'assets/custom_icons/test_specific/people_in_place/standing_female_marker.png',
-        width: 36,
-        height: 36,
-      );
-      sittingFemaleMarker = await AssetMapBitmap.create(
-        configuration,
-        'assets/custom_icons/test_specific/people_in_place/sitting_female_marker.png',
-        width: 36,
-        height: 36,
-      );
-      layingFemaleMarker = await AssetMapBitmap.create(
-        configuration,
-        'assets/custom_icons/test_specific/people_in_place/laying_female_marker.png',
-        width: 36,
-        height: 36,
-      );
-      squattingFemaleMarker = await AssetMapBitmap.create(
-        configuration,
-        'assets/custom_icons/test_specific/people_in_place/squatting_female_marker.png',
-        width: 36,
-        height: 36,
-      );
-      standingNAMarker = await AssetMapBitmap.create(
-        configuration,
-        'assets/custom_icons/test_specific/people_in_place/standing_na_marker.png',
-        width: 36,
-        height: 36,
-      );
-      sittingNAMarker = await AssetMapBitmap.create(
-        configuration,
-        'assets/custom_icons/test_specific/people_in_place/sitting_na_marker.png',
-        width: 36,
-        height: 36,
-      );
-      layingNAMarker = await AssetMapBitmap.create(
-        configuration,
-        'assets/custom_icons/test_specific/people_in_place/laying_na_marker.png',
-        width: 36,
-        height: 36,
-      );
-      squattingNAMarker = await AssetMapBitmap.create(
-        configuration,
-        'assets/custom_icons/test_specific/people_in_place/squatting_na_marker.png',
-        width: 36,
-        height: 36,
-      );
+  // Helper method to format elapsed seconds into mm:ss
+  String _formatTime(int seconds) {
+    final minutes = seconds ~/ 60;
+    final secs = seconds % 60;
+    return '${minutes.toString().padLeft(2, '0')}:${secs.toString().padLeft(2, '0')}';
+  }
+
+  // Method to start the test and timer
+  void _startTest() {
+    setState(() {
+      _isTestRunning = true;
+      _remainingSeconds = 300;
+    });
+    _timer = Timer.periodic(Duration(seconds: 1), (timer) {
       setState(() {
-        _customMarkersLoaded = true;
+        if (_remainingSeconds > 0) {
+          _remainingSeconds--;
+          timer.cancel();
+          // TODO: end test/submit data or something?
+        }
       });
-      print("Custom markers loaded successfully.");
-    } catch (e) {
-      print("Error loading custom markers: $e");
-    }
+    });
+  }
+
+  void _endTest() {
+    widget.activeTest.submitData(_newData);
+    Navigator.pop(context);
   }
 
   @override
@@ -588,11 +524,9 @@ class _PeopleInPlaceTestPageState extends State<PeopleInPlaceTestPage> {
             ),
             onPressed: () {
               if (_isTestRunning) {
-                // _endTest();
-                Navigator.pop(context);
+                _endTest();
               } else {
-                // _startTest();
-                Navigator.pop(context);
+                _startTest();
               }
             },
             child: Text(
@@ -868,127 +802,73 @@ class _PeopleInPlaceTestPageState extends State<PeopleInPlaceTestPage> {
   }
 }
 
-class PeopleInPlaceClassificationSheet extends StatefulWidget {
-  final Function(Map<String, String>) onSubmit;
-  const PeopleInPlaceClassificationSheet({super.key, required this.onSubmit});
+class _DescriptionForm extends StatefulWidget {
+  final LatLng location;
+
+  const _DescriptionForm({super.key, required this.location});
 
   @override
-  State<PeopleInPlaceClassificationSheet> createState() =>
-      _PeopleInPlaceClassificationSheetState();
+  State<_DescriptionForm> createState() => _DescriptionFormState();
 }
 
-class _PeopleInPlaceClassificationSheetState
-    extends State<PeopleInPlaceClassificationSheet> {
-  String? _selectedAge;
-  String? _selectedGender;
-  List<String> _selectedActivities = [];
-  String? _selectedPosture;
+class _DescriptionFormState extends State<_DescriptionForm> {
+  static const TextStyle boldTextStyle = TextStyle(fontWeight: FontWeight.bold);
 
-  // Helper to build an option button.
-  Widget _buildOptionButton(
-      String option, String? selected, void Function(String) onTap) {
-    final bool isSelected = option == selected;
-    return Padding(
-      padding: const EdgeInsets.all(4.0),
-      child: TextButton(
-        onPressed: () => onTap(option),
-        style: TextButton.styleFrom(
-          backgroundColor: isSelected ? Colors.blue : Colors.grey[200],
-          foregroundColor: isSelected ? Colors.white : Colors.black,
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(8),
-          ),
-          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-        ),
-        child: Text(option),
-      ),
-    );
-  }
+  int? _selectedAgeRange;
+  int? _selectedGender;
+  final List<bool> _selectedActivities =
+      List.of([for (final _ in _activityStrings) false], growable: false);
+  int? _selectedPosture;
 
-  // Helper to build a group row with a label and option buttons.
-  Widget _buildGroup(String groupName, List<String> options, String? selected,
-      void Function(String) onTap) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 8.0),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(
-            groupName,
-            style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
-          ),
-          const SizedBox(height: 4),
-          Wrap(
-            spacing: 8,
-            runSpacing: 8,
-            children: options
-                .map((option) => _buildOptionButton(option, selected, onTap))
-                .toList(),
-          ),
-        ],
-      ),
-    );
-  }
+  void _submitDescription() {
+    final PersonInPlace person;
 
-  // Helper to build a group row for multi-select (for Activity Type).
-  Widget _buildMultiSelectGroup(String groupName, List<String> options,
-      List<String> selectedList, void Function(String) onTap) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 8.0),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(
-            groupName,
-            style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
-          ),
-          const SizedBox(height: 4),
-          Wrap(
-            spacing: 8,
-            runSpacing: 8,
-            children: options.map((option) {
-              final bool isSelected = selectedList.contains(option);
-              return Padding(
-                padding: const EdgeInsets.all(4.0),
-                child: TextButton(
-                  onPressed: () {
-                    onTap(option);
-                  },
-                  style: TextButton.styleFrom(
-                    backgroundColor:
-                        isSelected ? Colors.blue : Colors.grey[200],
-                    foregroundColor: isSelected ? Colors.white : Colors.black,
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(8),
-                    ),
-                    padding:
-                        const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-                  ),
-                  child: Text(option),
-                ),
-              );
-            }).toList(),
-          ),
-        ],
-      ),
+    // Converts activity bool list to type set
+    List<ActivityType> types = ActivityType.values;
+    Set<ActivityType> activities = {};
+    for (int i = 0; i < types.length; i += 1) {
+      if (_selectedActivities[i]) {
+        activities.add(types[i]);
+      }
+    }
+
+    person = PersonInPlace(
+      location: widget.location,
+      ageRange: AgeRangeType.values[_selectedAgeRange!],
+      gender: GenderType.values[_selectedGender!],
+      activities: activities,
+      posture: PostureType.values[_selectedPosture!],
     );
+    print(person);
+
+    Navigator.pop(context, person);
   }
 
   @override
   Widget build(BuildContext context) {
+    final ThemeData theme = Theme.of(context);
     return Padding(
-      // Adjusts for keyboard appearance.
-      padding: MediaQuery.of(context).viewInsets,
-      child: Container(
-        // Use a wider container.
-        width: MediaQuery.of(context).size.width,
-        padding: const EdgeInsets.all(20),
+      padding: const EdgeInsets.all(20),
+      child: Theme(
+        data: theme.copyWith(
+          chipTheme: theme.chipTheme.copyWith(
+            showCheckmark: false,
+            backgroundColor: Colors.grey[200],
+            selectedColor: Colors.blue,
+            labelStyle: TextStyle(
+              color: ChipLabelColor(),
+              fontWeight: FontWeight.bold,
+            ),
+            side: BorderSide.none,
+          ),
+        ),
         child: SingleChildScrollView(
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
               // Centered header text.
               Row(
+                mainAxisAlignment: MainAxisAlignment.start,
                 children: [
                   IconButton(
                     icon: Icon(Icons.close),
@@ -998,84 +878,131 @@ class _PeopleInPlaceClassificationSheetState
                   ),
                   Expanded(
                     child: Center(
-                      child: const Text(
+                      child: Text(
                         'Data',
-                        style: TextStyle(
-                            fontSize: 20, fontWeight: FontWeight.bold),
+                        style: boldTextStyle.copyWith(fontSize: 24),
                       ),
                     ),
                   ),
-                  SizedBox(
-                    width: 48,
-                  )
+                  SizedBox(width: 48),
                 ],
               ),
               const SizedBox(height: 20),
-              // Age group.
               Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  _buildGroup(
-                      'Age',
-                      ['0-14', '15-21', '22-30', '30-50', '50-65', '65+'],
-                      _selectedAge, (val) {
-                    setState(() {
-                      _selectedAge = val;
-                    });
-                  }),
+                  // Age group.
+                  Text(
+                    'Age',
+                    style: boldTextStyle.copyWith(fontSize: 16),
+                  ),
+                  const SizedBox(height: 4),
+                  Wrap(
+                    spacing: 8,
+                    runSpacing: 8,
+                    children: List<Widget>.generate(
+                      _ageRangeStrings.length,
+                      (index) {
+                        return ChoiceChip(
+                          label: Text(_ageRangeStrings[index]),
+                          selected: _selectedAgeRange == index,
+                          onSelected: (selected) {
+                            setState(() {
+                              _selectedAgeRange = selected ? index : null;
+                            });
+                          },
+                        );
+                      },
+                    ),
+                  ),
+                  const SizedBox(height: 4),
                   // Gender group.
-                  _buildGroup(
-                      'Gender', ['Male', 'Female', 'N/A'], _selectedGender,
-                      (val) {
-                    setState(() {
-                      _selectedGender = val;
-                    });
-                  }),
-                  // Activity Type group.
-                  _buildMultiSelectGroup(
-                      'Activity Type',
-                      [
-                        'Socializing',
-                        'Waiting',
-                        'Recreation',
-                        'Eating',
-                        'Solitary'
-                      ],
-                      _selectedActivities, (val) {
-                    setState(() {
-                      if (_selectedActivities.contains(val)) {
-                        _selectedActivities.remove(val);
-                      } else {
-                        _selectedActivities.add(val);
-                      }
-                    });
-                  }),
+                  Text(
+                    'Gender',
+                    style: boldTextStyle.copyWith(fontSize: 16),
+                  ),
+                  const SizedBox(height: 4),
+                  Wrap(
+                    spacing: 8,
+                    children: List<Widget>.generate(
+                      _genderStrings.length,
+                      (index) {
+                        return ChoiceChip(
+                          label: Text(_genderStrings[index]),
+                          selected: _selectedGender == index,
+                          onSelected: (selected) {
+                            setState(() {
+                              _selectedGender = selected ? index : null;
+                            });
+                          },
+                        );
+                      },
+                    ),
+                  ),
+                  const SizedBox(height: 4),
+                  // Activity group.
+                  Text(
+                    'Activity',
+                    style: boldTextStyle.copyWith(fontSize: 16),
+                  ),
+                  const SizedBox(height: 4),
+                  Wrap(
+                    spacing: 8,
+                    children: List<Widget>.generate(
+                      _activityStrings.length,
+                      (index) {
+                        return FilterChip(
+                          label: Text(_activityStrings[index]),
+                          selected: _selectedActivities[index],
+                          onSelected: (selected) {
+                            setState(() {
+                              _selectedActivities[index] =
+                                  !_selectedActivities[index];
+                            });
+                          },
+                        );
+                      },
+                    ),
+                  ),
+                  const SizedBox(height: 4),
                   // Posture group.
-                  _buildGroup(
-                      'Posture',
-                      ['Standing', 'Sitting', 'Laying Down', 'Squatting'],
-                      _selectedPosture, (val) {
-                    setState(() {
-                      _selectedPosture = val;
-                    });
-                  }),
+                  Text(
+                    'Posture',
+                    style: boldTextStyle.copyWith(fontSize: 16),
+                  ),
+                  const SizedBox(height: 4),
+                  Wrap(
+                    spacing: 8,
+                    children: List<Widget>.generate(
+                      _postureStrings.length,
+                      (index) {
+                        return ChoiceChip(
+                          label: Text(_postureStrings[index]),
+                          selected: _selectedPosture == index,
+                          onSelected: (selected) {
+                            setState(() {
+                              _selectedPosture = selected ? index : null;
+                            });
+                          },
+                        );
+                      },
+                    ),
+                  ),
                 ],
               ),
               const SizedBox(height: 20),
-              // Centered Submit button.
               ElevatedButton(
-                onPressed: () {
-                  // For now, just close the bottom sheet after sending data.
-                  widget.onSubmit({
-                    'age': _selectedAge ?? '',
-                    'gender': _selectedGender ?? '',
-                    'activityType': _selectedActivities.join(', '),
-                    'posture': _selectedPosture ?? '',
-                  });
-                },
+                onPressed: (_selectedAgeRange != null &&
+                        _selectedGender != null &&
+                        _selectedActivities.contains(true) &&
+                        _selectedPosture != null)
+                    ? _submitDescription
+                    : null,
                 style: ElevatedButton.styleFrom(
-                  padding:
-                      const EdgeInsets.symmetric(horizontal: 40, vertical: 12),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 40,
+                    vertical: 12,
+                  ),
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(20),
                   ),
@@ -1087,5 +1014,19 @@ class _PeopleInPlaceClassificationSheetState
         ),
       ),
     );
+  }
+}
+
+class ChipLabelColor extends Color implements WidgetStateColor {
+  const ChipLabelColor() : super(_default);
+
+  static const int _default = 0xFF000000;
+
+  @override
+  Color resolve(Set<WidgetState> states) {
+    if (states.contains(WidgetState.selected)) {
+      return Colors.white;
+    }
+    return Colors.black;
   }
 }

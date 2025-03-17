@@ -20,7 +20,7 @@ import 'package:maps_toolkit/maps_toolkit.dart' as mp;
 import 'package:p2bp_2025spring_mobile/db_schema_classes.dart';
 import 'package:p2bp_2025spring_mobile/firestore_functions.dart';
 import 'package:p2bp_2025spring_mobile/google_maps_functions.dart';
-import 'package:p2bp_2025spring_mobile/peope_in_place_instructions.dart'; // for _showInstructionOverlay
+import 'package:p2bp_2025spring_mobile/people_in_place_instructions.dart'; // for _showInstructionOverlay
 import 'package:p2bp_2025spring_mobile/project_details_page.dart';
 
 // Data model to store one acoustic measurement
