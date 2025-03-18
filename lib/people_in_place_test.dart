@@ -431,6 +431,7 @@ class _PeopleInPlaceTestPageState extends State<PeopleInPlaceTestPage> {
         ),
       );
 
+      _loggedPoints.add(person.location);
       _newData.persons.add(person);
     });
   }
@@ -710,6 +711,11 @@ class _PeopleInPlaceTestPageState extends State<PeopleInPlaceTestPage> {
                                   // Remove the marker from the markers set.
                                   _markers.removeWhere(
                                       (marker) => marker.markerId == markerId);
+                                  // Remove the point from data.
+                                  _newData.persons.removeWhere((person) {
+                                    return person.location ==
+                                        _loggedPoints[index];
+                                  });
                                   // Remove the point from the list.
                                   _loggedPoints.removeAt(index);
                                 });
@@ -732,6 +738,7 @@ class _PeopleInPlaceTestPageState extends State<PeopleInPlaceTestPage> {
                               setState(() {
                                 // Clear all logged points.
                                 _loggedPoints.clear();
+                                _newData.persons.clear();
                                 // Remove all associated markers.
                                 _markers.clear();
                               });
