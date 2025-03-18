@@ -24,6 +24,7 @@ void registerTestTypes() {
   PeopleInPlaceTest.register();
   PeopleInMotionTest.register();
   NaturePrevalenceTest.register();
+  SpatialBoundariesTest.register();
 }
 
 void main() async {

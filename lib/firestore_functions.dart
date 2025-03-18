@@ -1,8 +1,11 @@
+import 'dart:math';
+
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:maps_toolkit/maps_toolkit.dart' as mp;
 import 'db_schema_classes.dart';
+import 'google_maps_functions.dart';
 
 final FirebaseFirestore _firestore = FirebaseFirestore.instance;
 final User? _loggedInUser = FirebaseAuth.instance.currentUser;
@@ -525,7 +528,7 @@ extension GeoPointListConversion on List<GeoPoint> {
   }
 }
 
-extension PolygonToGeoPoints on Polygon {
+extension PolygonHelpers on Polygon {
   /// Extension function on [Polygon]. Takes a [Polygon] and converts it to a
   /// list of [GeoPoint]s for Firestore storing. Returns the
   /// [List]`<`[GeoPoint]`>`.
@@ -537,9 +540,7 @@ extension PolygonToGeoPoints on Polygon {
     }
     return geoPointRepresentation;
   }
-}
 
-extension PolygonToLatLngs on Polygon {
   /// Extension function on [Polygon]. Takes a [Polygon] and converts it to a
   /// list of [LatLng]s for Firestore storing. Returns the
   /// [List]`<`[LatLng]`>`.
@@ -551,9 +552,7 @@ extension PolygonToLatLngs on Polygon {
     }
     return latLngRepresentation;
   }
-}
 
-extension PolygonToMapsToolkitLatLngs on Polygon {
   /// Extension function on [Polygon]. Takes a [Polygon] and converts it to a
   /// list of [mp.LatLng]s for maps toolkit functions. Returns the
   /// [List]`<`[mp.LatLng]`>`.
@@ -565,9 +564,16 @@ extension PolygonToMapsToolkitLatLngs on Polygon {
     }
     return latLngRepresentation;
   }
+
+  /// Returns the area covered by this polygon in square feet.
+  double getAreaInSquareFeet() {
+    return (mp.SphericalUtil.computeArea(toMPLatLngList()) *
+            pow(feetPerMeter, 2))
+        .toDouble();
+  }
 }
 
-extension PolylineToGeoPoints on Polyline {
+extension PolylineHelpers on Polyline {
   /// Extension function on [Polyline]. Takes a [Polyline] and converts it to a
   /// list of [GeoPoint]s for Firestore storing. Returns the
   /// [List]`<`[GeoPoint]`>`.
@@ -579,9 +585,7 @@ extension PolylineToGeoPoints on Polyline {
     }
     return geoPointRepresentation;
   }
-}
 
-extension PolylineToLatLngs on Polyline {
   /// Extension function on [Polyline]. Takes a [Polyline] and converts it to a
   /// list of [LatLng]s for Firestore storing. Returns the
   /// [List]`<`[LatLng]`>`.
@@ -593,9 +597,7 @@ extension PolylineToLatLngs on Polyline {
     }
     return latLngRepresentation;
   }
-}
 
-extension PolylineToMapsToolkitLatLngs on Polyline {
   /// Extension function on [Polyline]. Takes a [Polyline] and converts it to a
   /// list of [mp.LatLng]s for maps toolkit functions. Returns the
   /// [List]`<`[mp.LatLng]`>`.
@@ -606,6 +608,12 @@ extension PolylineToMapsToolkitLatLngs on Polyline {
       latLngRepresentation.add(mp.LatLng(point.latitude, point.longitude));
     }
     return latLngRepresentation;
+  }
+
+  /// Returns the length of this polyline in feet.
+  double getLengthInFeet() {
+    return (mp.SphericalUtil.computeLength(toMPLatLngList()) * feetPerMeter)
+        .toDouble();
   }
 }
 
