@@ -635,19 +635,3 @@ extension DynamicLatLngExtraction on List<dynamic> {
     return newLatLngList;
   }
 }
-
-/// Saves the traced route from PeopleInMotionTest
-Future<void> saveTracedRoute({
-  required PeopleInMotionTest test,
-  required Map<String, dynamic> tracedRouteData,
-}) async {
-  try {
-    // I have no idea if your intention was to make a collection just called 'tests' with all the tracedRoutes or what so I'm not messing with this
-    await _firestore.collection('tests').doc(test.testID).update({
-      'tracedRoutes': FieldValue.arrayUnion([tracedRouteData])
-    });
-    print("Traced route saved successfully.");
-  } catch (e) {
-    print("Error saving traced route: $e");
-  }
-}

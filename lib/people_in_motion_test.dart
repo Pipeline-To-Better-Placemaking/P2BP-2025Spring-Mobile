@@ -5,32 +5,12 @@ import 'package:flutter/services.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:p2bp_2025spring_mobile/firestore_functions.dart';
+import 'package:p2bp_2025spring_mobile/theme.dart';
 import 'google_maps_functions.dart';
 import 'package:maps_toolkit/maps_toolkit.dart' as mp;
 import 'package:p2bp_2025spring_mobile/db_schema_classes.dart';
 import 'package:p2bp_2025spring_mobile/project_details_page.dart';
 import 'package:p2bp_2025spring_mobile/people_in_motion_instructions.dart';
-
-class TracedRoute {
-  final List<LatLng> points;
-  final String activityType;
-  final DateTime timestamp;
-
-  TracedRoute({
-    required this.points,
-    required this.activityType,
-    required this.timestamp,
-  });
-
-  // Convert the route data into a JSON‑compatible map.
-  Map<String, dynamic> toJson() {
-    return {
-      'points': points.toGeoPointList(),
-      'activityType': activityType,
-      'timestamp': timestamp.toIso8601String(),
-    };
-  }
-}
 
 class PeopleInMotionTestPage extends StatefulWidget {
   final Project activeProject;
@@ -40,39 +20,40 @@ class PeopleInMotionTestPage extends StatefulWidget {
     super.key,
     required this.activeProject,
     required this.activeTest,
-  }) : super();
+  });
 
   @override
   State<PeopleInMotionTestPage> createState() => _PeopleInMotionTestPageState();
 }
 
 class _PeopleInMotionTestPageState extends State<PeopleInMotionTestPage> {
-  final FirebaseFirestore _firestore = FirebaseFirestore.instance;
-  final GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey<ScaffoldState>();
   late GoogleMapController mapController;
   LatLng _currentLocation = defaultLocation; // Default location
   bool _isLoading = true;
   Timer? _hintTimer;
   bool _showHint = false;
   bool _isTestRunning = false;
-  Timer? _timer;
-  Set<Marker> _markers = {}; // Set of markers for points
-  Set<Polygon> _polygons = {}; // Set of polygons
-  MapType _currentMapType = MapType.normal; // Default map type
+  bool _isTracingMode = false;
   bool _showErrorMessage = false;
   bool _isPointsMenuVisible = false;
-  List<LatLng> _loggedPoints = [];
+  Timer? _timer;
 
-  bool _isTracingMode = false;
-  List<LatLng> _tracedPolylinePoints = [];
-  // Confirmed polylines persist from previous sessions.
-  Set<Polyline> _confirmedPolylines = {};
+  Set<Polygon> _polygons = {}; // Set of polygons
+  MapType _currentMapType = MapType.normal; // Default map type
+
+  // Set of markers when drawing polyline
+  Set<Marker> _polylineMarkers = {};
+  // List of points when drawing polyline, should match _polylineMarkers
+  List<LatLng> _polylinePoints = [];
   // Temporary polyline shown during the current tracing session
   Polyline? _tempPolyline;
+  // Set of polylines created during this test
+  Set<Polyline> _polylines = {};
 
-  // This list tracks marker IDs added during the current tracing session.
-  List<String> _currentTracingMarkerIds = [];
-  PersistentBottomSheetController? _tracingSheetController;
+  // // Confirmed polylines persist from previous sessions.
+  // Set<Polyline> _confirmedPolylines = {};
+
+  final PeopleInMotionData _newData = PeopleInMotionData();
 
   // Custom marker icons
   BitmapDescriptor? walkingConnector;
@@ -83,10 +64,8 @@ class _PeopleInMotionTestPageState extends State<PeopleInMotionTestPage> {
   BitmapDescriptor? tempMarkerIcon;
   bool _customMarkersLoaded = false;
 
-  MarkerId? _openMarkerId;
-
-  List<TracedRoute> _confirmedRoutes = [];
-  Map<String, List<String>> _routeMarkerIds = {};
+  // List<TracedRoute> _confirmedRoutes = [];
+  // Map<String, List<String>> _routeMarkerIds = {};
 
   // Define an initial time
   int _remainingSeconds = 300;
@@ -121,64 +100,6 @@ class _PeopleInMotionTestPageState extends State<PeopleInMotionTestPage> {
     _timer?.cancel();
     _hintTimer?.cancel();
     super.dispose();
-  }
-
-  // Helper method to format elapsed seconds into mm:ss.
-  String _formatTime(int seconds) {
-    final minutes = seconds ~/ 60;
-    final secs = seconds % 60;
-    return '${minutes.toString().padLeft(2, '0')}:${secs.toString().padLeft(2, '0')}';
-  }
-
-  // Method to start the test and timer.
-  void _startTest() {
-    setState(() {
-      _isTestRunning = true;
-      _remainingSeconds = 300; // Reset countdown value
-    });
-    _timer = Timer.periodic(Duration(seconds: 1), (timer) {
-      setState(() {
-        if (_remainingSeconds > 0) {
-          _remainingSeconds--;
-        } else {
-          // When the timer reaches zero, cancel the timer and end the test.
-          timer.cancel();
-          _endTest();
-        }
-      });
-    });
-  }
-
-  // Method to end the test and cancel the timer.
-  void _endTest() async {
-    setState(() {
-      _isTestRunning = false;
-      Navigator.pushReplacement(
-        context,
-        MaterialPageRoute(
-          builder: (context) => ProjectDetailsPage(
-            projectData: widget.activeProject,
-          ),
-        ),
-      );
-    });
-    _timer?.cancel();
-
-    try {
-      await _firestore
-          .collection(
-              widget.activeTest.collectionID) // NEW: Use test's collection ID.
-          .doc(widget.activeTest.testID) // NEW: Use test's document ID.
-          .update({
-        'data': PeopleInMotionTest.convertDataToFirestore(
-            _confirmedRoutes), // NEW: Convert traced route data.
-        'isComplete': true,
-      });
-      print("PeopleInMotion test data submitted successfully.");
-    } catch (e, stacktrace) {
-      print("Error submitting PeopleInMotion test data: $e");
-      print("Stacktrace: $stacktrace");
-    }
   }
 
   void _showInstructionOverlay() {
@@ -323,13 +244,11 @@ class _PeopleInMotionTestPageState extends State<PeopleInMotionTestPage> {
   }
 
   void _moveToCurrentLocation() {
-    if (mapController != null) {
-      mapController.animateCamera(
-        CameraUpdate.newCameraPosition(
-          CameraPosition(target: _currentLocation, zoom: 14.0),
-        ),
-      );
-    }
+    mapController.animateCamera(
+      CameraUpdate.newCameraPosition(
+        CameraPosition(target: _currentLocation, zoom: 14.0),
+      ),
+    );
   }
 
   void _toggleMapType() {
@@ -356,8 +275,7 @@ class _PeopleInMotionTestPageState extends State<PeopleInMotionTestPage> {
   Future<void> _handleMapTap(LatLng point) async {
     _resetHintTimer();
     // If point is outside the project boundary, display error message
-    if (!_isPointInsidePolygon(
-        point, widget.activeProject.polygonPoints.toLatLngList())) {
+    if (!_isPointInsidePolygon(point, _polygons.first.toLatLngList())) {
       setState(() {
         _showErrorMessage = true;
       });
@@ -370,9 +288,7 @@ class _PeopleInMotionTestPageState extends State<PeopleInMotionTestPage> {
     }
     if (_isTracingMode) {
       // Add this tap as a dot marker.
-      final String markerIdVal =
-          "tracing_marker_${DateTime.now().millisecondsSinceEpoch}";
-      final MarkerId markerId = MarkerId(markerIdVal);
+      final markerId = MarkerId(point.toString());
       // Using a different hue for temporary markers.
       final Marker marker = Marker(
         markerId: markerId,
@@ -381,20 +297,22 @@ class _PeopleInMotionTestPageState extends State<PeopleInMotionTestPage> {
             ? tempMarkerIcon!
             : BitmapDescriptor.defaultMarkerWithHue(BitmapDescriptor.hueBlue),
       );
-      // Append the tapped point to the traced polyline.
+
       setState(() {
-        _markers.add(marker);
-        _currentTracingMarkerIds.add(markerIdVal);
-        _tracedPolylinePoints.add(point);
-        _tempPolyline = Polyline(
-          polylineId: PolylineId("tracing"),
-          points: _tracedPolylinePoints,
-          color: Colors.grey, // Temporary preview color.
-          width: 5,
-        );
+        _polylinePoints.add(point);
+        _polylineMarkers.add(marker);
+      });
+
+      // Append the tapped point to the traced polyline.
+      Polyline? polyline = createPolyline(_polylinePoints, Colors.grey);
+      if (polyline == null) {
+        throw Exception('Failed to create Polyline from given points.');
+      }
+
+      setState(() {
+        _tempPolyline = polyline;
       });
     }
-    // (No action for non-tracing taps; old classification bottom sheet removed.)
   }
 
   // Function to load custom marker icons using AssetMapBitmap.
@@ -447,183 +365,93 @@ class _PeopleInMotionTestPageState extends State<PeopleInMotionTestPage> {
     }
   }
 
-  // --- Tracing Mode Bottom Sheet (Persistent) ---
-  void _showTracingConfirmationSheet() {
-    // Use the scaffold key to show a persistent bottom sheet.
-    _tracingSheetController = _scaffoldKey.currentState?.showBottomSheet(
-      (context) {
-        return Container(
-          color: Color(0xFFDDE6F2),
-          padding: const EdgeInsets.all(20),
-          child: Row(
-            mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-            children: [
-              ElevatedButton(
-                onPressed: () {
-                  // Cancel: dismiss the sheet, remove temporary markers and polyline, and disable tracing mode.
-                  for (final id in _currentTracingMarkerIds) {
-                    _markers
-                        .removeWhere((marker) => marker.markerId.value == id);
-                  }
-                  setState(() {
-                    _currentTracingMarkerIds.clear();
-                    _tracedPolylinePoints.clear();
-                    _tempPolyline = null;
-                    _isTracingMode = false;
-                  });
-                  _tracingSheetController?.close();
-                },
-                child: Text('Cancel'),
-              ),
-              ElevatedButton(
-                onPressed: () {
-                  // Confirm: dismiss the sheet and show activity selection.
-                  _tracingSheetController?.close();
-                  _showActivityDataSheet();
-                },
-                child: Text('Confirm'),
-              ),
-            ],
-          ),
-        );
-      },
-      backgroundColor: Colors.transparent,
-    );
+  BitmapDescriptor _getMarkerIcon(ActivityTypeInMotion? key) {
+    switch (key) {
+      case ActivityTypeInMotion.walking:
+        return walkingConnector ?? BitmapDescriptor.defaultMarker;
+      case ActivityTypeInMotion.running:
+        return runningConnector ?? BitmapDescriptor.defaultMarker;
+      case ActivityTypeInMotion.swimming:
+        return swimmingConnector ?? BitmapDescriptor.defaultMarker;
+      case ActivityTypeInMotion.activityOnWheels:
+        return wheelsConnector ?? BitmapDescriptor.defaultMarker;
+      case ActivityTypeInMotion.handicapAssistedWheels:
+        return handicapConnector ?? BitmapDescriptor.defaultMarker;
+      default:
+        return BitmapDescriptor.defaultMarker;
+    }
   }
 
-  // --- Activity Data Bottom Sheet ---
-  void _showActivityDataSheet() {
-    showModalBottomSheet(
+  void _doActivityDataSheet() async {
+    final ActivityTypeInMotion? activity = await showModalBottomSheet(
       context: context,
       isScrollControlled: true,
       backgroundColor: Color(0xFFDDE6F2),
-      builder: (BuildContext context) {
-        return PeopleInMotionDataSheet(
-          onSubmit: (selectedActivity) {
-            // Map the selected activity to its corresponding marker icon.
-            BitmapDescriptor connectorIcon;
-            switch (selectedActivity) {
-              case 'Walking':
-                connectorIcon =
-                    walkingConnector ?? BitmapDescriptor.defaultMarker;
-                break;
-              case 'Running':
-                connectorIcon =
-                    runningConnector ?? BitmapDescriptor.defaultMarker;
-                break;
-              case 'Swimming':
-                connectorIcon =
-                    swimmingConnector ?? BitmapDescriptor.defaultMarker;
-                break;
-              case 'Activity on Wheels':
-                connectorIcon =
-                    wheelsConnector ?? BitmapDescriptor.defaultMarker;
-                break;
-              case 'Handicap Assisted Wheels':
-                connectorIcon =
-                    handicapConnector ?? BitmapDescriptor.defaultMarker;
-                break;
-              default:
-                connectorIcon = BitmapDescriptor.defaultMarker;
-            }
-
-            // Generate a unique route ID.
-            final String routeId =
-                DateTime.now().millisecondsSinceEpoch.toString();
-            final polylineId = PolylineId(routeId);
-
-            // Now, update the markers for the current tracing session to keep only the first and last markers.
-            setState(() {
-              _markers.removeWhere((marker) =>
-                  _currentTracingMarkerIds.contains(marker.markerId.value));
-              _currentTracingMarkerIds.clear();
-
-              // If there are traced points, create start and end markers with IDs based on routeId.
-              if (_tracedPolylinePoints.isNotEmpty) {
-                final LatLng firstPoint = _tracedPolylinePoints.first;
-                final LatLng lastPoint = _tracedPolylinePoints.last;
-
-                final String startMarkerId = "start_$routeId";
-                final String endMarkerId = "end_$routeId";
-
-                _markers.addAll([
-                  Marker(
-                    markerId: MarkerId(startMarkerId),
-                    position: firstPoint,
-                    icon: connectorIcon,
-                    anchor: Offset(0.5, 0.5),
-                  ),
-                  Marker(
-                    markerId: MarkerId(
-                        "end_${DateTime.now().millisecondsSinceEpoch}"),
-                    position: lastPoint,
-                    icon: connectorIcon,
-                    anchor: Offset(0.5, 0.5),
-                  ),
-                ]);
-
-                // Store these marker IDs in the map
-                _routeMarkerIds[routeId] = [startMarkerId, endMarkerId];
-              }
-
-              // Remove the temporary tracing polyline and add a colored one.
-              _confirmedPolylines
-                  .removeWhere((poly) => poly.polylineId.value == "tracing");
-              final polylineId =
-                  PolylineId(DateTime.now().millisecondsSinceEpoch.toString());
-              _confirmedPolylines.add(
-                Polyline(
-                  polylineId: polylineId,
-                  points: List<LatLng>.from(_tracedPolylinePoints),
-                  // Define colors for each activity type.
-                  color: {
-                        'Walking': Colors.teal,
-                        'Running': Colors.red,
-                        'Swimming': Colors.cyan,
-                        'Activity on Wheels': Colors.orange,
-                        'Handicap Assisted Wheels': Colors.purple,
-                      }[selectedActivity] ??
-                      Colors.black,
-                  width: 5,
-                ),
-              );
-
-              final tracedRoute = TracedRoute(
-                points: List<LatLng>.from(_tracedPolylinePoints),
-                activityType: selectedActivity,
-                timestamp: DateTime.now(),
-              );
-              _confirmedRoutes.add(tracedRoute);
-
-              saveTracedRoute(
-                test: widget.activeTest,
-                tracedRouteData: tracedRoute.toJson(),
-              );
-
-              _tracedPolylinePoints.clear();
-              _tempPolyline = null;
-              _isTracingMode = false;
-            });
-          },
-        );
-      },
+      builder: (BuildContext context) => _ActivityForm(),
     );
+    if (activity == null) return;
+
+    // Map the selected activity to its corresponding marker icon.
+    BitmapDescriptor connectorIcon = _getMarkerIcon(activity);
+
+    // Create a data point from the polyline and activity
+    _newData.persons.add(PersonInMotion(
+      polyline: _tempPolyline!,
+      activity: activity,
+    ));
+
+    setState(() {
+      // Add polyline to set of finished ones
+      _polylines.add(_tempPolyline!.copyWith(colorParam: activity.color));
+
+      // Clear temp values previously holding polyline info and turn off tracing
+      _polylinePoints.clear();
+      _polylineMarkers.clear();
+      _tempPolyline = null;
+      _isTracingMode = false;
+    });
+  }
+
+  // Helper method to format elapsed seconds into mm:ss.
+  String _formatTime(int seconds) {
+    final minutes = seconds ~/ 60;
+    final secs = seconds % 60;
+    return '${minutes.toString().padLeft(2, '0')}:${secs.toString().padLeft(2, '0')}';
+  }
+
+  void _startTest() {
+    setState(() {
+      _isTestRunning = true;
+      _remainingSeconds = 300; // Reset countdown value
+    });
+    _timer = Timer.periodic(Duration(seconds: 1), (timer) {
+      // TODO: extract the timer and necessary functionality to its own
+      // stateful widget to stop this from forcing the whole screen to
+      // need to rebuild every second.
+      setState(() {
+        if (_remainingSeconds <= 0) {
+          timer.cancel();
+        }
+        _remainingSeconds--;
+      });
+    });
+  }
+
+  void _endTest() async {
+    _isTestRunning = false;
+    _timer?.cancel();
+    _hintTimer?.cancel();
+    widget.activeTest.submitData(_newData);
+    Navigator.pop(context);
   }
 
   @override
   Widget build(BuildContext context) {
-    // Combine confirmed polylines with the temporary one (if any)
-    final Set<Polyline> allPolylines = _confirmedPolylines.union(
-      _tempPolyline != null ? {_tempPolyline!} : {},
-    );
-
     // Determine which set of points to display in the points menu.
-    final List<LatLng> displayedPoints = _tracedPolylinePoints.isNotEmpty
-        ? _tracedPolylinePoints
-        : _loggedPoints;
+    // final List<LatLng> displayedPoints =
+    //     _polylinePoints.isNotEmpty ? _polylinePoints : _loggedPoints;
 
     return Scaffold(
-      key: _scaffoldKey,
       extendBodyBehindAppBar: true,
       appBar: AppBar(
         systemOverlayStyle:
@@ -644,9 +472,9 @@ class _PeopleInMotionTestPageState extends State<PeopleInMotionTestPage> {
             ),
             onPressed: () {
               if (_isTestRunning) {
-                Navigator.pop(context);
+                _endTest();
               } else {
-                Navigator.pop(context);
+                _startTest();
               }
             },
             child: Text(
@@ -702,9 +530,12 @@ class _PeopleInMotionTestPageState extends State<PeopleInMotionTestPage> {
               target: _currentLocation,
               zoom: 14.0,
             ),
-            markers: _markers,
+            markers: _polylineMarkers,
             polygons: _polygons,
-            polylines: allPolylines,
+            polylines: {
+              ..._polylines,
+              if (_tempPolyline != null) _tempPolyline!
+            },
             onTap: _handleMapTap,
             mapType: _currentMapType,
             myLocationButtonEnabled: false,
@@ -824,18 +655,19 @@ class _PeopleInMotionTestPageState extends State<PeopleInMotionTestPage> {
                 ],
               ),
               child: IconButton(
-                icon: Icon(FontAwesomeIcons.pen, color: Color(0xFF8C2F00)),
+                icon: Icon(
+                  FontAwesomeIcons.pen,
+                  color: Color(0xFF8C2F00),
+                ),
                 onPressed: _isTracingMode
                     ? null
                     : () {
                         setState(() {
                           _isTracingMode = true;
-                          _tracedPolylinePoints.clear();
-                          _currentTracingMarkerIds.clear();
-                          _confirmedPolylines.removeWhere(
-                              (poly) => poly.polylineId.value == "tracing");
+                          _polylinePoints.clear();
+                          _polylineMarkers.clear();
+                          _tempPolyline = null;
                         });
-                        _showTracingConfirmationSheet();
                       },
               ),
             ),
@@ -861,10 +693,14 @@ class _PeopleInMotionTestPageState extends State<PeopleInMotionTestPage> {
                   children: [
                     Padding(
                       padding: const EdgeInsets.symmetric(vertical: 8.0),
-                      child: Text("Route Color Guide",
-                          textAlign: TextAlign.center,
-                          style: TextStyle(
-                              fontSize: 18, fontWeight: FontWeight.bold)),
+                      child: Text(
+                        "Route Color Guide",
+                        textAlign: TextAlign.center,
+                        style: TextStyle(
+                          fontSize: 18,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
                     ),
                     Padding(
                       padding: const EdgeInsets.symmetric(horizontal: 16.0),
@@ -879,24 +715,23 @@ class _PeopleInMotionTestPageState extends State<PeopleInMotionTestPage> {
                     Expanded(
                       child: ListView.builder(
                         padding: EdgeInsets.zero,
-                        itemCount: _confirmedPolylines.length,
+                        itemCount: _newData.persons.length,
                         itemBuilder: (context, index) {
-                          final route = _confirmedRoutes[index];
-                          final instanceNumber = _confirmedRoutes
+                          final person = _newData.persons[index];
+                          final instanceNumber = _newData.persons
                               .take(index + 1)
-                              .where(
-                                  (r) => r.activityType == route.activityType)
+                              .where((r) => r.activity == person.activity)
                               .length;
                           return ListTile(
                             contentPadding:
                                 const EdgeInsets.symmetric(horizontal: 20),
                             title: Text(
-                              '${route.activityType} Route $instanceNumber',
+                              '${person.activity} Route $instanceNumber',
                               style:
                                   const TextStyle(fontWeight: FontWeight.bold),
                             ),
                             subtitle: Text(
-                              'Points: ${route.points.length}',
+                              'Points: ${person.polyline.points.length}',
                               textAlign: TextAlign.left,
                             ),
                             trailing: IconButton(
@@ -906,23 +741,23 @@ class _PeopleInMotionTestPageState extends State<PeopleInMotionTestPage> {
                                 setState(() {
                                   // Retrieve the route ID from the polyline's id.
                                   // OLD: String routeId = polyline.polylineId.value; (Change back if necessary)
-                                  String routeId =
-                                      route.timestamp.toIso8601String();
-                                  // Remove associated markers for this route.
-                                  if (_routeMarkerIds.containsKey(routeId)) {
-                                    for (var markerId
-                                        in _routeMarkerIds[routeId]!) {
-                                      _markers.removeWhere((marker) =>
-                                          marker.markerId.value == markerId);
-                                    }
-                                    _routeMarkerIds.remove(routeId);
-                                  }
+                                  // String routeId =
+                                  //     person.timestamp.toIso8601String();
+                                  // // Remove associated markers for this route.
+                                  // if (_routeMarkerIds.containsKey(routeId)) {
+                                  //   for (var markerId
+                                  //       in _routeMarkerIds[routeId]!) {
+                                  //     _polylineMarkers.removeWhere((marker) =>
+                                  //         marker.markerId.value == markerId);
+                                  //   }
+                                  //   _routeMarkerIds.remove(routeId);
+                                  // }
 
-                                  // Remove the associated polyline from _confirmedPolylines
-                                  _confirmedPolylines.removeWhere((polyline) =>
-                                      polyline.polylineId.value == routeId);
+                                  // // Remove the associated polyline from _confirmedPolylines
+                                  // _confirmedPolylines.removeWhere((polyline) =>
+                                  //     polyline.polylineId.value == routeId);
 
-                                  _confirmedRoutes.removeAt(index);
+                                  // _confirmedRoutes.removeAt(index);
                                 });
                               },
                             ),
@@ -943,12 +778,12 @@ class _PeopleInMotionTestPageState extends State<PeopleInMotionTestPage> {
                             onPressed: () {
                               setState(() {
                                 // Clear all confirmed polylines.
-                                _confirmedPolylines.clear();
+                                // _confirmedPolylines.clear();
                                 // Remove start/end markers from the markers set.
-                                _markers.removeWhere((marker) =>
-                                    marker.markerId.value
-                                        .startsWith("start_") ||
-                                    marker.markerId.value.startsWith("end_"));
+                                // _polylineMarkers.removeWhere((marker) =>
+                                //     marker.markerId.value
+                                //         .startsWith("start_") ||
+                                //     marker.markerId.value.startsWith("end_"));
                               });
                             },
                             style: TextButton.styleFrom(
@@ -977,59 +812,73 @@ class _PeopleInMotionTestPageState extends State<PeopleInMotionTestPage> {
             ),
         ],
       ),
+      bottomSheet: (_isTracingMode)
+          ? Container(
+              color: Color(0xFFDDE6F2),
+              padding: const EdgeInsets.all(20),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                children: [
+                  ElevatedButton(
+                    onPressed: () {
+                      // Cancel: dismiss sheet, remove temp points for current
+                      // polyline, and disable tracing mode.
+                      setState(() {
+                        _polylinePoints.clear();
+                        _polylineMarkers.clear();
+                        _tempPolyline = null;
+                        _isTracingMode = false;
+                      });
+                    },
+                    child: Text('Cancel'),
+                  ),
+                  ElevatedButton(
+                    onPressed:
+                        (_polylinePoints.length > 1 && _tempPolyline != null)
+                            ? () {
+                                // Confirm: dismiss sheet and show activity selection.
+                                _doActivityDataSheet();
+                              }
+                            : null,
+                    child: Text('Confirm'),
+                  ),
+                ],
+              ),
+            )
+          : null,
     );
   }
 }
 
-// --- PeopleInMotionDataSheet for activity selection ---
-class PeopleInMotionDataSheet extends StatefulWidget {
-  final Function(String) onSubmit;
-  const PeopleInMotionDataSheet({Key? key, required this.onSubmit})
-      : super(key: key);
+class _ActivityForm extends StatefulWidget {
+  const _ActivityForm();
 
   @override
-  State<PeopleInMotionDataSheet> createState() =>
-      _PeopleInMotionDataSheetState();
+  State<_ActivityForm> createState() => _ActivityFormState();
 }
 
-class _PeopleInMotionDataSheetState extends State<PeopleInMotionDataSheet> {
-  String? _selectedActivity;
-
-  // Build a button for each activity type.
-  Widget _buildActivityButton(String activity) {
-    final bool isSelected = activity == _selectedActivity;
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 4.0),
-      child: TextButton(
-        onPressed: () {
-          setState(() {
-            _selectedActivity = activity;
-          });
-        },
-        style: TextButton.styleFrom(
-          backgroundColor: isSelected ? Colors.blue : Colors.grey[200],
-          foregroundColor: isSelected ? Colors.white : Colors.black,
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(8),
-          ),
-          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
-        ),
-        child: Align(
-          alignment: Alignment.centerLeft,
-          child: Text(activity),
-        ),
-      ),
-    );
-  }
+class _ActivityFormState extends State<_ActivityForm> {
+  ActivityTypeInMotion? _selectedActivity;
 
   @override
   Widget build(BuildContext context) {
+    final ThemeData theme = Theme.of(context);
+
     return Padding(
-      // Adjust for keyboard.
-      padding: MediaQuery.of(context).viewInsets,
-      child: Container(
-        width: MediaQuery.of(context).size.width,
-        padding: const EdgeInsets.all(20),
+      padding: const EdgeInsets.all(20),
+      child: Theme(
+        data: theme.copyWith(
+          chipTheme: theme.chipTheme.copyWith(
+            showCheckmark: false,
+            backgroundColor: Colors.grey[200],
+            selectedColor: Colors.blue,
+            labelStyle: TextStyle(
+              color: ChipLabelColor(),
+              fontWeight: FontWeight.bold,
+            ),
+            side: BorderSide.none,
+          ),
+        ),
         child: SingleChildScrollView(
           child: Column(
             mainAxisSize: MainAxisSize.min,
@@ -1065,26 +914,31 @@ class _PeopleInMotionDataSheetState extends State<PeopleInMotionDataSheet> {
               const SizedBox(height: 10),
               // Activity selection buttons.
               Column(
-                children: [
-                  _buildActivityButton('Walking'),
-                  _buildActivityButton('Running'),
-                  _buildActivityButton('Swimming'),
-                  _buildActivityButton('Activity on Wheels'),
-                  _buildActivityButton('Handicap Assisted Wheels'),
-                ],
+                children: List<Widget>.generate(
+                    ActivityTypeInMotion.values.length, (index) {
+                  final List activities = ActivityTypeInMotion.values;
+                  return ChoiceChip(
+                    label: Text(activities[index].displayName),
+                    selected: _selectedActivity == activities[index],
+                    onSelected: (selected) {
+                      setState(() {
+                        _selectedActivity = selected ? activities[index] : null;
+                      });
+                    },
+                  );
+                }),
               ),
               const SizedBox(height: 20),
               // Submit button.
               ElevatedButton(
-                onPressed: () {
-                  if (_selectedActivity != null) {
-                    widget.onSubmit(_selectedActivity!);
-                    Navigator.pop(context);
-                  }
-                },
+                onPressed: (_selectedActivity != null)
+                    ? () => Navigator.pop(context, _selectedActivity)
+                    : null,
                 style: ElevatedButton.styleFrom(
-                  padding:
-                      const EdgeInsets.symmetric(horizontal: 40, vertical: 12),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 40,
+                    vertical: 12,
+                  ),
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(20),
                   ),

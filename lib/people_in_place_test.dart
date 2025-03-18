@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
+import 'package:p2bp_2025spring_mobile/theme.dart';
 import 'google_maps_functions.dart';
 import 'package:maps_toolkit/maps_toolkit.dart' as mp;
 import 'package:p2bp_2025spring_mobile/firestore_functions.dart';
@@ -451,16 +452,18 @@ class _PeopleInPlaceTestPageState extends State<PeopleInPlaceTestPage> {
     });
     _timer = Timer.periodic(Duration(seconds: 1), (timer) {
       setState(() {
-        if (_remainingSeconds > 0) {
-          _remainingSeconds--;
+        if (_remainingSeconds <= 0) {
           timer.cancel();
-          // TODO: end test/submit data or something?
         }
+        _remainingSeconds--;
       });
     });
   }
 
   void _endTest() {
+    _isTestRunning = false;
+    _timer?.cancel();
+    _hintTimer?.cancel();
     widget.activeTest.submitData(_newData);
     Navigator.pop(context);
   }
@@ -787,16 +790,17 @@ class _DescriptionFormState extends State<_DescriptionForm> {
 
   int? _selectedAgeRange;
   int? _selectedGender;
-  final List<bool> _selectedActivities =
-      List.of([for (final _ in ActivityType.values) false], growable: false);
+  final List<bool> _selectedActivities = List.of(
+      [for (final _ in ActivityTypeInPlace.values) false],
+      growable: false);
   int? _selectedPosture;
 
   void _submitDescription() {
     final PersonInPlace person;
 
     // Converts activity bool list to type set
-    List<ActivityType> types = ActivityType.values;
-    Set<ActivityType> activities = {};
+    List<ActivityTypeInPlace> types = ActivityTypeInPlace.values;
+    Set<ActivityTypeInPlace> activities = {};
     for (int i = 0; i < types.length; i += 1) {
       if (_selectedActivities[i]) {
         activities.add(types[i]);
@@ -920,10 +924,11 @@ class _DescriptionFormState extends State<_DescriptionForm> {
                   Wrap(
                     spacing: 8,
                     children: List<Widget>.generate(
-                      ActivityType.values.length,
+                      ActivityTypeInPlace.values.length,
                       (index) {
                         return FilterChip(
-                          label: Text(ActivityType.values[index].displayName),
+                          label: Text(
+                              ActivityTypeInPlace.values[index].displayName),
                           selected: _selectedActivities[index],
                           onSelected: (selected) {
                             setState(() {
@@ -985,19 +990,5 @@ class _DescriptionFormState extends State<_DescriptionForm> {
         ),
       ),
     );
-  }
-}
-
-class ChipLabelColor extends Color implements WidgetStateColor {
-  const ChipLabelColor() : super(_default);
-
-  static const int _default = 0xFF000000;
-
-  @override
-  Color resolve(Set<WidgetState> states) {
-    if (states.contains(WidgetState.selected)) {
-      return Colors.white;
-    }
-    return Colors.black;
   }
 }
