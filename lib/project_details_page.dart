@@ -371,7 +371,7 @@ class TestCard extends StatelessWidget {
   Widget build(BuildContext context) {
     return InkWell(
       onLongPress: () {
-        print('1');
+        // TODO: Add menu for deletion?
       },
       child: Card(
         child: Padding(
@@ -383,8 +383,33 @@ class TestCard extends StatelessWidget {
                 child: Text(_testInitialsMap[test.runtimeType] ?? ''),
               ),
               SizedBox(width: 15),
+              // TODO: Add date
               Expanded(
-                child: Text(test.title),
+                  flex: 2,
+                  child: Column(
+                    children: [
+                      Text('Scheduled Time: '),
+                      Text(
+                          '${test.scheduledTime.toDate().month}/${test.scheduledTime.toDate().day}/${test.scheduledTime.toDate().year}'),
+                      Text(
+                          '${test.scheduledTime.toDate().weekday} at ${test.scheduledTime.toDate().hour}:${test.scheduledTime.toDate().minute}'),
+                    ],
+                  )),
+              Expanded(
+                flex: 2,
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      test.title,
+                      style: TextStyle(fontWeight: FontWeight.bold),
+                    ),
+                    Text(
+                      test.isComplete ? 'completed' : 'not completed',
+                      style: TextStyle(fontStyle: FontStyle.italic),
+                    )
+                  ],
+                ),
               ),
               Align(
                 alignment: Alignment.centerRight,
@@ -393,7 +418,7 @@ class TestCard extends StatelessWidget {
                     Icons.chevron_right,
                     color: Colors.blue,
                   ),
-                  tooltip: 'Open team settings',
+                  tooltip: 'Start test',
                   onPressed: () {
                     Navigator.push(
                       context,

@@ -1,5 +1,6 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:p2bp_2025spring_mobile/firestore_functions.dart';
 import 'package:p2bp_2025spring_mobile/project_details_page.dart';
@@ -39,16 +40,17 @@ class _NaturePrevalenceState extends State<NaturePrevalence> {
   LatLng _location = defaultLocation; // Default location
   List<LatLng> _polygonPoints = []; // Points for the polygon
   Set<Polygon> _polygons = {}; // Set of polygons
-  Set<Marker> _markers = {}; // Set of markers for points
+  final Set<Marker> _markers = {}; // Set of markers for points
   Set<Marker> _polygonMarkers = {}; // Set of markers for polygon creation
   MapType _currentMapType = MapType.satellite; // Default map type
   bool _oldVisibility = true;
 
-  NatureData natureData = NatureData();
+  final NatureData _natureData = NatureData();
 
-  List<Animal> animalData = [];
-  List<Vegetation> vegetationData = [];
-  List<WaterBody> waterBodyData = [];
+  final List<Animal> _animalData = [];
+  final List<Vegetation> _vegetationData = [];
+  final List<WaterBody> _waterBodyData = [];
+  WeatherData? _weatherData;
 
   AnimalType? _animalType;
   VegetationType? _vegetationType;
@@ -65,6 +67,9 @@ class _NaturePrevalenceState extends State<NaturePrevalence> {
   void initState() {
     super.initState();
     initProjectArea();
+    WidgetsBinding.instance.addPostFrameCallback((_) async {
+      _setWeatherData();
+    });
   }
 
   /// Sets all type variables to null.
@@ -105,6 +110,213 @@ class _NaturePrevalenceState extends State<NaturePrevalence> {
       // TODO: dynamic zooming
       _isLoading = false;
     });
+  }
+
+  void _setWeatherData() async {
+    WeatherData? weatherData;
+    double? temperature;
+    bool erroredTemp = false;
+    bool erroredSelect = false;
+    Map<Weather, bool> selectedMap = {
+      Weather.stormy: false,
+      Weather.sunny: false,
+      Weather.rainy: false,
+      Weather.windy: false,
+      Weather.cloudy: false,
+    };
+    try {
+      weatherData = await showDialog(
+          barrierDismissible: false,
+          context: context,
+          builder: (context) {
+            return StatefulBuilder(builder: (context, StateSetter setState) {
+              return AlertDialog(
+                scrollable: true,
+                title: Column(
+                  children: [
+                    Text(
+                      'Weather',
+                      style: TextStyle(
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                  ],
+                ),
+                content: Column(
+                  children: [
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      spacing: 10,
+                      children: [
+                        Flexible(
+                          child: Text(
+                            'Temperature: ',
+                            style: TextStyle(
+                                fontWeight: FontWeight.bold, fontSize: 16),
+                          ),
+                        ),
+                        Flexible(
+                          child: DialogTextBox(
+                            inputFormatter: [
+                              FilteringTextInputFormatter.allow(
+                                  RegExp('[1234567890.-]'))
+                            ],
+                            keyboardType: TextInputType.numberWithOptions(
+                                signed: true, decimal: true),
+                            maxLength: 6,
+                            labelText: 'Temp.',
+                            onChanged: (inputText) {
+                              setState(() {
+                                erroredTemp = false;
+                              });
+                              temperature = double.tryParse(inputText);
+                            },
+                          ),
+                        ),
+                        Flexible(
+                            child: Text(
+                          '°F',
+                          style: TextStyle(fontSize: 14),
+                        ))
+                      ],
+                    ),
+                    erroredTemp
+                        ? Text(
+                            "Please input a value!",
+                            style: TextStyle(color: Colors.red[900]),
+                          )
+                        : SizedBox(),
+                    SizedBox(height: 30),
+                    Center(child: Text("Type")),
+                    Row(
+                      spacing: 5,
+                      children: <Widget>[
+                        TestButton(
+                            buttonText: "Sunny",
+                            backgroundColor: selectedMap[Weather.sunny] == true
+                                ? Colors.blue
+                                : null,
+                            onPressed: () {
+                              setState(() {
+                                erroredSelect = false;
+                                selectedMap[Weather.sunny] =
+                                    !selectedMap[Weather.sunny]!;
+                              });
+                            }),
+                        TestButton(
+                            buttonText: "Cloudy",
+                            backgroundColor: selectedMap[Weather.cloudy] == true
+                                ? Colors.blue
+                                : null,
+                            onPressed: () {
+                              setState(() {
+                                erroredSelect = false;
+                                selectedMap[Weather.cloudy] =
+                                    !selectedMap[Weather.cloudy]!;
+                              });
+                            }),
+                        TestButton(
+                            buttonText: "Rainy",
+                            backgroundColor: selectedMap[Weather.rainy] == true
+                                ? Colors.blue
+                                : null,
+                            onPressed: () {
+                              setState(() {
+                                erroredSelect = false;
+                                selectedMap[Weather.rainy] =
+                                    !selectedMap[Weather.rainy]!;
+                              });
+                            })
+                      ],
+                    ),
+                    Row(
+                      spacing: 5,
+                      children: <Widget>[
+                        TestButton(
+                            buttonText: "Windy",
+                            backgroundColor: selectedMap[Weather.windy] == true
+                                ? Colors.blue
+                                : null,
+                            onPressed: () {
+                              setState(() {
+                                erroredSelect = false;
+                                selectedMap[Weather.windy] =
+                                    !selectedMap[Weather.windy]!;
+                              });
+                            }),
+                        TestButton(
+                            buttonText: "Stormy",
+                            backgroundColor: selectedMap[Weather.stormy] == true
+                                ? Colors.blue
+                                : null,
+                            onPressed: () {
+                              setState(() {
+                                erroredSelect = false;
+                                selectedMap[Weather.stormy] =
+                                    !selectedMap[Weather.stormy]!;
+                              });
+                            })
+                      ],
+                    ),
+                    erroredSelect
+                        ? Text(
+                            "Please select a type!",
+                            style: TextStyle(color: Colors.red[900]),
+                          )
+                        : SizedBox(),
+                  ],
+                ),
+                actions: <Widget>[
+                  TextButton(
+                    onPressed: () {
+                      Navigator.pop(context, null);
+                    },
+                    child: const Text('Cancel'),
+                  ),
+                  TextButton(
+                    onPressed: () {
+                      List<Weather> selectedWeather = [];
+                      for (Weather weatherType in selectedMap.keys) {
+                        if (selectedMap[weatherType] != null &&
+                            selectedMap[weatherType] == true) {
+                          selectedWeather.add(weatherType);
+                        }
+                      }
+                      if (temperature == null) {
+                        setState(() {
+                          erroredTemp = true;
+                        });
+                      }
+                      print(erroredSelect);
+                      if (selectedWeather.isEmpty) {
+                        print("\n");
+                        setState(() {
+                          erroredSelect = true;
+                        });
+                      }
+                      if (erroredSelect || erroredTemp) {
+                        return;
+                      }
+                      weatherData = WeatherData(
+                          weatherTypes: selectedWeather, temp: temperature!);
+                      Navigator.pop(context, weatherData);
+                      print('${weatherData!.weatherTypes} temp: $temperature');
+                    },
+                    child: const Text('Next'),
+                  ),
+                ],
+              );
+            });
+          });
+      if (weatherData == null && mounted) {
+        Navigator.pop(context);
+      } else {
+        _weatherData = weatherData;
+      }
+    } catch (e, stacktrace) {
+      print('Error in nature_prevalence_test.dart, _setWeatherData(): $e');
+      print('Stacktrace: $stacktrace');
+    }
   }
 
   void _chooseWaterBodyType(WaterBodyType waterBodyType) {
@@ -483,7 +695,7 @@ class _NaturePrevalenceState extends State<NaturePrevalence> {
               // If placing a point or polygon, don't remove point.
               if (_pointMode || _polygonMode) return;
               // If the marker is tapped again, it will be removed
-              animalData.removeWhere((animal) => animal.point == point);
+              _animalData.removeWhere((animal) => animal.point == point);
               setState(() {
                 _markers.removeWhere((marker) => marker.markerId == markerId);
               });
@@ -492,7 +704,7 @@ class _NaturePrevalenceState extends State<NaturePrevalence> {
         );
         _directions = 'Choose a category. Or, click finish to submit.';
       });
-      animalData.add(Animal(
+      _animalData.add(Animal(
           animalType: _animalType!, point: point, otherType: _otherType));
       _pointMode = false;
     }
@@ -506,7 +718,7 @@ class _NaturePrevalenceState extends State<NaturePrevalence> {
             _polygonPoints, Vegetation.vegetationTypeToColor[_vegetationType]);
         // Create polygon.
         _polygons = {..._polygons, ...tempPolygon};
-        vegetationData.add(Vegetation(
+        _vegetationData.add(Vegetation(
             vegetationType: _vegetationType!,
             polygon: tempPolygon.first,
             otherType: _otherType));
@@ -515,7 +727,7 @@ class _NaturePrevalenceState extends State<NaturePrevalence> {
             _polygonPoints, WaterBody.waterBodyTypeToColor[_waterBodyType]);
         // Create polygon.
         _polygons = {..._polygons, ...tempPolygon};
-        waterBodyData.add(WaterBody(
+        _waterBodyData.add(WaterBody(
             waterBodyType: _waterBodyType!, polygon: tempPolygon.first));
       } else {
         throw Exception("Invalid nature type in _finalizePolygon(), "
@@ -777,15 +989,17 @@ class _NaturePrevalenceState extends State<NaturePrevalence> {
                                                   builder: (context) {
                                                     return TestFinishDialog(
                                                         onNext: () {
-                                                      natureData.animals =
-                                                          animalData;
-                                                      natureData.vegetation =
-                                                          vegetationData;
-                                                      natureData.waterBodies =
-                                                          waterBodyData;
+                                                      _natureData.animals =
+                                                          _animalData;
+                                                      _natureData.vegetation =
+                                                          _vegetationData;
+                                                      _natureData.waterBodies =
+                                                          _waterBodyData;
+                                                      _natureData.weather =
+                                                          _weatherData;
                                                       widget.activeTest
                                                           .submitData(
-                                                              natureData);
+                                                              _natureData);
                                                       Navigator.pushReplacement(
                                                           context,
                                                           MaterialPageRoute(

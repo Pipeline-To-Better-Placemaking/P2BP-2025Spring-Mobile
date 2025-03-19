@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:p2bp_2025spring_mobile/theme.dart';
 
 /// Bar Indicator for the Sliding Up Panels (Edit Project, Results)
@@ -286,22 +287,31 @@ class PasswordTextFormField extends StatelessWidget {
 /// Text form field used for dialog boxes.
 ///
 /// Enter an [errorMessage] for error validation. Put in a form for validation.
-/// Takes a [maxLength], [labelText] and optional [error message], [icon], and
-/// [onChanged].
+/// Takes a [maxLength], [labelText] and optional [errorMessage], [icon], and
+/// [onChanged]. Optional [minChars] parameter to specify the minimum number of
+/// characters for validation (default: 3)
 class DialogTextBox extends StatelessWidget {
-  final int maxLength;
+  final int? maxLength;
   final String labelText;
+  final TextInputType? keyboardType;
+  final List<TextInputFormatter>? inputFormatter;
+  final bool? autofocus;
   final ValueChanged? onChanged;
   final Icon? icon;
   final String? errorMessage;
+  final int? minChars;
 
   const DialogTextBox({
     super.key,
-    required this.maxLength,
+    this.maxLength,
     required this.labelText,
     this.onChanged,
     this.icon,
     this.errorMessage,
+    this.minChars,
+    this.keyboardType,
+    this.inputFormatter,
+    this.autofocus,
   });
   @override
   Widget build(BuildContext context) {
@@ -313,11 +323,15 @@ class DialogTextBox extends StatelessWidget {
         ),
         child: TextFormField(
           onChanged: onChanged,
+          keyboardType: keyboardType,
+          inputFormatters: inputFormatter,
+          autofocus: autofocus ?? false,
           style: const TextStyle(color: Colors.black),
           maxLength: maxLength,
           cursorColor: const Color(0xFF585A6A),
           validator: (value) {
-            if (errorMessage != null && (value == null || value.length < 3)) {
+            if (errorMessage != null &&
+                (value == null || value.length < (minChars ?? 3))) {
               return errorMessage ??
                   'Error, insufficient input (validator error message not set)';
             }
@@ -551,11 +565,13 @@ class VisibilitySwitch extends StatelessWidget {
 class TestButton extends StatelessWidget {
   const TestButton({
     this.flex,
+    this.backgroundColor,
     required this.buttonText,
     required this.onPressed,
     super.key,
   });
 
+  final Color? backgroundColor;
   final int? flex;
   final String buttonText;
   final VoidCallback? onPressed;
@@ -566,7 +582,7 @@ class TestButton extends StatelessWidget {
       flex: flex ?? 1,
       child: FilledButton(
         style: FilledButton.styleFrom(
-          backgroundColor: Colors.white,
+          backgroundColor: backgroundColor ?? Colors.white,
           foregroundColor: Colors.black,
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(10.0),
