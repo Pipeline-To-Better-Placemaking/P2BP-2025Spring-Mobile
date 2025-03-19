@@ -5,10 +5,10 @@ import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:p2bp_2025spring_mobile/theme.dart';
 import 'google_maps_functions.dart';
-import 'package:maps_toolkit/maps_toolkit.dart' as mp;
 import 'package:p2bp_2025spring_mobile/firestore_functions.dart';
 import 'package:p2bp_2025spring_mobile/db_schema_classes.dart';
 import 'package:p2bp_2025spring_mobile/people_in_place_instructions.dart';
+import 'package:maps_toolkit/maps_toolkit.dart' as mp;
 
 class PeopleInPlaceTestPage extends StatefulWidget {
   final Project activeProject;
@@ -26,19 +26,21 @@ class PeopleInPlaceTestPage extends StatefulWidget {
 
 class _PeopleInPlaceTestPageState extends State<PeopleInPlaceTestPage> {
   late GoogleMapController mapController;
-  LatLng _currentLocation = defaultLocation; // Default location
+  LatLng _location = defaultLocation; // Default location
   bool _isLoading = true;
   Timer? _hintTimer;
   bool _showHint = false;
   bool _isTestRunning = false;
   int _remainingSeconds = 0;
   Timer? _timer;
-  Set<Marker> _markers = {}; // Set of markers for points
   Set<Polygon> _polygons = {}; // Set of polygons
   MapType _currentMapType = MapType.normal; // Default map type
   bool _showErrorMessage = false;
   bool _isPointsMenuVisible = false;
-  List<LatLng> _loggedPoints = [];
+  List<mp.LatLng> _projectArea = [];
+
+  final Set<Marker> _markers = {}; // Set of markers for points
+  final List<LatLng> _loggedPoints = [];
 
   // List to store backend‑compatible logged data points.
   final PeopleInPlaceData _newData = PeopleInPlaceData();
@@ -69,11 +71,11 @@ class _PeopleInPlaceTestPageState extends State<PeopleInPlaceTestPage> {
   @override
   void initState() {
     super.initState();
-    print("initState called");
-    _checkAndFetchLocation();
+    _initProjectArea();
     WidgetsBinding.instance.addPostFrameCallback((_) {
       print("PostFrameCallback fired");
       _loadCustomMarkers();
+      _showInstructionOverlay();
     });
   }
 
@@ -82,6 +84,21 @@ class _PeopleInPlaceTestPageState extends State<PeopleInPlaceTestPage> {
     _timer?.cancel();
     _hintTimer?.cancel();
     super.dispose();
+  }
+
+  /// Gets the project polygon, adds it to the current polygon list, and
+  /// centers the map over it.
+  void _initProjectArea() {
+    setState(() {
+      _polygons = getProjectPolygon(widget.activeProject.polygonPoints);
+      print(_polygons);
+      _location = getPolygonCentroid(_polygons.first);
+      // Take some latitude away to center considering bottom sheet.
+      _location = LatLng(_location.latitude * .999999, _location.longitude);
+      _projectArea = _polygons.first.toMPLatLngList();
+      // TODO: dynamic zooming
+      _isLoading = false;
+    });
   }
 
   // Function to load custom marker icons using AssetMapBitmap.
@@ -259,30 +276,6 @@ class _PeopleInPlaceTestPageState extends State<PeopleInPlaceTestPage> {
     });
   }
 
-  Future<void> _checkAndFetchLocation() async {
-    try {
-      _currentLocation = await checkAndFetchLocation();
-      if (!mounted) return;
-      setState(() {
-        _isLoading = false;
-      });
-      // Delay popup till after the map has loaded
-      WidgetsBinding.instance.addPostFrameCallback((_) {
-        _showInstructionOverlay();
-      });
-    } catch (e, stacktrace) {
-      print('Exception fetching location in project_map_creation.dart: $e');
-      print('Stracktrace: $stacktrace');
-      if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-            content: Text(
-                'Map failed to load. Error trying to retrieve location permissions.')),
-      );
-      Navigator.pop(context);
-    }
-  }
-
   LatLngBounds _getPolygonBounds(List<LatLng> points) {
     double minLat = points.first.latitude;
     double maxLat = points.first.latitude;
@@ -305,7 +298,7 @@ class _PeopleInPlaceTestPageState extends State<PeopleInPlaceTestPage> {
   void _moveToCurrentLocation() {
     mapController.animateCamera(
       CameraUpdate.newCameraPosition(
-        CameraPosition(target: _currentLocation, zoom: 14.0),
+        CameraPosition(target: _location, zoom: 14.0),
       ),
     );
   }
@@ -316,18 +309,6 @@ class _PeopleInPlaceTestPageState extends State<PeopleInPlaceTestPage> {
           ? MapType.satellite
           : MapType.normal);
     });
-  }
-
-  // Check if tapped point is inside the polygon boundary.
-  bool _isPointInsidePolygon(LatLng point, List<LatLng> polygon) {
-    final List<mp.LatLng> mpPolygon = polygon
-        .map((latLng) => mp.LatLng(latLng.latitude, latLng.longitude))
-        .toList();
-    return mp.PolygonUtil.containsLocation(
-      mp.LatLng(point.latitude, point.longitude),
-      mpPolygon,
-      false, // Edge considered outside; change as needed.
-    );
   }
 
   BitmapDescriptor _getMarkerIcon(String key) {
@@ -362,11 +343,8 @@ class _PeopleInPlaceTestPageState extends State<PeopleInPlaceTestPage> {
   // Tap handler for People In Place
   Future<void> _handleMapTap(LatLng point) async {
     _resetHintTimer();
-    // Check if tapped point is inside the polygon boundary.
-    bool inside = _isPointInsidePolygon(
-        point, widget.activeProject.polygonPoints.toLatLngList());
-    if (!inside) {
-      // If outside, show error message.
+    // If point is outside the project boundary, display error message
+    if (!isPointInsidePolygon(point, _polygons.first)) {
       setState(() {
         _showErrorMessage = true;
       });
@@ -375,7 +353,6 @@ class _PeopleInPlaceTestPageState extends State<PeopleInPlaceTestPage> {
           _showErrorMessage = false;
         });
       });
-      return; // Do not proceed with logging the data point.
     }
     // Check if custom markers are loaded
     if (!_customMarkersLoaded) {
@@ -396,7 +373,7 @@ class _PeopleInPlaceTestPageState extends State<PeopleInPlaceTestPage> {
     final key = '${person.posture.name}_${person.gender.name}';
     BitmapDescriptor markerIcon = _getMarkerIcon(key);
 
-    // Once classification data is provided, add the marker with an info window.
+    // Add this data point to set of visible markers and other data lists.
     setState(() {
       _markers.add(
         Marker(
@@ -437,13 +414,6 @@ class _PeopleInPlaceTestPageState extends State<PeopleInPlaceTestPage> {
     });
   }
 
-  // Helper method to format elapsed seconds into mm:ss
-  String _formatTime(int seconds) {
-    final minutes = seconds ~/ 60;
-    final secs = seconds % 60;
-    return '${minutes.toString().padLeft(2, '0')}:${secs.toString().padLeft(2, '0')}';
-  }
-
   // Method to start the test and timer
   void _startTest() {
     setState(() {
@@ -454,8 +424,9 @@ class _PeopleInPlaceTestPageState extends State<PeopleInPlaceTestPage> {
       setState(() {
         if (_remainingSeconds <= 0) {
           timer.cancel();
+        } else {
+          _remainingSeconds--;
         }
-        _remainingSeconds--;
       });
     });
   }
@@ -530,7 +501,7 @@ class _PeopleInPlaceTestPageState extends State<PeopleInPlaceTestPage> {
                   borderRadius: BorderRadius.circular(8),
                 ),
                 child: Text(
-                  _formatTime(_remainingSeconds),
+                  formatTime(_remainingSeconds),
                   style: TextStyle(color: Colors.white, fontSize: 16),
                 ),
               ),
@@ -544,7 +515,7 @@ class _PeopleInPlaceTestPageState extends State<PeopleInPlaceTestPage> {
           GoogleMap(
             onMapCreated: _onMapCreated,
             initialCameraPosition: CameraPosition(
-              target: _currentLocation,
+              target: _location,
               zoom: 14.0,
             ),
             markers: _markers,

@@ -542,18 +542,6 @@ extension PolygonHelpers on Polygon {
   }
 
   /// Extension function on [Polygon]. Takes a [Polygon] and converts it to a
-  /// list of [LatLng]s for Firestore storing. Returns the
-  /// [List]`<`[LatLng]`>`.
-  List<LatLng> toLatLngList() {
-    List<LatLng> latLngRepresentation = [];
-    if (points.isEmpty) return latLngRepresentation;
-    for (var point in points) {
-      latLngRepresentation.add(LatLng(point.latitude, point.longitude));
-    }
-    return latLngRepresentation;
-  }
-
-  /// Extension function on [Polygon]. Takes a [Polygon] and converts it to a
   /// list of [mp.LatLng]s for maps toolkit functions. Returns the
   /// [List]`<`[mp.LatLng]`>`.
   List<mp.LatLng> toMPLatLngList() {
@@ -584,18 +572,6 @@ extension PolylineHelpers on Polyline {
       geoPointRepresentation.add(GeoPoint(point.latitude, point.longitude));
     }
     return geoPointRepresentation;
-  }
-
-  /// Extension function on [Polyline]. Takes a [Polyline] and converts it to a
-  /// list of [LatLng]s for Firestore storing. Returns the
-  /// [List]`<`[LatLng]`>`.
-  List<LatLng> toLatLngList() {
-    List<LatLng> latLngRepresentation = [];
-    if (points.isEmpty) return latLngRepresentation;
-    for (var point in points) {
-      latLngRepresentation.add(LatLng(point.latitude, point.longitude));
-    }
-    return latLngRepresentation;
   }
 
   /// Extension function on [Polyline]. Takes a [Polyline] and converts it to a

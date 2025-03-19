@@ -653,8 +653,8 @@ class MaintenancePoint extends DataPoint with JsonToString {
 /// This is used as the generic type in the definition
 /// of [AbsenceOfOrderTest].
 class AbsenceOfOrderData with JsonToString {
-  List<BehaviorPoint> behaviorList = [];
-  List<MaintenancePoint> maintenanceList = [];
+  final List<BehaviorPoint> behaviorList = [];
+  final List<MaintenancePoint> maintenanceList = [];
 
   AbsenceOfOrderData();
 
@@ -834,6 +834,7 @@ class AbsenceOfOrderTest extends Test<AbsenceOfOrderData> with JsonToString {
   ///
   /// Typically used when saving or updating this object to get the
   /// correct format for Firestore.
+  @override
   Map<String, Object> toJson() {
     return {
       'title': title,
@@ -927,9 +928,9 @@ class ShelterBoundary {
 }
 
 class SpatialBoundariesData with JsonToString {
-  List<ConstructedBoundary> constructed = [];
-  List<MaterialBoundary> material = [];
-  List<ShelterBoundary> shelter = [];
+  final List<ConstructedBoundary> constructed = [];
+  final List<MaterialBoundary> material = [];
+  final List<ShelterBoundary> shelter = [];
 
   SpatialBoundariesData();
 

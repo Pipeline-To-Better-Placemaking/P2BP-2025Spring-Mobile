@@ -1,5 +1,4 @@
 import 'dart:async';
-import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
@@ -7,10 +6,9 @@ import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:p2bp_2025spring_mobile/firestore_functions.dart';
 import 'package:p2bp_2025spring_mobile/theme.dart';
 import 'google_maps_functions.dart';
-import 'package:maps_toolkit/maps_toolkit.dart' as mp;
 import 'package:p2bp_2025spring_mobile/db_schema_classes.dart';
-import 'package:p2bp_2025spring_mobile/project_details_page.dart';
 import 'package:p2bp_2025spring_mobile/people_in_motion_instructions.dart';
+import 'package:maps_toolkit/maps_toolkit.dart' as mp;
 
 class PeopleInMotionTestPage extends StatefulWidget {
   final Project activeProject;
@@ -28,7 +26,7 @@ class PeopleInMotionTestPage extends StatefulWidget {
 
 class _PeopleInMotionTestPageState extends State<PeopleInMotionTestPage> {
   late GoogleMapController mapController;
-  LatLng _currentLocation = defaultLocation; // Default location
+  LatLng _location = defaultLocation; // Default location
   bool _isLoading = true;
   Timer? _hintTimer;
   bool _showHint = false;
@@ -38,20 +36,28 @@ class _PeopleInMotionTestPageState extends State<PeopleInMotionTestPage> {
   bool _isPointsMenuVisible = false;
   Timer? _timer;
 
-  Set<Polygon> _polygons = {}; // Set of polygons
-  MapType _currentMapType = MapType.normal; // Default map type
+  List<mp.LatLng> _projectArea = [];
+  Set<Polygon> _polygons = {}; // Only has project polygon.
+  MapType _currentMapType = MapType.normal;
 
-  // Set of markers when drawing polyline
-  Set<Marker> _polylineMarkers = {};
-  // List of points when drawing polyline, should match _polylineMarkers
-  List<LatLng> _polylinePoints = [];
-  // Temporary polyline shown during the current tracing session
-  Polyline? _tempPolyline;
-  // Set of polylines created during this test
-  Set<Polyline> _polylines = {};
+  /// Markers placed while in TracingMode.
+  /// Should always be empty when [_isTracingMode] is false.
+  final Set<Marker> _tracingMarkers = {};
 
-  // // Confirmed polylines persist from previous sessions.
-  // Set<Polyline> _confirmedPolylines = {};
+  /// Points placed while in TracingMode.
+  /// Should always be empty when [_isTracingMode] is false.
+  final List<LatLng> _tracingPoints = [];
+
+  /// Polyline made with [_tracingPoints].
+  /// Should always be null when [_isTracingMode] is false.
+  Polyline? _tracingPolyline;
+
+  /// Set of polylines created and confirmed during this test.
+  final Set<Polyline> _confirmedPolylines = {};
+
+  /// Contains the first and last marker from each element of
+  /// [_confirmedPolylines].
+  final Set<Marker> _confirmedPolylineEndMarkers = {};
 
   final PeopleInMotionData _newData = PeopleInMotionData();
 
@@ -64,34 +70,17 @@ class _PeopleInMotionTestPageState extends State<PeopleInMotionTestPage> {
   BitmapDescriptor? tempMarkerIcon;
   bool _customMarkersLoaded = false;
 
-  // List<TracedRoute> _confirmedRoutes = [];
-  // Map<String, List<String>> _routeMarkerIds = {};
-
   // Define an initial time
   int _remainingSeconds = 300;
-
-  // Initialize project area using polygon data from ProjectDetails
-  void initProjectArea() {
-    setState(() {
-      if (widget.activeProject.polygonPoints.isNotEmpty) {
-        _polygons = getProjectPolygon(widget.activeProject.polygonPoints);
-        if (_polygons.isNotEmpty) {
-          // Calculate the centroid of the first polygon to center the map
-          _currentLocation = getPolygonCentroid(_polygons.first);
-        }
-      }
-    });
-  }
 
   @override
   void initState() {
     super.initState();
-    initProjectArea();
-    print("initState called");
-    _checkAndFetchLocation();
+    _initProjectArea();
     WidgetsBinding.instance.addPostFrameCallback((_) {
       print("PostFrameCallback fired");
       _loadCustomMarkers();
+      _showInstructionOverlay();
     });
   }
 
@@ -100,6 +89,89 @@ class _PeopleInMotionTestPageState extends State<PeopleInMotionTestPage> {
     _timer?.cancel();
     _hintTimer?.cancel();
     super.dispose();
+  }
+
+  /// Gets the project polygon, adds it to the current polygon list, and
+  /// centers the map over it.
+  void _initProjectArea() {
+    setState(() {
+      _polygons = getProjectPolygon(widget.activeProject.polygonPoints);
+      print(_polygons);
+      _location = getPolygonCentroid(_polygons.first);
+      // Take some latitude away to center considering bottom sheet.
+      _location = LatLng(_location.latitude * .999999, _location.longitude);
+      _projectArea = _polygons.first.toMPLatLngList();
+      // TODO: dynamic zooming
+      _isLoading = false;
+    });
+  }
+
+  // Function to load custom marker icons using AssetMapBitmap.
+  Future<void> _loadCustomMarkers() async {
+    final ImageConfiguration configuration =
+        createLocalImageConfiguration(context);
+    try {
+      walkingConnector = await AssetMapBitmap.create(
+        configuration,
+        'assets/custom_icons/test_specific/people_in_motion/square_marker_teal.png',
+        width: 24,
+        height: 24,
+      );
+      runningConnector = await AssetMapBitmap.create(
+        configuration,
+        'assets/custom_icons/test_specific/people_in_motion/square_marker_red.png',
+        width: 24,
+        height: 24,
+      );
+      swimmingConnector = await AssetMapBitmap.create(
+        configuration,
+        'assets/custom_icons/test_specific/people_in_motion/square_marker_cyan.png',
+        width: 24,
+        height: 24,
+      );
+      wheelsConnector = await AssetMapBitmap.create(
+        configuration,
+        'assets/custom_icons/test_specific/people_in_motion/square_marker_orange.png',
+        width: 24,
+        height: 24,
+      );
+      handicapConnector = await AssetMapBitmap.create(
+        configuration,
+        'assets/custom_icons/test_specific/people_in_motion/square_marker_purple.png',
+        width: 24,
+        height: 24,
+      );
+      tempMarkerIcon = await AssetMapBitmap.create(
+        configuration,
+        'assets/custom_icons/test_specific/people_in_motion/polyline_marker4.png',
+        width: 48,
+        height: 48,
+      );
+      setState(() {
+        _customMarkersLoaded = true;
+      });
+      print("Custom markers loaded successfully.");
+    } catch (e) {
+      print("Error loading custom markers: $e");
+    }
+  }
+
+  // Returns Marker icon for the given [ActivityTypeInMotion].
+  BitmapDescriptor _getMarkerIcon(ActivityTypeInMotion? key) {
+    switch (key) {
+      case ActivityTypeInMotion.walking:
+        return walkingConnector ?? BitmapDescriptor.defaultMarker;
+      case ActivityTypeInMotion.running:
+        return runningConnector ?? BitmapDescriptor.defaultMarker;
+      case ActivityTypeInMotion.swimming:
+        return swimmingConnector ?? BitmapDescriptor.defaultMarker;
+      case ActivityTypeInMotion.activityOnWheels:
+        return wheelsConnector ?? BitmapDescriptor.defaultMarker;
+      case ActivityTypeInMotion.handicapAssistedWheels:
+        return handicapConnector ?? BitmapDescriptor.defaultMarker;
+      default:
+        return BitmapDescriptor.defaultMarker;
+    }
   }
 
   void _showInstructionOverlay() {
@@ -158,24 +230,6 @@ class _PeopleInMotionTestPageState extends State<PeopleInMotionTestPage> {
     );
   }
 
-  Widget buildActivityColorItem(String label, Color color) {
-    return Row(
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        Container(
-          width: 20,
-          height: 20,
-          decoration: BoxDecoration(
-            color: color,
-            shape: BoxShape.circle,
-          ),
-        ),
-        SizedBox(width: 4),
-        Text(label, style: TextStyle(fontSize: 14)),
-      ],
-    );
-  }
-
   void _resetHintTimer() {
     _hintTimer?.cancel();
     setState(() {
@@ -201,29 +255,6 @@ class _PeopleInMotionTestPageState extends State<PeopleInMotionTestPage> {
     }
   }
 
-  Future<void> _checkAndFetchLocation() async {
-    try {
-      _currentLocation = await checkAndFetchLocation();
-      if (!mounted) return;
-      setState(() {
-        _isLoading = false;
-      });
-      WidgetsBinding.instance.addPostFrameCallback((_) {
-        _showInstructionOverlay();
-      });
-    } catch (e, stacktrace) {
-      print('Exception fetching location: $e');
-      print('Stacktrace: $stacktrace');
-      if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-            content: Text(
-                'Map failed to load. Error trying to retrieve location permissions.')),
-      );
-      Navigator.pop(context);
-    }
-  }
-
   LatLngBounds _getPolygonBounds(List<LatLng> points) {
     double minLat = points.first.latitude;
     double maxLat = points.first.latitude;
@@ -246,7 +277,7 @@ class _PeopleInMotionTestPageState extends State<PeopleInMotionTestPage> {
   void _moveToCurrentLocation() {
     mapController.animateCamera(
       CameraUpdate.newCameraPosition(
-        CameraPosition(target: _currentLocation, zoom: 14.0),
+        CameraPosition(target: _location, zoom: 14.0),
       ),
     );
   }
@@ -259,23 +290,11 @@ class _PeopleInMotionTestPageState extends State<PeopleInMotionTestPage> {
     });
   }
 
-  // Check if tapped point is inside the polygon boundary.
-  bool _isPointInsidePolygon(LatLng point, List<LatLng> polygon) {
-    final List<mp.LatLng> mpPolygon = polygon
-        .map((latLng) => mp.LatLng(latLng.latitude, latLng.longitude))
-        .toList();
-    return mp.PolygonUtil.containsLocation(
-      mp.LatLng(point.latitude, point.longitude),
-      mpPolygon,
-      false,
-    );
-  }
-
   // When in tracing mode, each tap creates a dot marker and updates the temporary polyline
   Future<void> _handleMapTap(LatLng point) async {
     _resetHintTimer();
     // If point is outside the project boundary, display error message
-    if (!_isPointInsidePolygon(point, _polygons.first.toLatLngList())) {
+    if (!isPointInsidePolygon(point, _polygons.first)) {
       setState(() {
         _showErrorMessage = true;
       });
@@ -284,7 +303,6 @@ class _PeopleInMotionTestPageState extends State<PeopleInMotionTestPage> {
           _showErrorMessage = false;
         });
       });
-      return;
     }
     if (_isTracingMode) {
       // Add this tap as a dot marker.
@@ -296,89 +314,23 @@ class _PeopleInMotionTestPageState extends State<PeopleInMotionTestPage> {
         icon: _customMarkersLoaded && tempMarkerIcon != null
             ? tempMarkerIcon!
             : BitmapDescriptor.defaultMarkerWithHue(BitmapDescriptor.hueBlue),
+        anchor: const Offset(0.5, 0.9),
       );
 
       setState(() {
-        _polylinePoints.add(point);
-        _polylineMarkers.add(marker);
+        _tracingPoints.add(point);
+        _tracingMarkers.add(marker);
       });
 
       // Append the tapped point to the traced polyline.
-      Polyline? polyline = createPolyline(_polylinePoints, Colors.grey);
+      Polyline? polyline = createPolyline(_tracingPoints, Colors.grey);
       if (polyline == null) {
         throw Exception('Failed to create Polyline from given points.');
       }
 
       setState(() {
-        _tempPolyline = polyline;
+        _tracingPolyline = polyline;
       });
-    }
-  }
-
-  // Function to load custom marker icons using AssetMapBitmap.
-  Future<void> _loadCustomMarkers() async {
-    final ImageConfiguration configuration =
-        createLocalImageConfiguration(context);
-    try {
-      walkingConnector = await AssetMapBitmap.create(
-        configuration,
-        'assets/custom_icons/test_specific/people_in_motion/square_marker_teal.png',
-        width: 24,
-        height: 24,
-      );
-      runningConnector = await AssetMapBitmap.create(
-        configuration,
-        'assets/custom_icons/test_specific/people_in_motion/square_marker_red.png',
-        width: 24,
-        height: 24,
-      );
-      swimmingConnector = await AssetMapBitmap.create(
-        configuration,
-        'assets/custom_icons/test_specific/people_in_motion/square_marker_cyan.png',
-        width: 24,
-        height: 24,
-      );
-      wheelsConnector = await AssetMapBitmap.create(
-        configuration,
-        'assets/custom_icons/test_specific/people_in_motion/square_marker_orange.png',
-        width: 24,
-        height: 24,
-      );
-      handicapConnector = await AssetMapBitmap.create(
-        configuration,
-        'assets/custom_icons/test_specific/people_in_motion/square_marker_purple.png',
-        width: 24,
-        height: 24,
-      );
-      tempMarkerIcon = await AssetMapBitmap.create(
-        configuration,
-        'assets/custom_icons/test_specific/people_in_motion/polyline_marker4.png',
-        width: 48,
-        height: 48,
-      );
-      setState(() {
-        _customMarkersLoaded = true;
-      });
-      print("Custom markers loaded successfully.");
-    } catch (e) {
-      print("Error loading custom markers: $e");
-    }
-  }
-
-  BitmapDescriptor _getMarkerIcon(ActivityTypeInMotion? key) {
-    switch (key) {
-      case ActivityTypeInMotion.walking:
-        return walkingConnector ?? BitmapDescriptor.defaultMarker;
-      case ActivityTypeInMotion.running:
-        return runningConnector ?? BitmapDescriptor.defaultMarker;
-      case ActivityTypeInMotion.swimming:
-        return swimmingConnector ?? BitmapDescriptor.defaultMarker;
-      case ActivityTypeInMotion.activityOnWheels:
-        return wheelsConnector ?? BitmapDescriptor.defaultMarker;
-      case ActivityTypeInMotion.handicapAssistedWheels:
-        return handicapConnector ?? BitmapDescriptor.defaultMarker;
-      default:
-        return BitmapDescriptor.defaultMarker;
     }
   }
 
@@ -394,29 +346,36 @@ class _PeopleInMotionTestPageState extends State<PeopleInMotionTestPage> {
     // Map the selected activity to its corresponding marker icon.
     BitmapDescriptor connectorIcon = _getMarkerIcon(activity);
 
+    final newPolyline = _tracingPolyline!.copyWith(colorParam: activity.color);
+
     // Create a data point from the polyline and activity
     _newData.persons.add(PersonInMotion(
-      polyline: _tempPolyline!,
+      polyline: newPolyline,
       activity: activity,
     ));
 
     setState(() {
       // Add polyline to set of finished ones
-      _polylines.add(_tempPolyline!.copyWith(colorParam: activity.color));
+      _confirmedPolylines.add(newPolyline);
+
+      // Add markers at first and last point of polyline
+      _confirmedPolylineEndMarkers.addAll([
+        _tracingMarkers.first.copyWith(
+          iconParam: connectorIcon,
+          anchorParam: const Offset(0.5, 0.5),
+        ),
+        _tracingMarkers.last.copyWith(
+          iconParam: connectorIcon,
+          anchorParam: const Offset(0.5, 0.5),
+        ),
+      ]);
 
       // Clear temp values previously holding polyline info and turn off tracing
-      _polylinePoints.clear();
-      _polylineMarkers.clear();
-      _tempPolyline = null;
+      _tracingPoints.clear();
+      _tracingMarkers.clear();
+      _tracingPolyline = null;
       _isTracingMode = false;
     });
-  }
-
-  // Helper method to format elapsed seconds into mm:ss.
-  String _formatTime(int seconds) {
-    final minutes = seconds ~/ 60;
-    final secs = seconds % 60;
-    return '${minutes.toString().padLeft(2, '0')}:${secs.toString().padLeft(2, '0')}';
   }
 
   void _startTest() {
@@ -431,8 +390,9 @@ class _PeopleInMotionTestPageState extends State<PeopleInMotionTestPage> {
       setState(() {
         if (_remainingSeconds <= 0) {
           timer.cancel();
+        } else {
+          _remainingSeconds--;
         }
-        _remainingSeconds--;
       });
     });
   }
@@ -447,10 +407,6 @@ class _PeopleInMotionTestPageState extends State<PeopleInMotionTestPage> {
 
   @override
   Widget build(BuildContext context) {
-    // Determine which set of points to display in the points menu.
-    // final List<LatLng> displayedPoints =
-    //     _polylinePoints.isNotEmpty ? _polylinePoints : _loggedPoints;
-
     return Scaffold(
       extendBodyBehindAppBar: true,
       appBar: AppBar(
@@ -486,8 +442,10 @@ class _PeopleInMotionTestPageState extends State<PeopleInMotionTestPage> {
         // Persistent prompt in the middle.
         title: _isTracingMode
             ? Container(
-                padding:
-                    const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 12,
+                  vertical: 8,
+                ),
                 decoration: BoxDecoration(
                   color: Colors.black.withValues(alpha: 0.6),
                   borderRadius: BorderRadius.circular(8),
@@ -513,7 +471,7 @@ class _PeopleInMotionTestPageState extends State<PeopleInMotionTestPage> {
                   borderRadius: BorderRadius.circular(8),
                 ),
                 child: Text(
-                  _formatTime(_remainingSeconds),
+                  formatTime(_remainingSeconds),
                   style: TextStyle(color: Colors.white, fontSize: 16),
                 ),
               ),
@@ -521,331 +479,335 @@ class _PeopleInMotionTestPageState extends State<PeopleInMotionTestPage> {
           )
         ],
       ),
-      body: Stack(
-        children: [
-          // Full-screen map with polylines.
-          GoogleMap(
-            onMapCreated: _onMapCreated,
-            initialCameraPosition: CameraPosition(
-              target: _currentLocation,
-              zoom: 14.0,
-            ),
-            markers: _polylineMarkers,
-            polygons: _polygons,
-            polylines: {
-              ..._polylines,
-              if (_tempPolyline != null) _tempPolyline!
-            },
-            onTap: _handleMapTap,
-            mapType: _currentMapType,
-            myLocationButtonEnabled: false,
-            zoomControlsEnabled: false,
-          ),
-          if (_showErrorMessage)
-            Positioned(
-              bottom: 100.0,
-              left: 0,
-              right: 0,
-              child: Center(
-                child: Container(
-                  padding: EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-                  decoration: BoxDecoration(
-                    color: Colors.red.withValues(alpha: 0.9),
-                    borderRadius: BorderRadius.circular(8),
-                  ),
-                  child: Text(
-                    'Please place points inside the boundary.',
-                    style: TextStyle(color: Colors.white, fontSize: 16),
-                  ),
-                ),
-              ),
-            ),
-          // Overlaid button for toggling map type.
-          Positioned(
-            top: MediaQuery.of(context).padding.top + kToolbarHeight + 8.0,
-            right: 20.0,
-            child: Container(
-              decoration: BoxDecoration(
-                shape: BoxShape.circle,
-                color: const Color(0xFF7EAD80).withValues(alpha: 0.9),
-                border: Border.all(color: Color(0xFF2D6040), width: 2),
-                boxShadow: [
-                  BoxShadow(
-                    color: Colors.black26,
-                    blurRadius: 6.0,
-                    offset: Offset(0, 2),
-                  ),
-                ],
-              ),
-              child: IconButton(
-                icon: Center(
-                  child: Icon(Icons.layers, color: Color(0xFF2D6040)),
-                ),
-                onPressed: _toggleMapType,
-              ),
-            ),
-          ),
-          // Overlaid button for toggling instructions.
-          if (!_isLoading)
-            Positioned(
-              top: MediaQuery.of(context).padding.top + kToolbarHeight + 70.0,
-              right: 20,
-              child: Container(
-                decoration: BoxDecoration(
-                  shape: BoxShape.circle,
-                  color: Color(0xFFBACFEB).withValues(alpha: 0.9),
-                  border: Border.all(color: Color(0xFF37597D), width: 2),
-                  boxShadow: [
-                    BoxShadow(
-                      color: Colors.black26,
-                      blurRadius: 6.0,
-                      offset: Offset(0, 2),
-                    ),
-                  ],
-                ),
-                child: IconButton(
-                  icon: Icon(FontAwesomeIcons.info, color: Color(0xFF37597D)),
-                  onPressed: _showInstructionOverlay,
-                ),
-              ),
-            ),
-          // Overlaid button for toggling points menu.
-          Positioned(
-            top: MediaQuery.of(context).padding.top + kToolbarHeight + 132.0,
-            right: 20.0,
-            child: Container(
-              decoration: BoxDecoration(
-                shape: BoxShape.circle,
-                color: Color(0xFFBD9FE4).withValues(alpha: 0.9),
-                border: Border.all(color: Color(0xFF5A3E85), width: 2),
-                boxShadow: [
-                  BoxShadow(
-                    color: Colors.black26,
-                    blurRadius: 6.0,
-                    offset: Offset(0, 2),
-                  ),
-                ],
-              ),
-              child: IconButton(
-                icon: Icon(FontAwesomeIcons.locationDot,
-                    color: Color(0xFF5A3E85)),
-                onPressed: () {
-                  setState(() {
-                    _isPointsMenuVisible = !_isPointsMenuVisible;
-                  });
-                },
-              ),
-            ),
-          ),
-          // Overlaid button for activating tracing mode.
-          Positioned(
-            top: MediaQuery.of(context).padding.top + kToolbarHeight + 194.0,
-            right: 20.0,
-            child: Container(
-              decoration: BoxDecoration(
-                shape: BoxShape.circle,
-                color: Color(0xFFFF9800).withValues(alpha: 0.9),
-                border: Border.all(color: Color(0xFF8C2F00), width: 2),
-                boxShadow: [
-                  BoxShadow(
-                    color: Colors.black26,
-                    blurRadius: 6.0,
-                    offset: Offset(0, 2),
-                  ),
-                ],
-              ),
-              child: IconButton(
-                icon: Icon(
-                  FontAwesomeIcons.pen,
-                  color: Color(0xFF8C2F00),
-                ),
-                onPressed: _isTracingMode
-                    ? null
-                    : () {
-                        setState(() {
-                          _isTracingMode = true;
-                          _polylinePoints.clear();
-                          _polylineMarkers.clear();
-                          _tempPolyline = null;
-                        });
-                      },
-              ),
-            ),
-          ),
-          // Points menu bottom sheet.
-          if (_isPointsMenuVisible)
-            Positioned(
-              bottom: 135.0,
-              left: 20.0,
-              right: 20.0,
-              child: Container(
-                // Set a fixed or dynamic height as needed.
-                height: MediaQuery.of(context).size.height * 0.5,
-                decoration: BoxDecoration(
-                    color: Color(0xFFDDE6F2).withValues(alpha: 0.9),
-                    borderRadius: BorderRadius.circular(20),
-                    border: Border.all(
-                      color: Color(0xFF2F6DCF),
-                      width: 2,
-                    )),
-                padding: EdgeInsets.only(bottom: 8),
-                child: Column(
-                  children: [
-                    Padding(
-                      padding: const EdgeInsets.symmetric(vertical: 8.0),
-                      child: Text(
-                        "Route Color Guide",
-                        textAlign: TextAlign.center,
-                        style: TextStyle(
-                          fontSize: 18,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-                    ),
-                    Padding(
-                      padding: const EdgeInsets.symmetric(horizontal: 16.0),
-                      child: activityColorsRow(),
-                    ),
-                    SizedBox(height: 16),
-                    Divider(
-                      height: 1,
-                      thickness: 1.5,
-                      color: Color(0xFF2F6DCF),
-                    ),
-                    Expanded(
-                      child: ListView.builder(
-                        padding: EdgeInsets.zero,
-                        itemCount: _newData.persons.length,
-                        itemBuilder: (context, index) {
-                          final person = _newData.persons[index];
-                          final instanceNumber = _newData.persons
-                              .take(index + 1)
-                              .where((r) => r.activity == person.activity)
-                              .length;
-                          return ListTile(
-                            contentPadding:
-                                const EdgeInsets.symmetric(horizontal: 20),
-                            title: Text(
-                              '${person.activity} Route $instanceNumber',
-                              style:
-                                  const TextStyle(fontWeight: FontWeight.bold),
-                            ),
-                            subtitle: Text(
-                              'Points: ${person.polyline.points.length}',
-                              textAlign: TextAlign.left,
-                            ),
-                            trailing: IconButton(
-                              icon: const Icon(FontAwesomeIcons.trashCan,
-                                  color: Color(0xFFD32F2F)),
-                              onPressed: () {
-                                setState(() {
-                                  // Retrieve the route ID from the polyline's id.
-                                  // OLD: String routeId = polyline.polylineId.value; (Change back if necessary)
-                                  // String routeId =
-                                  //     person.timestamp.toIso8601String();
-                                  // // Remove associated markers for this route.
-                                  // if (_routeMarkerIds.containsKey(routeId)) {
-                                  //   for (var markerId
-                                  //       in _routeMarkerIds[routeId]!) {
-                                  //     _polylineMarkers.removeWhere((marker) =>
-                                  //         marker.markerId.value == markerId);
-                                  //   }
-                                  //   _routeMarkerIds.remove(routeId);
-                                  // }
+      body: _buildBodyStack(context),
+      bottomSheet: (_isTracingMode) ? _buildTraceConfirmSheet() : null,
+    );
+  }
 
-                                  // // Remove the associated polyline from _confirmedPolylines
-                                  // _confirmedPolylines.removeWhere((polyline) =>
-                                  //     polyline.polylineId.value == routeId);
-
-                                  // _confirmedRoutes.removeAt(index);
-                                });
-                              },
-                            ),
-                          );
-                        },
-                      ),
-                    ),
-                    // Bottom row with only a Clear All button.
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        Container(
-                          decoration: BoxDecoration(
-                            color: Color(0xFFD32F2F),
-                            borderRadius: BorderRadius.circular(10),
-                          ),
-                          child: TextButton(
-                            onPressed: () {
-                              setState(() {
-                                // Clear all confirmed polylines.
-                                // _confirmedPolylines.clear();
-                                // Remove start/end markers from the markers set.
-                                // _polylineMarkers.removeWhere((marker) =>
-                                //     marker.markerId.value
-                                //         .startsWith("start_") ||
-                                //     marker.markerId.value.startsWith("end_"));
-                              });
-                            },
-                            style: TextButton.styleFrom(
-                              padding: const EdgeInsets.symmetric(
-                                  horizontal: 10, vertical: 8),
-                              tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                            ),
-                            child: Row(
-                              mainAxisAlignment: MainAxisAlignment.center,
-                              children: const [
-                                Text(
-                                  'Clear All',
-                                  style: TextStyle(color: Colors.white),
-                                ),
-                                SizedBox(width: 8),
-                                Icon(Icons.close, color: Colors.white),
-                              ],
-                            ),
-                          ),
-                        ),
-                      ],
-                    ),
-                  ],
+  Stack _buildBodyStack(BuildContext context) {
+    Set<Marker> visibleMarkers = {
+      if (_tracingMarkers.isNotEmpty) ...{
+        _tracingMarkers.first,
+        _tracingMarkers.last,
+      },
+      ..._confirmedPolylineEndMarkers
+    };
+    return Stack(
+      children: [
+        // Full-screen map with polylines.
+        GoogleMap(
+          onMapCreated: _onMapCreated,
+          initialCameraPosition: CameraPosition(
+            target: _location,
+            zoom: 14.0,
+          ),
+          markers: visibleMarkers,
+          polygons: _polygons,
+          polylines: {
+            ..._confirmedPolylines,
+            if (_tracingPolyline != null) _tracingPolyline!
+          },
+          onTap: (_isTracingMode) ? _handleMapTap : null,
+          mapType: _currentMapType,
+          myLocationButtonEnabled: false,
+          zoomControlsEnabled: false,
+        ),
+        if (_showErrorMessage)
+          Positioned(
+            bottom: 100.0,
+            left: 0,
+            right: 0,
+            child: Center(
+              child: Container(
+                padding: EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                decoration: BoxDecoration(
+                  color: Colors.red.withValues(alpha: 0.9),
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: const Text(
+                  'Please place points inside the boundary.',
+                  style: TextStyle(color: Colors.white, fontSize: 16),
                 ),
               ),
             ),
-        ],
-      ),
-      bottomSheet: (_isTracingMode)
-          ? Container(
-              color: Color(0xFFDDE6F2),
-              padding: const EdgeInsets.all(20),
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                children: [
-                  ElevatedButton(
-                    onPressed: () {
-                      // Cancel: dismiss sheet, remove temp points for current
-                      // polyline, and disable tracing mode.
+          ),
+
+        // Buttons in top right corner of map below timer.
+        // Button for toggling map type.
+        Positioned(
+          top: MediaQuery.of(context).padding.top + kToolbarHeight + 8.0,
+          right: 20.0,
+          child: Container(
+            decoration: BoxDecoration(
+              shape: BoxShape.circle,
+              color: const Color(0xFF7EAD80).withValues(alpha: 0.9),
+              border: Border.all(color: Color(0xFF2D6040), width: 2),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black26,
+                  blurRadius: 6.0,
+                  offset: Offset(0, 2),
+                ),
+              ],
+            ),
+            child: IconButton(
+              icon: Center(
+                child: Icon(Icons.layers, color: Color(0xFF2D6040)),
+              ),
+              onPressed: _toggleMapType,
+            ),
+          ),
+        ),
+        // Button for toggling instructions.
+        if (!_isLoading)
+          Positioned(
+            top: MediaQuery.of(context).padding.top + kToolbarHeight + 70.0,
+            right: 20,
+            child: Container(
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                color: Color(0xFFBACFEB).withValues(alpha: 0.9),
+                border: Border.all(color: Color(0xFF37597D), width: 2),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black26,
+                    blurRadius: 6.0,
+                    offset: Offset(0, 2),
+                  ),
+                ],
+              ),
+              child: IconButton(
+                icon: Icon(FontAwesomeIcons.info, color: Color(0xFF37597D)),
+                onPressed: _showInstructionOverlay,
+              ),
+            ),
+          ),
+        // Button for toggling points menu.
+        Positioned(
+          top: MediaQuery.of(context).padding.top + kToolbarHeight + 132.0,
+          right: 20.0,
+          child: Container(
+            decoration: BoxDecoration(
+              shape: BoxShape.circle,
+              color: Color(0xFFBD9FE4).withValues(alpha: 0.9),
+              border: Border.all(color: Color(0xFF5A3E85), width: 2),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black26,
+                  blurRadius: 6.0,
+                  offset: Offset(0, 2),
+                ),
+              ],
+            ),
+            child: IconButton(
+              icon:
+                  Icon(FontAwesomeIcons.locationDot, color: Color(0xFF5A3E85)),
+              onPressed: () {
+                setState(() {
+                  _isPointsMenuVisible = !_isPointsMenuVisible;
+                });
+              },
+            ),
+          ),
+        ),
+        // Button for activating tracing mode.
+        Positioned(
+          top: MediaQuery.of(context).padding.top + kToolbarHeight + 194.0,
+          right: 20.0,
+          child: Container(
+            decoration: BoxDecoration(
+              shape: BoxShape.circle,
+              color: Color(0xFFFF9800).withValues(alpha: 0.9),
+              border: Border.all(color: Color(0xFF8C2F00), width: 2),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black26,
+                  blurRadius: 6.0,
+                  offset: Offset(0, 2),
+                ),
+              ],
+            ),
+            child: IconButton(
+              icon: Icon(
+                FontAwesomeIcons.pen,
+                color: Color(0xFF8C2F00),
+              ),
+              onPressed: _isTracingMode
+                  ? null
+                  : () {
                       setState(() {
-                        _polylinePoints.clear();
-                        _polylineMarkers.clear();
-                        _tempPolyline = null;
-                        _isTracingMode = false;
+                        _isTracingMode = true;
+                        _tracingPoints.clear();
+                        _tracingMarkers.clear();
+                        _tracingPolyline = null;
                       });
                     },
-                    child: Text('Cancel'),
-                  ),
-                  ElevatedButton(
-                    onPressed:
-                        (_polylinePoints.length > 1 && _tempPolyline != null)
-                            ? () {
-                                // Confirm: dismiss sheet and show activity selection.
-                                _doActivityDataSheet();
-                              }
-                            : null,
-                    child: Text('Confirm'),
-                  ),
-                ],
+            ),
+          ),
+        ),
+        if (_isPointsMenuVisible) _buildPointsMenu(context),
+      ],
+    );
+  }
+
+  Positioned _buildPointsMenu(BuildContext context) {
+    return Positioned(
+      bottom: 135.0,
+      left: 20.0,
+      right: 20.0,
+      child: Container(
+        // Set a fixed or dynamic height as needed.
+        height: MediaQuery.of(context).size.height * 0.5,
+        decoration: BoxDecoration(
+            color: Color(0xFFDDE6F2).withValues(alpha: 0.9),
+            borderRadius: BorderRadius.circular(20),
+            border: Border.all(
+              color: Color(0xFF2F6DCF),
+              width: 2,
+            )),
+        padding: EdgeInsets.only(bottom: 8),
+        child: Column(
+          children: [
+            Padding(
+              padding: const EdgeInsets.symmetric(vertical: 8.0),
+              child: Text(
+                "Route Color Guide",
+                textAlign: TextAlign.center,
+                style: TextStyle(
+                  fontSize: 18,
+                  fontWeight: FontWeight.bold,
+                ),
               ),
-            )
-          : null,
+            ),
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 16.0),
+              child: activityColorsRow(),
+            ),
+            SizedBox(height: 16),
+            Divider(
+              height: 1,
+              thickness: 1.5,
+              color: Color(0xFF2F6DCF),
+            ),
+            Expanded(
+              child: _buildPlacedPolylineList(),
+            ),
+            // Bottom row with only a Clear All button.
+            UnconstrainedBox(
+              child: Container(
+                decoration: BoxDecoration(
+                  color: Color(0xFFD32F2F),
+                  borderRadius: BorderRadius.circular(10),
+                ),
+                child: TextButton(
+                  onPressed: () {
+                    setState(() {
+                      // Clear all confirmed polylines.
+                      _confirmedPolylineEndMarkers.clear();
+                      _confirmedPolylines.clear();
+                      _newData.persons.clear();
+                    });
+                  },
+                  style: TextButton.styleFrom(
+                    padding:
+                        const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+                    tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                  ),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: const [
+                      Text(
+                        'Clear All',
+                        style: TextStyle(color: Colors.white),
+                      ),
+                      SizedBox(width: 8),
+                      Icon(Icons.close, color: Colors.white),
+                    ],
+                  ),
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  ListView _buildPlacedPolylineList() {
+    // Tracks how many elements of each type have been added so far.
+    Map<ActivityTypeInMotion, int> typeCounter = {};
+    return ListView.builder(
+      padding: EdgeInsets.zero,
+      itemCount: _newData.persons.length,
+      itemBuilder: (context, index) {
+        final person = _newData.persons[index];
+        // Increment this type's count
+        typeCounter.update(person.activity, (i) => i + 1, ifAbsent: () => 1);
+
+        return ListTile(
+          contentPadding: const EdgeInsets.symmetric(horizontal: 20),
+          title: Text(
+            '${person.activity.displayName} Route ${typeCounter[person.activity]}',
+            style: const TextStyle(fontWeight: FontWeight.bold),
+          ),
+          subtitle: Text(
+            'Points: ${person.polyline.points.length}',
+            textAlign: TextAlign.left,
+          ),
+          trailing: IconButton(
+            icon: const Icon(
+              FontAwesomeIcons.trashCan,
+              color: Color(0xFFD32F2F),
+            ),
+            onPressed: () {
+              setState(() {
+                // Delete this polyline and related objects from all sources.
+                _confirmedPolylineEndMarkers.removeWhere((marker) {
+                  final points = person.polyline.points;
+                  if (marker.markerId.value == points.first.toString() ||
+                      marker.markerId.value == points.last.toString()) {
+                    return true;
+                  }
+                  return false;
+                });
+                _confirmedPolylines.remove(person.polyline);
+                _newData.persons.remove(person);
+              });
+            },
+          ),
+        );
+      },
+    );
+  }
+
+  Container _buildTraceConfirmSheet() {
+    return Container(
+      color: Color(0xFFDDE6F2),
+      padding: const EdgeInsets.all(20),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+        children: [
+          // Cancel: clear placed points and leave tracing mode.
+          ElevatedButton(
+            onPressed: () {
+              setState(() {
+                _tracingPoints.clear();
+                _tracingMarkers.clear();
+                _tracingPolyline = null;
+                _isTracingMode = false;
+              });
+            },
+            child: Text('Cancel'),
+          ),
+          // Confirm: display sheet to select activity type.
+          ElevatedButton(
+            onPressed: (_tracingPoints.length > 1 && _tracingPolyline != null)
+                ? _doActivityDataSheet
+                : null,
+            child: Text('Confirm'),
+          ),
+        ],
+      ),
     );
   }
 }

@@ -3,6 +3,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
+import 'package:maps_toolkit/maps_toolkit.dart' as mp;
 
 /// Conversion used for length and area to convert from meters to feet.
 /// Make sure to multiply twice (or square) for use in area,
@@ -207,4 +208,28 @@ LatLngBounds? getLatLngBounds(List<LatLng> points) {
   }
 
   return LatLngBounds(southwest: southWest, northeast: northEast);
+}
+
+/// Returns bool for if [point] is inside the [polygon] boundary.
+bool isPointInsidePolygon(LatLng point, Polygon polygon) {
+  List<LatLng> points = polygon.points.toList();
+  final List<mp.LatLng> mpPolygon = points
+      .map((latLng) => mp.LatLng(latLng.latitude, latLng.longitude))
+      .toList();
+  return mp.PolygonUtil.containsLocation(
+    mp.LatLng(point.latitude, point.longitude),
+    mpPolygon,
+    false, // Edge considered outside; change as needed.
+  );
+}
+
+/// Takes time in seconds and returns that time formatted as `mm:ss`
+/// where `m` is minutes and `s` is seconds.
+///
+/// This is not really a google maps related thing but we have no other
+/// file for general functions like this.
+String formatTime(int time) {
+  final minutes = time ~/ 60;
+  final seconds = time % 60;
+  return '${minutes.toString().padLeft(2, '0')}:${seconds.toString().padLeft(2, '0')}';
 }
