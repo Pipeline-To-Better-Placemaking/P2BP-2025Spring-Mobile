@@ -240,10 +240,9 @@ class _CreateTestFormState extends State<CreateTestForm> {
               ],
               onChanged: (value) {
                 _selectedTest = value;
+                _standingPoints = [];
                 setState(() {
-                  _standingPoints = [];
-                  _standingPointsTest =
-                      standingPointsTests.contains(_selectedTest);
+                  _standingPointsTest = Test.isStandingPointTest(_selectedTest);
                   if (_selectedTest
                           ?.compareTo(SectionCutterTest.collectionIDStatic) ==
                       0) {

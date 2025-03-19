@@ -67,7 +67,7 @@ class Project {
   num polygonArea = 0;
   List<DocumentReference> testRefs = [];
   List<Test>? tests;
-  List standingPoints = [];
+  List<StandingPoint> standingPoints = [];
 
   Project({
     this.creationTime,
@@ -107,22 +107,6 @@ class Project {
 // | to the initials list on project_details.dart. If it it implements        |
 // | standing points and a timer, add it to the following lists.              |
 // *--------------------------------------------------------------------------*
-
-/// Set containing all tests that make use of standing points.
-///
-/// Used to check for test creation and saving.
-///
-/// Note: Section Cutter is considered a standing points test even though
-/// it uses a section line, not points.
-const Set<String> standingPointsTests = {
-  IdentifyingAccessTest.collectionIDStatic,
-  SectionCutterTest.collectionIDStatic,
-};
-
-/// Set containing all tests that make use of timers.
-///
-/// Used to check for test creation and saving.
-const Set<String> timerTests = {NaturePrevalenceTest.collectionIDStatic};
 
 /// Parent class extended by every specific test class.
 ///
@@ -230,6 +214,16 @@ abstract class Test<T> {
   /// save that [Test] instance to Firestore.
   static final Map<Type, void Function(Test)> _saveToFirestoreFunctions = {};
 
+  /// Set used internally to determine whether a [Test] subclass uses
+  /// standing points. Subclasses that do are expected to register themselves
+  /// into this set.
+  static final Set<String> _standingPointTestCollectionIDs = {};
+
+  /// Set containing all tests that make use of timers.
+  ///
+  /// Used to check for test creation and saving.
+  static final Set<String> _timerTests = {};
+
   /// Returns a new instance of the [Test] subclass associated with
   /// [collectionID].
   ///
@@ -297,6 +291,12 @@ abstract class Test<T> {
         'No registered saveToFirestore function for test type: $runtimeType');
   }
 
+  /// Returns whether [Test] subclass with given [collectionID] is
+  /// registered as a standing points test.
+  static bool isStandingPointTest(String? collectionID) {
+    return _standingPointTestCollectionIDs.contains(collectionID);
+  }
+
   @override
   String toString() {
     return 'This is an instance of $runtimeType\n'
@@ -320,6 +320,30 @@ abstract class Test<T> {
   /// this new data and marks the test as complete; `isComplete = true`.
   /// This will need to change if more than 1 researcher is allowed per test.
   void submitData(T data);
+}
+
+class StandingPoint with JsonToString {
+  late final LatLng location;
+  late final String title;
+
+  StandingPoint({required this.location, required this.title});
+
+  StandingPoint.fromJson(Map<String, dynamic> data) {
+    if (data.containsKey('point') && data['point'] is GeoPoint) {
+      location = (data['point'] as GeoPoint).toLatLng();
+    }
+    if (data.containsKey('title') && data['title'] is String) {
+      title = data['title'] as String;
+    }
+  }
+
+  @override
+  Map<String, Object> toJson() {
+    return {
+      'point': location.toGeoPoint(),
+      'title': title,
+    };
+  }
 }
 
 /// Mixin to add toString functionality to any class with a toJson() method.
@@ -1162,6 +1186,9 @@ class Section with JsonToString {
 
   Section({required this.sectionLink});
 
+  Section.empty()
+      : sectionLink = 'Empty sectionLink. SectionLink has not been set yet.';
+
   static Section fromJson(Map<String, dynamic> data) {
     Section? output;
     if (data.containsKey('sectionLink') && data['sectionLink'] is String) {
@@ -1179,19 +1206,11 @@ class Section with JsonToString {
 
 /// Class for section cutter test info and methods.
 class SectionCutterTest extends Test<Section> with JsonToString {
-  /// Default structure for Section Cutter test. Simply a [Map<String, String>],
-  /// where the first string is the field and the second is the reference which
-  /// refers to the path of the section drawing.
-  static Section newInitialDataDeepCopy() {
-    return Section(
-        sectionLink: 'Empty sectionLink. SectionLink has not been set yet.');
-  }
-
   /// Static constant definition of collection ID for this test type.
   static const String collectionIDStatic = 'section_cutter_tests';
 
   /// Line used for taking section. Standing point equivalent for this test.
-  List linePoints;
+  List<LatLng> linePoints;
 
   /// Creates a new [SectionCutterTest] instance from the given arguments.
   ///
@@ -1228,8 +1247,8 @@ class SectionCutterTest extends Test<Section> with JsonToString {
           scheduledTime: scheduledTime,
           projectRef: projectRef,
           collectionID: collectionID,
-          data: newInitialDataDeepCopy(),
-          linePoints: standingPoints ?? [],
+          data: Section.empty(),
+          linePoints: (standingPoints as List<LatLng>?) ?? [],
         );
     // Register for Map for Test.recreateFromDoc
     Test._recreateTestConstructors[collectionIDStatic] = (testDoc) {
@@ -1254,6 +1273,7 @@ class SectionCutterTest extends Test<Section> with JsonToString {
           );
       await testRef.set(test as SectionCutterTest, SetOptions(merge: true));
     };
+    Test._standingPointTestCollectionIDs.add(collectionIDStatic);
   }
 
   @override
@@ -1286,7 +1306,7 @@ class SectionCutterTest extends Test<Section> with JsonToString {
       creationTime: doc['creationTime'],
       maxResearchers: doc['maxResearchers'],
       isComplete: doc['isComplete'],
-      linePoints: doc['linePoints'],
+      linePoints: (doc['linePoints'] as List).toLatLngList(),
     );
   }
 
@@ -1301,7 +1321,7 @@ class SectionCutterTest extends Test<Section> with JsonToString {
       'creationTime': creationTime,
       'maxResearchers': maxResearchers,
       'isComplete': isComplete,
-      'linePoints': linePoints,
+      'linePoints': linePoints.toGeoPointList(),
     };
   }
 
@@ -1505,8 +1525,8 @@ class IdentifyingAccessTest extends Test<AccessData> {
   /// Static constant definition of collection ID for this test type.
   static const String collectionIDStatic = 'identifying_access_tests';
 
-  /// Temporary list of standing points for testing purposes (TODO)
-  List standingPoints;
+  /// TODO: Remove temporary list of standing points for testing purposes
+  final List<StandingPoint> standingPoints;
 
   /// Creates a new [IdentifyingAccessTest] instance from the given arguments.
   IdentifyingAccessTest._({
@@ -1540,7 +1560,7 @@ class IdentifyingAccessTest extends Test<AccessData> {
           projectRef: projectRef,
           collectionID: collectionID,
           data: newInitialDataDeepCopy(),
-          standingPoints: standingPoints ?? [],
+          standingPoints: (standingPoints as List<StandingPoint>?) ?? [],
         );
     // Register for recreating a Identifying Access Test from Firestore
     Test._recreateTestConstructors[collectionIDStatic] = (testDoc) {
@@ -1578,6 +1598,7 @@ class IdentifyingAccessTest extends Test<AccessData> {
         'standingPoints': (test as IdentifyingAccessTest).standingPoints,
       }, SetOptions(merge: true));
     };
+    Test._standingPointTestCollectionIDs.add(collectionIDStatic);
   }
 
   @override
@@ -2044,6 +2065,7 @@ class NaturePrevalenceTest extends Test<NatureData> {
         'isComplete': false,
       }, SetOptions(merge: true));
     };
+    Test._timerTests.add(collectionIDStatic);
   }
 
   @override

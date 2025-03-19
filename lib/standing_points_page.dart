@@ -38,7 +38,7 @@ class _StandingPointsPageState extends State<StandingPointsPage> {
   Set<Marker> _markers = {}; // Set of markers for points
   List _standingPoints = [];
   Marker? _currentMarker;
-  double _bottomSheetHeight = 300;
+  static const double _bottomSheetHeight = 300;
   MapType _currentMapType = MapType.satellite; // Default map type
   final List<bool> _checkboxValues = [];
   Project? project;
@@ -61,7 +61,7 @@ class _StandingPointsPageState extends State<StandingPointsPage> {
       _markers = _setMarkersFromPoints(widget.activeProject.standingPoints);
       _standingPoints = widget.activeProject.standingPoints;
       if (widget.currentStandingPoints != null) {
-        final List? currentStandingPoints = widget.currentStandingPoints;
+        final List currentStandingPoints = widget.currentStandingPoints!;
         _loadCurrentStandingPoints(currentStandingPoints);
       }
       _isLoading = false;
@@ -120,8 +120,7 @@ class _StandingPointsPageState extends State<StandingPointsPage> {
     _currentMarker = null;
   }
 
-  void _loadCurrentStandingPoints(List? currentStandingPoints) {
-    if (currentStandingPoints == null) return;
+  void _loadCurrentStandingPoints(List currentStandingPoints) {
     for (Map point in currentStandingPoints) {
       final Marker thisMarker = _markers.singleWhere(
           (marker) => point['point'] == marker.position.toGeoPoint());

@@ -72,7 +72,6 @@ Future<String> saveTeam(
   return teamID;
 }
 
-// TODO: try catch
 /// Saves project after project creation in create_project_and_teams.dart. Takes
 /// fields for project: `String` projectTitle, `String` description,
 /// `DocumentReference` teamRef, and `List<GeoPoint>` polygonPoints. Saves it in
@@ -82,47 +81,49 @@ Future<Project> saveProject({
   required String description,
   required DocumentReference? teamRef,
   required List<GeoPoint> polygonPoints,
-  required List<Map> standingPoints,
+  required List<StandingPoint> standingPoints,
   required num polygonArea,
 }) async {
-  Project tempProject;
-  String projectID = _firestore.collection('projects').doc().id;
+  late Project tempProject;
 
-  if (teamRef == null) {
-    throw Exception(
-        "teamRef not defined when passed to saveProject() in firestore_functions.dart");
+  try {
+    String projectID = _firestore.collection('projects').doc().id;
+    if (teamRef == null) {
+      throw Exception(
+          "teamRef not defined when passed to saveProject() in firestore_functions.dart");
+    }
+
+    await _firestore.collection('projects').doc(projectID).set({
+      'title': projectTitle,
+      'creationTime': FieldValue.serverTimestamp(),
+      'id': projectID,
+      'team': teamRef,
+      'description': description,
+      'polygonPoints': polygonPoints,
+      'standingPoints': [for (final point in standingPoints) point.toJson()],
+      'polygonArea': polygonArea,
+      'tests': [],
+    });
+
+    await _firestore.doc('/${teamRef.path}').update({
+      'projects':
+          FieldValue.arrayUnion([_firestore.doc('/projects/$projectID')])
+    });
+
+    tempProject = Project(
+      teamRef: teamRef,
+      projectID: projectID,
+      title: projectTitle,
+      description: description,
+      polygonPoints: polygonPoints,
+      polygonArea: polygonArea,
+      standingPoints: standingPoints,
+      testRefs: [],
+    );
+  } catch (e, stacktrace) {
+    print('Exception retrieving : $e');
+    print('Stacktrace: $stacktrace');
   }
-
-  await _firestore.collection('projects').doc(projectID).set({
-    'title': projectTitle,
-    'creationTime': FieldValue.serverTimestamp(),
-    'id': projectID,
-    'team': teamRef,
-    'description': description,
-    'polygonPoints': polygonPoints,
-    'standingPoints': standingPoints,
-    'polygonArea': polygonArea,
-    'tests': [],
-  });
-
-  await _firestore.doc('/${teamRef.path}').update({
-    'projects': FieldValue.arrayUnion([_firestore.doc('/projects/$projectID')])
-  });
-
-  tempProject = Project(
-    teamRef: teamRef,
-    projectID: projectID,
-    title: projectTitle,
-    description: description,
-    polygonPoints: polygonPoints,
-    polygonArea: polygonArea,
-    standingPoints: standingPoints,
-    testRefs: [],
-  );
-
-  // Debugging print statement.
-  // print("Done in project creation. Putting /projects/$projectID into $teamRef.");
-
   return tempProject;
 }
 
@@ -152,7 +153,10 @@ Future<Project> getProjectInfo(String projectID) async {
           description: projectDoc['description'],
           polygonPoints: projectDoc['polygonPoints'],
           polygonArea: projectDoc['polygonArea'],
-          standingPoints: projectDoc['standingPoints'],
+          standingPoints: [
+            for (final standingPoint in projectDoc['standingPoints'])
+              StandingPoint.fromJson(standingPoint)
+          ],
           creationTime: projectDoc['creationTime'],
           testRefs: testRefs,
         );

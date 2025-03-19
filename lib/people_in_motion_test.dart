@@ -407,80 +407,85 @@ class _PeopleInMotionTestPageState extends State<PeopleInMotionTestPage> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      extendBodyBehindAppBar: true,
-      appBar: AppBar(
-        systemOverlayStyle:
-            SystemUiOverlayStyle(statusBarBrightness: Brightness.light),
-        backgroundColor: Colors.transparent,
-        elevation: 0,
-        leadingWidth: 100,
-        // Start/End button on the left.
-        leading: Padding(
-          padding: const EdgeInsets.only(left: 20),
-          child: ElevatedButton(
-            style: ElevatedButton.styleFrom(
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(20),
-              ),
-              backgroundColor: _isTestRunning ? Colors.red : Colors.green,
-              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-            ),
-            onPressed: () {
-              if (_isTestRunning) {
-                _endTest();
-              } else {
-                _startTest();
-              }
-            },
-            child: Text(
-              _isTestRunning ? 'End' : 'Start',
-              style: const TextStyle(color: Colors.white, fontSize: 16),
-            ),
-          ),
-        ),
-        // Persistent prompt in the middle.
-        title: _isTracingMode
-            ? Container(
+    return SafeArea(
+      child: Scaffold(
+        extendBodyBehindAppBar: true,
+        appBar: AppBar(
+          systemOverlayStyle:
+              SystemUiOverlayStyle(statusBarBrightness: Brightness.light),
+          backgroundColor: Colors.transparent,
+          elevation: 0,
+          leadingWidth: 100,
+          // Start/End button on the left.
+          leading: Padding(
+            padding: const EdgeInsets.only(left: 20),
+            child: ElevatedButton(
+              style: ElevatedButton.styleFrom(
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(20),
+                ),
+                backgroundColor: _isTestRunning ? Colors.red : Colors.green,
                 padding: const EdgeInsets.symmetric(
-                  horizontal: 12,
+                  horizontal: 16,
                   vertical: 8,
                 ),
-                decoration: BoxDecoration(
-                  color: Colors.black.withValues(alpha: 0.6),
-                  borderRadius: BorderRadius.circular(8),
-                ),
-                child: Text(
-                  'Tap the screen to trace',
-                  maxLines: 2,
-                  overflow: TextOverflow.visible,
-                  style: const TextStyle(color: Colors.white, fontSize: 16),
-                ),
-              )
-            : null,
-        centerTitle: true,
-        // Timer on the right.
-        actions: [
-          Padding(
-            padding: const EdgeInsets.only(right: 20),
-            child: Center(
-              child: Container(
-                padding: EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-                decoration: BoxDecoration(
-                  color: Colors.black.withValues(alpha: 0.6),
-                  borderRadius: BorderRadius.circular(8),
-                ),
-                child: Text(
-                  formatTime(_remainingSeconds),
-                  style: TextStyle(color: Colors.white, fontSize: 16),
-                ),
+              ),
+              onPressed: () {
+                if (_isTestRunning) {
+                  _endTest();
+                } else {
+                  _startTest();
+                }
+              },
+              child: Text(
+                _isTestRunning ? 'End' : 'Start',
+                style: const TextStyle(color: Colors.white, fontSize: 16),
               ),
             ),
-          )
-        ],
+          ),
+          // Persistent prompt in the middle.
+          title: _isTracingMode
+              ? Container(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 12,
+                    vertical: 8,
+                  ),
+                  decoration: BoxDecoration(
+                    color: Colors.black.withValues(alpha: 0.6),
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  child: Text(
+                    'Tap the screen to trace',
+                    maxLines: 2,
+                    overflow: TextOverflow.visible,
+                    style: const TextStyle(color: Colors.white, fontSize: 16),
+                  ),
+                )
+              : null,
+          centerTitle: true,
+          // Timer on the right.
+          actions: [
+            Padding(
+              padding: const EdgeInsets.only(right: 20),
+              child: Center(
+                child: Container(
+                  padding: EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                  decoration: BoxDecoration(
+                    color: Colors.black.withValues(alpha: 0.6),
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  child: Text(
+                    formatTime(_remainingSeconds),
+                    style: TextStyle(color: Colors.white, fontSize: 16),
+                  ),
+                ),
+              ),
+            )
+          ],
+        ),
+        body: _buildBodyStack(context),
+        bottomSheet: (_isTracingMode) ? _buildTraceConfirmSheet() : null,
       ),
-      body: _buildBodyStack(context),
-      bottomSheet: (_isTracingMode) ? _buildTraceConfirmSheet() : null,
     );
   }
 

@@ -38,7 +38,7 @@ class _ProjectMapCreationState extends State<ProjectMapCreation> {
       "Place points for your polygon, and click the check to confirm it. When you're satisfied click next.";
   String _errorText = 'You tried to place a point outside of the project area!';
   List<LatLng> _polygonPoints = []; // Points for the polygon
-  List<Map> _standingPoints = [];
+  List<StandingPoint> _standingPoints = [];
   List<mp.LatLng> _mapToolsPolygonPoints = [];
   Set<Polygon> _polygon = {}; // Set of polygons
   Set<Marker> _markers = {}; // Set of markers for points
@@ -112,7 +112,7 @@ class _ProjectMapCreationState extends State<ProjectMapCreation> {
   void _pointTap(LatLng point, String? title) {
     if (title == null) return;
     final markerId = MarkerId(point.toString());
-    _standingPoints.add({'title': title, 'point': point.toGeoPoint()});
+    _standingPoints.add(StandingPoint(location: point, title: title));
     setState(() {
       _markers.add(
         Marker(
@@ -128,8 +128,8 @@ class _ProjectMapCreationState extends State<ProjectMapCreation> {
             if (_deleteMode) {
               setState(() {
                 _markers.removeWhere((marker) => marker.markerId == markerId);
-                _standingPoints.removeWhere((standingPoint) =>
-                    standingPoint.containsValue(point.toGeoPoint()));
+                _standingPoints.removeWhere(
+                    (standingPoint) => standingPoint.location == point);
               });
             }
           },
