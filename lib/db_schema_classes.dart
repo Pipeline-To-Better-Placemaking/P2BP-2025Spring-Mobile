@@ -728,7 +728,7 @@ class AbsenceOfOrderData with JsonToString {
 }
 
 /// Class for Absence of Order Test info and methods.
-class AbsenceOfOrderTest extends Test<AbsenceOfOrderData> {
+class AbsenceOfOrderTest extends Test<AbsenceOfOrderData> with JsonToString {
   static const String collectionIDStatic = 'absence_of_order_tests';
 
   /// Creates a new [AbsenceOfOrderTest] instance from the given arguments.
@@ -1156,14 +1156,28 @@ class SpatialBoundariesTest extends Test<SpatialBoundariesData>
 ///
 /// Contains a [sectionLink] variable which refers to the section drawing
 /// stored in Firebase. Contains a function for converting to Firebase.
-class Section {
+class Section with JsonToString {
   final String sectionLink;
 
   Section({required this.sectionLink});
+
+  static Section fromJson(Map<String, dynamic> data) {
+    Section? output;
+    if (data.containsKey('sectionLink') && data['sectionLink'] is String) {
+      output = Section(sectionLink: data['sectionLink']);
+    }
+    return output ??
+        Section(sectionLink: 'Error retrieving file. File not retrieved.');
+  }
+
+  @override
+  Map<String, String> toJson() {
+    return {'sectionLink': sectionLink};
+  }
 }
 
 /// Class for section cutter test info and methods.
-class SectionCutterTest extends Test<Section> {
+class SectionCutterTest extends Test<Section> with JsonToString {
   /// Default structure for Section Cutter test. Simply a [Map<String, String>],
   /// where the first string is the field and the second is the reference which
   /// refers to the path of the section drawing.
@@ -1217,19 +1231,9 @@ class SectionCutterTest extends Test<Section> {
           linePoints: standingPoints ?? [],
         );
     // Register for Map for Test.recreateFromDoc
-    Test._recreateTestConstructors[collectionIDStatic] =
-        (testDoc) => SectionCutterTest._(
-              title: testDoc['title'],
-              testID: testDoc['id'],
-              scheduledTime: testDoc['scheduledTime'],
-              projectRef: testDoc['project'],
-              collectionID: testDoc.reference.parent.id,
-              data: convertDataFromFirestore(testDoc['data']),
-              creationTime: testDoc['creationTime'],
-              maxResearchers: testDoc['maxResearchers'],
-              isComplete: testDoc['isComplete'],
-              linePoints: testDoc['linePoints'],
-            );
+    Test._recreateTestConstructors[collectionIDStatic] = (testDoc) {
+      return SectionCutterTest.fromJson(testDoc.data()!);
+    };
     // Register for Map for Test.getPage
     Test._pageBuilders[SectionCutterTest] = (project, test) => SectionCutter(
           projectData: project,
@@ -1239,27 +1243,24 @@ class SectionCutterTest extends Test<Section> {
     // Standing points are saved under line, as they will be made to create
     // a polyline, instead of displayed as individual points.
     Test._saveToFirestoreFunctions[SectionCutterTest] = (test) async {
-      await _firestore.collection(test.collectionID).doc(test.testID).set({
-        'title': test.title,
-        'id': test.testID,
-        'scheduledTime': test.scheduledTime,
-        'project': test.projectRef,
-        'data': convertDataToFirestore(test.data),
-        'creationTime': test.creationTime,
-        'maxResearchers': test.maxResearchers,
-        'isComplete': false,
-        'linePoints': (test as SectionCutterTest).linePoints,
-      }, SetOptions(merge: true));
+      final testRef = _firestore
+          .collection(test.collectionID)
+          .doc(test.testID)
+          .withConverter<SectionCutterTest>(
+            fromFirestore: (snapshot, _) =>
+                SectionCutterTest.fromJson(snapshot.data()!),
+            toFirestore: (test, _) => test.toJson(),
+          );
+      await testRef.set(test as SectionCutterTest, SetOptions(merge: true));
     };
   }
 
   @override
   void submitData(Section data) async {
     try {
-      Map<String, String> firestoreData = convertDataToFirestore(data);
       // Updates data in Firestore
       await _firestore.collection(collectionID).doc(testID).update({
-        'data': firestoreData,
+        'data': data.toJson(),
         'isComplete': true,
       });
 
@@ -1273,8 +1274,34 @@ class SectionCutterTest extends Test<Section> {
     }
   }
 
-  static Map<String, String> convertDataToFirestore(Section data) {
-    return {'sectionLink': data.sectionLink};
+  static SectionCutterTest fromJson(Map<String, dynamic> doc) {
+    return SectionCutterTest._(
+      title: doc['title'],
+      testID: doc['id'],
+      scheduledTime: doc['scheduledTime'],
+      projectRef: doc['project'],
+      collectionID: collectionIDStatic,
+      data: Section.fromJson(doc['data']),
+      creationTime: doc['creationTime'],
+      maxResearchers: doc['maxResearchers'],
+      isComplete: doc['isComplete'],
+      linePoints: doc['linePoints'],
+    );
+  }
+
+  @override
+  Map<String, Object> toJson() {
+    return {
+      'title': title,
+      'id': testID,
+      'scheduledTime': scheduledTime,
+      'project': projectRef,
+      'data': data.toJson(),
+      'creationTime': creationTime,
+      'maxResearchers': maxResearchers,
+      'isComplete': isComplete,
+      'linePoints': linePoints,
+    };
   }
 
   /// Saves given [XFile] under the test's project reference.
@@ -1301,15 +1328,6 @@ class SectionCutterTest extends Test<Section> {
     // Section should only be null if the file fails to save to Firebase.
     return section ??
         Section(sectionLink: 'Error saving file. File not saved.');
-  }
-
-  static Section convertDataFromFirestore(Map<String, dynamic> data) {
-    Section? output;
-    if (data.containsKey('sectionLink') && data['sectionLink'] is String) {
-      output = Section(sectionLink: data['sectionLink']);
-    }
-    return output ??
-        Section(sectionLink: 'Error retrieving file. File not retrieved.');
   }
 }
 
