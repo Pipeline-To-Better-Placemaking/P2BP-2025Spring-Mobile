@@ -336,10 +336,16 @@ class _ProjectDetailsPageState extends State<ProjectDetailsPage> {
         top: 25,
         bottom: 30,
       ),
-      itemBuilder: (BuildContext context, int index) => TestCard(
-        test: widget.projectData.tests![index],
-        project: widget.projectData,
-      ),
+      itemBuilder: (BuildContext context, int index) {
+        widget.projectData.tests
+            ?.sort((a, b) => (a.scheduledTime.compareTo(b.scheduledTime)));
+        widget.projectData.tests?.sort((a, b) =>
+            (a.isComplete == b.isComplete ? 0 : (a.isComplete ? 1 : -1)));
+        return TestCard(
+          test: widget.projectData.tests![index],
+          project: widget.projectData,
+        );
+      },
       separatorBuilder: (BuildContext context, int index) =>
           const SizedBox(height: 10),
     );
