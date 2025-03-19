@@ -8,6 +8,7 @@ import 'package:flutter/services.dart';
 import 'package:p2bp_2025spring_mobile/create_test_form.dart';
 import 'package:p2bp_2025spring_mobile/theme.dart';
 import 'firestore_functions.dart';
+import 'package:intl/intl.dart';
 
 class ProjectDetailsPage extends StatefulWidget {
   final Project projectData;
@@ -385,32 +386,49 @@ class TestCard extends StatelessWidget {
               SizedBox(width: 15),
               // TODO: Add date
               Expanded(
-                  flex: 2,
-                  child: Column(
-                    children: [
-                      Text('Scheduled Time: '),
-                      Text(
-                          '${test.scheduledTime.toDate().month}/${test.scheduledTime.toDate().day}/${test.scheduledTime.toDate().year}'),
-                      Text(
-                          '${test.scheduledTime.toDate().weekday} at ${test.scheduledTime.toDate().hour}:${test.scheduledTime.toDate().minute}'),
-                    ],
-                  )),
-              Expanded(
-                flex: 2,
+                flex: 4,
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
                       test.title,
+                      overflow: TextOverflow.ellipsis,
                       style: TextStyle(fontWeight: FontWeight.bold),
                     ),
-                    Text(
-                      test.isComplete ? 'completed' : 'not completed',
-                      style: TextStyle(fontStyle: FontStyle.italic),
+                    Row(
+                      children: <Widget>[
+                        Text(
+                          test.isComplete ? 'Completed ' : 'Not Completed ',
+                          style: TextStyle(fontStyle: FontStyle.italic),
+                        ),
+                        test.isComplete
+                            ? Icon(
+                                Icons.check_circle_outline_sharp,
+                                size: 18,
+                                color: Colors.green,
+                              )
+                            : SizedBox(),
+                      ],
                     )
                   ],
                 ),
               ),
+              Expanded(
+                flex: 5,
+                child: Column(
+                  children: [
+                    Text(
+                      'Scheduled Time: ',
+                      style: TextStyle(fontWeight: FontWeight.bold),
+                    ),
+                    Text(DateFormat.yMMMMd()
+                        .format(test.scheduledTime.toDate())),
+                    Text(
+                        '${DateFormat.EEEE().format(test.scheduledTime.toDate())} at ${DateFormat.jmv().format(test.scheduledTime.toDate())}'),
+                  ],
+                ),
+              ),
+              Expanded(flex: 1, child: SizedBox()),
               Align(
                 alignment: Alignment.centerRight,
                 child: IconButton(
@@ -420,11 +438,21 @@ class TestCard extends StatelessWidget {
                   ),
                   tooltip: 'Start test',
                   onPressed: () {
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                          builder: (context) => test.getPage(project)),
-                    );
+                    if (test.isComplete) {
+                      showDialog(
+                        context: context,
+                        builder: (context) {
+                          return RedoConfirmationWidget(
+                              test: test, project: project);
+                        },
+                      );
+                    } else {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                            builder: (context) => test.getPage(project)),
+                      );
+                    }
                   },
                 ),
               ),
@@ -432,6 +460,77 @@ class TestCard extends StatelessWidget {
           ),
         ),
       ),
+    );
+  }
+}
+
+class RedoConfirmationWidget extends StatelessWidget {
+  const RedoConfirmationWidget({
+    super.key,
+    required this.test,
+    required this.project,
+  });
+
+  final Test test;
+  final Project project;
+
+  @override
+  Widget build(BuildContext context) {
+    return AlertDialog(
+      scrollable: true,
+      title: Column(
+        children: [
+          Text(
+            "Wait!",
+            style: TextStyle(
+              fontWeight: FontWeight.bold,
+            ),
+          ),
+        ],
+      ),
+      content: Text(
+        "This test has already been completed. "
+        "If you continue, you will overwrite the data in this test. "
+        "\nWould you still like to continue?",
+        style: TextStyle(fontSize: 16),
+      ),
+      actions: <Widget>[
+        Row(
+          mainAxisAlignment: MainAxisAlignment.end,
+          children: <Widget>[
+            Flexible(
+              child: TextButton(
+                onPressed: () {
+                  Navigator.pop(context, 'Cancel');
+                },
+                child: const Text(
+                  'No, take me back.',
+                  style: TextStyle(fontSize: 17),
+                  overflow: TextOverflow.ellipsis,
+                ),
+              ),
+            ),
+            Flexible(
+              child: TextButton(
+                onPressed: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                        builder: (context) => test.getPage(project)),
+                  );
+                },
+                child: Text(
+                  'Yes, overwrite it.',
+                  style: TextStyle(
+                      fontWeight: FontWeight.bold,
+                      color: Colors.red[900],
+                      fontSize: 15),
+                ),
+              ),
+            ),
+          ],
+        ),
+      ],
     );
   }
 }
