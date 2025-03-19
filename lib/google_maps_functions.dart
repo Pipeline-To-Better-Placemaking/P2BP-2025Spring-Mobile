@@ -59,9 +59,10 @@ Future<LocationPermission> _checkLocationPermissions() async {
 Set<Polygon> finalizePolygon(List<LatLng> polygonPoints,
     [Color? polygonColor]) {
   Set<Polygon> polygon = {};
+  List<LatLng> polygonPointsCopy = List.of(polygonPoints);
   try {
     // Sort points in clockwise order
-    List<LatLng> sortedPoints = _sortPointsClockwise(polygonPoints);
+    List<LatLng> sortedPoints = _sortPointsClockwise(polygonPointsCopy);
 
     // Creates polygon ID from time
     final String polygonId = DateTime.now().millisecondsSinceEpoch.toString();
@@ -76,7 +77,7 @@ Set<Polygon> finalizePolygon(List<LatLng> polygonPoints,
       ),
     };
   } catch (e, stacktrace) {
-    print('Exception in finalize_polygon(): $e');
+    print('Exception in finalizePolygon(): $e');
     print('Stacktrace: $stacktrace');
   }
   return polygon;
@@ -85,6 +86,10 @@ Set<Polygon> finalizePolygon(List<LatLng> polygonPoints,
 /// Takes a list of LatLng points, sorts them into a clockwise representation
 /// to create the ideal polygon. Returns a list of LatLng points.
 List<LatLng> _sortPointsClockwise(List<LatLng> points) {
+  if (points.isEmpty) {
+    throw Exception(
+        'Empty points List passed to _sortPointsClockwise in google_maps_functions.dart');
+  }
   // Calculate the centroid of the points
   double centerX =
       points.map((p) => p.latitude).reduce((a, b) => a + b) / points.length;
@@ -171,11 +176,11 @@ Polyline? createPolyline(List<LatLng> polylinePoints, Color color) {
       polylineId: PolylineId(polylineID),
       width: 4,
       startCap: Cap.squareCap,
-      points: polylinePoints,
+      points: List.of(polylinePoints),
       color: color,
     );
   } catch (e, stacktrace) {
-    print('Exception in finalize_polygon(): $e');
+    print('Exception in createPolyline(): $e');
     print('Stacktrace: $stacktrace');
   }
   return polyline;

@@ -7,6 +7,7 @@ import 'package:p2bp_2025spring_mobile/absence_of_order_test.dart';
 import 'package:p2bp_2025spring_mobile/google_maps_functions.dart';
 import 'package:p2bp_2025spring_mobile/lighting_profile_test.dart';
 import 'package:p2bp_2025spring_mobile/section_cutter_test.dart';
+import 'package:p2bp_2025spring_mobile/spatial_boundaries_test.dart';
 import 'package:p2bp_2025spring_mobile/theme.dart';
 import 'firestore_functions.dart';
 import 'package:flutter/material.dart';
@@ -322,35 +323,60 @@ abstract class Test<T> {
 /// Types of light for lighting profile test.
 enum LightType { rhythmic, building, task }
 
-// Author's note: I hate the names I used for both of these typedefs but I've
-// already changed it/them so many times and I still cannot think of a better
-// or shorter naming scheme for them so it is what it is.
-/// Convenience alias for `LightingProfileTest` format used for `data`
-/// locally (in Flutter/Dart).
-typedef LightToLatLngMap = Map<LightType, Set<LatLng>>;
+class Light {
+  final LightType lightType;
+  final LatLng point;
 
-/// Convenience alias for `LightingProfileTest` format used for `data`
-/// retrieved from Firestore.
-typedef StringToGeoPointMap = Map<String, List<GeoPoint>>;
+  Light({
+    required this.lightType,
+    required this.point,
+  });
+}
 
-/// Class for Lighting Profile Test info and methods.
-class LightingProfileTest extends Test<LightToLatLngMap> {
-  /// Returns a new instance of the initial data structure used for
-  /// Lighting Profile Test.
-  ///
-  /// Initial data structure needs to be setup similar to this as
-  /// just assigning a Map normally assigns by reference and will
-  /// either overwrite the variable holding that initial structure
-  /// or throw an Exception because you attempted to modify an
-  /// immutable value if it was const.
-  static LightToLatLngMap newInitialDataDeepCopy() {
-    LightToLatLngMap newInitial = {};
-    newInitial[LightType.rhythmic] = <LatLng>{};
-    newInitial[LightType.building] = <LatLng>{};
-    newInitial[LightType.task] = <LatLng>{};
-    return newInitial;
+class LightingProfileData {
+  List<Light> lights = [];
+
+  LightingProfileData();
+
+  LightingProfileData.fromJson(Map<String, dynamic> data) {
+    List<LightType> types = LightType.values;
+    for (final type in types) {
+      if (data.containsKey(type.name) && (data[type.name] as List).isNotEmpty) {
+        for (final light in data[type.name]) {
+          if (light is GeoPoint) {
+            lights.add(Light(
+              point: light.toLatLng(),
+              lightType: type,
+            ));
+          }
+        }
+      }
+    }
   }
 
+  Map<String, Object> toJson() {
+    // Create base map with each light type mapping to empty list
+    List<LightType> types = LightType.values;
+    Map<String, List> json = {
+      for (final type in types) type.name: [],
+    };
+
+    // Loop through all lights and add to map based on type
+    for (final light in lights) {
+      json[light.lightType.name]!.add(light.point.toGeoPoint());
+    }
+
+    return json;
+  }
+
+  @override
+  String toString() {
+    return toJson().toString();
+  }
+}
+
+/// Class for Lighting Profile Test info and methods.
+class LightingProfileTest extends Test<LightingProfileData> {
   /// Static constant definition of collection ID for this test type.
   static const String collectionIDStatic = 'lighting_profile_tests';
 
@@ -388,21 +414,11 @@ class LightingProfileTest extends Test<LightToLatLngMap> {
           scheduledTime: scheduledTime,
           projectRef: projectRef,
           collectionID: collectionID,
-          data: newInitialDataDeepCopy(),
+          data: LightingProfileData(),
         );
     // Register for recreating a Lighting Profile Test from Firestore
     Test._recreateTestConstructors[collectionIDStatic] = (testDoc) {
-      return LightingProfileTest._(
-        title: testDoc['title'],
-        testID: testDoc['id'],
-        scheduledTime: testDoc['scheduledTime'],
-        projectRef: testDoc['project'],
-        collectionID: testDoc.reference.parent.id,
-        data: convertDataFromFirestore(testDoc['data']),
-        creationTime: testDoc['creationTime'],
-        maxResearchers: testDoc['maxResearchers'],
-        isComplete: testDoc['isComplete'],
-      );
+      return LightingProfileTest.fromJson(testDoc.data()!);
     };
     // Register for building a Lighting Profile Test page
     Test._pageBuilders[LightingProfileTest] =
@@ -412,73 +428,67 @@ class LightingProfileTest extends Test<LightToLatLngMap> {
             );
     // Register a function for saving to Firestore
     Test._saveToFirestoreFunctions[LightingProfileTest] = (test) async {
-      await _firestore.collection(test.collectionID).doc(test.testID).set({
-        'title': test.title,
-        'id': test.testID,
-        'scheduledTime': test.scheduledTime,
-        'project': test.projectRef,
-        'data': convertDataToFirestore(test.data),
-        'creationTime': test.creationTime,
-        'maxResearchers': test.maxResearchers,
-        'isComplete': false,
-      }, SetOptions(merge: true));
+      final testRef = _firestore
+          .collection(test.collectionID)
+          .doc(test.testID)
+          .withConverter<LightingProfileTest>(
+            fromFirestore: (snapshot, _) =>
+                LightingProfileTest.fromJson(snapshot.data()!),
+            toFirestore: (test, _) => test.toJson(),
+          );
+      await testRef.set(test as LightingProfileTest, SetOptions(merge: true));
     };
   }
 
   @override
-  void submitData(LightToLatLngMap data) async {
+  void submitData(LightingProfileData data) async {
     try {
-      // Adds all points of each type from submitted data to overall data
-      StringToGeoPointMap firestoreData = convertDataToFirestore(data);
-
       // Updates data in Firestore
       await _firestore.collection(collectionID).doc(testID).update({
-        'data': firestoreData,
+        'data': data.toJson(),
         'isComplete': true,
       });
 
       this.data = data;
       isComplete = true;
 
-      print(
-          'Success! In LightingProfileTest.submitData. data = $firestoreData');
+      print('Success! In LightingProfileTest.submitData. data = $data');
     } catch (e, stacktrace) {
       print("Exception in LightingProfileTest.submitData(): $e");
       print("Stacktrace: $stacktrace");
     }
   }
 
-  /// Transforms data retrieved from Firestore test instance to
-  /// [LightToLatLngMap] for local manipulation.
-  static LightToLatLngMap convertDataFromFirestore(Map<String, dynamic> data) {
-    LightToLatLngMap output = newInitialDataDeepCopy();
-    List<LightType> types = LightType.values;
-    // Adds all data to output one type at a time
-    for (final type in types) {
-      if (data.containsKey(type.name)) {
-        for (final GeoPoint geopoint in data[type.name]!) {
-          output[type]?.add(geopoint.toLatLng());
-        }
-      }
-    }
-    return output;
+  static LightingProfileTest fromJson(Map<String, dynamic> doc) {
+    return LightingProfileTest._(
+      title: doc['title'],
+      testID: doc['id'],
+      scheduledTime: doc['scheduledTime'],
+      projectRef: doc['project'],
+      collectionID: collectionIDStatic,
+      data: LightingProfileData.fromJson(doc['data']),
+      creationTime: doc['creationTime'],
+      maxResearchers: doc['maxResearchers'],
+      isComplete: doc['isComplete'],
+    );
   }
 
-  /// Transforms data stored locally as [LightToLatLngMap] to
-  /// Firestore format (represented by [StringToGeoPointMap])
-  /// with String keys and any other needed changes.
-  static StringToGeoPointMap convertDataToFirestore(LightToLatLngMap data) {
-    StringToGeoPointMap output = {};
-    List<LightType> types = LightType.values;
-    for (final type in types) {
-      output[type.name] = [];
-      if (data.containsKey(type) && data[type] is Set) {
-        for (final latlng in data[type]!) {
-          output[type.name]?.add(latlng.toGeoPoint());
-        }
-      }
-    }
-    return output;
+  Map<String, Object> toJson() {
+    return {
+      'title': title,
+      'id': testID,
+      'scheduledTime': scheduledTime,
+      'project': projectRef,
+      'data': data.toJson(),
+      'creationTime': creationTime,
+      'maxResearchers': maxResearchers,
+      'isComplete': isComplete,
+    };
+  }
+
+  @override
+  String toString() {
+    return toJson().toString();
   }
 }
 
@@ -683,10 +693,10 @@ class AbsenceOfOrderData {
       'maintenancePoints': [],
     };
     for (final behavior in behaviorList) {
-      json['behaviorPoints']?.add(behavior.toJson());
+      json['behaviorPoints']!.add(behavior.toJson());
     }
     for (final maintenance in maintenanceList) {
-      json['maintenancePoints']?.add(maintenance.toJson());
+      json['maintenancePoints']!.add(maintenance.toJson());
     }
     return json;
   }
@@ -843,6 +853,317 @@ class AbsenceOfOrderTest extends Test<AbsenceOfOrderData> {
       'maxResearchers': maxResearchers,
       'isComplete': isComplete,
     };
+  }
+}
+
+enum BoundaryType { constructed, material, shelter }
+
+enum ConstructedBoundaryType {
+  curb,
+  buildingWall,
+  fence,
+  planter,
+  partialWall,
+}
+
+enum MaterialBoundaryType {
+  pavers,
+  concrete,
+  tile,
+  natural,
+  decking,
+}
+
+enum ShelterBoundaryType {
+  canopy,
+  tree,
+  furniture,
+  temporary,
+  constructed,
+}
+
+class ConstructedBoundary {
+  static Color polylineColor = Colors.purpleAccent;
+  late final Polyline polyline;
+  late final double polylineLength;
+  final ConstructedBoundaryType constructedType;
+
+  ConstructedBoundary({
+    required this.polyline,
+    required this.constructedType,
+  }) : polylineLength = polyline.getLengthInFeet();
+
+  ConstructedBoundary.recreate({
+    required this.polyline,
+    required this.polylineLength,
+    required this.constructedType,
+  });
+}
+
+class MaterialBoundary {
+  late final Polygon polygon;
+  late final double polygonArea;
+  final MaterialBoundaryType materialType;
+
+  MaterialBoundary({
+    required this.polygon,
+    required this.materialType,
+  }) : polygonArea = polygon.getAreaInSquareFeet();
+
+  MaterialBoundary.recreate({
+    required this.polygon,
+    required this.polygonArea,
+    required this.materialType,
+  });
+}
+
+class ShelterBoundary {
+  late final Polygon polygon;
+  late final double polygonArea;
+  final ShelterBoundaryType shelterType;
+
+  ShelterBoundary({
+    required this.polygon,
+    required this.shelterType,
+  }) : polygonArea = polygon.getAreaInSquareFeet();
+
+  ShelterBoundary.recreate({
+    required this.polygon,
+    required this.polygonArea,
+    required this.shelterType,
+  });
+}
+
+class SpatialBoundariesData {
+  List<ConstructedBoundary> constructed = [];
+  List<MaterialBoundary> material = [];
+  List<ShelterBoundary> shelter = [];
+
+  SpatialBoundariesData();
+
+  SpatialBoundariesData.fromJson(Map<String, dynamic> data) {
+    if (data.containsKey(BoundaryType.constructed.name) &&
+        (data[BoundaryType.constructed.name] as Map).isNotEmpty) {
+      final constructedData = data[BoundaryType.constructed.name];
+      List<ConstructedBoundaryType> types = ConstructedBoundaryType.values;
+      for (final type in types) {
+        if (constructedData.containsKey(type.name) &&
+            (constructedData[type.name] as List).isNotEmpty) {
+          for (final boundary in (constructedData[type.name] as List)) {
+            // Try to create polyline from existing and only add if successful
+            List points = boundary['polyline'];
+            Polyline? polyline = createPolyline(
+                points.toLatLngList(), ConstructedBoundary.polylineColor);
+            if (polyline != null) {
+              constructed.add(ConstructedBoundary.recreate(
+                polyline: polyline,
+                polylineLength: boundary['polylineLength'],
+                constructedType: type,
+              ));
+            }
+          }
+        }
+      }
+    }
+    if (data.containsKey(BoundaryType.material.name) &&
+        (data[BoundaryType.material.name] as Map).isNotEmpty) {
+      final materialData = data[BoundaryType.material.name];
+      List<MaterialBoundaryType> types = MaterialBoundaryType.values;
+      for (final type in types) {
+        if (materialData.containsKey(type.name) &&
+            (materialData[type.name] as List).isNotEmpty) {
+          for (final boundary in (materialData[type.name] as List)) {
+            List points = boundary['polygon'];
+            Polygon polygon = Polygon(
+              polygonId:
+                  PolygonId(DateTime.now().millisecondsSinceEpoch.toString()),
+              points: points.toLatLngList(),
+            );
+            material.add(MaterialBoundary.recreate(
+              polygon: polygon,
+              polygonArea: boundary['polygonArea'],
+              materialType: type,
+            ));
+          }
+        }
+      }
+    }
+    if (data.containsKey(BoundaryType.shelter.name) &&
+        (data[BoundaryType.shelter.name] as Map).isNotEmpty) {
+      final shelterData = data[BoundaryType.shelter.name];
+      List<ShelterBoundaryType> types = ShelterBoundaryType.values;
+      for (final type in types) {
+        if (shelterData.containsKey(type.name) &&
+            (shelterData[type.name] as List).isNotEmpty) {
+          for (final boundary in (shelterData[type.name] as List)) {
+            List points = boundary['polygon'];
+            Polygon polygon = Polygon(
+              polygonId:
+                  PolygonId(DateTime.now().millisecondsSinceEpoch.toString()),
+              points: points.toLatLngList(),
+            );
+            shelter.add(ShelterBoundary.recreate(
+              polygon: polygon,
+              polygonArea: boundary['polygonArea'],
+              shelterType: type,
+            ));
+          }
+        }
+      }
+    }
+  }
+
+  Map<String, Object> toJson() {
+    List<ConstructedBoundaryType> constructedTypes =
+        ConstructedBoundaryType.values;
+    List<MaterialBoundaryType> materialTypes = MaterialBoundaryType.values;
+    List<ShelterBoundaryType> shelterTypes = ShelterBoundaryType.values;
+    Map<String, Map<String, List>> json = {
+      BoundaryType.constructed.name: {
+        for (final type in constructedTypes) type.name: []
+      },
+      BoundaryType.material.name: {
+        for (final type in materialTypes) type.name: []
+      },
+      BoundaryType.shelter.name: {
+        for (final type in shelterTypes) type.name: []
+      },
+    };
+
+    for (final boundary in constructed) {
+      json[BoundaryType.constructed.name]![boundary.constructedType.name]?.add({
+        'polyline': boundary.polyline.toGeoPointList(),
+        'polylineLength': boundary.polylineLength,
+      });
+    }
+    for (final boundary in material) {
+      json[BoundaryType.material.name]![boundary.materialType.name]?.add({
+        'polygon': boundary.polygon.toGeoPointList(),
+        'polygonArea': boundary.polygonArea,
+      });
+    }
+    for (final boundary in shelter) {
+      json[BoundaryType.shelter.name]![boundary.shelterType.name]?.add({
+        'polygon': boundary.polygon.toGeoPointList(),
+        'polygonArea': boundary.polygonArea,
+      });
+    }
+
+    return json;
+  }
+
+  @override
+  String toString() {
+    return toJson().toString();
+  }
+}
+
+class SpatialBoundariesTest extends Test<SpatialBoundariesData> {
+  static const String collectionIDStatic = 'spatial_boundaries_tests';
+
+  SpatialBoundariesTest._({
+    required super.title,
+    required super.testID,
+    required super.scheduledTime,
+    required super.projectRef,
+    required super.collectionID,
+    required super.data,
+    super.creationTime,
+    super.maxResearchers,
+    super.isComplete,
+  }) : super._();
+
+  /// Registers this class within the Maps required by class [Test].
+  static void register() {
+    // Register for creating new Spatial Boundaries Tests
+    Test._newTestConstructors[collectionIDStatic] = ({
+      required String title,
+      required String testID,
+      required Timestamp scheduledTime,
+      required DocumentReference projectRef,
+      required String collectionID,
+      List? standingPoints,
+    }) =>
+        SpatialBoundariesTest._(
+          title: title,
+          testID: testID,
+          scheduledTime: scheduledTime,
+          projectRef: projectRef,
+          collectionID: collectionID,
+          data: SpatialBoundariesData(),
+        );
+    // Register for recreating a Spatial Boundaries Test from Firestore
+    Test._recreateTestConstructors[collectionIDStatic] = (testDoc) {
+      return SpatialBoundariesTest.fromJson(testDoc.data()!);
+    };
+    // Register for building a Spatial Boundaries Test page
+    Test._pageBuilders[SpatialBoundariesTest] =
+        (project, test) => SpatialBoundariesTestPage(
+              activeProject: project,
+              activeTest: test as SpatialBoundariesTest,
+            );
+    // Register a function for saving to Firestore
+    Test._saveToFirestoreFunctions[SpatialBoundariesTest] = (test) async {
+      final testRef = _firestore
+          .collection(test.collectionID)
+          .doc(test.testID)
+          .withConverter<SpatialBoundariesTest>(
+            fromFirestore: (snapshot, _) =>
+                SpatialBoundariesTest.fromJson(snapshot.data()!),
+            toFirestore: (test, _) => test.toJson(),
+          );
+      await testRef.set(test as SpatialBoundariesTest, SetOptions(merge: true));
+    };
+  }
+
+  @override
+  void submitData(SpatialBoundariesData data) async {
+    try {
+      await _firestore.collection(collectionID).doc(testID).update({
+        'data': data.toJson(),
+        'isComplete': true,
+      });
+
+      this.data = data;
+      isComplete = true;
+
+      print('Success! In SpatialBoundariesTest.submitData. data = $data');
+    } catch (e, stacktrace) {
+      print("Exception in SpatialBoundariesTest.submitData(): $e");
+      print("Stacktrace: $stacktrace");
+    }
+  }
+
+  static SpatialBoundariesTest fromJson(Map<String, dynamic> doc) {
+    return SpatialBoundariesTest._(
+      title: doc['title'],
+      testID: doc['id'],
+      scheduledTime: doc['scheduledTime'],
+      projectRef: doc['project'],
+      collectionID: collectionIDStatic,
+      data: SpatialBoundariesData.fromJson(doc['data']),
+      creationTime: doc['creationTime'],
+      maxResearchers: doc['maxResearchers'],
+      isComplete: doc['isComplete'],
+    );
+  }
+
+  Map<String, Object> toJson() {
+    return {
+      'title': title,
+      'id': testID,
+      'scheduledTime': scheduledTime,
+      'project': projectRef,
+      'data': data.toJson(),
+      'creationTime': creationTime,
+      'maxResearchers': maxResearchers,
+      'isComplete': isComplete,
+    };
+  }
+
+  @override
+  String toString() {
+    return toJson().toString();
   }
 }
 
@@ -1736,7 +2057,6 @@ class NaturePrevalenceTest extends Test<NatureData> {
         );
     // Register for recreating a Nature Prevalence Test from Firestore
     Test._recreateTestConstructors[collectionIDStatic] = (testDoc) {
-      print(testDoc['data']);
       return NaturePrevalenceTest._(
         title: testDoc['title'],
         testID: testDoc['id'],

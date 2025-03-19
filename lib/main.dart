@@ -27,6 +27,7 @@ void registerTestTypes() {
   AbsenceOfOrderTest.register();
   IdentifyingAccessTest.register();
   NaturePrevalenceTest.register();
+  SpatialBoundariesTest.register();
 }
 
 void main() async {

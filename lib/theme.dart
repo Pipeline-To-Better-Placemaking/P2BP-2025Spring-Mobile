@@ -48,6 +48,20 @@ final LinearGradient verticalBlueGrad = LinearGradient(
   ],
 );
 
+/// Style for buttons on Test pages that are not toggleable
+/// requiring custom conditional color values.
+final ButtonStyle testButtonStyle = FilledButton.styleFrom(
+  padding: const EdgeInsets.symmetric(horizontal: 15),
+  foregroundColor: Colors.black,
+  backgroundColor: Colors.white,
+  disabledBackgroundColor: Color(0xCD6C6C6C),
+  iconColor: Colors.black,
+  shape: RoundedRectangleBorder(
+    borderRadius: BorderRadius.circular(10),
+  ),
+  textStyle: TextStyle(fontSize: 14),
+);
+
 // List<ThemeData> appThemes = [
 //   ThemeData(
 //     //

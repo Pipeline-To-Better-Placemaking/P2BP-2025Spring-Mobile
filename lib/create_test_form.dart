@@ -196,6 +196,13 @@ class _CreateTestFormState extends State<CreateTestForm> {
                   ),
                 ),
                 DropdownMenuItem(
+                  value: SpatialBoundariesTest.collectionIDStatic,
+                  child: Text(
+                    'Spatial Boundaries',
+                    style: TextStyle(color: Color(0xFF2F6DCF)),
+                  ),
+                ),
+                DropdownMenuItem(
                   value: SectionCutterTest.collectionIDStatic,
                   child: Text(
                     'Section Cutter',
