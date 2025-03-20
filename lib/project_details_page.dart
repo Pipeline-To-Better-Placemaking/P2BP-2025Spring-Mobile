@@ -2,7 +2,6 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:p2bp_2025spring_mobile/show_project_options_dialog.dart';
-import 'package:p2bp_2025spring_mobile/standing_points_page.dart';
 import 'db_schema_classes.dart';
 import 'package:flutter/services.dart';
 import 'package:p2bp_2025spring_mobile/create_test_form.dart';
@@ -130,152 +129,145 @@ class _ProjectDetailsPageState extends State<ProjectDetailsPage> {
         constraints: BoxConstraints(
           minHeight: MediaQuery.of(context).size.height,
         ),
-        child: IntrinsicHeight(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: <Widget>[
-              Padding(
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: <Widget>[
+            Padding(
+              padding: const EdgeInsets.only(left: 10.0),
+              child: Text(
+                widget.projectData.title,
+                style: TextStyle(
+                  color: Colors.white,
+                  fontSize: 24,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+            ),
+            SizedBox(height: 40),
+            Align(
+              alignment: Alignment.centerLeft,
+              child: Padding(
                 padding: const EdgeInsets.only(left: 10.0),
                 child: Text(
-                  widget.projectData.title,
+                  'Project Description',
                   style: TextStyle(
                     color: Colors.white,
-                    fontSize: 24,
+                    fontSize: 18,
                     fontWeight: FontWeight.bold,
                   ),
                 ),
               ),
-              SizedBox(height: 40),
-              Align(
-                alignment: Alignment.centerLeft,
-                child: Padding(
-                  padding: const EdgeInsets.only(left: 10.0),
-                  child: Text(
-                    'Project Description',
-                    style: TextStyle(
-                      color: Colors.white,
-                      fontSize: 18,
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
+            ),
+            SizedBox(height: 20),
+            Container(
+              width: double.infinity,
+              height: 150,
+              decoration: BoxDecoration(
+                border: Border(
+                  top: BorderSide(color: Colors.white, width: .5),
+                  bottom: BorderSide(color: Colors.white, width: .5),
+                ),
+                color: Color(0x699F9F9F),
+              ),
+              child: Padding(
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 8.0, vertical: 5.0),
+                child: Text.rich(
+                  maxLines: 7,
+                  overflow: TextOverflow.ellipsis,
+                  TextSpan(text: "${widget.projectData.description}\n\n\n"),
+                  style: TextStyle(fontSize: 15, color: Colors.white),
                 ),
               ),
-              SizedBox(height: 20),
-              Container(
-                width: double.infinity,
-                height: 150,
+            ),
+            SizedBox(height: 30),
+            Center(
+              child: Container(
+                width: 300,
+                height: 200,
                 decoration: BoxDecoration(
-                  border: Border(
-                    top: BorderSide(color: Colors.white, width: .5),
-                    bottom: BorderSide(color: Colors.white, width: .5),
-                  ),
                   color: Color(0x699F9F9F),
+                  borderRadius: BorderRadius.circular(10),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Color(0x98474747),
+                      spreadRadius: 3,
+                      blurRadius: 3,
+                      offset: Offset(0, 3),
+                    ),
+                  ],
                 ),
                 child: Padding(
-                  padding: const EdgeInsets.symmetric(
-                      horizontal: 8.0, vertical: 5.0),
-                  child: Text.rich(
-                    maxLines: 7,
-                    overflow: TextOverflow.ellipsis,
-                    TextSpan(text: "${widget.projectData.description}\n\n\n"),
-                    style: TextStyle(fontSize: 15, color: Colors.white),
-                  ),
-                ),
-              ),
-              SizedBox(height: 30),
-              Center(
-                child: Container(
-                  width: 300,
-                  height: 200,
-                  decoration: BoxDecoration(
-                    color: Color(0x699F9F9F),
-                    borderRadius: BorderRadius.circular(10),
-                    boxShadow: [
-                      BoxShadow(
-                        color: Color(0x98474747),
-                        spreadRadius: 3,
-                        blurRadius: 3,
-                        offset: Offset(0, 3),
-                      ),
-                    ],
-                  ),
-                  child: Padding(
-                    padding:
-                        EdgeInsets.symmetric(horizontal: 50, vertical: 77.5),
-                    child: SizedBox(
-                      width: 200,
-                      child: FilledButton.icon(
-                        style: FilledButton.styleFrom(
-                          padding: const EdgeInsets.only(left: 15, right: 15),
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(10.0),
-                          ),
-                          // foregroundColor: foregroundColor,
-                          backgroundColor: Colors.black,
-                        ),
-                        onPressed: () => {
-                          // TODO: Function
-                        },
-                        label: Text('View Project Area'),
-                        icon: Icon(Icons.location_on),
-                        iconAlignment: IconAlignment.start,
-                      ),
-                    ),
-                  ),
-                ),
-              ),
-              SizedBox(height: 30),
-              Padding(
-                padding: const EdgeInsets.symmetric(
-                    horizontal: 25.0, vertical: 20.0),
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: <Widget>[
-                    Text(
-                      "Research Activities",
-                      style: TextStyle(
-                        color: Colors.white,
-                        fontSize: 20,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                    FilledButton.icon(
+                  padding: EdgeInsets.symmetric(horizontal: 50, vertical: 77.5),
+                  child: SizedBox(
+                    width: 200,
+                    child: FilledButton.icon(
                       style: FilledButton.styleFrom(
                         padding: const EdgeInsets.only(left: 15, right: 15),
-                        backgroundColor: Color(0xFF62B6FF),
                         shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(10.0),
                         ),
                         // foregroundColor: foregroundColor,
-                        // backgroundColor: backgroundColor,
+                        backgroundColor: Colors.black,
                       ),
-                      onPressed: _showCreateTestModal,
-                      label: Text('Create'),
-                      icon: Icon(Icons.add),
-                      iconAlignment: IconAlignment.end,
-                    )
-                  ],
-                ),
-              ),
-              Container(
-                // TODO: change depending on size of description box.
-                height: 350,
-                decoration: BoxDecoration(
-                  color: Color(0x22535455),
-                  border: Border(
-                    top: BorderSide(color: Colors.white, width: .5),
+                      onPressed: () => {
+                        // TODO: Function
+                      },
+                      label: Text('View Project Area'),
+                      icon: Icon(Icons.location_on),
+                      iconAlignment: IconAlignment.start,
+                    ),
                   ),
                 ),
-                child: _isLoading == true
-                    ? const Center(child: CircularProgressIndicator())
-                    : _testCount > 0
-                        ? _testListView
-                        : const Center(
-                            child: Text(
-                                'No research activities. Create one first!')),
               ),
-            ],
-          ),
+            ),
+            SizedBox(height: 30),
+            Padding(
+              padding:
+                  const EdgeInsets.symmetric(horizontal: 25.0, vertical: 20.0),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: <Widget>[
+                  Text(
+                    "Research Activities",
+                    style: TextStyle(
+                      color: Colors.white,
+                      fontSize: 20,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                  FilledButton.icon(
+                    style: FilledButton.styleFrom(
+                      padding: const EdgeInsets.only(left: 15, right: 15),
+                      backgroundColor: Color(0xFF62B6FF),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(10.0),
+                      ),
+                    ),
+                    onPressed: _showCreateTestModal,
+                    label: Text('Create'),
+                    icon: Icon(Icons.add),
+                    iconAlignment: IconAlignment.end,
+                  )
+                ],
+              ),
+            ),
+            Container(
+              decoration: BoxDecoration(
+                color: Color(0x22535455),
+                border: Border(
+                  top: BorderSide(color: Colors.white, width: .5),
+                ),
+              ),
+              child: _isLoading == true
+                  ? const Center(child: CircularProgressIndicator())
+                  : _testCount > 0
+                      ? _testListView
+                      : const Center(
+                          child: Text(
+                              'No research activities. Create one first!')),
+            ),
+          ],
         ),
       ),
     );
@@ -328,7 +320,10 @@ class _ProjectDetailsPageState extends State<ProjectDetailsPage> {
   }
 
   Widget _buildTestListView() {
+    widget.projectData.tests?.sort((a, b) => testTimeComparison(a, b));
     Widget list = ListView.separated(
+      physics: ClampingScrollPhysics(),
+      shrinkWrap: true,
       itemCount: _testCount,
       padding: const EdgeInsets.only(
         left: 15,
@@ -337,10 +332,6 @@ class _ProjectDetailsPageState extends State<ProjectDetailsPage> {
         bottom: 30,
       ),
       itemBuilder: (BuildContext context, int index) {
-        widget.projectData.tests
-            ?.sort((a, b) => (a.scheduledTime.compareTo(b.scheduledTime)));
-        widget.projectData.tests?.sort((a, b) =>
-            (a.isComplete == b.isComplete ? 0 : (a.isComplete ? 1 : -1)));
         return TestCard(
           test: widget.projectData.tests![index],
           project: widget.projectData,
@@ -369,14 +360,17 @@ class TestCard extends StatelessWidget {
   final Test test;
   final Project project;
 
-  const TestCard({
+  TestCard({
     super.key,
     required this.test,
     required this.project,
-  });
+  }) : isPastDate = test.scheduledTime.compareTo(Timestamp.now()) <= 0;
+
+  final bool isPastDate;
 
   @override
   Widget build(BuildContext context) {
+    final Color dateColor = isPastDate ? Color(0xFFB71C1C) : Colors.black;
     return InkWell(
       onLongPress: () {
         // TODO: Add menu for deletion?
@@ -384,80 +378,99 @@ class TestCard extends StatelessWidget {
       child: Card(
         margin: EdgeInsets.zero,
         child: Padding(
-          padding: const EdgeInsets.all(10.0),
-          child: Row(
-            children: <Widget>[
-              // TODO: change corresponding to test type
-              CircleAvatar(
-                child: Text(_testInitialsMap[test.runtimeType] ?? ''),
-              ),
-              SizedBox(width: 8),
-              // TODO: Add date
-              Expanded(
-                flex: 5,
-                child: Wrap(
-                  children: [
-                    Text(
-                      test.title,
-                      overflow: TextOverflow.ellipsis,
-                      style: TextStyle(fontWeight: FontWeight.bold),
-                    ),
-                    Text(
-                      test.isComplete ? 'Completed ' : 'Not Completed ',
-                      style: TextStyle(fontStyle: FontStyle.italic),
-                    ),
-                    test.isComplete
-                        ? Icon(
-                            Icons.check_circle_outline_sharp,
-                            size: 18,
-                            color: Colors.green,
-                          )
-                        : SizedBox()
-                  ],
-                ),
-              ),
-              Expanded(
-                flex: 7,
-                child: Wrap(
-                  alignment: WrapAlignment.center,
-                  children: [
-                    Text(
-                      'Scheduled Time: ',
-                      style: TextStyle(fontWeight: FontWeight.bold),
-                    ),
-                    Text(
-                        DateFormat.yMMMd().format(test.scheduledTime.toDate())),
-                    Text('${DateFormat.E().format(test.scheduledTime.toDate())}'
-                        ' at ${DateFormat.jmv().format(test.scheduledTime.toDate())}'),
-                  ],
-                ),
-              ),
-              SizedBox(
-                width: 30,
-                child: IconButton(
-                  icon: const Icon(
-                    Icons.chevron_right,
-                    color: Colors.blue,
+          padding: const EdgeInsets.all(8.0),
+          child: Column(
+            children: [
+              Row(
+                mainAxisAlignment: MainAxisAlignment.start,
+                children: <Widget>[
+                  // TODO: change corresponding to test type
+                  CircleAvatar(
+                    child: Text(_testInitialsMap[test.runtimeType] ?? ''),
                   ),
-                  tooltip: 'Start test',
-                  onPressed: () {
-                    if (test.isComplete) {
-                      showDialog(
-                        context: context,
-                        builder: (context) {
-                          return RedoConfirmationWidget(
-                              test: test, project: project);
-                        },
-                      );
-                    } else {
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                            builder: (context) => test.getPage(project)),
-                      );
-                    }
-                  },
-                ),
+                  SizedBox(width: 8),
+                  Expanded(
+                    flex: 5,
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Row(
+                          children: [
+                            Text(
+                              test.title,
+                              overflow: TextOverflow.ellipsis,
+                              style: TextStyle(fontWeight: FontWeight.bold),
+                            ),
+                          ],
+                        ),
+                        Row(
+                          children: [
+                            Icon(Icons.calendar_today_outlined,
+                                size: 15, color: dateColor),
+                            SizedBox(width: 3),
+                            Text(
+                              DateFormat.yMMMd()
+                                  .format(test.scheduledTime.toDate()),
+                              style: TextStyle(fontSize: 14, color: dateColor),
+                            ),
+                          ],
+                        ),
+                        Row(
+                          children: [
+                            Icon(Icons.access_time, size: 16, color: dateColor),
+                            SizedBox(width: 3),
+                            Text(
+                              '${DateFormat.E().format(test.scheduledTime.toDate())}'
+                              ' at ${DateFormat.jmv().format(test.scheduledTime.toDate())}',
+                              style: TextStyle(
+                                fontSize: 14,
+                                color: dateColor,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ],
+                    ),
+                  ),
+                  Text(
+                    test.isComplete ? 'Completed ' : 'Not Completed ',
+                    style: TextStyle(fontStyle: FontStyle.italic),
+                  ),
+                  test.isComplete
+                      ? Icon(
+                          Icons.check_circle_outline_sharp,
+                          size: 18,
+                          color: Colors.green,
+                        )
+                      : SizedBox(),
+                  SizedBox(
+                    width: 30,
+                    child: IconButton(
+                      icon: const Icon(
+                        Icons.chevron_right,
+                        color: Colors.blue,
+                      ),
+                      tooltip: 'Start test',
+                      onPressed: () {
+                        if (test.isComplete) {
+                          showDialog(
+                            context: context,
+                            builder: (context) {
+                              return RedoConfirmationWidget(
+                                  test: test, project: project);
+                            },
+                          );
+                        } else {
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                                builder: (context) => test.getPage(project)),
+                          );
+                        }
+                      },
+                    ),
+                  ),
+                ],
               ),
             ],
           ),

@@ -98,6 +98,49 @@ class Project {
   }
 }
 
+/// Comparison function for tests. Used in [.sort].
+///
+/// Sorts based on scheduled time.
+/// The tests are split further into two categories completed and not completed.
+/// For completed tests, simply sort by scheduled time.
+/// For non-completed tests, sort first by whether the date has passed. This gives two more groups.
+/// Sort both by their scheduled time.
+int testTimeComparison(Test a, Test b) {
+  Timestamp currentTime = Timestamp.now();
+  if (a.isComplete) {
+    // If a and b are both complete
+    if (b.isComplete) {
+      return a.scheduledTime.compareTo(b.scheduledTime);
+    }
+    // If a is complete and b is not
+    else {
+      return 2;
+    }
+  }
+  // If a is not complete and b is
+  else if (b.isComplete) {
+    return -2;
+  }
+  // If both a and b are not complete
+  else {
+    // If a's time has passed
+    if (a.scheduledTime.compareTo(currentTime) > 0) {
+      // If b's time has also passed
+      if (b.scheduledTime.compareTo(currentTime) > 0) {
+        return a.scheduledTime.compareTo(b.scheduledTime);
+      }
+      // Else if a's time has not passed, but b's has
+      else {
+        return -3;
+      }
+    }
+    // Else if a's time has passed
+    else {
+      return 3;
+    }
+  }
+}
+
 // *--------------------------------------------------------------------------*
 // | Important: When adding a test, make sure to implement the requisite      |
 // | fields and functions. When done, make sure to implement it in the        |
