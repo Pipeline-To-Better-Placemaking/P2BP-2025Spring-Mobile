@@ -382,6 +382,7 @@ class TestCard extends StatelessWidget {
         // TODO: Add menu for deletion?
       },
       child: Card(
+        margin: EdgeInsets.zero,
         child: Padding(
           padding: const EdgeInsets.all(10.0),
           child: Row(
@@ -390,54 +391,49 @@ class TestCard extends StatelessWidget {
               CircleAvatar(
                 child: Text(_testInitialsMap[test.runtimeType] ?? ''),
               ),
-              SizedBox(width: 15),
+              SizedBox(width: 8),
               // TODO: Add date
               Expanded(
-                flex: 4,
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
+                flex: 5,
+                child: Wrap(
                   children: [
                     Text(
                       test.title,
                       overflow: TextOverflow.ellipsis,
                       style: TextStyle(fontWeight: FontWeight.bold),
                     ),
-                    Row(
-                      children: <Widget>[
-                        Text(
-                          test.isComplete ? 'Completed ' : 'Not Completed ',
-                          style: TextStyle(fontStyle: FontStyle.italic),
-                        ),
-                        test.isComplete
-                            ? Icon(
-                                Icons.check_circle_outline_sharp,
-                                size: 18,
-                                color: Colors.green,
-                              )
-                            : SizedBox(),
-                      ],
-                    )
+                    Text(
+                      test.isComplete ? 'Completed ' : 'Not Completed ',
+                      style: TextStyle(fontStyle: FontStyle.italic),
+                    ),
+                    test.isComplete
+                        ? Icon(
+                            Icons.check_circle_outline_sharp,
+                            size: 18,
+                            color: Colors.green,
+                          )
+                        : SizedBox()
                   ],
                 ),
               ),
               Expanded(
-                flex: 5,
-                child: Column(
+                flex: 7,
+                child: Wrap(
+                  alignment: WrapAlignment.center,
                   children: [
                     Text(
                       'Scheduled Time: ',
                       style: TextStyle(fontWeight: FontWeight.bold),
                     ),
-                    Text(DateFormat.yMMMMd()
-                        .format(test.scheduledTime.toDate())),
                     Text(
-                        '${DateFormat.EEEE().format(test.scheduledTime.toDate())} at ${DateFormat.jmv().format(test.scheduledTime.toDate())}'),
+                        DateFormat.yMMMd().format(test.scheduledTime.toDate())),
+                    Text('${DateFormat.E().format(test.scheduledTime.toDate())}'
+                        ' at ${DateFormat.jmv().format(test.scheduledTime.toDate())}'),
                   ],
                 ),
               ),
-              Expanded(flex: 1, child: SizedBox()),
-              Align(
-                alignment: Alignment.centerRight,
+              SizedBox(
+                width: 30,
                 child: IconButton(
                   icon: const Icon(
                     Icons.chevron_right,
