@@ -56,11 +56,13 @@ Future<LocationPermission> _checkLocationPermissions() async {
 /// polygon out of those points (makes sure the polygon is logical). Returns
 /// the singular polygon as a Set so it can be used directly on the GoogleMap
 /// widget.
-Set<Polygon> finalizePolygon(List<LatLng> polygonPoints) {
+Set<Polygon> finalizePolygon(List<LatLng> polygonPoints,
+    [Color? polygonColor]) {
   Set<Polygon> polygon = {};
+  List<LatLng> polygonPointsCopy = List.of(polygonPoints);
   try {
     // Sort points in clockwise order
-    List<LatLng> sortedPoints = _sortPointsClockwise(polygonPoints);
+    List<LatLng> sortedPoints = _sortPointsClockwise(polygonPointsCopy);
 
     // Creates polygon ID from time
     final String polygonId = DateTime.now().millisecondsSinceEpoch.toString();
@@ -69,13 +71,13 @@ Set<Polygon> finalizePolygon(List<LatLng> polygonPoints) {
       Polygon(
         polygonId: PolygonId(polygonId),
         points: sortedPoints,
-        strokeColor: Colors.blue,
+        strokeColor: polygonColor ?? Colors.blue,
         strokeWidth: 2,
-        fillColor: Colors.blue.withValues(alpha: 0.2),
+        fillColor: polygonColor ?? Colors.blue.withValues(alpha: 0.2),
       ),
     };
   } catch (e, stacktrace) {
-    print('Excpetion in finalize_polygon(): $e');
+    print('Exception in finalizePolygon(): $e');
     print('Stacktrace: $stacktrace');
   }
   return polygon;
@@ -84,6 +86,10 @@ Set<Polygon> finalizePolygon(List<LatLng> polygonPoints) {
 /// Takes a list of LatLng points, sorts them into a clockwise representation
 /// to create the ideal polygon. Returns a list of LatLng points.
 List<LatLng> _sortPointsClockwise(List<LatLng> points) {
+  if (points.isEmpty) {
+    throw Exception(
+        'Empty points List passed to _sortPointsClockwise in google_maps_functions.dart');
+  }
   // Calculate the centroid of the points
   double centerX =
       points.map((p) => p.latitude).reduce((a, b) => a + b) / points.length;
@@ -168,14 +174,37 @@ Polyline? createPolyline(List<LatLng> polylinePoints, Color color) {
 
     polyline = Polyline(
       polylineId: PolylineId(polylineID),
-      width: 3,
-      startCap: Cap.roundCap,
-      points: polylinePoints,
+      width: 4,
+      startCap: Cap.squareCap,
+      points: List.of(polylinePoints),
       color: color,
     );
   } catch (e, stacktrace) {
-    print('Excpetion in finalize_polygon(): $e');
+    print('Exception in createPolyline(): $e');
     print('Stacktrace: $stacktrace');
   }
   return polyline;
+}
+
+/// Gets the the rectangle bounds enclosing a polygon.
+///
+/// Takes a list of [LatLng] points and returns a [LatLngBounds]. If bounds
+/// cannot be created (eg. points is empty) then returns null.
+LatLngBounds? getLatLngBounds(List<LatLng> points) {
+  LatLng southWest;
+  LatLng northEast;
+
+  if (points.isEmpty || points.firstOrNull == null) return null;
+
+  southWest = points.first;
+  northEast = points.first;
+
+  for (LatLng point in points) {
+    southWest = LatLng(min(point.latitude, southWest.latitude),
+        min(point.longitude, southWest.longitude));
+    northEast = LatLng(max(point.latitude, northEast.latitude),
+        max(point.longitude, northEast.longitude));
+  }
+
+  return LatLngBounds(southwest: southWest, northeast: northEast);
 }

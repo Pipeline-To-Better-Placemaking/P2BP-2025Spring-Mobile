@@ -30,6 +30,7 @@ void registerTestTypes() {
   PeopleInMotionTest.register();
   NaturePrevalenceTest.register();
   AcousticProfileTest.register();
+  SpatialBoundariesTest.register();
 }
 
 void main() async {

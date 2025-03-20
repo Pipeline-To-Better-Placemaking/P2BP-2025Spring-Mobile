@@ -384,6 +384,7 @@ class _ProjectDetailsPageState extends State<ProjectDetailsPage> {
 const Map<Type, String> _testInitialsMap = {
   AbsenceOfOrderTest: 'AO',
   LightingProfileTest: 'LP',
+  SpatialBoundariesTest: 'SB',
   SectionCutterTest: 'SC',
   IdentifyingAccessTest: 'IA',
   PeopleInPlaceTest: 'PP',
@@ -404,37 +405,42 @@ class TestCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Card(
-      child: Padding(
-        padding: const EdgeInsets.all(10.0),
-        child: Row(
-          children: <Widget>[
-            // TODO: change corresponding to test type
-            CircleAvatar(
-              child: Text(_testInitialsMap[test.runtimeType] ?? ''),
-            ),
-            SizedBox(width: 15),
-            Expanded(
-              child: Text(test.title),
-            ),
-            Align(
-              alignment: Alignment.centerRight,
-              child: IconButton(
-                icon: const Icon(
-                  Icons.chevron_right,
-                  color: Colors.blue,
-                ),
-                tooltip: 'Open team settings',
-                onPressed: () {
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                        builder: (context) => test.getPage(project)),
-                  );
-                },
+    return InkWell(
+      onLongPress: () {
+        print('1');
+      },
+      child: Card(
+        child: Padding(
+          padding: const EdgeInsets.all(10.0),
+          child: Row(
+            children: <Widget>[
+              // TODO: change corresponding to test type
+              CircleAvatar(
+                child: Text(_testInitialsMap[test.runtimeType] ?? ''),
               ),
-            ),
-          ],
+              SizedBox(width: 15),
+              Expanded(
+                child: Text(test.title),
+              ),
+              Align(
+                alignment: Alignment.centerRight,
+                child: IconButton(
+                  icon: const Icon(
+                    Icons.chevron_right,
+                    color: Colors.blue,
+                  ),
+                  tooltip: 'Open team settings',
+                  onPressed: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                          builder: (context) => test.getPage(project)),
+                    );
+                  },
+                ),
+              ),
+            ],
+          ),
         ),
       ),
     );
