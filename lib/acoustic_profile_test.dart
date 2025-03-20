@@ -13,35 +13,7 @@ import 'package:p2bp_2025spring_mobile/project_details_page.dart';
 import 'package:p2bp_2025spring_mobile/theme.dart';
 import 'package:p2bp_2025spring_mobile/acoustic_instructions.dart'; // for _showInstructionOverlay
 
-/// Data model to store one acoustic measurement
-class AcousticMeasurement {
-  final double decibel;
-  final List<String> soundTypes;
-  final String mainSoundType;
-  final DateTime timestamp;
-
-  AcousticMeasurement({
-    required this.decibel,
-    required this.soundTypes,
-    required this.mainSoundType,
-    required this.timestamp,
-  });
-
-  Map<String, dynamic> toJson() {
-    return {
-      'decibel': decibel,
-      'soundTypes': soundTypes,
-      'mainSoundType': mainSoundType,
-      'timestamp': timestamp.toIso8601String(),
-    };
-  }
-}
-
 // Converts a list of AcousticMeasurement objects into a list of JSON maps.
-List<Map<String, dynamic>> acousticMeasurementsToJson(
-    List<AcousticMeasurement> measurements) {
-  return measurements.map((m) => m.toJson()).toList();
-}
 
 /// AcousticProfileTestPage displays a Google Map (with the project polygon)
 /// in the background and uses a timer to prompt the researcher for sound
@@ -49,13 +21,11 @@ List<Map<String, dynamic>> acousticMeasurementsToJson(
 class AcousticProfileTestPage extends StatefulWidget {
   final Project activeProject;
   final dynamic activeTest;
-  final List? currentStandingPoints;
 
   const AcousticProfileTestPage({
     super.key,
     required this.activeProject,
     required this.activeTest,
-    required this.currentStandingPoints,
   });
 
   @override
@@ -93,7 +63,6 @@ class _AcousticProfileTestPageState extends State<AcousticProfileTestPage> {
   Set<Polygon> _polygons = {};
   Set<Circle> _circles = <Circle>{};
   Set<Marker> _markers = {};
-  Marker? _currentMarker;
   List _standingPoints = [];
   final int _maxIntervals = 5; // Total number of intervals
   // List to store acoustic measurements for each interval.
@@ -105,7 +74,6 @@ class _AcousticProfileTestPageState extends State<AcousticProfileTestPage> {
   bool _isTestRunning = false;
   MapType _currentMapType = MapType.normal;
   // Firestore instance.
-  final FirebaseFirestore _firestore = FirebaseFirestore.instance;
   bool _showErrorMessage = false;
   int _remainingSeconds = 0;
   bool _isBottomSheetOpen = false;
@@ -116,7 +84,6 @@ class _AcousticProfileTestPageState extends State<AcousticProfileTestPage> {
     super.initState();
     // Center the map based on the project polygon.
     _initProjectArea();
-    _checkAndFetchLocation();
     // Delay starting the interval timer until the map is ready.
     WidgetsBinding.instance.addPostFrameCallback((_) {});
   }
@@ -140,15 +107,66 @@ class _AcousticProfileTestPageState extends State<AcousticProfileTestPage> {
             _currentLocation.latitude * 0.999999, _currentLocation.longitude);
       }
       // TODO: dynamic zooming
-      _markers = _setMarkersFromPoints(widget.activeProject.standingPoints);
-      _standingPoints = widget.activeProject.standingPoints;
+      _markers = _setMarkersFromPoints(widget.activeTest.standingPoints);
+      _standingPoints = widget.activeTest.standingPoints;
       // Initialize the completion status for each standing point.
       _completedStandingPoints = List.filled(_standingPoints.length, false);
-      if (widget.currentStandingPoints != null) {
-        final List? currentStandingPoints = widget.currentStandingPoints;
-        _loadCurrentStandingPoints(currentStandingPoints);
-      }
       _isLoading = false;
+    });
+  }
+
+  LatLngBounds _getPolygonBounds(List<LatLng> points) {
+    double minLat = points.first.latitude;
+    double maxLat = points.first.latitude;
+    double minLng = points.first.longitude;
+    double maxLng = points.first.longitude;
+
+    for (final point in points) {
+      if (point.latitude < minLat) minLat = point.latitude;
+      if (point.latitude > maxLat) maxLat = point.latitude;
+      if (point.longitude < minLng) minLng = point.longitude;
+      if (point.longitude > maxLng) maxLng = point.longitude;
+    }
+
+    return LatLngBounds(
+      southwest: LatLng(minLat, minLng),
+      northeast: LatLng(maxLat, maxLng),
+    );
+  }
+
+  void _moveToCurrentLocation() {
+    mapController.animateCamera(
+      CameraUpdate.newCameraPosition(
+        CameraPosition(target: _currentLocation, zoom: 14.0),
+      ),
+    );
+  }
+
+  /// Toggle the map type between normal and satellite view.
+  void _toggleMapType() {
+    setState(() {
+      _currentMapType = (_currentMapType == MapType.normal
+          ? MapType.satellite
+          : MapType.normal);
+    });
+  }
+
+  /// Initialize the map controller and adjust the camera:
+  /// - If the project has defined polygon points, zoom to fit the project area.
+  /// - Otherwise, center the map on the user's current location
+  void _onMapCreated(GoogleMapController controller) {
+    mapController = controller;
+    setState(() {
+      if (widget.activeProject.polygonPoints.isNotEmpty) {
+        _polygons = getProjectPolygon(widget.activeProject.polygonPoints);
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          final bounds = _getPolygonBounds(
+              widget.activeProject.polygonPoints.toLatLngList());
+          mapController.animateCamera(CameraUpdate.newLatLngBounds(bounds, 50));
+        });
+      } else {
+        _moveToCurrentLocation(); // Ensure the map is centered on the current location
+      }
     });
   }
 
@@ -193,14 +211,8 @@ class _AcousticProfileTestPageState extends State<AcousticProfileTestPage> {
                 if (_selectedStandingPointIndex == i) {
                   // Deselect if tapped again.
                   _selectedStandingPointIndex = null;
-                  _currentMarker = null;
                 } else {
                   _selectedStandingPointIndex = i;
-                  _currentMarker = Marker(
-                    markerId: markerId,
-                    position: (point['point'] as GeoPoint).toLatLng(),
-                    icon: activeIcon,
-                  );
                 }
               });
             }
@@ -209,40 +221,6 @@ class _AcousticProfileTestPageState extends State<AcousticProfileTestPage> {
       );
     }
     return markers;
-  }
-
-  void _loadCurrentStandingPoints(List? currentStandingPoints) {
-    if (currentStandingPoints == null) return;
-    for (Map point in currentStandingPoints) {
-      final Marker thisMarker = _markers.singleWhere(
-          (marker) => point['point'] == marker.position.toGeoPoint());
-      final int listIndex = _standingPoints.indexWhere((namePointMap) =>
-          namePointMap['point'] == thisMarker.position.toGeoPoint());
-      _currentMarker = thisMarker;
-    }
-  }
-
-  /// Checks for location permissions and fetches the current location.
-  Future<void> _checkAndFetchLocation() async {
-    // Attempt to fetch the current user location. On success, update the UI and display the
-    // instruction overlay. On failure, show an error message and navigate back.
-    try {
-      _currentLocation = await checkAndFetchLocation();
-      if (!mounted) return;
-      setState(() {
-        _isLoading = false;
-      });
-      // Show instructions once the map loads.
-      _showInstructionOverlay();
-    } catch (e, stacktrace) {
-      print('Error fetching location: $e');
-      print('Stacktrace: $stacktrace');
-      if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
-          content: Text(
-              'Map failed to load. Error retrieving location permissions.')));
-      Navigator.pop(context);
-    }
   }
 
   // Helper method to format elapsed seconds into mm:ss
@@ -1076,62 +1054,5 @@ class _AcousticProfileTestPageState extends State<AcousticProfileTestPage> {
         ],
       ),
     );
-  }
-
-  LatLngBounds _getPolygonBounds(List<LatLng> points) {
-    double minLat = points.first.latitude;
-    double maxLat = points.first.latitude;
-    double minLng = points.first.longitude;
-    double maxLng = points.first.longitude;
-
-    for (final point in points) {
-      if (point.latitude < minLat) minLat = point.latitude;
-      if (point.latitude > maxLat) maxLat = point.latitude;
-      if (point.longitude < minLng) minLng = point.longitude;
-      if (point.longitude > maxLng) maxLng = point.longitude;
-    }
-
-    return LatLngBounds(
-      southwest: LatLng(minLat, minLng),
-      northeast: LatLng(maxLat, maxLng),
-    );
-  }
-
-  void _moveToCurrentLocation() {
-    if (mapController != null) {
-      mapController.animateCamera(
-        CameraUpdate.newCameraPosition(
-          CameraPosition(target: _currentLocation, zoom: 14.0),
-        ),
-      );
-    }
-  }
-
-  /// Toggle the map type between normal and satellite view.
-  void _toggleMapType() {
-    setState(() {
-      _currentMapType = (_currentMapType == MapType.normal
-          ? MapType.satellite
-          : MapType.normal);
-    });
-  }
-
-  /// Initialize the map controller and adjust the camera:
-  /// - If the project has defined polygon points, zoom to fit the project area.
-  /// - Otherwise, center the map on the user's current location
-  void _onMapCreated(GoogleMapController controller) {
-    mapController = controller;
-    setState(() {
-      if (widget.activeProject.polygonPoints.isNotEmpty) {
-        _polygons = getProjectPolygon(widget.activeProject.polygonPoints);
-        WidgetsBinding.instance.addPostFrameCallback((_) {
-          final bounds = _getPolygonBounds(
-              widget.activeProject.polygonPoints.toLatLngList());
-          mapController.animateCamera(CameraUpdate.newLatLngBounds(bounds, 50));
-        });
-      } else {
-        _moveToCurrentLocation(); // Ensure the map is centered on the current location
-      }
-    });
   }
 }

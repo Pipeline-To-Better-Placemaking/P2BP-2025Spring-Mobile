@@ -2450,6 +2450,35 @@ class NaturePrevalenceTest extends Test<NatureData> {
   }
 }
 
+/// Data model to store one acoustic measurement
+class AcousticMeasurement {
+  final double decibel;
+  final List<String> soundTypes;
+  final String mainSoundType;
+  final DateTime timestamp;
+
+  AcousticMeasurement({
+    required this.decibel,
+    required this.soundTypes,
+    required this.mainSoundType,
+    required this.timestamp,
+  });
+
+  Map<String, dynamic> toJson() {
+    return {
+      'decibel': decibel,
+      'soundTypes': soundTypes,
+      'mainSoundType': mainSoundType,
+      'timestamp': timestamp.toIso8601String(),
+    };
+  }
+}
+
+List<Map<String, dynamic>> acousticMeasurementsToJson(
+    List<AcousticMeasurement> measurements) {
+  return measurements.map((m) => m.toJson()).toList();
+}
+
 /// Class for Acoustic Profile Test info and methods.
 class AcousticProfileTest extends Test<List<AcousticMeasurement>> {
   /// Returns a new instance of the initial data structure used for Acoustic Profile Test.
@@ -2460,7 +2489,6 @@ class AcousticProfileTest extends Test<List<AcousticMeasurement>> {
   /// Static constant definition of collection ID for this test type.
   static const String collectionIDStatic = 'acoustic_profile_tests';
 
-  /// Temporary list of standing points for testing purposes (TODO)
   List standingPoints;
 
   /// Private constructor for AcousticProfileTest.
@@ -2480,21 +2508,23 @@ class AcousticProfileTest extends Test<List<AcousticMeasurement>> {
   /// Registers this test type in the Test class system.
   static void register() {
     // Register for creating new instances.
-    Test._newTestConstructors[collectionIDStatic] = (
-            {required String title,
-            required String testID,
-            required Timestamp scheduledTime,
-            required DocumentReference projectRef,
-            required String collectionID,
-            List? standingPoints}) =>
+    Test._newTestConstructors[collectionIDStatic] = ({
+      required String title,
+      required String testID,
+      required Timestamp scheduledTime,
+      required DocumentReference projectRef,
+      required String collectionID,
+      List? standingPoints,
+    }) =>
         AcousticProfileTest._(
-            title: title,
-            testID: testID,
-            scheduledTime: scheduledTime,
-            projectRef: projectRef,
-            collectionID: collectionID,
-            data: newInitialDataDeepCopy(),
-            standingPoints: standingPoints ?? []);
+          title: title,
+          testID: testID,
+          scheduledTime: scheduledTime,
+          projectRef: projectRef,
+          collectionID: collectionID,
+          data: newInitialDataDeepCopy(),
+          standingPoints: standingPoints ?? [],
+        );
 
     // Register for recreating an instance from Firestore.
     Test._recreateTestConstructors[collectionIDStatic] = (testDoc) {
@@ -2517,7 +2547,6 @@ class AcousticProfileTest extends Test<List<AcousticMeasurement>> {
         (project, test) => AcousticProfileTestPage(
               activeProject: project,
               activeTest: test as AcousticProfileTest,
-              currentStandingPoints: [],
             );
 
     // Register a function for saving the test data to Firestore.

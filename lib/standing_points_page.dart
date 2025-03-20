@@ -7,60 +7,6 @@ import 'google_maps_functions.dart';
 import 'db_schema_classes.dart';
 import 'firestore_functions.dart';
 
-/// Build the header for the bottom sheet, including a draggable handle.
-class _BottomSheetHeaderDelegate extends SliverPersistentHeaderDelegate {
-  final double height;
-  _BottomSheetHeaderDelegate({required this.height});
-
-  @override
-  Widget build(
-      BuildContext context, double shrinkOffset, bool overlapsContent) {
-    return Container(
-      decoration: BoxDecoration(
-        color: Color(0xFFDDE6F2),
-        border: Border.all(color: bottomSheetBlue.shade900, width: 2.0),
-        borderRadius: BorderRadius.vertical(top: Radius.circular(25.0)),
-      ),
-      child: Column(
-        children: [
-          // Pill-shaped drag handle.
-          Padding(
-            padding: const EdgeInsets.only(top: 8.0, bottom: 8.0),
-            child: Center(
-              child: Container(
-                width: 40.0,
-                height: 5.0,
-                decoration: BoxDecoration(
-                  color: bottomSheetBlue.shade700,
-                  borderRadius: BorderRadius.circular(10.0),
-                ),
-              ),
-            ),
-          ),
-          // Header text.
-          Padding(
-            padding:
-                const EdgeInsets.symmetric(horizontal: 15.0, vertical: 10.0),
-            child: Text(
-              "Standing Points",
-              textAlign: TextAlign.center,
-              style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  @override
-  double get maxExtent => height;
-  @override
-  double get minExtent => height;
-  @override
-  bool shouldRebuild(covariant SliverPersistentHeaderDelegate oldDelegate) =>
-      false;
-}
-
 class StandingPointsPage extends StatefulWidget {
   final Project activeProject;
   final List? currentStandingPoints;
@@ -589,4 +535,58 @@ class _StandingPointsPageState extends State<StandingPointsPage> {
       ),
     );
   }
+}
+
+/// Build the header for the bottom sheet, including a draggable handle.
+class _BottomSheetHeaderDelegate extends SliverPersistentHeaderDelegate {
+  final double height;
+  _BottomSheetHeaderDelegate({required this.height});
+
+  @override
+  Widget build(
+      BuildContext context, double shrinkOffset, bool overlapsContent) {
+    return Container(
+      decoration: BoxDecoration(
+        color: Color(0xFFDDE6F2),
+        border: Border.all(color: bottomSheetBlue.shade900, width: 2.0),
+        borderRadius: BorderRadius.vertical(top: Radius.circular(25.0)),
+      ),
+      child: Column(
+        children: [
+          // Pill-shaped drag handle.
+          Padding(
+            padding: const EdgeInsets.only(top: 8.0, bottom: 8.0),
+            child: Center(
+              child: Container(
+                width: 40.0,
+                height: 5.0,
+                decoration: BoxDecoration(
+                  color: bottomSheetBlue.shade700,
+                  borderRadius: BorderRadius.circular(10.0),
+                ),
+              ),
+            ),
+          ),
+          // Header text.
+          Padding(
+            padding:
+                const EdgeInsets.symmetric(horizontal: 15.0, vertical: 10.0),
+            child: Text(
+              "Standing Points",
+              textAlign: TextAlign.center,
+              style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  @override
+  double get maxExtent => height;
+  @override
+  double get minExtent => height;
+  @override
+  bool shouldRebuild(covariant SliverPersistentHeaderDelegate oldDelegate) =>
+      false;
 }

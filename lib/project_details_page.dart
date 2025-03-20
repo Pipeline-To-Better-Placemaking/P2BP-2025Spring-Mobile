@@ -2,7 +2,6 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:p2bp_2025spring_mobile/show_project_options_dialog.dart';
-import 'package:p2bp_2025spring_mobile/standing_points_page.dart';
 import 'db_schema_classes.dart';
 import 'package:flutter/services.dart';
 import 'package:p2bp_2025spring_mobile/create_test_form.dart';
@@ -10,7 +9,6 @@ import 'package:p2bp_2025spring_mobile/theme.dart';
 import 'firestore_functions.dart';
 import 'package:p2bp_2025spring_mobile/acoustic_profile_test.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
-import 'google_maps_functions.dart';
 import 'mini_map.dart';
 
 class ProjectDetailsPage extends StatefulWidget {
@@ -34,63 +32,7 @@ class _ProjectDetailsPageState extends State<ProjectDetailsPage> {
   bool _isLoading = true;
   Project? project;
   late Widget _testListView;
-  LatLng _location = defaultLocation;
-  final LatLng _currentLocation = defaultLocation;
-  Set<Polygon> _polygons = {};
   late GoogleMapController mapController;
-
-  @override
-  void initState() {
-    super.initState();
-    initProjectArea();
-  }
-
-  void _onMapCreated(GoogleMapController controller) {
-    mapController = controller;
-    _moveToLocation(); // Ensure the map is centered on the current location
-  }
-
-  void _moveToLocation() {
-    if (mapController == null) return;
-    mapController!.animateCamera(
-      CameraUpdate.newCameraPosition(
-        CameraPosition(target: _location, zoom: 14.0),
-      ),
-    );
-  }
-
-  /// Gets the project polygon, adds it to the current polygon list, and
-  /// centers the map over it.
-  void initProjectArea() {
-    setState(() {
-      _polygons = getProjectPolygon(widget.projectData.polygonPoints);
-      _location = getPolygonCentroid(_polygons.first);
-      // Take some latitude away to center considering bottom sheet.
-      _location = LatLng(_location.latitude * .999999, _location.longitude);
-      // TODO: dynamic zooming
-
-      _isLoading = false;
-    });
-  }
-
-  LatLngBounds _getPolygonBounds(List<LatLng> points) {
-    double minLat = points.first.latitude;
-    double maxLat = points.first.latitude;
-    double minLng = points.first.longitude;
-    double maxLng = points.first.longitude;
-
-    for (final point in points) {
-      if (point.latitude < minLat) minLat = point.latitude;
-      if (point.latitude > maxLat) maxLat = point.latitude;
-      if (point.longitude < minLng) minLng = point.longitude;
-      if (point.longitude > maxLng) maxLng = point.longitude;
-    }
-
-    return LatLngBounds(
-      southwest: LatLng(minLat, minLng),
-      northeast: LatLng(maxLat, maxLng),
-    );
-  }
 
   @override
   Widget build(BuildContext context) {
@@ -122,8 +64,7 @@ class _ProjectDetailsPageState extends State<ProjectDetailsPage> {
                   shape: BoxShape.circle,
                 ),
                 child: IconButton(
-                  padding: EdgeInsets
-                      .zero, // Removes internal padding from IconButton
+                  padding: EdgeInsets.zero,
                   constraints: BoxConstraints(),
                   icon: Icon(Icons.arrow_back, color: p2bpBlue, size: 20),
                   onPressed: () {
@@ -246,14 +187,15 @@ class _ProjectDetailsPageState extends State<ProjectDetailsPage> {
                 padding: const EdgeInsets.symmetric(
                     horizontal: 20.0, vertical: 10.0),
                 child: SizedBox(
-                    height: 200,
-                    width: double.infinity,
-                    child: ClipRRect(
-                      borderRadius: BorderRadius.circular(16.0),
-                      child: MiniMap(
-                        projectData: widget.projectData,
-                      ),
-                    )),
+                  height: 200,
+                  width: double.infinity,
+                  child: ClipRRect(
+                    borderRadius: BorderRadius.circular(16.0),
+                    child: MiniMap(
+                      projectData: widget.projectData,
+                    ),
+                  ),
+                ),
               ),
               SizedBox(height: 30),
               Padding(
@@ -320,9 +262,9 @@ class _ProjectDetailsPageState extends State<ProjectDetailsPage> {
           Colors.transparent, // makes the sheet's corners rounded if desired
       builder: (BuildContext context) {
         return DraggableScrollableSheet(
-          initialChildSize: 0.7, // initial height as 50% of screen height
-          minChildSize: 0.3, // minimum height when dragged down
-          maxChildSize: 0.9, // maximum height when dragged up
+          initialChildSize: 0.7,
+          minChildSize: 0.3,
+          maxChildSize: 0.9,
           builder: (BuildContext context, ScrollController scrollController) {
             return Container(
               decoration: BoxDecoration(
@@ -390,7 +332,7 @@ const Map<Type, String> _testInitialsMap = {
   PeopleInPlaceTest: 'PP',
   PeopleInMotionTest: 'PM',
   NaturePrevalenceTest: 'NP',
-  AcousticProfileTestPage: 'AP',
+  AcousticProfileTest: 'AP',
 };
 
 class TestCard extends StatelessWidget {
