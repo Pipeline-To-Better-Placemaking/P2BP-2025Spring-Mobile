@@ -71,8 +71,6 @@ class StandingPointsPage extends StatefulWidget {
   State<StandingPointsPage> createState() => _StandingPointsPageState();
 }
 
-final User? loggedInUser = FirebaseAuth.instance.currentUser;
-
 /// Icon for when the standing point isn't selected
 final AssetMapBitmap disabledIcon = AssetMapBitmap(
   'assets/standing_point_disabled.png',
