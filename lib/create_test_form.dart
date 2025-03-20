@@ -3,7 +3,11 @@ import 'package:flutter/material.dart';
 import 'package:dropdown_button2/dropdown_button2.dart';
 import 'package:p2bp_2025spring_mobile/db_schema_classes.dart';
 import 'package:p2bp_2025spring_mobile/standing_points_page.dart';
+import 'package:google_maps_flutter/google_maps_flutter.dart';
+import 'google_maps_functions.dart';
+import 'firestore_functions.dart';
 import 'theme.dart';
+import 'section_creation_page.dart';
 
 class CreateTestForm extends StatefulWidget {
   final Project activeProject;
@@ -15,9 +19,13 @@ class CreateTestForm extends StatefulWidget {
 
 class _CreateTestFormState extends State<CreateTestForm> {
   final _formKey = GlobalKey<FormState>();
-
+  late GoogleMapController mapController;
+  LatLng _location = defaultLocation;
   final TextEditingController _dateTimeController = TextEditingController();
   final TextEditingController _activityNameController = TextEditingController();
+  final LatLng _currentLocation = defaultLocation;
+  bool _isLoading = true;
+  Set<Polygon> _polygons = {};
 
   DateTime? _selectedDateTime;
   String? _selectedTest;
@@ -66,10 +74,64 @@ class _CreateTestFormState extends State<CreateTestForm> {
   }
 
   @override
+  void initState() {
+    super.initState();
+    initProjectArea();
+  }
+
+  @override
   void dispose() {
     _dateTimeController.dispose();
     _activityNameController.dispose();
     super.dispose();
+  }
+
+  LatLngBounds _getPolygonBounds(List<LatLng> points) {
+    double minLat = points.first.latitude;
+    double maxLat = points.first.latitude;
+    double minLng = points.first.longitude;
+    double maxLng = points.first.longitude;
+
+    for (final point in points) {
+      if (point.latitude < minLat) minLat = point.latitude;
+      if (point.latitude > maxLat) maxLat = point.latitude;
+      if (point.longitude < minLng) minLng = point.longitude;
+      if (point.longitude > maxLng) maxLng = point.longitude;
+    }
+
+    return LatLngBounds(
+      southwest: LatLng(minLat, minLng),
+      northeast: LatLng(maxLat, maxLng),
+    );
+  }
+
+  /// Gets the project polygon, adds it to the current polygon list, and
+  /// centers the map over it.
+  void initProjectArea() {
+    setState(() {
+      _polygons = getProjectPolygon(widget.activeProject.polygonPoints);
+      _location = getPolygonCentroid(_polygons.first);
+      // Take some latitude away to center considering bottom sheet.
+      _location = LatLng(_location.latitude * .999999, _location.longitude);
+      // TODO: dynamic zooming
+
+      _standingPoints = widget.activeProject.standingPoints;
+      _isLoading = false;
+    });
+  }
+
+  void _moveToLocation() {
+    if (mapController == null) return;
+    mapController!.animateCamera(
+      CameraUpdate.newCameraPosition(
+        CameraPosition(target: _location, zoom: 14.0),
+      ),
+    );
+  }
+
+  void _onMapCreated(GoogleMapController controller) {
+    mapController = controller;
+    _moveToLocation(); // Ensure the map is centered on the current location
   }
 
   @override
@@ -254,60 +316,87 @@ class _CreateTestFormState extends State<CreateTestForm> {
             ),
             SizedBox(height: 32),
             _standingPointsTest
-                ? Row(
-                    children: [
-                      Expanded(flex: 1, child: SizedBox()),
-                      Expanded(
-                        flex: 2,
-                        child: ElevatedButton(
-                          onPressed: () async {
-                            final List tempPoints = await Navigator.push(
-                              context,
-                              MaterialPageRoute(
-                                builder: (context) => StandingPointsPage(
-                                  activeProject: widget.activeProject,
-                                  currentStandingPoints:
-                                      _standingPoints.isNotEmpty
-                                          ? _standingPoints
-                                          : null,
-                                ),
-                              ),
-                            );
-                            setState(() {
-                              _standingPoints = tempPoints;
-                            });
-                          },
-                          style: ElevatedButton.styleFrom(
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(10.0),
-                              side: (_standingPointsError)
-                                  ? BorderSide(color: Color(0xFFB3261E))
-                                  : BorderSide(color: Colors.transparent),
+                ? SizedBox(
+                    height: 200,
+                    width: double.infinity,
+                    child: Stack(
+                      fit: StackFit.expand,
+                      children: [
+                        // Static map container
+                        ClipRRect(
+                          borderRadius: BorderRadius.circular(16.0),
+                          child: GoogleMap(
+                            onMapCreated: _onMapCreated,
+                            initialCameraPosition: CameraPosition(
+                              target: _currentLocation,
+                              zoom: 42.0,
                             ),
-                            backgroundColor: Color(0xFF2F6DCF),
-                          ),
-                          child: Text(
-                            _standingPoints.isEmpty
-                                ? 'Add Standing Points'
-                                : 'Edit Standing Points',
-                            style: TextStyle(color: Colors.white),
+                            polygons: _polygons,
+                            liteModeEnabled: true,
+                            myLocationButtonEnabled: false,
+
+                            // Disable gestures to mimic a static image.
+                            zoomGesturesEnabled: false,
+                            scrollGesturesEnabled: false,
+                            rotateGesturesEnabled: false,
+                            tiltGesturesEnabled: false,
                           ),
                         ),
-                      ),
-                      Expanded(
-                          flex: 1,
-                          child: SizedBox(
-                            child: Align(
-                                alignment: Alignment.centerLeft,
-                                child: Padding(
-                                  padding: const EdgeInsets.only(left: 8.0),
-                                  child: _standingPoints.isNotEmpty
-                                      ? Icon(Icons.check_circle,
-                                          color: Colors.green)
-                                      : SizedBox(),
-                                )),
-                          )),
-                    ],
+                        ClipRRect(
+                          borderRadius: BorderRadius.circular(16.0),
+                          // Dimmed Overlay
+                          child: Container(
+                            width: double.infinity,
+                            height: 200,
+                            color: Colors.black.withValues(alpha: 0.5),
+                          ),
+                        ),
+                        Center(
+                          child: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              ElevatedButton.icon(
+                                onPressed: () async {
+                                  final List tempPoints = await Navigator.push(
+                                      context, _customRoute());
+                                  setState(() {
+                                    _standingPoints = tempPoints;
+                                  });
+                                },
+                                style: ElevatedButton.styleFrom(
+                                  backgroundColor: p2bpBlue,
+                                  padding: EdgeInsets.symmetric(
+                                      horizontal: 20, vertical: 14),
+                                  shape: RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.circular(10),
+                                  ),
+                                  elevation: 3,
+                                ),
+                                icon: Icon(Icons.location_on,
+                                    color: Colors.white),
+                                label: Text(
+                                  _standingPoints.isEmpty
+                                      ? 'Add Standing Points'
+                                      : 'Edit Standing Points',
+                                  textAlign: TextAlign.center,
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
+                                  style: TextStyle(
+                                    color: Colors.white,
+                                    fontSize: 16,
+                                    fontWeight: FontWeight.bold,
+                                  ),
+                                ),
+                              ),
+                              if (_standingPoints.isNotEmpty) ...[
+                                SizedBox(width: 8),
+                                Icon(Icons.check_circle, color: Colors.green),
+                              ],
+                            ],
+                          ),
+                        ),
+                      ],
+                    ),
                   )
                 : SizedBox(),
             (_standingPointsError)
@@ -316,8 +405,8 @@ class _CreateTestFormState extends State<CreateTestForm> {
                         style: TextStyle(color: Color(0xFFB3261E))),
                   )
                 : SizedBox(),
-            SizedBox(height: 32),
-            // Optional: A button to submit the form
+            SizedBox(height: _standingPointsTest ? 32 : 4),
+            // Submit activity information to create it
             Align(
               alignment: Alignment.center,
               child: ElevatedButton(
@@ -347,17 +436,62 @@ class _CreateTestFormState extends State<CreateTestForm> {
                   }
                 },
                 style: ElevatedButton.styleFrom(
-                  backgroundColor: p2bpBlue,
+                  backgroundColor:
+                      p2bpBlue, // Using the Save Activity button color
+                  padding: EdgeInsets.symmetric(horizontal: 20, vertical: 14),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(30),
+                  ),
+                  elevation: 3,
                 ),
                 child: Text(
                   "Save Activity",
-                  style: TextStyle(color: Colors.white),
+                  textAlign: TextAlign.center,
+                  style: TextStyle(
+                    color: Colors.white,
+                    fontSize: 16,
+                    fontWeight: FontWeight.bold,
+                  ),
                 ),
               ),
             ),
           ],
         ),
       ),
+    );
+  }
+
+  Route _customRoute() {
+    return PageRouteBuilder(
+      pageBuilder: (context, animation, secondaryAnimation) {
+        // Conditional navigation based on _selectedTest
+        if (_selectedTest?.compareTo(SectionCutterTest.collectionIDStatic) ==
+            0) {
+          return SectionCreationPage(
+            activeProject: widget.activeProject,
+            currentSection: _standingPoints.isNotEmpty ? _standingPoints : null,
+          );
+        } else {
+          return StandingPointsPage(
+            activeProject: widget.activeProject,
+            currentStandingPoints:
+                _standingPoints.isNotEmpty ? _standingPoints : null,
+          );
+        }
+      },
+      transitionsBuilder: (context, animation, secondaryAnimation, child) {
+        const begin = Offset(0.0, 1.0); // Start from bottom of screen
+        const end = Offset.zero; // End at original position
+        const curve = Curves.easeInOut;
+        var tween =
+            Tween(begin: begin, end: end).chain(CurveTween(curve: curve));
+        var offsetAnimation = animation.drive(tween);
+
+        return SlideTransition(
+          position: offsetAnimation,
+          child: child,
+        );
+      },
     );
   }
 }

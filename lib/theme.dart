@@ -12,14 +12,30 @@ const Color directionsTransparency = Color(0xDFDDE6F2);
 /// Default yellow color, used mainly for text on blue gradient background.
 const Color placeYellow = Color(0xFFFFD31F);
 
+/// Primary blue color used across the app
 final MaterialColor p2bpBlue = generateMaterialColor(const Color(0xFF2F6DCF));
 
-const LinearGradient defaultGrad = LinearGradient(
+/// Primary accent color, used for buttons on screens with default gradient background
+final MaterialColor p2bpBlueAccent =
+    generateMaterialColor(const Color(0xFF62B6FF));
+
+/// Dark blue color used for default gradient
+final MaterialColor p2bpDarkBlue =
+    generateMaterialColor(const Color(0xFF0A2A88));
+
+/// Primary yellow color used across the app
+final MaterialColor p2bpYellow = generateMaterialColor(const Color(0xFFFFCC00));
+
+/// Primary bottom sheet background color when a gradient is not used
+final MaterialColor bottomSheetBlue =
+    generateMaterialColor(const Color(0xFFDDE6F2));
+
+LinearGradient defaultGrad = LinearGradient(
   begin: Alignment.topLeft,
   end: Alignment.bottomRight,
   colors: <Color>[
-    Color(0xFF0A2A88),
-    Color(0xFF62B6FF),
+    p2bpDarkBlue,
+    p2bpBlueAccent,
   ],
 );
 
@@ -27,8 +43,8 @@ final LinearGradient verticalBlueGrad = LinearGradient(
   begin: Alignment.topCenter,
   end: Alignment.bottomCenter,
   colors: <Color>[
-    Colors.blue[900]!,
-    Colors.blueAccent,
+    p2bpDarkBlue,
+    p2bpBlueAccent,
   ],
 );
 

@@ -3,18 +3,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
-import 'package:google_maps_flutter/google_maps_flutter.dart'
-    show
-        CameraPosition,
-        CameraUpdate,
-        GoogleMap,
-        GoogleMapController,
-        LatLng,
-        LatLngBounds,
-        MapType,
-        Marker,
-        Polygon,
-        createLocalImageConfiguration;
+import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:maps_toolkit/maps_toolkit.dart' as mp;
 import 'package:p2bp_2025spring_mobile/db_schema_classes.dart';
@@ -24,7 +13,7 @@ import 'package:p2bp_2025spring_mobile/project_details_page.dart';
 import 'package:p2bp_2025spring_mobile/theme.dart';
 import 'package:p2bp_2025spring_mobile/acoustic_instructions.dart'; // for _showInstructionOverlay
 
-// Data model to store one acoustic measurement
+/// Data model to store one acoustic measurement
 class AcousticMeasurement {
   final double decibel;
   final List<String> soundTypes;
@@ -59,19 +48,41 @@ List<Map<String, dynamic>> acousticMeasurementsToJson(
 /// measurements at fixed intervals.
 class AcousticProfileTestPage extends StatefulWidget {
   final Project activeProject;
-  final dynamic
-      activeTest; // Depending on your schema, this might be a specific test type
+  final dynamic activeTest;
+  final List? currentStandingPoints;
 
   const AcousticProfileTestPage({
-    Key? key,
+    super.key,
     required this.activeProject,
     required this.activeTest,
-  }) : super(key: key);
+    required this.currentStandingPoints,
+  });
 
   @override
   State<AcousticProfileTestPage> createState() =>
       _AcousticProfileTestPageState();
 }
+
+/// Icon for a standing point that hasn't been measured yet
+final AssetMapBitmap incompleteIcon = AssetMapBitmap(
+  'assets/standing_point_disabled.png',
+  width: 48,
+  height: 48,
+);
+
+/// Icon for a standing point that has completed its measurement
+final AssetMapBitmap completedIcon = AssetMapBitmap(
+  'assets/standing_point_enabled.png',
+  width: 48,
+  height: 48,
+);
+
+/// Icon for a standing point that is actively being measured
+final AssetMapBitmap activeIcon = AssetMapBitmap(
+  'assets/standing_point_disabled.png',
+  width: 48,
+  height: 48,
+);
 
 class _AcousticProfileTestPageState extends State<AcousticProfileTestPage> {
   late GoogleMapController mapController;
@@ -80,20 +91,25 @@ class _AcousticProfileTestPageState extends State<AcousticProfileTestPage> {
   Timer? _intervalTimer;
   int _currentInterval = 0;
   Set<Polygon> _polygons = {};
-  final int _maxIntervals = 15; // Total number of intervals
+  Set<Circle> _circles = <Circle>{};
+  Set<Marker> _markers = {};
+  Marker? _currentMarker;
+  List _standingPoints = [];
+  final int _maxIntervals = 5; // Total number of intervals
   // List to store acoustic measurements for each interval.
-  List<AcousticMeasurement> _measurements = [];
+  Map<int, List<AcousticMeasurement>> _measurementsPerPoint = {};
+  List<bool> _completedStandingPoints = [];
   // Timer (in seconds) for each interval (e.g. 4 seconds).
   final int _intervalDuration = 4;
   // Controls whether the test is running.
   bool _isTestRunning = false;
-  // For simplicity, we remove marker/point-tap functionality.
   MapType _currentMapType = MapType.normal;
   // Firestore instance.
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
   bool _showErrorMessage = false;
   int _remainingSeconds = 0;
   bool _isBottomSheetOpen = false;
+  int? _selectedStandingPointIndex;
 
   @override
   void initState() {
@@ -111,18 +127,105 @@ class _AcousticProfileTestPageState extends State<AcousticProfileTestPage> {
     super.dispose();
   }
 
-  /// Initializes the project area by calculating the polygon’s centroid.
-  void _initProjectArea() {
-    if (widget.activeProject.polygonPoints.isNotEmpty) {
+  /// Initializes the project area by setting up the polygon for the project,
+  /// centering the map based on the polygon's centroid, creating markers for each
+  /// standing point, and loading any pre-existing standing point data.
+  void _initProjectArea() async {
+    setState(() {
       _polygons = getProjectPolygon(widget.activeProject.polygonPoints);
       if (_polygons.isNotEmpty) {
         _currentLocation = getPolygonCentroid(_polygons.first);
+        // Adjust the location slightly.
+        _currentLocation = LatLng(
+            _currentLocation.latitude * 0.999999, _currentLocation.longitude);
       }
+      // TODO: dynamic zooming
+      _markers = _setMarkersFromPoints(widget.activeProject.standingPoints);
+      _standingPoints = widget.activeProject.standingPoints;
+      // Initialize the completion status for each standing point.
+      _completedStandingPoints = List.filled(_standingPoints.length, false);
+      if (widget.currentStandingPoints != null) {
+        final List? currentStandingPoints = widget.currentStandingPoints;
+        _loadCurrentStandingPoints(currentStandingPoints);
+      }
+      _isLoading = false;
+    });
+  }
+
+  /// Create a marker for each standing point. Markers include an onTap callback
+  /// that toggles selection (or deselection) if the marker's interval cycle hasn't been
+  /// completed.
+  Set<Marker> _setMarkersFromPoints(List points) {
+    Set<Marker> markers = {};
+    for (int i = 0; i < points.length; i++) {
+      final Map point = points[i];
+      final markerId = MarkerId('standing_point_$i');
+
+      // Choose the appropriate icon for this standing point based on its state:
+      // - Use completedIcon if the measurement for this point is complete.
+      // - Use activeIcon if this point is currently selected for measurement.
+      // - Otherwise, use incompleteIcon to indicate it hasn't been measured yet.
+      AssetMapBitmap markerIcon;
+      if (_completedStandingPoints[i]) {
+        markerIcon = completedIcon;
+      } else if (_selectedStandingPointIndex == i) {
+        markerIcon = activeIcon;
+      } else {
+        markerIcon = incompleteIcon;
+      }
+
+      markers.add(
+        Marker(
+          markerId: markerId,
+          position: (point['point'] as GeoPoint).toLatLng(),
+          icon: markerIcon,
+          infoWindow: InfoWindow(
+            title: point['title'],
+            snippet:
+                '${point['point'].latitude.toStringAsFixed(5)}, ${point['point'].latitude.toStringAsFixed(5)}',
+          ),
+          onTap: () {
+            // Only allow selection if the marker doesn't have a completed interval cycle.
+            if (!_completedStandingPoints[i]) {
+              setState(() {
+                // Toggle marker selection: if the tapped marker is already selected, deselect it;
+                // otherwise, select it.
+                if (_selectedStandingPointIndex == i) {
+                  // Deselect if tapped again.
+                  _selectedStandingPointIndex = null;
+                  _currentMarker = null;
+                } else {
+                  _selectedStandingPointIndex = i;
+                  _currentMarker = Marker(
+                    markerId: markerId,
+                    position: (point['point'] as GeoPoint).toLatLng(),
+                    icon: activeIcon,
+                  );
+                }
+              });
+            }
+          },
+        ),
+      );
+    }
+    return markers;
+  }
+
+  void _loadCurrentStandingPoints(List? currentStandingPoints) {
+    if (currentStandingPoints == null) return;
+    for (Map point in currentStandingPoints) {
+      final Marker thisMarker = _markers.singleWhere(
+          (marker) => point['point'] == marker.position.toGeoPoint());
+      final int listIndex = _standingPoints.indexWhere((namePointMap) =>
+          namePointMap['point'] == thisMarker.position.toGeoPoint());
+      _currentMarker = thisMarker;
     }
   }
 
   /// Checks for location permissions and fetches the current location.
   Future<void> _checkAndFetchLocation() async {
+    // Attempt to fetch the current user location. On success, update the UI and display the
+    // instruction overlay. On failure, show an error message and navigate back.
     try {
       _currentLocation = await checkAndFetchLocation();
       if (!mounted) return;
@@ -152,6 +255,8 @@ class _AcousticProfileTestPageState extends State<AcousticProfileTestPage> {
   /// Starts the interval timer. Every [_intervalDuration] seconds, this timer
   /// pauses and launches the acoustic measurement sequence.
   void _startAcousticTest() {
+    // Begin the acoustic test by setting the test running flag, resetting the interval counter,
+    // and initializing the countdown timer.
     setState(() {
       _isTestRunning = true;
       _currentInterval = 0;
@@ -162,6 +267,11 @@ class _AcousticProfileTestPageState extends State<AcousticProfileTestPage> {
     _executeIntervalCycle();
   }
 
+  /// Execute a single interval cycle:
+  /// - Start a countdown using a periodic timer
+  /// - Update the remaining seconds each tick.
+  /// - Once the countdown reaches zero, trigger the bottom sheet sequence to collect data,
+  ///   then move on to the next interval or end the cycle if all intervals are complete
   void _executeIntervalCycle() {
     // Record the exact start time for this interval.
     final DateTime intervalStart = DateTime.now();
@@ -192,7 +302,7 @@ class _AcousticProfileTestPageState extends State<AcousticProfileTestPage> {
         if (_currentInterval < _maxIntervals) {
           _executeIntervalCycle();
         } else {
-          // Test is complete.
+          // Cycle is complete.
           await _endTest();
         }
       }
@@ -204,7 +314,8 @@ class _AcousticProfileTestPageState extends State<AcousticProfileTestPage> {
   /// 2. Sound Types multi-select.
   /// 3. Main Sound Type single-select.
   ///
-  /// Each step collects data which is then stored as an AcousticMeasurement.
+  /// Each step collects data which is then stored as an AcousticMeasurement for the current
+  /// standing point.
   Future<void> _showAcousticBottomSheetSequence() async {
     setState(() {
       _isBottomSheetOpen = true;
@@ -222,48 +333,60 @@ class _AcousticProfileTestPageState extends State<AcousticProfileTestPage> {
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
       builder: (context) {
         final TextEditingController decibelController = TextEditingController();
+        final _formKey = GlobalKey<FormState>();
         return Padding(
           padding: MediaQuery.of(context).viewInsets,
           child: Container(
             padding: const EdgeInsets.all(16),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                const Text(
-                  'Sound Decibel Level',
-                  style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-                ),
-                const SizedBox(height: 12),
-                Center(
-                  child: Container(
-                    width: 250,
-                    child: TextField(
-                      textAlign: TextAlign.center,
-                      controller: decibelController,
-                      keyboardType: TextInputType.number,
-                      style: const TextStyle(fontSize: 24),
-                      decoration: InputDecoration(
-                        label: Center(child: Text('Enter decibel value')),
+            child: Form(
+              key: _formKey,
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  const Text(
+                    'Sound Decibel Level',
+                    style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                  ),
+                  const SizedBox(height: 12),
+                  Center(
+                    child: Container(
+                      width: 250,
+                      child: TextFormField(
+                        textAlign: TextAlign.center,
+                        controller: decibelController,
+                        keyboardType: TextInputType.number,
+                        style: const TextStyle(fontSize: 24),
+                        decoration: InputDecoration(
+                          label: Center(child: Text('Enter decibel value')),
+                        ),
+                        validator: (value) {
+                          if (value == null || value.trim().isEmpty) {
+                            return 'Please enter a value';
+                          }
+                          if (double.tryParse(value.trim()) == null) {
+                            return 'Enter a valid number';
+                          }
+                          return null;
+                        },
                       ),
                     ),
                   ),
-                ),
-                const SizedBox(height: 12),
-                ElevatedButton(
-                  style: ElevatedButton.styleFrom(backgroundColor: p2bpBlue),
-                  onPressed: () {
-                    double? value =
-                        double.tryParse(decibelController.text.trim());
-                    if (value != null) {
-                      Navigator.pop(context, value);
-                    }
-                  },
-                  child: const Text(
-                    'Submit',
-                    style: TextStyle(color: Colors.white),
+                  const SizedBox(height: 12),
+                  ElevatedButton(
+                    style: ElevatedButton.styleFrom(backgroundColor: p2bpBlue),
+                    onPressed: () {
+                      if (_formKey.currentState!.validate()) {
+                        Navigator.pop(context,
+                            double.parse(decibelController.text.trim()));
+                      }
+                    },
+                    child: const Text(
+                      'Submit',
+                      style: TextStyle(color: Colors.white),
+                    ),
                   ),
-                ),
-              ],
+                ],
+              ),
             ),
           ),
         );
@@ -295,6 +418,9 @@ class _AcousticProfileTestPageState extends State<AcousticProfileTestPage> {
             ];
             // Use a local set to track selection.
             final Set<String> selections = {};
+            // Form key for input validation
+            final GlobalKey<FormState> _formKey = GlobalKey<FormState>();
+            String? errorMessage;
             // Tracks user input for the other section.
             final TextEditingController _otherController =
                 TextEditingController();
@@ -307,90 +433,103 @@ class _AcousticProfileTestPageState extends State<AcousticProfileTestPage> {
               builder: (context, setState) {
                 return Padding(
                   padding: MediaQuery.of(context).viewInsets,
-                  child: Container(
-                    padding: const EdgeInsets.all(16),
-                    child: Column(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        const Text(
-                          'Sound Types',
-                          style: TextStyle(
-                              fontSize: 18, fontWeight: FontWeight.bold),
-                        ),
-                        const SizedBox(height: 8),
-                        const Text(
-                          'Select all of the sounds you heard during the measurement',
-                          textAlign: TextAlign.center,
-                        ),
-                        const SizedBox(height: 12),
-                        GridView.count(
-                          crossAxisCount: 3, // Three columns
-                          shrinkWrap: true,
-                          physics:
-                              const NeverScrollableScrollPhysics(), // Prevent scrolling inside the sheet
-                          mainAxisSpacing: 1,
-                          crossAxisSpacing: 2,
-                          padding: const EdgeInsets.only(bottom: 8),
-                          childAspectRatio:
-                              2, // Adjust to change the height/width ratio of each cell
-                          children: soundOptions.map((option) {
-                            final bool isSelected = selections.contains(option);
-                            return ChoiceChip(
-                              label: Text(option),
-                              selected: isSelected,
-                              onSelected: (selected) {
-                                setState(() {
-                                  if (selected) {
-                                    selections.add(option);
-                                  } else {
-                                    selections.remove(option);
-                                  }
-                                });
-                              },
-                              shape: RoundedRectangleBorder(
-                                borderRadius:
-                                    BorderRadius.circular(20), // Pill shape
-                                side: BorderSide(
-                                  color: isSelected
-                                      ? p2bpBlue
-                                      : Color(
-                                          0xFFB0C4DE), // Distinct border when selected
-                                  width: 2.0,
-                                ),
-                              ),
-                              selectedColor: p2bpBlue
-                                  .shade100, // Background color when selected
-                              backgroundColor:
-                                  Color(0xFFE3EBF4), // Default background color
-                            );
-                          }).toList(),
-                        ),
-                        // Other option text field and select button.
-                        Row(
-                          children: [
-                            Expanded(
-                              child: TextField(
-                                  controller: _otherController,
-                                  decoration: InputDecoration(
-                                    labelText: 'Other',
-                                    suffixIcon: _otherController.text.isNotEmpty
-                                        ? IconButton(
-                                            icon: Icon(Icons.clear),
-                                            onPressed: () {
-                                              setState(() {
-                                                _otherController.clear();
-                                              });
-                                            },
-                                          )
-                                        : null,
+                  child: Form(
+                    key: _formKey,
+                    child: Container(
+                      padding: const EdgeInsets.all(16),
+                      child: Column(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          const Text(
+                            'Sound Types',
+                            style: TextStyle(
+                                fontSize: 18, fontWeight: FontWeight.bold),
+                          ),
+                          const SizedBox(height: 8),
+                          const Text(
+                            'Select all of the sounds you heard during the measurement',
+                            textAlign: TextAlign.center,
+                          ),
+                          const SizedBox(height: 12),
+                          GridView.count(
+                            crossAxisCount: 3, // Three columns
+                            shrinkWrap: true,
+                            physics:
+                                const NeverScrollableScrollPhysics(), // Prevent scrolling inside the sheet
+                            mainAxisSpacing: 1,
+                            crossAxisSpacing: 2,
+                            padding: const EdgeInsets.only(bottom: 8),
+                            childAspectRatio:
+                                2, // Adjust to change the height/width ratio of each cell
+                            children: soundOptions.map((option) {
+                              final bool isSelected =
+                                  selections.contains(option);
+                              return ChoiceChip(
+                                label: Text(option),
+                                selected: isSelected,
+                                onSelected: (selected) {
+                                  setState(() {
+                                    if (selected) {
+                                      selections.add(option);
+                                    } else {
+                                      selections.remove(option);
+                                    }
+                                  });
+                                },
+                                shape: RoundedRectangleBorder(
+                                  borderRadius:
+                                      BorderRadius.circular(20), // Pill shape
+                                  side: BorderSide(
+                                    color: isSelected
+                                        ? p2bpBlue
+                                        : Color(
+                                            0xFFB0C4DE), // Distinct border when selected
+                                    width: 2.0,
                                   ),
-                                  onChanged: (value) {
-                                    setState(() {});
-                                  }),
-                            ),
-                            const SizedBox(width: 8),
-                            // Always display the chip; disable it if there's no text.
-                            ChoiceChip(
+                                ),
+                                selectedColor: p2bpBlue
+                                    .shade100, // Background color when selected
+                                backgroundColor: Color(
+                                    0xFFE3EBF4), // Default background color
+                              );
+                            }).toList(),
+                          ),
+                          // Other option text field and select button.
+                          Row(
+                            children: [
+                              Expanded(
+                                child: TextFormField(
+                                    controller: _otherController,
+                                    decoration: InputDecoration(
+                                      labelText: 'Other',
+                                      suffixIcon:
+                                          _otherController.text.isNotEmpty
+                                              ? IconButton(
+                                                  icon: Icon(Icons.clear),
+                                                  onPressed: () {
+                                                    setState(() {
+                                                      _otherController.clear();
+                                                    });
+                                                  },
+                                                )
+                                              : null,
+                                    ),
+                                    // Validate only if the chip is selected
+                                    validator: (value) {
+                                      if (isOtherSelected &&
+                                          (value == null ||
+                                              value.trim().isEmpty)) {
+                                        return 'Please enter a value';
+                                      }
+                                      return null;
+                                    },
+                                    onChanged: (value) {
+                                      setState(() {});
+                                    }),
+                              ),
+                              const SizedBox(width: 8),
+                              // Always display the chip; disable it if there's no text.
+                              ChoiceChip(
                                 label: Text(
                                   _otherController.text.trim().isEmpty
                                       ? "Other"
@@ -416,26 +555,50 @@ class _AcousticProfileTestPageState extends State<AcousticProfileTestPage> {
                                 disabledColor: Color(0xFFE3EBF4),
                                 selectedColor: p2bpBlue.shade100,
                                 shape: RoundedRectangleBorder(
-                                    borderRadius: BorderRadius.circular(20),
-                                    side: BorderSide(
-                                      color: isOtherSelected
-                                          ? p2bpBlue
-                                          : Color(0xFFB0C4DE),
-                                      width: 2.0,
-                                    ))),
-                          ],
-                        ),
-                        const SizedBox(height: 12),
-                        ElevatedButton(
-                          style: ElevatedButton.styleFrom(
-                              backgroundColor: p2bpBlue),
-                          onPressed: () {
-                            Navigator.pop(context, selections.toList());
-                          },
-                          child: const Text('Submit',
-                              style: TextStyle(color: Colors.white)),
-                        ),
-                      ],
+                                  borderRadius: BorderRadius.circular(20),
+                                  side: BorderSide(
+                                    color: isOtherSelected
+                                        ? p2bpBlue
+                                        : Color(0xFFB0C4DE),
+                                    width: 2.0,
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
+                          // Display an error message if no chip is selected.
+                          if (errorMessage != null)
+                            Padding(
+                              padding: const EdgeInsets.only(top: 8.0),
+                              child: Text(
+                                errorMessage!,
+                                style: const TextStyle(color: Colors.red),
+                              ),
+                            ),
+                          const SizedBox(height: 12),
+                          ElevatedButton(
+                            style: ElevatedButton.styleFrom(
+                                backgroundColor: p2bpBlue),
+                            onPressed: () {
+                              // Check that at least one chip is selected.
+                              if (selections.isEmpty) {
+                                setState(() {
+                                  errorMessage =
+                                      'Please select at least one sound type';
+                                });
+                                return;
+                              }
+                              // Validate the "Other" field if its chip is selected.
+                              if (!_formKey.currentState!.validate()) {
+                                return;
+                              }
+                              Navigator.pop(context, selections.toList());
+                            },
+                            child: const Text('Submit',
+                                style: TextStyle(color: Colors.white)),
+                          ),
+                        ],
+                      ),
                     ),
                   ),
                 );
@@ -456,6 +619,7 @@ class _AcousticProfileTestPageState extends State<AcousticProfileTestPage> {
       builder: (context) {
         final List<String> soundOptions = selectedSoundTypes;
         String? selectedOption;
+        String? errorMessage;
         return StatefulBuilder(
           builder: (context, setState) {
             return Padding(
@@ -494,6 +658,8 @@ class _AcousticProfileTestPageState extends State<AcousticProfileTestPage> {
                           onSelected: (selected) {
                             setState(() {
                               selectedOption = selected ? option : null;
+                              // Clear error when a chip is selected.
+                              if (selectedOption != null) errorMessage = null;
                             });
                           },
                           shape: RoundedRectangleBorder(
@@ -513,14 +679,26 @@ class _AcousticProfileTestPageState extends State<AcousticProfileTestPage> {
                         );
                       }).toList(),
                     ),
+                    if (errorMessage != null)
+                      Padding(
+                        padding: const EdgeInsets.only(top: 8.0),
+                        child: Text(
+                          errorMessage!,
+                          style: const TextStyle(color: Colors.red),
+                        ),
+                      ),
                     const SizedBox(height: 24),
                     ElevatedButton(
                       style:
                           ElevatedButton.styleFrom(backgroundColor: p2bpBlue),
                       onPressed: () {
-                        if (selectedOption != null) {
-                          Navigator.pop(context, selectedOption);
+                        if (selectedOption == null) {
+                          setState(() {
+                            errorMessage = 'Please select a main sound type.';
+                          });
+                          return;
                         }
+                        Navigator.pop(context, selectedOption);
                       },
                       child: const Text('Submit',
                           style: TextStyle(color: Colors.white)),
@@ -545,21 +723,33 @@ class _AcousticProfileTestPageState extends State<AcousticProfileTestPage> {
       mainSoundType: mainSoundType ?? '',
       timestamp: DateTime.now(),
     );
-    _measurements.add(measurement);
+    // Use the selected standing point index, defaulting to 0 if none is selected.
+    int index = _selectedStandingPointIndex ?? 0;
+
+    // Initialize the measureme list for this standing point if it doesn't exist.
+    if (!_measurementsPerPoint.containsKey(index)) {
+      _measurementsPerPoint[index] = [];
+    }
+    _measurementsPerPoint[index]!.add(measurement);
   }
 
-  /// Ends the test, saves the acoustic measurement data to Firestore, and
-  /// navigates back to the project details page.
+  /// Finalize the interval cycle by stopping the test-running state.
+  /// Process and aggregate the measurement data for each standing point:
+  /// - Calculate average decibel values.
+  /// - Draw a circle around the point representing the data as a 'heat map'
+  /// Update the completed status of each standing point
+  /// If all points are completed, navigate to the Project Details Page
   Future<void> _endTest() async {
     setState(() {
       _isTestRunning = false;
     });
     try {
+      // TODO: Bsckend logic when interval cycle completes
       // await _firestore
       //     .collection(widget.activeTest.collectionID)
       //     .doc(widget.activeTest.testID)
       //     .update({
-      //   'data': acousticMeasurementsToJson(_measurements),
+      //   'data': acousticMeasurementsToJson(measurements),
       //   'isComplete': true,
       // });
       print("Acoustic Profile test data submitted successfully.");
@@ -567,19 +757,83 @@ class _AcousticProfileTestPageState extends State<AcousticProfileTestPage> {
       print("Error submitting Acoustic Profile test data: $e");
       print("Stacktrace: $stacktrace");
     }
-    // Navigate back to the Project Details page.
-    Navigator.pushReplacement(
-      context,
-      MaterialPageRoute(
-        builder: (context) =>
-            ProjectDetailsPage(projectData: widget.activeProject),
-      ),
-    );
+    _measurementsPerPoint.forEach((index, measurements) {
+      if (measurements.isNotEmpty) {
+        final avgDecibel =
+            measurements.map((m) => m.decibel).reduce((a, b) => a + b) /
+                measurements.length;
+        final scaleFactor = 10;
+        final circleRadius = avgDecibel * scaleFactor;
+
+        // Calculate the most frequently chosen main sound type.
+        Map<String, int> mainSoundTypeCount = {};
+        for (final measurement in measurements) {
+          final type = measurement.mainSoundType;
+          mainSoundTypeCount[type] = (mainSoundTypeCount[type] ?? 0) + 1;
+        }
+        String mainSoundTypeMode = '';
+        int maxCount = 0;
+        mainSoundTypeCount.forEach((type, cnt) {
+          if (cnt > maxCount) {
+            maxCount = cnt;
+            mainSoundTypeMode = type;
+          }
+        });
+
+        // Determine the center for the circle.
+        // Use the selected marker index. If none is selected, default to 0.
+        int index = _selectedStandingPointIndex ?? 0;
+        LatLng circleCenter = _currentLocation;
+        if (_standingPoints.isNotEmpty && index < _standingPoints.length) {
+          final currentStandingPoint = _standingPoints[index];
+          if (currentStandingPoint is Map &&
+              currentStandingPoint.containsKey('point') &&
+              currentStandingPoint['point'] is GeoPoint) {
+            circleCenter =
+                (currentStandingPoint['point'] as GeoPoint).toLatLng();
+          }
+        }
+
+        setState(() {
+          _circles.add(
+            Circle(
+              circleId: CircleId('acousticHeatmap_$index'),
+              center: circleCenter,
+              radius: circleRadius,
+              fillColor: Colors.purple.shade100.withValues(alpha: 0.3),
+              strokeWidth: 0,
+            ),
+          );
+          // Mark this standing point as completed.
+          if (index < _completedStandingPoints.length) {
+            _completedStandingPoints[index] = true;
+          }
+
+          // Clear the current selection.
+          _selectedStandingPointIndex = null;
+          // Refresh markers so that the icon updates.
+          _markers = _setMarkersFromPoints(_standingPoints);
+        });
+      } else {
+        print("No measurements available to calculate average decibel.");
+      }
+    });
+
+    // If all standing points have a corresponding circle, navigate out to Project Details Page.
+    if (_completedStandingPoints.every((completed) => completed)) {
+      Navigator.pushReplacement(
+        context,
+        MaterialPageRoute(
+          builder: (context) =>
+              ProjectDetailsPage(projectData: widget.activeProject),
+        ),
+      );
+    }
   }
 
-  /// Displays the same instruction overlay as People In Place.
+  /// Displays an instruction overlay that explains how Acoustic Profile works.
+  /// This overlay is shown immediately when the screen loads.
   void _showInstructionOverlay() {
-    // For now, reusing the People In Place instructions.
     showDialog(
       context: context,
       barrierDismissible: false,
@@ -630,8 +884,9 @@ class _AcousticProfileTestPageState extends State<AcousticProfileTestPage> {
     );
   }
 
-  // Overlay widget to display a centered message.
-  Widget _buildCenterMessage() {
+  /// Overlay widget to display a centered message instructing the user not to leave the application
+  /// once the test has started.
+  Widget _buildInstructionMessage() {
     // Only display if no bottom sheet is open.
     if (_isBottomSheetOpen) return SizedBox.shrink();
     // Choose message based on whether the test has started.
@@ -657,6 +912,9 @@ class _AcousticProfileTestPageState extends State<AcousticProfileTestPage> {
     );
   }
 
+  /// Build the main UI for Acoustic Profile.
+  /// This includes the Google Map with project boundaries, the Start button (which is enabled
+  /// upon marker selection), a timer display, and overlays for instructions and messages.
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -674,22 +932,20 @@ class _AcousticProfileTestPageState extends State<AcousticProfileTestPage> {
             style: ElevatedButton.styleFrom(
               shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(20)),
-              backgroundColor: _isTestRunning ? Colors.red : Colors.green,
+              backgroundColor: _isTestRunning ? Colors.grey : Colors.green,
               padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
             ),
-            onPressed: () {
-              if (!_isTestRunning) {
-                setState(() {
-                  _isTestRunning = true;
-                  _startAcousticTest(); // Start the countdown timer when pressed
-                });
-              } else {
-                Navigator.pop(context); // Exit the test if End is displayed
-              }
-            },
-            child: Text(
-              _isTestRunning ? 'End' : 'Start',
-              style: const TextStyle(color: Colors.white, fontSize: 16),
+            onPressed: (!_isTestRunning && _selectedStandingPointIndex != null)
+                ? () {
+                    setState(() {
+                      _isTestRunning = true;
+                      _startAcousticTest(); // Start the countdown timer when pressed
+                    });
+                  }
+                : null,
+            child: const Text(
+              'Start',
+              style: TextStyle(color: Colors.white, fontSize: 16),
             ),
           ),
         ),
@@ -740,6 +996,7 @@ class _AcousticProfileTestPageState extends State<AcousticProfileTestPage> {
             initialCameraPosition:
                 CameraPosition(target: _currentLocation, zoom: 14.0),
             polygons: _polygons,
+            circles: _circles,
             mapType: _currentMapType,
             myLocationButtonEnabled: false,
             zoomControlsEnabled: false,
@@ -765,7 +1022,7 @@ class _AcousticProfileTestPageState extends State<AcousticProfileTestPage> {
                 ),
               ),
             ),
-          // Floating button for toggling map type.
+          // Overlaid button for toggling map type.
           Positioned(
             top: MediaQuery.of(context).padding.top + kToolbarHeight + 8.0,
             right: 20.0,
@@ -790,7 +1047,7 @@ class _AcousticProfileTestPageState extends State<AcousticProfileTestPage> {
               ),
             ),
           ),
-          // Floating button for toggling instructions.
+          // Overlaid button for toggling instructions.
           if (!_isLoading)
             Positioned(
               top: MediaQuery.of(context).padding.top + kToolbarHeight + 70.0,
@@ -815,7 +1072,7 @@ class _AcousticProfileTestPageState extends State<AcousticProfileTestPage> {
                 ),
               ),
             ),
-          if (!_isBottomSheetOpen) _buildCenterMessage(),
+          if (!_isBottomSheetOpen) _buildInstructionMessage(),
         ],
       ),
     );
@@ -859,7 +1116,9 @@ class _AcousticProfileTestPageState extends State<AcousticProfileTestPage> {
     });
   }
 
-  /// Callback when the map is created. Saves the controller for later use.
+  /// Initialize the map controller and adjust the camera:
+  /// - If the project has defined polygon points, zoom to fit the project area.
+  /// - Otherwise, center the map on the user's current location
   void _onMapCreated(GoogleMapController controller) {
     mapController = controller;
     setState(() {

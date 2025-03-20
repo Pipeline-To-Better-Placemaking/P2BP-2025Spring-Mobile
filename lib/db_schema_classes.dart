@@ -111,7 +111,10 @@ class Project {
 ///
 /// Used to check for test creation and saving.
 const Set<String> standingPointsTests = {
-  IdentifyingAccessTest.collectionIDStatic
+  IdentifyingAccessTest.collectionIDStatic,
+  PeopleInPlaceTest.collectionIDStatic,
+  PeopleInMotionTest.collectionIDStatic,
+  AcousticProfileTest.collectionIDStatic,
 };
 
 /// List containing all tests that make use of standing points.
@@ -1361,6 +1364,9 @@ class IdentifyingAccessTest extends Test<Map> {
 class PeopleInPlaceTest extends Test<List<LoggedDataPoint>> {
   static const String collectionIDStatic = 'people_in_place_tests';
 
+  /// List of standing points
+  List standingPoints;
+
   static List<LoggedDataPoint> newInitialDataDeepCopy() {
     return [];
   }
@@ -1372,6 +1378,7 @@ class PeopleInPlaceTest extends Test<List<LoggedDataPoint>> {
     required super.projectRef,
     required super.collectionID,
     required super.data,
+    required this.standingPoints,
     super.creationTime,
     super.maxResearchers,
     super.isComplete,
@@ -1384,15 +1391,16 @@ class PeopleInPlaceTest extends Test<List<LoggedDataPoint>> {
       required Timestamp scheduledTime,
       required DocumentReference projectRef,
       required String collectionID,
+      List? standingPoints,
     }) =>
         PeopleInPlaceTest._(
-          title: title,
-          testID: testID,
-          scheduledTime: scheduledTime,
-          projectRef: projectRef,
-          collectionID: collectionID,
-          data: newInitialDataDeepCopy(),
-        );
+            title: title,
+            testID: testID,
+            scheduledTime: scheduledTime,
+            projectRef: projectRef,
+            collectionID: collectionID,
+            data: newInitialDataDeepCopy(),
+            standingPoints: standingPoints ?? []);
 
     Test._recreateTestConstructors[collectionIDStatic] = (testDoc) {
       List<dynamic> dataList = testDoc['data'] ?? [];
@@ -1418,6 +1426,7 @@ class PeopleInPlaceTest extends Test<List<LoggedDataPoint>> {
         creationTime: testDoc['creationTime'],
         maxResearchers: testDoc['maxResearchers'],
         isComplete: testDoc['isComplete'],
+        standingPoints: testDoc['standingPoints'],
       );
     };
 
@@ -1437,6 +1446,7 @@ class PeopleInPlaceTest extends Test<List<LoggedDataPoint>> {
         'creationTime': test.creationTime,
         'maxResearchers': test.maxResearchers,
         'isComplete': test.isComplete,
+        'standingPoints': (test as PeopleInPlaceTest).standingPoints,
       }, SetOptions(merge: true));
     };
   }
@@ -1470,6 +1480,9 @@ class PeopleInMotionTest extends Test<List<TracedRoute>> {
   /// Static constant definition of collection ID for this test type.
   static const String collectionIDStatic = 'people_in_motion_tests';
 
+  /// Temporary list of standing points for testing purposes (TODO)
+  List standingPoints;
+
   /// Private constructor for PeopleInMotionTest.
   PeopleInMotionTest._({
     required super.title,
@@ -1478,6 +1491,7 @@ class PeopleInMotionTest extends Test<List<TracedRoute>> {
     required super.projectRef,
     required super.collectionID,
     required super.data,
+    required this.standingPoints,
     super.creationTime,
     super.maxResearchers,
     super.isComplete,
@@ -1486,21 +1500,21 @@ class PeopleInMotionTest extends Test<List<TracedRoute>> {
   /// Registers this test type in the Test class system.
   static void register() {
     // Register for creating new instances
-    Test._newTestConstructors[collectionIDStatic] = ({
-      required String title,
-      required String testID,
-      required Timestamp scheduledTime,
-      required DocumentReference projectRef,
-      required String collectionID,
-    }) =>
+    Test._newTestConstructors[collectionIDStatic] = (
+            {required String title,
+            required String testID,
+            required Timestamp scheduledTime,
+            required DocumentReference projectRef,
+            required String collectionID,
+            List? standingPoints}) =>
         PeopleInMotionTest._(
-          title: title,
-          testID: testID,
-          scheduledTime: scheduledTime,
-          projectRef: projectRef,
-          collectionID: collectionID,
-          data: newInitialDataDeepCopy(),
-        );
+            title: title,
+            testID: testID,
+            scheduledTime: scheduledTime,
+            projectRef: projectRef,
+            collectionID: collectionID,
+            data: newInitialDataDeepCopy(),
+            standingPoints: standingPoints ?? []);
 
     // Register for recreating from Firestore
     Test._recreateTestConstructors[collectionIDStatic] = (testDoc) {
@@ -1514,6 +1528,7 @@ class PeopleInMotionTest extends Test<List<TracedRoute>> {
         creationTime: testDoc['creationTime'],
         maxResearchers: testDoc['maxResearchers'],
         isComplete: testDoc['isComplete'],
+        standingPoints: testDoc['standingPoints'],
       );
     };
 
@@ -1535,6 +1550,7 @@ class PeopleInMotionTest extends Test<List<TracedRoute>> {
         'creationTime': test.creationTime,
         'maxResearchers': test.maxResearchers,
         'isComplete': false,
+        'standingPoints': (test as PeopleInMotionTest).standingPoints,
       }, SetOptions(merge: true));
     };
   }
@@ -2079,6 +2095,9 @@ class AcousticProfileTest extends Test<List<AcousticMeasurement>> {
   /// Static constant definition of collection ID for this test type.
   static const String collectionIDStatic = 'acoustic_profile_tests';
 
+  /// Temporary list of standing points for testing purposes (TODO)
+  List standingPoints;
+
   /// Private constructor for AcousticProfileTest.
   AcousticProfileTest._({
     required super.title,
@@ -2087,6 +2106,7 @@ class AcousticProfileTest extends Test<List<AcousticMeasurement>> {
     required super.projectRef,
     required super.collectionID,
     required super.data,
+    required this.standingPoints,
     super.creationTime,
     super.maxResearchers,
     super.isComplete,
@@ -2095,21 +2115,21 @@ class AcousticProfileTest extends Test<List<AcousticMeasurement>> {
   /// Registers this test type in the Test class system.
   static void register() {
     // Register for creating new instances.
-    Test._newTestConstructors[collectionIDStatic] = ({
-      required String title,
-      required String testID,
-      required Timestamp scheduledTime,
-      required DocumentReference projectRef,
-      required String collectionID,
-    }) =>
+    Test._newTestConstructors[collectionIDStatic] = (
+            {required String title,
+            required String testID,
+            required Timestamp scheduledTime,
+            required DocumentReference projectRef,
+            required String collectionID,
+            List? standingPoints}) =>
         AcousticProfileTest._(
-          title: title,
-          testID: testID,
-          scheduledTime: scheduledTime,
-          projectRef: projectRef,
-          collectionID: collectionID,
-          data: newInitialDataDeepCopy(),
-        );
+            title: title,
+            testID: testID,
+            scheduledTime: scheduledTime,
+            projectRef: projectRef,
+            collectionID: collectionID,
+            data: newInitialDataDeepCopy(),
+            standingPoints: standingPoints ?? []);
 
     // Register for recreating an instance from Firestore.
     Test._recreateTestConstructors[collectionIDStatic] = (testDoc) {
@@ -2123,6 +2143,7 @@ class AcousticProfileTest extends Test<List<AcousticMeasurement>> {
         creationTime: testDoc['creationTime'],
         maxResearchers: testDoc['maxResearchers'],
         isComplete: testDoc['isComplete'],
+        standingPoints: testDoc['standingPoints'],
       );
     };
 
@@ -2131,6 +2152,7 @@ class AcousticProfileTest extends Test<List<AcousticMeasurement>> {
         (project, test) => AcousticProfileTestPage(
               activeProject: project,
               activeTest: test as AcousticProfileTest,
+              currentStandingPoints: [],
             );
 
     // Register a function for saving the test data to Firestore.
@@ -2144,6 +2166,7 @@ class AcousticProfileTest extends Test<List<AcousticMeasurement>> {
         'creationTime': test.creationTime,
         'maxResearchers': test.maxResearchers,
         'isComplete': false,
+        'standingPoints': (test as AcousticProfileTest).standingPoints,
       }, SetOptions(merge: true));
     };
   }
