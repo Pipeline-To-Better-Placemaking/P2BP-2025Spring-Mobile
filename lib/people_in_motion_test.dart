@@ -246,32 +246,15 @@ class _PeopleInMotionTestPageState extends State<PeopleInMotionTestPage> {
     mapController = controller;
     if (widget.activeProject.polygonPoints.isNotEmpty) {
       WidgetsBinding.instance.addPostFrameCallback((_) {
-        final latLngPoints = widget.activeProject.polygonPoints.toLatLngList();
-        final bounds = _getPolygonBounds(latLngPoints);
-        mapController.animateCamera(CameraUpdate.newLatLngBounds(bounds, 50));
+        final latLngPoints = widget.activeProject.polygonPoints;
+        final bounds = getLatLngBounds(latLngPoints);
+        if (bounds != null) {
+          mapController.animateCamera(CameraUpdate.newLatLngBounds(bounds, 50));
+        }
       });
     } else {
       _moveToCurrentLocation(); // Center on current location.
     }
-  }
-
-  LatLngBounds _getPolygonBounds(List<LatLng> points) {
-    double minLat = points.first.latitude;
-    double maxLat = points.first.latitude;
-    double minLng = points.first.longitude;
-    double maxLng = points.first.longitude;
-
-    for (final point in points) {
-      if (point.latitude < minLat) minLat = point.latitude;
-      if (point.latitude > maxLat) maxLat = point.latitude;
-      if (point.longitude < minLng) minLng = point.longitude;
-      if (point.longitude > maxLng) maxLng = point.longitude;
-    }
-
-    return LatLngBounds(
-      southwest: LatLng(minLat, minLng),
-      northeast: LatLng(maxLat, maxLng),
-    );
   }
 
   void _moveToCurrentLocation() {

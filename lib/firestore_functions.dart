@@ -80,7 +80,7 @@ Future<Project> saveProject({
   required String projectTitle,
   required String description,
   required DocumentReference? teamRef,
-  required List<GeoPoint> polygonPoints,
+  required List<LatLng> polygonPoints,
   required List<StandingPoint> standingPoints,
   required num polygonArea,
 }) async {
@@ -99,8 +99,8 @@ Future<Project> saveProject({
       'id': projectID,
       'team': teamRef,
       'description': description,
-      'polygonPoints': polygonPoints,
-      'standingPoints': [for (final point in standingPoints) point.toJson()],
+      'polygonPoints': polygonPoints.toGeoPointList(),
+      'standingPoints': StandingPoint.toJsonList(standingPoints),
       'polygonArea': polygonArea,
       'tests': [],
     });
@@ -151,7 +151,7 @@ Future<Project> getProjectInfo(String projectID) async {
           projectID: projectDoc['id'],
           title: projectDoc['title'],
           description: projectDoc['description'],
-          polygonPoints: projectDoc['polygonPoints'],
+          polygonPoints: (projectDoc['polygonPoints'] as List).toLatLngList(),
           polygonArea: projectDoc['polygonArea'],
           standingPoints: [
             for (final standingPoint in projectDoc['standingPoints'])
@@ -166,7 +166,7 @@ Future<Project> getProjectInfo(String projectID) async {
           projectID: projectDoc['id'],
           title: projectDoc['title'],
           description: projectDoc['description'],
-          polygonPoints: projectDoc['polygonPoints'],
+          polygonPoints: (projectDoc['polygonPoints'] as List).toLatLngList(),
           polygonArea: projectDoc['polygonArea'],
           standingPoints: [],
           creationTime: projectDoc['creationTime'],
@@ -431,31 +431,36 @@ Future<Test> saveTest({
   required String collectionID,
   List? standingPoints,
 }) async {
-  Test tempTest;
+  late Test tempTest;
 
-  if (projectRef == null) {
-    throw Exception('projectRef not defined when passed to createTest()');
+  try {
+    if (projectRef == null) {
+      throw Exception('projectRef not defined when passed to createTest()');
+    }
+
+    // Generates test document ID
+    String testID = _firestore.collection(collectionID).doc().id;
+
+    // Creates Test object
+    tempTest = Test.createNew(
+      title: title,
+      testID: testID,
+      scheduledTime: scheduledTime,
+      projectRef: projectRef,
+      collectionID: collectionID,
+      standingPoints: standingPoints,
+    );
+
+    await tempTest.saveToFirestore();
+
+    // Adds a reference to the Test to the relevant Project in Firestore
+    await _firestore.doc('/${projectRef.path}').update({
+      'tests': FieldValue.arrayUnion([_firestore.doc('/$collectionID/$testID')])
+    });
+  } catch (e, stacktrace) {
+    print('Exception retrieving : $e');
+    print('Stacktrace: $stacktrace');
   }
-
-  // Generates test document ID
-  String testID = _firestore.collection(collectionID).doc().id;
-
-  // Creates Test object
-  tempTest = Test.createNew(
-    title: title,
-    testID: testID,
-    scheduledTime: scheduledTime,
-    projectRef: projectRef,
-    collectionID: collectionID,
-    standingPoints: standingPoints,
-  );
-
-  tempTest.saveToFirestore();
-
-  // Adds a reference to the Test to the relevant Project in Firestore
-  await _firestore.doc('/${projectRef.path}').update({
-    'tests': FieldValue.arrayUnion([_firestore.doc('/$collectionID/$testID')])
-  });
 
   return tempTest;
 }

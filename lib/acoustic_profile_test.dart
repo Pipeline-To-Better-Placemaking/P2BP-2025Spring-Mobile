@@ -787,8 +787,7 @@ class _AcousticProfileTestPageState extends State<AcousticProfileTestPage> {
       if (widget.activeProject.polygonPoints.isNotEmpty) {
         _polygons = getProjectPolygon(widget.activeProject.polygonPoints);
         WidgetsBinding.instance.addPostFrameCallback((_) {
-          final bounds = _getPolygonBounds(
-              widget.activeProject.polygonPoints.toLatLngList());
+          final bounds = _getPolygonBounds(widget.activeProject.polygonPoints);
           mapController.animateCamera(CameraUpdate.newLatLngBounds(bounds, 50));
         });
       } else {

@@ -113,24 +113,18 @@ double _calculateAngle(double centerX, double centerY, double x, double y) {
   return atan2(y - centerY, x - centerX);
 }
 
-/// Takes in a `List<GeoPoint>`. This is the native coordinate type from
-/// Firestore. Converts them to `LatLng`, then creates a `Polygon` with those
-/// points. Default polygon color is a transparent red.
-/// Returns as a `Set<Polygon>`.
+/// Returns a `Set<Polygon>` with a single `Polygon` made up of the given
+/// [polygonPoints].
+///
 /// <br/> Note: This should render the points in the correct order. However, if
 /// points are **not** connected in the correct order, change function to call
 /// _sortPointsClockwise first.
-Set<Polygon> getProjectPolygon(List polygonPoints) {
+Set<Polygon> getProjectPolygon(List<LatLng> polygonPoints) {
   Set<Polygon> projectPolygon = {};
-  List<LatLng> polygonPointsLatLng = [];
   try {
-    for (GeoPoint point in polygonPoints) {
-      polygonPointsLatLng.add(LatLng(point.latitude, point.longitude));
-    }
-
     projectPolygon.add(Polygon(
       polygonId: PolygonId('project_polygon'),
-      points: polygonPointsLatLng,
+      points: polygonPoints.toList(),
       fillColor: Color(0x52F34236),
       strokeColor: Colors.red,
       strokeWidth: 1,

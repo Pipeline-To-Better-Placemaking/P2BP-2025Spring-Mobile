@@ -31,7 +31,7 @@ class _PeopleInPlaceTestPageState extends State<PeopleInPlaceTestPage> {
   Timer? _hintTimer;
   bool _showHint = false;
   bool _isTestRunning = false;
-  int _remainingSeconds = 0;
+  int _remainingSeconds = 300;
   Timer? _timer;
   Set<Polygon> _polygons = {}; // Set of polygons
   MapType _currentMapType = MapType.normal; // Default map type
@@ -42,10 +42,13 @@ class _PeopleInPlaceTestPageState extends State<PeopleInPlaceTestPage> {
   final Set<Marker> _markers = {}; // Set of markers for points
   final List<LatLng> _loggedPoints = [];
 
+  final Set<Marker> _standingPointMarkers = {};
+
   // List to store backend‑compatible logged data points.
   final PeopleInPlaceData _newData = PeopleInPlaceData();
 
   // Custom marker icons
+  BitmapDescriptor? standingPointMarker;
 
   // Male Markers
   BitmapDescriptor? standingMaleMarker;
@@ -91,7 +94,6 @@ class _PeopleInPlaceTestPageState extends State<PeopleInPlaceTestPage> {
   void _initProjectArea() {
     setState(() {
       _polygons = getProjectPolygon(widget.activeProject.polygonPoints);
-      print(_polygons);
       _location = getPolygonCentroid(_polygons.first);
       // Take some latitude away to center considering bottom sheet.
       _location = LatLng(_location.latitude * .999999, _location.longitude);
@@ -106,6 +108,12 @@ class _PeopleInPlaceTestPageState extends State<PeopleInPlaceTestPage> {
     final ImageConfiguration configuration =
         createLocalImageConfiguration(context);
     try {
+      standingPointMarker = await AssetMapBitmap.create(
+        configuration,
+        'assets/standing_point_disabled_marker.png',
+        width: 36,
+        height: 36,
+      );
       standingMaleMarker = await AssetMapBitmap.create(
         configuration,
         'assets/custom_icons/test_specific/people_in_place/standing_male_marker.png',
@@ -180,10 +188,21 @@ class _PeopleInPlaceTestPageState extends State<PeopleInPlaceTestPage> {
       );
       setState(() {
         _customMarkersLoaded = true;
+        _buildStandingPointMarkers();
       });
-      print("Custom markers loaded successfully.");
-    } catch (e) {
+    } catch (e, s) {
       print("Error loading custom markers: $e");
+      print("Stacktrace: $s");
+    }
+  }
+
+  void _buildStandingPointMarkers() {
+    for (final point in widget.activeTest.standingPoints) {
+      _standingPointMarkers.add(Marker(
+        markerId: MarkerId(point.toString()),
+        position: point.location,
+        icon: standingPointMarker!,
+      ));
     }
   }
 
@@ -264,35 +283,18 @@ class _PeopleInPlaceTestPageState extends State<PeopleInPlaceTestPage> {
     mapController = controller;
     setState(() {
       if (widget.activeProject.polygonPoints.isNotEmpty) {
-        _polygons = getProjectPolygon(widget.activeProject.polygonPoints);
         WidgetsBinding.instance.addPostFrameCallback((_) {
-          final bounds = _getPolygonBounds(
+          final bounds = getLatLngBounds(
               widget.activeProject.polygonPoints.toLatLngList());
-          mapController.animateCamera(CameraUpdate.newLatLngBounds(bounds, 50));
+          if (bounds != null) {
+            mapController
+                .animateCamera(CameraUpdate.newLatLngBounds(bounds, 50));
+          }
         });
       } else {
         _moveToCurrentLocation(); // Ensure the map is centered on the current location
       }
     });
-  }
-
-  LatLngBounds _getPolygonBounds(List<LatLng> points) {
-    double minLat = points.first.latitude;
-    double maxLat = points.first.latitude;
-    double minLng = points.first.longitude;
-    double maxLng = points.first.longitude;
-
-    for (final point in points) {
-      if (point.latitude < minLat) minLat = point.latitude;
-      if (point.latitude > maxLat) maxLat = point.latitude;
-      if (point.longitude < minLng) minLng = point.longitude;
-      if (point.longitude > maxLng) maxLng = point.longitude;
-    }
-
-    return LatLngBounds(
-      southwest: LatLng(minLat, minLng),
-      northeast: LatLng(maxLat, maxLng),
-    );
   }
 
   void _moveToCurrentLocation() {
@@ -388,8 +390,6 @@ class _PeopleInPlaceTestPageState extends State<PeopleInPlaceTestPage> {
               ]}\n'
                   'Posture: ${person.posture.displayName}'),
           onTap: () {
-            // Print for debugging:
-            print("Marker tapped: $markerId");
             // Use a short delay to ensure the marker is rendered,
             // then show its info window using the same markerId.
             if (_openMarkerId == markerId) {
@@ -520,7 +520,7 @@ class _PeopleInPlaceTestPageState extends State<PeopleInPlaceTestPage> {
                 target: _location,
                 zoom: 14.0,
               ),
-              markers: _markers,
+              markers: {..._standingPointMarkers, ..._markers},
               polygons: _polygons,
               onTap: _handleMapTap,
               mapType: _currentMapType,
@@ -639,103 +639,127 @@ class _PeopleInPlaceTestPageState extends State<PeopleInPlaceTestPage> {
                     ),
                   ),
                   padding: EdgeInsets.only(bottom: 8),
-                  child: Column(
+                  child: Stack(
                     children: [
-                      Padding(
-                        padding: const EdgeInsets.symmetric(vertical: 8.0),
-                        child: Text(
-                          "Marker Color Guide",
-                          textAlign: TextAlign.center,
-                          style: TextStyle(
-                              fontSize: 18, fontWeight: FontWeight.bold),
+                      Align(
+                        // Slightly closer to center than topRight alignment.
+                        alignment: Alignment(0.95, -0.95),
+                        child: IconButton(
+                          onPressed: () => setState(() =>
+                              _isPointsMenuVisible = !_isPointsMenuVisible),
+                          icon: Icon(Icons.close_outlined),
+                          style: ButtonStyle(
+                            backgroundColor: WidgetStatePropertyAll(Colors.red),
+                            shape: WidgetStatePropertyAll(
+                              RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(10),
+                              ),
+                            ),
+                          ),
                         ),
                       ),
-                      Padding(
-                        padding: const EdgeInsets.symmetric(horizontal: 16.0),
-                        child: activityColorsRow(),
-                      ),
-                      Divider(
-                        height: 20,
-                        thickness: 2,
-                        color: Color(0xFF2F6DCF),
-                      ),
-                      Expanded(
-                        child: ListView.builder(
-                          padding: EdgeInsets.zero,
-                          itemCount: _loggedPoints.length,
-                          itemBuilder: (context, index) {
-                            final point = _loggedPoints[index];
-                            return ListTile(
-                              contentPadding:
-                                  const EdgeInsets.symmetric(horizontal: 20),
-                              title: Text(
-                                'Point ${index + 1}',
-                                style: const TextStyle(
-                                    fontWeight: FontWeight.bold),
-                              ),
-                              subtitle: Text(
-                                '${point.latitude.toStringAsFixed(4)}, ${point.longitude.toStringAsFixed(4)}',
-                                textAlign: TextAlign.left,
-                              ),
-                              trailing: IconButton(
-                                icon: const Icon(FontAwesomeIcons.trashCan,
-                                    color: Color(0xFFD32F2F)),
-                                onPressed: () {
-                                  setState(() {
-                                    // Construct the markerId the same way it was created.
-                                    final markerId = MarkerId(point.toString());
-                                    // Remove the marker from the markers set.
-                                    _markers.removeWhere((marker) =>
-                                        marker.markerId == markerId);
-                                    // Remove the point from data.
-                                    _newData.persons.removeWhere((person) {
-                                      return person.location ==
-                                          _loggedPoints[index];
-                                    });
-                                    // Remove the point from the list.
-                                    _loggedPoints.removeAt(index);
-                                  });
-                                },
-                              ),
-                            );
-                          },
-                        ),
-                      ),
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.center,
+                      Column(
                         children: [
-                          Container(
-                            decoration: BoxDecoration(
-                              color: Color(0xFFD32F2F),
-                              borderRadius: BorderRadius.circular(10),
+                          Padding(
+                            padding: const EdgeInsets.symmetric(vertical: 8.0),
+                            child: Text(
+                              "Marker Color Guide",
+                              textAlign: TextAlign.center,
+                              style: TextStyle(
+                                  fontSize: 18, fontWeight: FontWeight.bold),
                             ),
-                            child: TextButton(
-                              onPressed: () {
-                                setState(() {
-                                  // Clear all logged points.
-                                  _loggedPoints.clear();
-                                  _newData.persons.clear();
-                                  // Remove all associated markers.
-                                  _markers.clear();
-                                });
-                              },
-                              style: TextButton.styleFrom(
-                                padding: const EdgeInsets.symmetric(
-                                    horizontal: 10, vertical: 8),
-                                tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                              ),
-                              child: Row(
-                                mainAxisAlignment: MainAxisAlignment.center,
-                                children: const [
-                                  Text(
-                                    'Clear All',
-                                    style: TextStyle(color: Colors.white),
+                          ),
+                          Padding(
+                            padding:
+                                const EdgeInsets.symmetric(horizontal: 16.0),
+                            child: activityColorsRow(),
+                          ),
+                          Divider(
+                            height: 20,
+                            thickness: 2,
+                            color: Color(0xFF2F6DCF),
+                          ),
+                          Expanded(
+                            child: ListView.builder(
+                              padding: EdgeInsets.zero,
+                              itemCount: _loggedPoints.length,
+                              itemBuilder: (context, index) {
+                                final point = _loggedPoints[index];
+                                return ListTile(
+                                  contentPadding: const EdgeInsets.symmetric(
+                                      horizontal: 20),
+                                  title: Text(
+                                    'Point ${index + 1}',
+                                    style: const TextStyle(
+                                        fontWeight: FontWeight.bold),
                                   ),
-                                  SizedBox(width: 8),
-                                  Icon(Icons.close, color: Colors.white),
-                                ],
-                              ),
+                                  subtitle: Text(
+                                    '${point.latitude.toStringAsFixed(4)}, ${point.longitude.toStringAsFixed(4)}',
+                                    textAlign: TextAlign.left,
+                                  ),
+                                  trailing: IconButton(
+                                    icon: const Icon(FontAwesomeIcons.trashCan,
+                                        color: Color(0xFFD32F2F)),
+                                    onPressed: () {
+                                      setState(() {
+                                        // Construct the markerId the same way it was created.
+                                        final markerId =
+                                            MarkerId(point.toString());
+                                        // Remove the marker from the markers set.
+                                        _markers.removeWhere((marker) =>
+                                            marker.markerId == markerId);
+                                        // Remove the point from data.
+                                        _newData.persons.removeWhere((person) {
+                                          return person.location ==
+                                              _loggedPoints[index];
+                                        });
+                                        // Remove the point from the list.
+                                        _loggedPoints.removeAt(index);
+                                      });
+                                    },
+                                  ),
+                                );
+                              },
                             ),
+                          ),
+                          Row(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              Container(
+                                decoration: BoxDecoration(
+                                  color: Color(0xFFD32F2F),
+                                  borderRadius: BorderRadius.circular(10),
+                                ),
+                                child: TextButton(
+                                  onPressed: () {
+                                    setState(() {
+                                      // Clear all logged points.
+                                      _loggedPoints.clear();
+                                      _newData.persons.clear();
+                                      // Remove all associated markers.
+                                      _markers.clear();
+                                    });
+                                  },
+                                  style: TextButton.styleFrom(
+                                    padding: const EdgeInsets.symmetric(
+                                        horizontal: 10, vertical: 8),
+                                    tapTargetSize:
+                                        MaterialTapTargetSize.shrinkWrap,
+                                  ),
+                                  child: Row(
+                                    mainAxisAlignment: MainAxisAlignment.center,
+                                    children: const [
+                                      Text(
+                                        'Clear All',
+                                        style: TextStyle(color: Colors.white),
+                                      ),
+                                      SizedBox(width: 8),
+                                      Icon(Icons.close, color: Colors.white),
+                                    ],
+                                  ),
+                                ),
+                              ),
+                            ],
                           ),
                         ],
                       ),
@@ -788,7 +812,6 @@ class _DescriptionFormState extends State<_DescriptionForm> {
       activities: activities,
       posture: PostureType.values[_selectedPosture!],
     );
-    print(person);
 
     Navigator.pop(context, person);
   }

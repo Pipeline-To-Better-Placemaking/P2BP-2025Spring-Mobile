@@ -40,7 +40,7 @@ class _ProjectMapCreationState extends State<ProjectMapCreation> {
   List<LatLng> _polygonPoints = []; // Points for the polygon
   List<StandingPoint> _standingPoints = [];
   List<mp.LatLng> _mapToolsPolygonPoints = [];
-  Set<Polygon> _polygon = {}; // Set of polygons
+  Set<Polygon> _polygons = {}; // Set of polygons
   Set<Marker> _markers = {}; // Set of markers for points
   final _formKey = GlobalKey<FormState>();
 
@@ -162,11 +162,11 @@ class _ProjectMapCreationState extends State<ProjectMapCreation> {
   void _finalizePolygon() {
     try {
       // Create polygon.
-      _polygon = finalizePolygon(_polygonPoints);
+      _polygons = finalizePolygon(_polygonPoints);
 
       // Creates Maps Toolkit representation of Polygon for checking if point
       // is inside area.
-      _mapToolsPolygonPoints = _polygon.first.toMPLatLngList();
+      _mapToolsPolygonPoints = _polygons.first.toMPLatLngList();
 
       // Clears polygon points and enter add points mode.
       _polygonPoints = [];
@@ -205,7 +205,7 @@ class _ProjectMapCreationState extends State<ProjectMapCreation> {
                           onMapCreated: _onMapCreated,
                           initialCameraPosition: CameraPosition(
                               target: _currentLocation, zoom: 14.0),
-                          polygons: _polygon,
+                          polygons: _polygons,
                           markers: _markers,
                           onTap: _togglePoint,
                           mapType: _currentMapType, // Use current map type
@@ -328,7 +328,7 @@ class _ProjectMapCreationState extends State<ProjectMapCreation> {
                               onPressed: _isLoading
                                   ? null
                                   : () {
-                                      if (_polygon.isNotEmpty) {
+                                      if (_polygons.isNotEmpty) {
                                         setState(() {
                                           _markers = {};
                                           _polygonPoints = [];
@@ -371,15 +371,12 @@ class _ProjectMapCreationState extends State<ProjectMapCreation> {
                                           description: widget
                                               .partialProjectData.description,
                                           teamRef: await getCurrentTeam(),
-                                          polygonPoints:
-                                              _polygon.first.toGeoPointList(),
+                                          polygonPoints: _polygons.first.points,
                                           // Polygon area is square feet, returned in
                                           // (meters)^2, multiplied by (feet/meter)^2
                                           // TODO: move to constructor
-                                          polygonArea:
-                                              mp.SphericalUtil.computeArea(
-                                                      _mapToolsPolygonPoints) *
-                                                  pow(feetPerMeter, 2),
+                                          polygonArea: _polygons.first
+                                              .getAreaInSquareFeet(),
                                           standingPoints: _standingPoints,
                                         );
                                         if (!context.mounted) return;

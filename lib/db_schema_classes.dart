@@ -63,7 +63,7 @@ class Project {
   String projectID = '';
   String title = '';
   String description = '';
-  List polygonPoints = [];
+  List<LatLng> polygonPoints = [];
   num polygonArea = 0;
   List<DocumentReference> testRefs = [];
   List<Test>? tests;
@@ -212,7 +212,8 @@ abstract class Test<T> {
 
   /// Maps from [Type] assumed to extend [Test] to the function used to
   /// save that [Test] instance to Firestore.
-  static final Map<Type, void Function(Test)> _saveToFirestoreFunctions = {};
+  static final Map<Type, Future<void> Function(Test)>
+      _saveToFirestoreFunctions = {};
 
   /// Set used internally to determine whether a [Test] subclass uses
   /// standing points. Subclasses that do are expected to register themselves
@@ -222,7 +223,7 @@ abstract class Test<T> {
   /// Set containing all tests that make use of timers.
   ///
   /// Used to check for test creation and saving.
-  static final Set<String> _timerTests = {};
+  static final Set<String> _timerTestCollectionIDs = {};
 
   /// Returns a new instance of the [Test] subclass associated with
   /// [collectionID].
@@ -282,7 +283,7 @@ abstract class Test<T> {
     throw Exception('No registered page for test type: $runtimeType');
   }
 
-  void saveToFirestore() {
+  Future<void> saveToFirestore() {
     final saveFunction = _saveToFirestoreFunctions[runtimeType];
     if (saveFunction != null) {
       return saveFunction(this);
@@ -343,6 +344,24 @@ class StandingPoint with JsonToString {
       'point': location.toGeoPoint(),
       'title': title,
     };
+  }
+
+  static List<StandingPoint> fromJsonList(List points) {
+    List<StandingPoint> output = [];
+    for (final point in points) {
+      if (point is Map<String, dynamic>) {
+        output.add(StandingPoint.fromJson(point));
+      }
+    }
+    return output;
+  }
+
+  static List<Map<String, Object>> toJsonList(List<StandingPoint> points) {
+    List<Map<String, Object>> json = [];
+    for (final point in points) {
+      json.add(point.toJson());
+    }
+    return json;
   }
 }
 
@@ -2065,7 +2084,7 @@ class NaturePrevalenceTest extends Test<NatureData> {
         'isComplete': false,
       }, SetOptions(merge: true));
     };
-    Test._timerTests.add(collectionIDStatic);
+    Test._timerTestCollectionIDs.add(collectionIDStatic);
   }
 
   @override
@@ -2415,6 +2434,8 @@ class PeopleInPlaceData with JsonToString {
 class PeopleInPlaceTest extends Test<PeopleInPlaceData> with JsonToString {
   static const String collectionIDStatic = 'people_in_place_tests';
 
+  final List<StandingPoint> standingPoints;
+
   PeopleInPlaceTest._({
     required super.title,
     required super.testID,
@@ -2422,6 +2443,7 @@ class PeopleInPlaceTest extends Test<PeopleInPlaceData> with JsonToString {
     required super.projectRef,
     required super.collectionID,
     required super.data,
+    required this.standingPoints,
     super.creationTime,
     super.maxResearchers,
     super.isComplete,
@@ -2443,18 +2465,16 @@ class PeopleInPlaceTest extends Test<PeopleInPlaceData> with JsonToString {
           projectRef: projectRef,
           collectionID: collectionID,
           data: PeopleInPlaceData(),
+          standingPoints: (standingPoints as List<StandingPoint>?) ?? [],
         );
-
     Test._recreateTestConstructors[collectionIDStatic] = (testDoc) {
       return PeopleInPlaceTest.fromJson(testDoc.data()!);
     };
-
     Test._pageBuilders[PeopleInPlaceTest] =
         (project, test) => PeopleInPlaceTestPage(
               activeProject: project,
               activeTest: test as PeopleInPlaceTest,
             );
-
     Test._saveToFirestoreFunctions[PeopleInPlaceTest] = (test) async {
       final testRef = _firestore
           .collection(test.collectionID)
@@ -2466,6 +2486,7 @@ class PeopleInPlaceTest extends Test<PeopleInPlaceData> with JsonToString {
           );
       await testRef.set(test as PeopleInPlaceTest, SetOptions(merge: true));
     };
+    Test._standingPointTestCollectionIDs.add(collectionIDStatic);
   }
 
   @override
@@ -2497,6 +2518,7 @@ class PeopleInPlaceTest extends Test<PeopleInPlaceData> with JsonToString {
       creationTime: doc['creationTime'],
       maxResearchers: doc['maxResearchers'],
       isComplete: doc['isComplete'],
+      standingPoints: StandingPoint.fromJsonList(doc['standingPoints']),
     );
   }
 
@@ -2511,6 +2533,7 @@ class PeopleInPlaceTest extends Test<PeopleInPlaceData> with JsonToString {
       'creationTime': creationTime,
       'maxResearchers': maxResearchers,
       'isComplete': isComplete,
+      'standingPoints': StandingPoint.toJsonList(standingPoints),
     };
   }
 }

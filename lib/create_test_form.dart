@@ -264,7 +264,7 @@ class _CreateTestFormState extends State<CreateTestForm> {
             _standingPointsTest
                 ? Row(
                     children: [
-                      Expanded(flex: 1, child: SizedBox()),
+                      Spacer(flex: 1),
                       Expanded(
                         flex: 2,
                         child: ElevatedButton(
@@ -289,6 +289,7 @@ class _CreateTestFormState extends State<CreateTestForm> {
                                         currentStandingPoints:
                                             _standingPoints.isNotEmpty
                                                 ? _standingPoints
+                                                    as List<StandingPoint>
                                                 : null,
                                       ),
                               ),
@@ -315,18 +316,20 @@ class _CreateTestFormState extends State<CreateTestForm> {
                         ),
                       ),
                       Expanded(
-                          flex: 1,
-                          child: SizedBox(
-                            child: Align(
-                                alignment: Alignment.centerLeft,
-                                child: Padding(
-                                  padding: const EdgeInsets.only(left: 8.0),
-                                  child: _standingPoints.isNotEmpty
-                                      ? Icon(Icons.check_circle,
-                                          color: Colors.green)
-                                      : SizedBox(),
-                                )),
-                          )),
+                        flex: 1,
+                        child: SizedBox(
+                          child: Align(
+                            alignment: Alignment.centerLeft,
+                            child: Padding(
+                              padding: const EdgeInsets.only(left: 8.0),
+                              child: _standingPoints.isNotEmpty
+                                  ? Icon(Icons.check_circle,
+                                      color: Colors.green)
+                                  : SizedBox(),
+                            ),
+                          ),
+                        ),
+                      ),
                     ],
                   )
                 : SizedBox(),
