@@ -240,7 +240,8 @@ class _IdentifyingAccessState extends State<IdentifyingAccess> {
 
   void _saveLocalData() {
     try {
-      if (_currentSpotsOrRoute == null) {
+      if (_type != AccessType.taxiAndRideShare &&
+          _currentSpotsOrRoute == null) {
         throw Exception("Current spots/routes not set in _saveLocalData(). "
             "Make sure a value is entered before continuing.");
       }
