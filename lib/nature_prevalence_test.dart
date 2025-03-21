@@ -936,7 +936,8 @@ class _NaturePrevalenceState extends State<NaturePrevalence> {
                                           backgroundColor: Colors.white,
                                           icon: const Icon(Icons.check),
                                           iconColor: Colors.green,
-                                          onPressed: (_polygonMode)
+                                          onPressed: (_polygonMode &&
+                                                  _polygonPoints.length >= 3)
                                               ? () {
                                                   _finalizePolygon();
                                                   setState(() {
