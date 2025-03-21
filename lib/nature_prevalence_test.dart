@@ -30,10 +30,12 @@ class _NaturePrevalenceState extends State<NaturePrevalence> {
   bool _polygonMode = false;
   bool _pointMode = false;
   bool _outsidePoint = false;
+  bool _deleteMode = false;
+  String _errorText = '';
   Set<Polygon> _projectPolygon = {};
   List<mp.LatLng> _projectArea = [];
   String _directions = "Choose a category.";
-  bool _directionsVisible = true;
+  bool _directionsVisible = false;
   double _bottomSheetHeight = 300;
   late DocumentReference teamRef;
   late GoogleMapController mapController;
@@ -143,20 +145,20 @@ class _NaturePrevalenceState extends State<NaturePrevalence> {
                   ],
                 ),
                 content: Column(
+                  spacing: 5,
                   children: [
+                    Text(
+                      'Temperature',
+                      style:
+                          TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+                    ),
                     Row(
                       mainAxisAlignment: MainAxisAlignment.center,
                       spacing: 10,
                       children: [
                         Flexible(
-                          child: Text(
-                            'Temperature: ',
-                            style: TextStyle(
-                                fontWeight: FontWeight.bold, fontSize: 16),
-                          ),
-                        ),
-                        Flexible(
                           child: DialogTextBox(
+                            textAlign: TextAlign.center,
                             inputFormatter: [
                               FilteringTextInputFormatter.allow(
                                   RegExp('[1234567890.-]'))
@@ -187,75 +189,96 @@ class _NaturePrevalenceState extends State<NaturePrevalence> {
                           )
                         : SizedBox(),
                     SizedBox(height: 30),
-                    Center(child: Text("Type")),
+                    SizedBox(width: MediaQuery.of(context).size.width),
+                    Center(
+                      child: Text(
+                        "Type",
+                        style: TextStyle(
+                            fontWeight: FontWeight.bold, fontSize: 16),
+                      ),
+                    ),
                     Row(
                       spacing: 5,
                       children: <Widget>[
                         TestButton(
-                            buttonText: "Sunny",
-                            backgroundColor: selectedMap[Weather.sunny] == true
-                                ? Colors.blue
-                                : null,
-                            onPressed: () {
-                              setState(() {
-                                erroredSelect = false;
-                                selectedMap[Weather.sunny] =
-                                    !selectedMap[Weather.sunny]!;
-                              });
-                            }),
+                          buttonText: "Sunny",
+                          backgroundColor: selectedMap[Weather.sunny] == true
+                              ? Colors.blue
+                              : null,
+                          onPressed: () {
+                            setState(() {
+                              erroredSelect = false;
+                              selectedMap[Weather.sunny] =
+                                  !selectedMap[Weather.sunny]!;
+                            });
+                          },
+                        ),
                         TestButton(
-                            buttonText: "Cloudy",
-                            backgroundColor: selectedMap[Weather.cloudy] == true
-                                ? Colors.blue
-                                : null,
-                            onPressed: () {
-                              setState(() {
-                                erroredSelect = false;
-                                selectedMap[Weather.cloudy] =
-                                    !selectedMap[Weather.cloudy]!;
-                              });
-                            }),
-                        TestButton(
-                            buttonText: "Rainy",
-                            backgroundColor: selectedMap[Weather.rainy] == true
-                                ? Colors.blue
-                                : null,
-                            onPressed: () {
-                              setState(() {
-                                erroredSelect = false;
-                                selectedMap[Weather.rainy] =
-                                    !selectedMap[Weather.rainy]!;
-                              });
-                            })
+                          buttonText: "Rainy",
+                          backgroundColor: selectedMap[Weather.rainy] == true
+                              ? Colors.blue
+                              : null,
+                          onPressed: () {
+                            setState(() {
+                              erroredSelect = false;
+                              selectedMap[Weather.rainy] =
+                                  !selectedMap[Weather.rainy]!;
+                            });
+                          },
+                        )
                       ],
                     ),
                     Row(
                       spacing: 5,
                       children: <Widget>[
                         TestButton(
-                            buttonText: "Windy",
-                            backgroundColor: selectedMap[Weather.windy] == true
-                                ? Colors.blue
-                                : null,
-                            onPressed: () {
-                              setState(() {
-                                erroredSelect = false;
-                                selectedMap[Weather.windy] =
-                                    !selectedMap[Weather.windy]!;
-                              });
-                            }),
+                          buttonText: "Windy",
+                          backgroundColor: selectedMap[Weather.windy] == true
+                              ? Colors.blue
+                              : null,
+                          onPressed: () {
+                            setState(() {
+                              erroredSelect = false;
+                              selectedMap[Weather.windy] =
+                                  !selectedMap[Weather.windy]!;
+                            });
+                          },
+                        ),
                         TestButton(
-                            buttonText: "Stormy",
-                            backgroundColor: selectedMap[Weather.stormy] == true
-                                ? Colors.blue
-                                : null,
-                            onPressed: () {
-                              setState(() {
-                                erroredSelect = false;
-                                selectedMap[Weather.stormy] =
-                                    !selectedMap[Weather.stormy]!;
-                              });
-                            })
+                          buttonText: "Stormy",
+                          backgroundColor: selectedMap[Weather.stormy] == true
+                              ? Colors.blue
+                              : null,
+                          onPressed: () {
+                            setState(() {
+                              erroredSelect = false;
+                              selectedMap[Weather.stormy] =
+                                  !selectedMap[Weather.stormy]!;
+                            });
+                          },
+                        )
+                      ],
+                    ),
+                    Row(
+                      spacing: 5,
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Spacer(),
+                        TestButton(
+                          flex: 2,
+                          buttonText: "Cloudy",
+                          backgroundColor: selectedMap[Weather.cloudy] == true
+                              ? Colors.blue
+                              : null,
+                          onPressed: () {
+                            setState(() {
+                              erroredSelect = false;
+                              selectedMap[Weather.cloudy] =
+                                  !selectedMap[Weather.cloudy]!;
+                            });
+                          },
+                        ),
+                        Spacer(),
                       ],
                     ),
                     erroredSelect
@@ -660,7 +683,7 @@ class _NaturePrevalenceState extends State<NaturePrevalence> {
         Marker(
           markerId: markerId,
           position: point,
-          consumeTapEvents: true,
+          consumeTapEvents: _deleteMode,
           onTap: () {
             // If the marker is tapped again, it will be removed
             setState(() {
@@ -679,26 +702,30 @@ class _NaturePrevalenceState extends State<NaturePrevalence> {
     if (type != null) {
       final markerId = MarkerId('${type}_marker_${point.toString()}');
       setState(() {
-        // TODO: create list of markers for test, add these to it (cat, dog, etc.)
         _markers.add(
           Marker(
             markerId: markerId,
             position: point,
-            consumeTapEvents: true,
-            infoWindow: InfoWindow(),
+            consumeTapEvents: _deleteMode,
+            infoWindow: InfoWindow(
+                title:
+                    _otherType ?? (type[0].toUpperCase() + type.substring(1)),
+                snippet:
+                    "(${point.latitude.toStringAsFixed(5)}, ${point.longitude.toStringAsFixed(5)})"),
             icon: AssetMapBitmap(
               'assets/test_markers/${type}_marker.png',
               width: 25,
               height: 25,
             ),
             onTap: () {
-              // If placing a point or polygon, don't remove point.
               if (_pointMode || _polygonMode) return;
               // If the marker is tapped again, it will be removed
-              _animalData.removeWhere((animal) => animal.point == point);
-              setState(() {
-                _markers.removeWhere((marker) => marker.markerId == markerId);
-              });
+              if (_deleteMode) {
+                _animalData.removeWhere((animal) => animal.point == point);
+                setState(() {
+                  _markers.removeWhere((marker) => marker.markerId == markerId);
+                });
+              }
             },
           ),
         );
@@ -707,6 +734,7 @@ class _NaturePrevalenceState extends State<NaturePrevalence> {
       _animalData.add(Animal(
           animalType: _animalType!, point: point, otherType: _otherType));
       _pointMode = false;
+      _clearTypes();
     }
   }
 
@@ -715,7 +743,9 @@ class _NaturePrevalenceState extends State<NaturePrevalence> {
     try {
       if (_natureType == NatureType.vegetation) {
         tempPolygon = finalizePolygon(
-            _polygonPoints, Vegetation.vegetationTypeToColor[_vegetationType]);
+          _polygonPoints,
+          polygonColor: Vegetation.vegetationTypeToColor[_vegetationType],
+        );
         // Create polygon.
         _polygons = {..._polygons, ...tempPolygon};
         _vegetationData.add(Vegetation(
@@ -723,8 +753,8 @@ class _NaturePrevalenceState extends State<NaturePrevalence> {
             polygon: tempPolygon.first,
             otherType: _otherType));
       } else if (_natureType == NatureType.waterBody) {
-        tempPolygon = finalizePolygon(
-            _polygonPoints, WaterBody.waterBodyTypeToColor[_waterBodyType]);
+        tempPolygon = finalizePolygon(_polygonPoints,
+            polygonColor: WaterBody.waterBodyTypeToColor[_waterBodyType]);
         // Create polygon.
         _polygons = {..._polygons, ...tempPolygon};
         _waterBodyData.add(WaterBody(
@@ -786,6 +816,50 @@ class _NaturePrevalenceState extends State<NaturePrevalence> {
                         mapType: _currentMapType, // Use current map type
                       ),
                     ),
+                    Align(
+                      alignment: Alignment.topRight,
+                      child: Padding(
+                        padding: EdgeInsets.only(top: 80, right: 20),
+                        child: CircularIconMapButton(
+                          backgroundColor: Colors.green,
+                          borderColor: Color(0xFF2D6040),
+                          onPressed: _toggleMapType,
+                          icon: const Icon(Icons.map),
+                        ),
+                      ),
+                    ),
+                    (!_polygonMode && !_pointMode)
+                        ? Align(
+                            alignment: Alignment.topRight,
+                            child: Padding(
+                              padding: EdgeInsets.only(top: 140, right: 20),
+                              child: CircularIconMapButton(
+                                borderColor: Color(0xFF2D6040),
+                                onPressed: () {
+                                  setState(() {
+                                    _deleteMode = !_deleteMode;
+                                    if (_deleteMode == true) {
+                                      _outsidePoint = false;
+                                      _errorText = 'You are in delete mode.';
+                                    } else {
+                                      _outsidePoint = false;
+                                      _errorText =
+                                          'You tried to place a point outside of the project area!';
+                                    }
+                                  });
+                                },
+                                backgroundColor:
+                                    _deleteMode ? Colors.blue : Colors.red,
+                                icon: Icon(
+                                  _deleteMode
+                                      ? Icons.location_on
+                                      : Icons.delete,
+                                  size: 30,
+                                ),
+                              ),
+                            ),
+                          )
+                        : SizedBox(),
                     DirectionsWidget(
                         onTap: () {
                           setState(() {
@@ -807,19 +881,6 @@ class _NaturePrevalenceState extends State<NaturePrevalence> {
                               _oldVisibility = value;
                             });
                           },
-                        ),
-                      ),
-                    ),
-                    Align(
-                      alignment: Alignment.bottomLeft,
-                      child: Padding(
-                        padding: EdgeInsets.only(
-                            bottom: _bottomSheetHeight + 130, left: 5),
-                        child: FloatingActionButton(
-                          heroTag: null,
-                          onPressed: _toggleMapType,
-                          backgroundColor: Colors.green,
-                          child: const Icon(Icons.map),
                         ),
                       ),
                     ),
@@ -877,7 +938,9 @@ class _NaturePrevalenceState extends State<NaturePrevalence> {
                             spacing: 10,
                             children: [
                               DisplayModalButton(
-                                  onPressed: (_pointMode || _polygonMode)
+                                  onPressed: (_pointMode ||
+                                          _polygonMode ||
+                                          _deleteMode)
                                       ? null
                                       : () {
                                           showModalAnimal(context);
@@ -885,7 +948,9 @@ class _NaturePrevalenceState extends State<NaturePrevalence> {
                                   text: 'Animal',
                                   icon: Icon(Icons.pets)),
                               DisplayModalButton(
-                                  onPressed: (_pointMode || _polygonMode)
+                                  onPressed: (_pointMode ||
+                                          _polygonMode ||
+                                          _deleteMode)
                                       ? null
                                       : () {
                                           showModalVegetation(context);
@@ -911,7 +976,9 @@ class _NaturePrevalenceState extends State<NaturePrevalence> {
                             spacing: 10,
                             children: [
                               DisplayModalButton(
-                                  onPressed: (_pointMode || _polygonMode)
+                                  onPressed: (_pointMode ||
+                                          _polygonMode ||
+                                          _deleteMode)
                                       ? null
                                       : () {
                                           showModalWaterBody(context);
@@ -937,7 +1004,8 @@ class _NaturePrevalenceState extends State<NaturePrevalence> {
                                           icon: const Icon(Icons.check),
                                           iconColor: Colors.green,
                                           onPressed: (_polygonMode &&
-                                                  _polygonPoints.length >= 3)
+                                                  _polygonPoints.length >= 3 &&
+                                                  !_deleteMode)
                                               ? () {
                                                   _finalizePolygon();
                                                   setState(() {
@@ -956,7 +1024,8 @@ class _NaturePrevalenceState extends State<NaturePrevalence> {
                                           icon: const Icon(Icons.cancel),
                                           iconColor: Colors.red,
                                           onPressed:
-                                              (_pointMode || _polygonMode)
+                                              ((_pointMode || _polygonMode) &&
+                                                      !_deleteMode)
                                                   ? () {
                                                       setState(() {
                                                         _pointMode = false;
@@ -982,7 +1051,9 @@ class _NaturePrevalenceState extends State<NaturePrevalence> {
                                       backgroundColor: Colors.white,
                                       icon: const Icon(Icons.chevron_right,
                                           color: Colors.black),
-                                      onPressed: (_pointMode || _polygonMode)
+                                      onPressed: (_pointMode ||
+                                              _polygonMode ||
+                                              _deleteMode)
                                           ? null
                                           : () {
                                               showDialog(
@@ -1028,7 +1099,9 @@ class _NaturePrevalenceState extends State<NaturePrevalence> {
                         ],
                       ),
                     ),
-                    _outsidePoint ? TestErrorText() : SizedBox(),
+                    (_outsidePoint || _deleteMode)
+                        ? TestErrorText(text: _errorText)
+                        : SizedBox(),
                   ],
                 ),
               ),

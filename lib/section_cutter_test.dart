@@ -46,7 +46,7 @@ class _SectionCutterState extends State<SectionCutter> {
   Set<Polygon> _polygons = {}; // Set of polygons
   Set<Polyline> _polyline = {};
   List<LatLng> _sectionPoints = [];
-  bool _directionsVisible = true;
+  bool _directionsVisible = false;
 
   MapType _currentMapType = MapType.satellite; // Default map type
 

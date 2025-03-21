@@ -91,6 +91,10 @@ class _SectionCreationPageState extends State<SectionCreationPage> {
             setState(() {
               _linePoints.remove(point);
               _markers.removeWhere((marker) => marker.markerId == markerId);
+              final Polyline? polyline =
+                  createPolyline(_linePoints, Colors.green[600]!);
+              if (polyline == null) return;
+              _polyline = polyline;
             });
           },
         ),

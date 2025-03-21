@@ -56,8 +56,9 @@ Future<LocationPermission> _checkLocationPermissions() async {
 /// polygon out of those points (makes sure the polygon is logical). Returns
 /// the singular polygon as a Set so it can be used directly on the GoogleMap
 /// widget.
+/// Takes an optional onTap parameter.
 Set<Polygon> finalizePolygon(List<LatLng> polygonPoints,
-    [Color? polygonColor]) {
+    {Color? polygonColor, VoidCallback? onTap, bool? consumeTapEvents}) {
   Set<Polygon> polygon = {};
   List<LatLng> polygonPointsCopy = List.of(polygonPoints);
   try {
@@ -69,6 +70,8 @@ Set<Polygon> finalizePolygon(List<LatLng> polygonPoints,
 
     polygon = {
       Polygon(
+        consumeTapEvents: consumeTapEvents ?? false,
+        onTap: onTap,
         polygonId: PolygonId(polygonId),
         points: sortedPoints,
         strokeColor: polygonColor ?? Colors.blue,

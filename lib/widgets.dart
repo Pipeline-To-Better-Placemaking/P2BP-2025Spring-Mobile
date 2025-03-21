@@ -300,6 +300,7 @@ class DialogTextBox extends StatelessWidget {
   final Icon? icon;
   final String? errorMessage;
   final int? minChars;
+  final TextAlign? textAlign;
 
   const DialogTextBox({
     super.key,
@@ -312,6 +313,7 @@ class DialogTextBox extends StatelessWidget {
     this.keyboardType,
     this.inputFormatter,
     this.autofocus,
+    this.textAlign,
   });
   @override
   Widget build(BuildContext context) {
@@ -322,6 +324,7 @@ class DialogTextBox extends StatelessWidget {
               selectionColor: Colors.blue, selectionHandleColor: Colors.blue),
         ),
         child: TextFormField(
+          textAlign: textAlign ?? TextAlign.left,
           onChanged: onChanged,
           keyboardType: keyboardType,
           inputFormatters: inputFormatter,
@@ -645,22 +648,26 @@ class TestFinishDialog extends StatelessWidget {
   }
 }
 
-/// Directions widget used for tests.
-///
-/// Pass through a [visibility] variable. This should be of type [bool] and
-/// control the visibility of the directions. The [onTap] function passed
-/// should toggle the [visibility] boolean in a [setState]. It may do other
-/// things on top of this if desired. The [text] should be the directions
-/// variable which controls the text to display.
 class DirectionsWidget extends StatelessWidget {
+  /// Directions widget used for tests.
+  ///
+  /// Pass through a [visibility] variable. This should be of type [bool] and
+  /// control the visibility of the directions. The [onTap] function passed
+  /// should toggle the [visibility] boolean in a [setState]. It may do other
+  /// things on top of this if desired. The [text] should be the directions
+  /// variable which controls the text to display.
+  ///
+  /// Default button padding of 20.
   const DirectionsWidget({
     super.key,
     required this.onTap,
     required this.text,
     required this.visibility,
+    this.buttonPadding,
   });
 
   final VoidCallback? onTap;
+  final EdgeInsets? buttonPadding;
   final String text;
   final bool visibility;
 
@@ -704,7 +711,7 @@ class DirectionsWidget extends StatelessWidget {
         : Align(
             alignment: Alignment.topRight,
             child: Padding(
-              padding: const EdgeInsets.all(20.0),
+              padding: buttonPadding ?? const EdgeInsets.all(20.0),
               child: Container(
                 decoration: BoxDecoration(
                     borderRadius: const BorderRadius.all(Radius.circular(50)),
