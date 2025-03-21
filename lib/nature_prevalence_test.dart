@@ -819,55 +819,55 @@ class _NaturePrevalenceState extends State<NaturePrevalence> {
                     Align(
                       alignment: Alignment.topRight,
                       child: Padding(
-                        padding: EdgeInsets.only(top: 80, right: 20),
-                        child: CircularIconMapButton(
-                          backgroundColor: Colors.green,
-                          borderColor: Color(0xFF2D6040),
-                          onPressed: _toggleMapType,
-                          icon: const Icon(Icons.map),
+                        padding: const EdgeInsets.all(20.0),
+                        child: Column(
+                          spacing: 10,
+                          children: [
+                            DirectionsWidget(
+                                onTap: () {
+                                  setState(() {
+                                    _directionsVisible = !_directionsVisible;
+                                  });
+                                },
+                                text: _directions,
+                                visibility: _directionsVisible),
+                            CircularIconMapButton(
+                              backgroundColor: Colors.green,
+                              borderColor: Color(0xFF2D6040),
+                              onPressed: _toggleMapType,
+                              icon: const Icon(Icons.map),
+                            ),
+                            (!_polygonMode && !_pointMode)
+                                ? CircularIconMapButton(
+                                    borderColor: Color(0xFF2D6040),
+                                    onPressed: () {
+                                      setState(() {
+                                        _deleteMode = !_deleteMode;
+                                        if (_deleteMode == true) {
+                                          _outsidePoint = false;
+                                          _errorText =
+                                              'You are in delete mode.';
+                                        } else {
+                                          _outsidePoint = false;
+                                          _errorText =
+                                              'You tried to place a point outside of the project area!';
+                                        }
+                                      });
+                                    },
+                                    backgroundColor:
+                                        _deleteMode ? Colors.blue : Colors.red,
+                                    icon: Icon(
+                                      _deleteMode
+                                          ? Icons.location_on
+                                          : Icons.delete,
+                                      size: 30,
+                                    ),
+                                  )
+                                : SizedBox(),
+                          ],
                         ),
                       ),
                     ),
-                    (!_polygonMode && !_pointMode)
-                        ? Align(
-                            alignment: Alignment.topRight,
-                            child: Padding(
-                              padding: EdgeInsets.only(top: 140, right: 20),
-                              child: CircularIconMapButton(
-                                borderColor: Color(0xFF2D6040),
-                                onPressed: () {
-                                  setState(() {
-                                    _deleteMode = !_deleteMode;
-                                    if (_deleteMode == true) {
-                                      _outsidePoint = false;
-                                      _errorText = 'You are in delete mode.';
-                                    } else {
-                                      _outsidePoint = false;
-                                      _errorText =
-                                          'You tried to place a point outside of the project area!';
-                                    }
-                                  });
-                                },
-                                backgroundColor:
-                                    _deleteMode ? Colors.blue : Colors.red,
-                                icon: Icon(
-                                  _deleteMode
-                                      ? Icons.location_on
-                                      : Icons.delete,
-                                  size: 30,
-                                ),
-                              ),
-                            ),
-                          )
-                        : SizedBox(),
-                    DirectionsWidget(
-                        onTap: () {
-                          setState(() {
-                            _directionsVisible = !_directionsVisible;
-                          });
-                        },
-                        text: _directions,
-                        visibility: _directionsVisible),
                     Align(
                       alignment: Alignment.bottomLeft,
                       child: Padding(

@@ -656,8 +656,7 @@ class DirectionsWidget extends StatelessWidget {
   /// should toggle the [visibility] boolean in a [setState]. It may do other
   /// things on top of this if desired. The [text] should be the directions
   /// variable which controls the text to display.
-  ///
-  /// Default button padding of 20.
+  /// Should be placed in a Column w/ other widgets (delete mode, map type)
   const DirectionsWidget({
     super.key,
     required this.onTap,
@@ -708,31 +707,25 @@ class DirectionsWidget extends StatelessWidget {
               ),
             ),
           )
-        : Align(
-            alignment: Alignment.topRight,
-            child: Padding(
-              padding: buttonPadding ?? const EdgeInsets.all(20.0),
-              child: Container(
-                decoration: BoxDecoration(
-                    borderRadius: const BorderRadius.all(Radius.circular(50)),
-                    boxShadow: [
-                      BoxShadow(
-                        color: Colors.black.withValues(alpha: 0.1),
-                        blurRadius: 6,
-                        offset: const Offset(0, 2),
-                      ),
-                    ],
-                    gradient: defaultGrad,
-                    color: directionsTransparency),
-                child: IconButton(
-                    color: Colors.white,
-                    onPressed: onTap,
-                    icon: Icon(
-                      Icons.help_outline,
-                      size: 35,
-                    )),
-              ),
-            ),
+        : Container(
+            decoration: BoxDecoration(
+                borderRadius: const BorderRadius.all(Radius.circular(50)),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withValues(alpha: 0.1),
+                    blurRadius: 6,
+                    offset: const Offset(0, 2),
+                  ),
+                ],
+                gradient: defaultGrad,
+                color: directionsTransparency),
+            child: IconButton(
+                color: Colors.white,
+                onPressed: onTap,
+                icon: Icon(
+                  Icons.help_outline,
+                  size: 35,
+                )),
           );
   }
 }

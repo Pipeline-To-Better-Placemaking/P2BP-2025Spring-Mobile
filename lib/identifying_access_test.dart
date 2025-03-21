@@ -34,6 +34,7 @@ class _IdentifyingAccessState extends State<IdentifyingAccess> {
   bool _oldPolylinesToggle = true;
   int? _currentSpotsOrRoute;
   bool _deleteMode = false;
+  double _timerHeight = 90;
   AccessType? _type;
   String _directions = "Choose a category.";
   final double _bottomSheetHeight = 300;
@@ -319,8 +320,36 @@ class _IdentifyingAccessState extends State<IdentifyingAccess> {
   Widget build(BuildContext context) {
     return SafeArea(
       child: Scaffold(
-        resizeToAvoidBottomInset: false,
+        extendBodyBehindAppBar: true,
         extendBody: true,
+        appBar: PreferredSize(
+          preferredSize: Size.fromHeight(_timerHeight),
+          child: Container(
+            color: Colors.transparent,
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.end,
+              children: <Widget>[
+                TextButton(onPressed: () {}, child: Text("Start")),
+                TextButton(onPressed: () {}, child: Text("End")),
+                Padding(
+                  padding: const EdgeInsets.only(right: 20),
+                  child: Container(
+                    padding: EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                    decoration: BoxDecoration(
+                      color: Colors.black.withValues(alpha: 0.6),
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    child: Text(
+                      "19:00",
+                      style: TextStyle(color: Colors.white, fontSize: 16),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+        resizeToAvoidBottomInset: false,
         body: _isLoading
             ? const Center(child: CircularProgressIndicator())
             : Center(
@@ -358,47 +387,47 @@ class _IdentifyingAccessState extends State<IdentifyingAccess> {
                     Align(
                       alignment: Alignment.topRight,
                       child: Padding(
-                        padding: EdgeInsets.only(top: 80, right: 20),
-                        child: CircularIconMapButton(
-                          backgroundColor: Colors.green,
-                          borderColor: Color(0xFF2D6040),
-                          onPressed: _toggleMapType,
-                          icon: const Icon(Icons.map),
+                        padding: const EdgeInsets.all(20.0),
+                        child: Column(
+                          spacing: 10,
+                          mainAxisAlignment: MainAxisAlignment.start,
+                          children: [
+                            DirectionsWidget(
+                                onTap: () {
+                                  setState(() {
+                                    _directionsVisible = !_directionsVisible;
+                                  });
+                                },
+                                text: _directions,
+                                visibility: _directionsVisible),
+                            CircularIconMapButton(
+                              backgroundColor: Colors.green,
+                              borderColor: Color(0xFF2D6040),
+                              onPressed: _toggleMapType,
+                              icon: const Icon(Icons.map),
+                            ),
+                            (!_polygonMode && !_pointMode && !_polylineMode)
+                                ? CircularIconMapButton(
+                                    borderColor: Color(0xFF2D6040),
+                                    onPressed: () {
+                                      setState(() {
+                                        _deleteMode = !_deleteMode;
+                                      });
+                                    },
+                                    backgroundColor:
+                                        _deleteMode ? Colors.blue : Colors.red,
+                                    icon: Icon(
+                                      _deleteMode
+                                          ? Icons.location_on
+                                          : Icons.delete,
+                                      size: 30,
+                                    ),
+                                  )
+                                : SizedBox(),
+                          ],
                         ),
                       ),
                     ),
-                    (!_polygonMode && !_pointMode && !_polylineMode)
-                        ? Align(
-                            alignment: Alignment.topRight,
-                            child: Padding(
-                              padding: EdgeInsets.only(top: 140, right: 20),
-                              child: CircularIconMapButton(
-                                borderColor: Color(0xFF2D6040),
-                                onPressed: () {
-                                  setState(() {
-                                    _deleteMode = !_deleteMode;
-                                  });
-                                },
-                                backgroundColor:
-                                    _deleteMode ? Colors.blue : Colors.red,
-                                icon: Icon(
-                                  _deleteMode
-                                      ? Icons.location_on
-                                      : Icons.delete,
-                                  size: 30,
-                                ),
-                              ),
-                            ),
-                          )
-                        : SizedBox(),
-                    DirectionsWidget(
-                        onTap: () {
-                          setState(() {
-                            _directionsVisible = !_directionsVisible;
-                          });
-                        },
-                        text: _directions,
-                        visibility: _directionsVisible),
                     Align(
                       alignment: Alignment.bottomLeft,
                       child: Padding(
