@@ -13,7 +13,7 @@ import 'home_screen.dart';
 
 class SectionCutter extends StatefulWidget {
   final Project projectData;
-  final SectionCutterTest? activeTest;
+  final SectionCutterTest activeTest;
 
   /// IMPORTANT: When navigating to this page, pass in project details. The
   /// project details page already contains project info, so you should use
@@ -33,7 +33,6 @@ const XTypeGroup acceptedFileTypes = XTypeGroup(
 class _SectionCutterState extends State<SectionCutter> {
   bool _isLoadingUpload = false;
   bool _uploaded = false;
-  bool _isLoading = false;
   bool _failedToUpload = false;
   String _errorText = 'Failed to upload new image.';
   String _directions =
@@ -47,6 +46,7 @@ class _SectionCutterState extends State<SectionCutter> {
   Set<Polygon> _polygons = {}; // Set of polygons
   Set<Polyline> _polyline = {};
   List<LatLng> _sectionPoints = [];
+  bool _directionsVisible = true;
 
   MapType _currentMapType = MapType.satellite; // Default map type
 
@@ -66,10 +66,10 @@ class _SectionCutterState extends State<SectionCutter> {
     setState(() {
       _polygons = getProjectPolygon(widget.projectData.polygonPoints);
       _location = getPolygonCentroid(_polygons.first);
-      // Take some lattitude away to center considering bottom sheet.
+      // Take some latitude away to center considering bottom sheet.
       _location = LatLng(_location.latitude * .999999, _location.longitude);
       // TODO: dynamic zooming
-      _sectionPoints = widget.activeTest!.linePoints.toLatLngList();
+      _sectionPoints = widget.activeTest.linePoints;
       _polyline = {
         Polyline(
           polylineId:
@@ -109,300 +109,274 @@ class _SectionCutterState extends State<SectionCutter> {
       child: Scaffold(
         resizeToAvoidBottomInset: false,
         extendBody: true,
-        body: _isLoading
-            ? const Center(child: CircularProgressIndicator())
-            : Center(
-                child: Stack(
-                  children: [
-                    SizedBox(
-                      height: MediaQuery.of(context).size.height,
-                      child: GoogleMap(
-                        // TODO: size based off of bottomsheet container
-                        padding: EdgeInsets.only(bottom: _bottomSheetHeight),
-                        onMapCreated: _onMapCreated,
-                        initialCameraPosition:
-                            CameraPosition(target: _location, zoom: _zoom),
-                        cameraTargetBounds: CameraTargetBounds(
-                            getLatLngBounds(_polyline.single.points)),
-                        polygons: _polygons,
-                        polylines: _polyline,
-                        mapType: _currentMapType, // Use current map type
-                      ),
-                    ),
-                    Align(
-                      alignment: Alignment.topCenter,
-                      child: Padding(
-                        padding: const EdgeInsets.symmetric(
-                            vertical: 20.0, horizontal: 25.0),
-                        child: Container(
-                          padding: EdgeInsets.symmetric(
-                              horizontal: 15, vertical: 10),
-                          decoration: BoxDecoration(
-                            color: directionsTransparency,
-                            gradient: defaultGrad,
-                            borderRadius:
-                                const BorderRadius.all(Radius.circular(10)),
-                            boxShadow: [
-                              BoxShadow(
-                                color: Colors.black.withValues(alpha: 0.1),
-                                blurRadius: 6,
-                                offset: const Offset(0, 2),
+        body: Center(
+          child: Stack(
+            children: [
+              SizedBox(
+                height: MediaQuery.of(context).size.height,
+                child: GoogleMap(
+                  // TODO: size based off of bottomsheet container
+                  padding: EdgeInsets.only(bottom: _bottomSheetHeight),
+                  onMapCreated: _onMapCreated,
+                  initialCameraPosition:
+                      CameraPosition(target: _location, zoom: _zoom),
+                  polygons: _polygons,
+                  polylines: _polyline,
+                  mapType: _currentMapType, // Use current map type
+                ),
+              ),
+              DirectionsWidget(
+                  onTap: () {
+                    setState(() {
+                      _directionsVisible = !_directionsVisible;
+                    });
+                  },
+                  text: _directions,
+                  visibility: _directionsVisible),
+              Align(
+                alignment: Alignment.bottomLeft,
+                child: Padding(
+                  padding:
+                      EdgeInsets.only(bottom: _bottomSheetHeight + 50, left: 5),
+                  child: FloatingActionButton(
+                    heroTag: null,
+                    onPressed: _toggleMapType,
+                    backgroundColor: Colors.green,
+                    child: const Icon(Icons.map),
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
+        bottomSheet: Container(
+          height: _bottomSheetHeight,
+          padding: const EdgeInsets.symmetric(horizontal: 12.0, vertical: 10.0),
+          decoration: BoxDecoration(
+            gradient: defaultGrad,
+            borderRadius: const BorderRadius.only(
+              topLeft: Radius.circular(24.0),
+              topRight: Radius.circular(24.0),
+            ),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black,
+                offset: Offset(0.0, 1.0), //(x,y)
+                blurRadius: 6.0,
+              ),
+            ],
+          ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.center,
+            children: [
+              SizedBox(height: 5),
+              Text(
+                'Section Cutter',
+                style: TextStyle(
+                  fontSize: 20,
+                  fontWeight: FontWeight.bold,
+                  color: placeYellow,
+                ),
+              ),
+              Text(
+                'Upload your section drawing here.',
+                style: TextStyle(
+                  fontSize: 16,
+                  fontStyle: FontStyle.italic,
+                  color: Colors.grey[400],
+                ),
+              ),
+              SizedBox(height: 35),
+              Row(
+                children: <Widget>[
+                  Expanded(
+                    flex: 1,
+                    child: SizedBox(),
+                  ),
+                  _isLoadingUpload
+                      ? const Center(child: CircularProgressIndicator())
+                      : Expanded(
+                          flex: 2,
+                          child: FilledButton.icon(
+                            onPressed: () async {
+                              sectionCutterFile = await openFile(
+                                acceptedTypeGroups: <XTypeGroup>[
+                                  acceptedFileTypes
+                                ],
+                              );
+                              setState(() {
+                                _isLoadingUpload = true;
+                              });
+                              if (sectionCutterFile != null) {
+                                // save to firebase
+                                setState(() {
+                                  _failedToUpload = false;
+                                  _uploaded = true;
+                                  _directions = "Click finish to finish test.";
+                                });
+                              } else {
+                                setState(() {
+                                  _failedToUpload = true;
+                                  _errorText = 'Failed to upload new image.';
+                                });
+                                print("No file selected");
+                              }
+                              setState(() {
+                                _isLoadingUpload = false;
+                              });
+                            },
+                            label: Text(
+                              'Upload File',
+                              style: TextStyle(
+                                  fontSize: 20, fontWeight: FontWeight.bold),
+                            ),
+                            icon: _uploaded
+                                ? Icon(Icons.check)
+                                : Icon(Icons.upload_file),
+                            iconAlignment: IconAlignment.end,
+                            style: FilledButton.styleFrom(
+                              padding: EdgeInsets.symmetric(
+                                  vertical: 20, horizontal: 20),
+                              backgroundColor: Colors.white,
+                              foregroundColor: Colors.black,
+                              iconColor: Colors.black,
+                              iconSize: 25,
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(10.0),
                               ),
-                            ],
-                          ),
-                          child: Text(
-                            _directions,
-                            maxLines: 3,
-                            overflow: TextOverflow.ellipsis,
-                            style: TextStyle(
-                              fontSize: 18,
-                              fontWeight: FontWeight.w500,
-                              color: Colors.white,
                             ),
                           ),
                         ),
-                      ),
-                    ),
-                    Align(
-                      alignment: Alignment.bottomLeft,
-                      child: Padding(
-                        padding: EdgeInsets.only(
-                            bottom: _bottomSheetHeight + 50, left: 5),
-                        child: FloatingActionButton(
-                          heroTag: null,
-                          onPressed: _toggleMapType,
-                          backgroundColor: Colors.green,
-                          child: const Icon(Icons.map),
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-        bottomSheet: _isLoading
-            ? SizedBox()
-            : Container(
-                height: _bottomSheetHeight,
-                padding: const EdgeInsets.symmetric(
-                    horizontal: 12.0, vertical: 10.0),
-                decoration: BoxDecoration(
-                  gradient: defaultGrad,
-                  borderRadius: const BorderRadius.only(
-                    topLeft: Radius.circular(24.0),
-                    topRight: Radius.circular(24.0),
-                  ),
-                  boxShadow: [
-                    BoxShadow(
-                      color: Colors.black,
-                      offset: Offset(0.0, 1.0), //(x,y)
-                      blurRadius: 6.0,
-                    ),
-                  ],
-                ),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.center,
-                  children: [
-                    SizedBox(height: 5),
-                    Text(
-                      'Section Cutter',
-                      style: TextStyle(
-                        fontSize: 20,
-                        fontWeight: FontWeight.bold,
-                        color: placeYellow,
-                      ),
-                    ),
-                    Text(
-                      'Upload your section drawing here.',
-                      style: TextStyle(
-                        fontSize: 16,
-                        fontStyle: FontStyle.italic,
-                        color: Colors.grey[400],
-                      ),
-                    ),
-                    SizedBox(height: 35),
-                    Row(
-                      children: <Widget>[
-                        Expanded(
-                          flex: 1,
-                          child: SizedBox(),
-                        ),
-                        _isLoadingUpload
-                            ? const Center(child: CircularProgressIndicator())
-                            : Expanded(
-                                flex: 2,
-                                child: FilledButton.icon(
-                                  onPressed: () async {
-                                    sectionCutterFile = await openFile(
-                                      acceptedTypeGroups: <XTypeGroup>[
-                                        acceptedFileTypes
-                                      ],
-                                    );
-                                    setState(() {
-                                      _isLoadingUpload = true;
-                                    });
-                                    if (sectionCutterFile != null) {
-                                      // save to firebase
-                                      setState(() {
-                                        _failedToUpload = false;
-                                        _uploaded = true;
-                                        _directions =
-                                            "Click finish to finish test.";
-                                      });
-                                    } else {
-                                      setState(() {
-                                        _failedToUpload = true;
-                                        _errorText =
-                                            'Failed to upload new image.';
-                                      });
-                                      print("No file selected");
-                                    }
-                                    setState(() {
-                                      _isLoadingUpload = false;
-                                    });
-                                  },
-                                  label: Text(
-                                    'Upload File',
-                                    style: TextStyle(
-                                        fontSize: 20,
-                                        fontWeight: FontWeight.bold),
-                                  ),
-                                  icon: _uploaded
-                                      ? Icon(Icons.check)
-                                      : Icon(Icons.upload_file),
-                                  iconAlignment: IconAlignment.end,
-                                  style: FilledButton.styleFrom(
-                                    padding: EdgeInsets.symmetric(
-                                        vertical: 20, horizontal: 20),
-                                    backgroundColor: Colors.white,
-                                    foregroundColor: Colors.black,
-                                    iconColor: Colors.black,
-                                    iconSize: 25,
-                                    shape: RoundedRectangleBorder(
-                                      borderRadius: BorderRadius.circular(10.0),
-                                    ),
-                                  ),
-                                ),
-                              ),
-                        Expanded(
-                          flex: 1,
-                          child: (_uploaded && !_isLoadingUpload)
-                              ? Align(
-                                  alignment: Alignment.centerLeft,
-                                  child: IconButton(
-                                    onPressed: () {
-                                      if (sectionCutterFile != null) {
-                                        sectionCutterFile = null;
-                                      }
-                                      setState(() {
-                                        _failedToUpload = false;
-                                        _uploaded = false;
-                                        _directions =
-                                            "Go to designated section. Then upload the section drawing here.";
-                                      });
-                                    },
-                                    icon: Icon(Icons.cancel),
-                                    color: Colors.red[700],
-                                  ),
-                                )
-                              : SizedBox(),
-                        ),
-                      ],
-                    ),
-                    SizedBox(height: 5),
-                    _failedToUpload
-                        ? Padding(
-                            padding: const EdgeInsets.only(left: 12.0),
-                            child: Text.rich(
-                              TextSpan(
-                                text: _errorText,
-                              ),
-                              overflow: TextOverflow.ellipsis,
-                              maxLines: 2,
-                              style: TextStyle(
-                                fontSize: 16,
-                                fontStyle: FontStyle.italic,
-                                color: Colors.red,
-                              ),
+                  Expanded(
+                    flex: 1,
+                    child: (_uploaded && !_isLoadingUpload)
+                        ? Align(
+                            alignment: Alignment.centerLeft,
+                            child: IconButton(
+                              onPressed: () {
+                                if (sectionCutterFile != null) {
+                                  sectionCutterFile = null;
+                                }
+                                setState(() {
+                                  _failedToUpload = false;
+                                  _uploaded = false;
+                                  _directions =
+                                      "Go to designated section. Then upload the section drawing here.";
+                                });
+                              },
+                              icon: Icon(Icons.cancel),
+                              color: Colors.red[700],
                             ),
                           )
                         : SizedBox(),
-                    SizedBox(height: 5),
-                    Text(
-                      'Accepted formats: .png, .pdf, .jpg',
-                      style: TextStyle(
-                        fontSize: 16,
-                        fontStyle: FontStyle.italic,
-                        color: Colors.grey[400],
-                      ),
-                    ),
-                    SizedBox(height: 20),
-                    Expanded(
-                      child: Row(
-                        spacing: 10,
-                        children: <Widget>[
-                          EditButton(
-                            text: 'Back',
-                            foregroundColor: Colors.black,
-                            backgroundColor: Colors.white,
-                            onPressed: _isLoadingUpload
-                                ? null
-                                : () => Navigator.pop(context, 'Back'),
-                            iconAlignment: IconAlignment.start,
-                            icon: Icon(Icons.chevron_left, color: Colors.black),
-                          ),
-                          Flexible(
-                            flex: 1,
-                            child: Align(
-                              alignment: Alignment.bottomRight,
-                              child: EditButton(
-                                text: 'Finish',
-                                foregroundColor: Colors.black,
-                                backgroundColor: Colors.white,
-                                icon: const Icon(Icons.chevron_right,
-                                    color: Colors.black),
-                                onPressed: _isLoadingUpload
-                                    ? null
-                                    : () async {
-                                        if (sectionCutterFile == null) {
-                                          setState(() {
-                                            _failedToUpload = true;
-                                            _errorText =
-                                                'No file uploaded. Please upload an image first.';
-                                          });
-                                          print("No file uploaded.");
-                                          return;
-                                        }
-                                        setState(() {
-                                          _isLoadingUpload = true;
-                                        });
-                                        Section data = await widget.activeTest!
-                                            .saveXFile(sectionCutterFile!);
-                                        widget.activeTest!.submitData(data);
-                                        if (!context.mounted) return;
-                                        Navigator.pushReplacement(
-                                            context,
-                                            MaterialPageRoute(
-                                              builder: (context) =>
-                                                  HomeScreen(),
-                                            ));
-                                        Navigator.push(
-                                            context,
-                                            MaterialPageRoute(
-                                              builder: (context) =>
-                                                  ProjectDetailsPage(
-                                                      projectData:
-                                                          widget.projectData),
-                                            ));
-                                      },
-                              ),
-                            ),
-                          ),
-                        ],
+                  ),
+                ],
+              ),
+              SizedBox(height: 5),
+              _failedToUpload
+                  ? Padding(
+                      padding: const EdgeInsets.only(left: 12.0),
+                      child: Text.rich(
+                        TextSpan(
+                          text: _errorText,
+                        ),
+                        overflow: TextOverflow.ellipsis,
+                        maxLines: 2,
+                        style: TextStyle(
+                          fontSize: 16,
+                          fontStyle: FontStyle.italic,
+                          color: Colors.red,
+                        ),
                       ),
                     )
-                  ],
+                  : SizedBox(),
+              SizedBox(height: 5),
+              Text(
+                'Accepted formats: .png, .pdf, .jpg',
+                style: TextStyle(
+                  fontSize: 16,
+                  fontStyle: FontStyle.italic,
+                  color: Colors.grey[400],
                 ),
               ),
+              SizedBox(height: 20),
+              Expanded(
+                child: Row(
+                  spacing: 10,
+                  children: <Widget>[
+                    EditButton(
+                      text: 'Back',
+                      foregroundColor: Colors.black,
+                      backgroundColor: Colors.white,
+                      onPressed: _isLoadingUpload
+                          ? null
+                          : () => Navigator.pop(context, 'Back'),
+                      iconAlignment: IconAlignment.start,
+                      icon: Icon(Icons.chevron_left, color: Colors.black),
+                    ),
+                    Flexible(
+                      flex: 1,
+                      child: Align(
+                        alignment: Alignment.bottomRight,
+                        child: EditButton(
+                          text: 'Finish',
+                          foregroundColor: Colors.black,
+                          backgroundColor: Colors.white,
+                          icon: const Icon(Icons.chevron_right,
+                              color: Colors.black),
+                          onPressed: _isLoadingUpload
+                              ? null
+                              : () async {
+                                  final bool finishSuccess = await showDialog(
+                                      context: context,
+                                      builder: (context) {
+                                        return TestFinishDialog(
+                                            onNext: () async {
+                                          if (sectionCutterFile == null) {
+                                            Navigator.pop(context, false);
+                                            setState(() {
+                                              _failedToUpload = true;
+                                              _errorText =
+                                                  'No file uploaded. Please upload an image first.';
+                                            });
+                                            print("No file uploaded.");
+                                            return;
+                                          }
+                                          Navigator.pop(context, true);
+                                        });
+                                      });
+                                  if (finishSuccess) {
+                                    setState(() {
+                                      _isLoadingUpload = true;
+                                    });
+                                    Section data = await widget.activeTest!
+                                        .saveXFile(sectionCutterFile!);
+                                    widget.activeTest!.submitData(data);
+                                    if (!context.mounted) return;
+                                    Navigator.pushReplacement(
+                                        context,
+                                        MaterialPageRoute(
+                                          builder: (context) => HomeScreen(),
+                                        ));
+                                    Navigator.push(
+                                        context,
+                                        MaterialPageRoute(
+                                          builder: (context) =>
+                                              ProjectDetailsPage(
+                                                  projectData:
+                                                      widget.projectData),
+                                        ));
+                                  }
+                                },
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              )
+            ],
+          ),
+        ),
       ),
     );
   }

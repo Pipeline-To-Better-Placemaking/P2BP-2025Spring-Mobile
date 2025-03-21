@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
-import 'package:google_maps_flutter/google_maps_flutter.dart';
+import 'package:p2bp_2025spring_mobile/db_schema_classes.dart';
 
 Widget peopleInMotionInstructions() {
   return RichText(
@@ -200,7 +200,7 @@ Widget buildLegends() {
 
 Widget legendItem(IconData icon, String label, Color buttonColor,
     BoxShape buttonShape, Border border, Color iconColor, double width) {
-  return Container(
+  return SizedBox(
     width: width,
     child: Row(
       children: [
@@ -229,37 +229,5 @@ Widget legendItem(IconData icon, String label, Color buttonColor,
         ),
       ],
     ),
-  );
-}
-
-Widget activityColorsRow() {
-  return Wrap(
-    spacing: 16,
-    runSpacing: 8,
-    children: [
-      buildActivityColorItem("Walking", Colors.teal),
-      buildActivityColorItem("Running", Colors.red),
-      buildActivityColorItem("Swimming", Colors.cyan),
-      buildActivityColorItem("On Wheels", Colors.orange),
-      buildActivityColorItem("Handicap Assisted", Colors.purple),
-    ],
-  );
-}
-
-Widget buildActivityColorItem(String label, Color color) {
-  return Row(
-    mainAxisSize: MainAxisSize.min,
-    children: [
-      Container(
-        width: 20,
-        height: 20,
-        decoration: BoxDecoration(
-          color: color,
-          shape: BoxShape.circle,
-        ),
-      ),
-      SizedBox(width: 4),
-      Text(label, style: TextStyle(fontSize: 14)),
-    ],
   );
 }

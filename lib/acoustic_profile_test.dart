@@ -4,16 +4,12 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
-import 'package:geolocator/geolocator.dart';
-import 'package:maps_toolkit/maps_toolkit.dart' as mp;
 import 'package:p2bp_2025spring_mobile/db_schema_classes.dart';
 import 'package:p2bp_2025spring_mobile/firestore_functions.dart';
 import 'package:p2bp_2025spring_mobile/google_maps_functions.dart';
 import 'package:p2bp_2025spring_mobile/project_details_page.dart';
 import 'package:p2bp_2025spring_mobile/theme.dart';
 import 'package:p2bp_2025spring_mobile/acoustic_instructions.dart'; // for _showInstructionOverlay
-
-// Converts a list of AcousticMeasurement objects into a list of JSON maps.
 
 /// AcousticProfileTestPage displays a Google Map (with the project polygon)
 /// in the background and uses a timer to prompt the researcher for sound
@@ -109,6 +105,7 @@ class _AcousticProfileTestPageState extends State<AcousticProfileTestPage> {
       // TODO: dynamic zooming
       _markers = _setMarkersFromPoints(widget.activeTest.standingPoints);
       _standingPoints = widget.activeTest.standingPoints;
+      print(_standingPoints);
       // Initialize the completion status for each standing point.
       _completedStandingPoints = List.filled(_standingPoints.length, false);
       _isLoading = false;

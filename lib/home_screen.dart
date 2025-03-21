@@ -53,11 +53,13 @@ class _HomeScreenState extends State<HomeScreen> {
       } else {
         _projectList = await getTeamProjects(teamRef!);
       }
-      setState(() {
-        _projectsCount = _projectList.length;
-        _projectList;
-        _isLoading = false;
-      });
+      if (context.mounted) {
+        setState(() {
+          _projectsCount = _projectList.length;
+          _projectList;
+          _isLoading = false;
+        });
+      }
     } catch (e) {
       print("Error in _populateProjects(): $e");
     }
