@@ -100,6 +100,49 @@ class Project {
   }
 }
 
+/// Comparison function for tests. Used in [.sort].
+///
+/// Sorts based on scheduled time.
+/// The tests are split further into two categories completed and not completed.
+/// For completed tests, simply sort by scheduled time.
+/// For non-completed tests, sort first by whether the date has passed. This gives two more groups.
+/// Sort both by their scheduled time.
+int testTimeComparison(Test a, Test b) {
+  Timestamp currentTime = Timestamp.now();
+  if (a.isComplete) {
+    // If a and b are both complete
+    if (b.isComplete) {
+      return a.scheduledTime.compareTo(b.scheduledTime);
+    }
+    // If a is complete and b is not
+    else {
+      return 2;
+    }
+  }
+  // If a is not complete and b is
+  else if (b.isComplete) {
+    return -2;
+  }
+  // If both a and b are not complete
+  else {
+    // If a's time has passed
+    if (a.scheduledTime.compareTo(currentTime) > 0) {
+      // If b's time has also passed
+      if (b.scheduledTime.compareTo(currentTime) > 0) {
+        return a.scheduledTime.compareTo(b.scheduledTime);
+      }
+      // Else if a's time has not passed, but b's has
+      else {
+        return -3;
+      }
+    }
+    // Else if a's time has passed
+    else {
+      return 3;
+    }
+  }
+}
+
 // *--------------------------------------------------------------------------*
 // | Important: When adding a test, make sure to implement the requisite      |
 // | fields and functions. When done, make sure to implement it in the        |
@@ -1434,7 +1477,8 @@ class BikeRack implements AccessTypes {
 
   BikeRack({required this.spots, required this.polyline})
       : pathLength = mp.SphericalUtil.computeLength(polyline.toMPLatLngList())
-            .toDouble();
+                .toDouble() *
+            feetPerMeter;
 
   @override
   Map<String, dynamic> convertToFirestoreData() {
@@ -1459,7 +1503,8 @@ class TaxiAndRideShare implements AccessTypes {
 
   TaxiAndRideShare({required this.polyline})
       : pathLength = mp.SphericalUtil.computeLength(polyline.toMPLatLngList())
-            .toDouble();
+                .toDouble() *
+            feetPerMeter;
 
   @override
   Map<String, dynamic> convertToFirestoreData() {
@@ -1485,7 +1530,8 @@ class Parking implements AccessTypes {
 
   Parking({required this.spots, required this.polyline, required this.polygon})
       : pathLength = mp.SphericalUtil.computeLength(polyline.toMPLatLngList())
-            .toDouble(),
+                .toDouble() *
+            feetPerMeter,
         polygonArea = (mp.SphericalUtil.computeArea(polygon.toMPLatLngList()) *
                 pow(feetPerMeter, 2))
             .toDouble();
@@ -1518,7 +1564,8 @@ class TransportStation implements AccessTypes {
 
   TransportStation({required this.routeNumber, required this.polyline})
       : pathLength = mp.SphericalUtil.computeLength(polyline.toMPLatLngList())
-            .toDouble();
+                .toDouble() *
+            feetPerMeter;
 
   @override
   Map<String, dynamic> convertToFirestoreData() {
@@ -1791,6 +1838,7 @@ class NatureData implements NatureTypes {
   List<Animal> animals = [];
   List<WaterBody> waterBodies = [];
   List<Vegetation> vegetation = [];
+  WeatherData? weather;
 
   @override
   Map<String, Map> convertToFirestoreData() {
@@ -1821,7 +1869,14 @@ class NatureData implements NatureTypes {
       WaterBodyType.river.name: [],
       WaterBodyType.swamp.name: [],
     };
+    Map<String, dynamic> weatherData = {};
     try {
+      if (weather == null) {
+        throw Exception(
+            "Weather not set in NatureType.convertToFirestoreData()!");
+      } else {
+        weatherData = weather!.convertToFirestoreData();
+      }
       for (Animal animal in animals) {
         // Checks that the set contains the correct fields as needed, included
         // domestication designation and name, then adds the data accordingly.
@@ -1845,6 +1900,7 @@ class NatureData implements NatureTypes {
             ?.add(vegetation.convertToFirestoreData());
       }
       firestoreData = {
+        'weather': weatherData,
         NatureType.animal.name: animalData,
         NatureType.vegetation.name: vegetationData,
         NatureType.waterBody.name: waterBodyData,
@@ -1854,6 +1910,41 @@ class NatureData implements NatureTypes {
       print("Stacktrace $stacktrace");
     }
 
+    return firestoreData;
+  }
+}
+
+/// Types of weather for Nature Prevalence. Types include [sunny], [cloudy],
+/// [rainy], [windy], and [stormy].
+enum Weather { sunny, cloudy, rainy, windy, stormy }
+
+/// Class for weather in Nature Prevalence Test. Implements enum type
+/// [weather].
+class WeatherData implements NatureTypes {
+  final List<Weather> weatherTypes;
+  final double temp;
+
+  WeatherData({required this.weatherTypes, required this.temp});
+
+  @override
+  Map<String, dynamic> convertToFirestoreData() {
+    Map<String, dynamic> firestoreData = {};
+    Map<String, bool> weatherMap = {};
+    try {
+      // Initialize a map for Firestore with true or false depending on weather.
+      for (Weather weatherType in Weather.values) {
+        weatherTypes.contains(weatherType)
+            ? weatherMap[weatherType.name] = true
+            : weatherMap[weatherType.name] = false;
+      }
+      firestoreData = {
+        'weatherTypes': weatherMap,
+        'temperature': temp,
+      };
+    } catch (e, stacktrace) {
+      print("Error in Vegetation.convertToFirestoreData(): $e");
+      print("Stacktrace: $stacktrace");
+    }
     return firestoreData;
   }
 }
@@ -2110,8 +2201,22 @@ class NaturePrevalenceTest extends Test<NatureData> {
     List<Animal> animalList = [];
     List<WaterBody> waterBodyList = [];
     List<Vegetation> vegetationList = [];
+    WeatherData? weatherData;
+    List<Weather> weatherTypes = [];
 
     try {
+      if (data.containsKey('weather')) {
+        for (Weather weatherType in Weather.values) {
+          if (data['weather'].containsKey(weatherType) &&
+              data['weather'][weatherType] == true) {
+            weatherTypes.add(weatherType);
+          }
+        }
+        if (data['weather'].containsKey('temperature')) {
+          weatherData = WeatherData(
+              weatherTypes: weatherTypes, temp: data['weather']['temperature']);
+        }
+      }
       // Getting data from animal in Firestore
       if (data.containsKey(NatureType.animal.name)) {
         // For every animal type
@@ -2221,8 +2326,14 @@ class NaturePrevalenceTest extends Test<NatureData> {
       output.animals = animalList;
       output.vegetation = vegetationList;
       output.waterBodies = waterBodyList;
+      if (weatherData == null) {
+        throw Exception(
+            "Weather is not defined in Firestore in Nature Prevalence test .");
+      } else {
+        output.weather = weatherData;
+      }
     } catch (e, stacktrace) {
-      print("Error in NaturePrevalenceTest.convertDataFromFirestore(): $e");
+      print("Warning in NaturePrevalenceTest.convertDataFromFirestore(): $e");
       print("Stacktrace: $stacktrace");
     }
 
