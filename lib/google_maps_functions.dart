@@ -1,8 +1,8 @@
 import 'dart:math';
-import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
+import 'package:maps_toolkit/maps_toolkit.dart' as mp;
 
 /// Conversion used for length and area to convert from meters to feet.
 /// Make sure to multiply twice (or square) for use in area,
@@ -112,24 +112,18 @@ double _calculateAngle(double centerX, double centerY, double x, double y) {
   return atan2(y - centerY, x - centerX);
 }
 
-/// Takes in a `List<GeoPoint>`. This is the native coordinate type from
-/// Firestore. Converts them to `LatLng`, then creates a `Polygon` with those
-/// points. Default polygon color is a transparent red.
-/// Returns as a `Set<Polygon>`.
+/// Returns a `Set<Polygon>` with a single `Polygon` made up of the given
+/// [polygonPoints].
+///
 /// <br/> Note: This should render the points in the correct order. However, if
 /// points are **not** connected in the correct order, change function to call
 /// _sortPointsClockwise first.
-Set<Polygon> getProjectPolygon(List polygonPoints) {
+Set<Polygon> getProjectPolygon(List<LatLng> polygonPoints) {
   Set<Polygon> projectPolygon = {};
-  List<LatLng> polygonPointsLatLng = [];
   try {
-    for (GeoPoint point in polygonPoints) {
-      polygonPointsLatLng.add(LatLng(point.latitude, point.longitude));
-    }
-
     projectPolygon.add(Polygon(
       polygonId: PolygonId('project_polygon'),
-      points: polygonPointsLatLng,
+      points: polygonPoints.toList(),
       fillColor: Color(0x52F34236),
       strokeColor: Colors.red,
       strokeWidth: 1,
@@ -207,4 +201,28 @@ LatLngBounds? getLatLngBounds(List<LatLng> points) {
   }
 
   return LatLngBounds(southwest: southWest, northeast: northEast);
+}
+
+/// Returns bool for if [point] is inside the [polygon] boundary.
+bool isPointInsidePolygon(LatLng point, Polygon polygon) {
+  List<LatLng> points = polygon.points.toList();
+  final List<mp.LatLng> mpPolygon = points
+      .map((latLng) => mp.LatLng(latLng.latitude, latLng.longitude))
+      .toList();
+  return mp.PolygonUtil.containsLocation(
+    mp.LatLng(point.latitude, point.longitude),
+    mpPolygon,
+    false, // Edge considered outside; change as needed.
+  );
+}
+
+/// Takes time in seconds and returns that time formatted as `mm:ss`
+/// where `m` is minutes and `s` is seconds.
+///
+/// This is not really a google maps related thing but we have no other
+/// file for general functions like this.
+String formatTime(int time) {
+  final minutes = time ~/ 60;
+  final seconds = time % 60;
+  return '${minutes.toString().padLeft(2, '0')}:${seconds.toString().padLeft(2, '0')}';
 }

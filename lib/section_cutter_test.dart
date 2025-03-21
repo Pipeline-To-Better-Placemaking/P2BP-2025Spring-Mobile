@@ -13,7 +13,7 @@ import 'home_screen.dart';
 
 class SectionCutter extends StatefulWidget {
   final Project projectData;
-  final SectionCutterTest? activeTest;
+  final SectionCutterTest activeTest;
 
   /// IMPORTANT: When navigating to this page, pass in project details. The
   /// project details page already contains project info, so you should use
@@ -69,7 +69,7 @@ class _SectionCutterState extends State<SectionCutter> {
       // Take some latitude away to center considering bottom sheet.
       _location = LatLng(_location.latitude * .999999, _location.longitude);
       // TODO: dynamic zooming
-      _sectionPoints = widget.activeTest!.linePoints.toLatLngList();
+      _sectionPoints = widget.activeTest.linePoints;
       _polyline = {
         Polyline(
           polylineId:

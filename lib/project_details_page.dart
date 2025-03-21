@@ -45,11 +45,12 @@ class _ProjectDetailsPageState extends State<ProjectDetailsPage> {
             automaticallyImplyLeading: false, // Disable default back arrow
             leadingWidth: 48,
             systemOverlayStyle: SystemUiOverlayStyle(
-                statusBarColor: Colors.white,
-                statusBarIconBrightness:
-                    Brightness.dark, // Changes Android status bar to white
-                statusBarBrightness:
-                    Brightness.dark), // Changes iOS status bar to white
+              statusBarColor: Colors.white,
+              // Changes Android status bar to white
+              statusBarIconBrightness: Brightness.dark,
+              // Changes iOS status bar to white
+              statusBarBrightness: Brightness.dark,
+            ),
             // Custom back arrow button
             leading: Padding(
               padding: const EdgeInsets.only(left: 16),
@@ -61,8 +62,7 @@ class _ProjectDetailsPageState extends State<ProjectDetailsPage> {
                   shape: BoxShape.circle,
                 ),
                 child: IconButton(
-                  padding: EdgeInsets
-                      .zero, // Removes internal padding from IconButton
+                  padding: EdgeInsets.zero,
                   constraints: BoxConstraints(),
                   icon: Icon(Icons.arrow_back,
                       color: Color(0xFF2F6DCF), size: 20),
@@ -353,6 +353,8 @@ const Map<Type, String> _testInitialsMap = {
   SpatialBoundariesTest: 'SB',
   SectionCutterTest: 'SC',
   IdentifyingAccessTest: 'IA',
+  PeopleInPlaceTest: 'PP',
+  PeopleInMotionTest: 'PM',
   NaturePrevalenceTest: 'NP',
 };
 
@@ -451,15 +453,24 @@ class TestCard extends StatelessWidget {
                         color: Colors.blue,
                       ),
                       tooltip: 'Start test',
-                      onPressed: () {
+                      onPressed: () async {
                         if (test.isComplete) {
-                          showDialog(
+                          final bool doOverwrite = await showDialog(
                             context: context,
                             builder: (context) {
                               return RedoConfirmationWidget(
-                                  test: test, project: project);
+                                test: test,
+                                project: project,
+                              );
                             },
                           );
+                          if (doOverwrite && context.mounted) {
+                            Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                  builder: (context) => test.getPage(project)),
+                            );
+                          }
                         } else {
                           Navigator.push(
                             context,
@@ -517,7 +528,7 @@ class RedoConfirmationWidget extends StatelessWidget {
             Flexible(
               child: TextButton(
                 onPressed: () {
-                  Navigator.pop(context, 'Cancel');
+                  Navigator.pop(context, false);
                 },
                 child: const Text(
                   'No, take me back.',
@@ -529,18 +540,15 @@ class RedoConfirmationWidget extends StatelessWidget {
             Flexible(
               child: TextButton(
                 onPressed: () {
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                        builder: (context) => test.getPage(project)),
-                  );
+                  Navigator.pop(context, true);
                 },
                 child: Text(
                   'Yes, overwrite it.',
                   style: TextStyle(
-                      fontWeight: FontWeight.bold,
-                      color: Colors.red[900],
-                      fontSize: 15),
+                    fontWeight: FontWeight.bold,
+                    color: Colors.red[900],
+                    fontSize: 15,
+                  ),
                 ),
               ),
             ),

@@ -347,207 +347,204 @@ class _SpatialBoundariesTestPageState extends State<SpatialBoundariesTestPage> {
             ? SizedBox()
             : SizedBox(
                 height: _bottomSheetHeight,
-                child: Stack(
-                  children: [
-                    Container(
-                      padding: const EdgeInsets.symmetric(
-                          horizontal: 12.0, vertical: 10.0),
-                      decoration: BoxDecoration(
-                        gradient: defaultGrad,
-                        borderRadius: const BorderRadius.only(
-                          topLeft: Radius.circular(24.0),
-                          topRight: Radius.circular(24.0),
-                        ),
-                        boxShadow: [
-                          BoxShadow(
-                            color: Colors.black,
-                            offset: Offset(0.0, 1.0), //(x,y)
-                            blurRadius: 6.0,
-                          ),
-                        ],
-                      ),
-                      child: Column(
-                        children: <Widget>[
-                          Center(
-                            child: Text(
-                              'Spatial Boundaries',
-                              softWrap: true,
-                              textAlign: TextAlign.center,
-                              style: TextStyle(
-                                fontSize: 20,
-                                fontWeight: FontWeight.bold,
-                                color: placeYellow,
-                              ),
-                            ),
-                          ),
-                          SizedBox(height: 5),
-                          Center(
-                            child: Text(
-                              _directionsActive,
-                              softWrap: true,
-                              textAlign: TextAlign.center,
-                              style: TextStyle(
-                                fontSize: 18,
-                                color: Colors.white,
-                              ),
-                            ),
-                          ),
-                          SizedBox(height: 5),
-                          Row(
-                            mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                            spacing: 10,
-                            children: <Widget>[
-                              Expanded(
-                                flex: 11,
-                                child: FilledButton(
-                                  style: testButtonStyle,
-                                  onPressed: (_polygonMode || _polylineMode)
-                                      ? null
-                                      : () {
-                                          _doConstructedModal(context);
-                                        },
-                                  child: Text('Constructed'),
-                                ),
-                              ),
-                              Expanded(
-                                flex: 8,
-                                child: FilledButton(
-                                  style: testButtonStyle,
-                                  onPressed: (_polygonMode || _polylineMode)
-                                      ? null
-                                      : () {
-                                          _doMaterialModal(context);
-                                        },
-                                  child: Text('Material'),
-                                ),
-                              ),
-                              Expanded(
-                                flex: 7,
-                                child: FilledButton(
-                                  style: testButtonStyle,
-                                  onPressed: (_polygonMode || _polylineMode)
-                                      ? null
-                                      : () {
-                                          _doShelterModal(context);
-                                        },
-                                  child: Text('Shelter'),
-                                ),
-                              ),
-                            ],
-                          ),
-                          SizedBox(height: 15),
-                          Row(
-                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                            spacing: 15,
-                            children: <Widget>[
-                              Expanded(
-                                flex: 9,
-                                child: EditButton(
-                                  text: 'Confirm Shape',
-                                  foregroundColor: Colors.green,
-                                  backgroundColor: Colors.white,
-                                  icon: const Icon(Icons.check),
-                                  iconColor: Colors.green,
-                                  onPressed: (_polygonMode &&
-                                          _polygonPoints.length >= 3)
-                                      ? _finalizePolygon
-                                      : (_polylineMode &&
-                                              _polylinePoints.length >= 2)
-                                          ? _finalizePolyline
-                                          : null,
-                                ),
-                              ),
-                              Expanded(
-                                flex: 6,
-                                child: EditButton(
-                                  text: 'Cancel',
-                                  foregroundColor: Colors.red,
-                                  backgroundColor: Colors.white,
-                                  icon: const Icon(Icons.cancel),
-                                  iconColor: Colors.red,
-                                  onPressed: (_polygonMode || _polylineMode)
-                                      ? _resetPlacementVariables
-                                      : null,
-                                ),
-                              ),
-                            ],
-                          ),
-                          SizedBox(height: 15),
-                          Row(
-                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                            spacing: 10,
-                            children: <Widget>[
-                              Flexible(
-                                child: FilledButton.icon(
-                                  style: testButtonStyle,
-                                  onPressed: () {
-                                    Navigator.pop(context);
-                                  },
-                                  label: Text('Back'),
-                                  icon: Icon(Icons.chevron_left),
-                                  iconAlignment: IconAlignment.start,
-                                ),
-                              ),
-                              Flexible(
-                                child: FilledButton.icon(
-                                  style: testButtonStyle,
-                                  onPressed: (_polygonMode || _polylineMode)
-                                      ? null
-                                      : () {
-                                          widget.activeTest
-                                              .submitData(_newData);
-                                          Navigator.pop(context);
-                                        },
-                                  label: Text('Finish'),
-                                  icon: Icon(Icons.chevron_right),
-                                  iconAlignment: IconAlignment.end,
-                                ),
-                              ),
-                            ],
-                          ),
-                        ],
-                      ),
-                    ),
-                    _outsidePoint
-                        ? Align(
-                            alignment: Alignment.bottomCenter,
-                            child: Padding(
-                              padding: const EdgeInsets.symmetric(
-                                  vertical: 30.0, horizontal: 100.0),
-                              child: Container(
-                                padding: EdgeInsets.symmetric(
-                                    horizontal: 15, vertical: 10),
-                                decoration: BoxDecoration(
-                                  color: Colors.red[900],
-                                  borderRadius: const BorderRadius.all(
-                                      Radius.circular(10)),
-                                  boxShadow: [
-                                    BoxShadow(
-                                      color:
-                                          Colors.black.withValues(alpha: 0.1),
-                                      blurRadius: 6,
-                                      offset: const Offset(0, 2),
-                                    ),
-                                  ],
-                                ),
-                                child: Text(
-                                  'You have placed a point outside of the project area!',
-                                  maxLines: 3,
-                                  overflow: TextOverflow.ellipsis,
-                                  style: TextStyle(
-                                    fontSize: 18,
-                                    fontWeight: FontWeight.w500,
-                                    color: Colors.red[50],
-                                  ),
-                                ),
-                              ),
-                            ),
-                          )
-                        : SizedBox(),
-                  ],
-                ),
+                child: _buildBottomSheetStack(context),
               ),
       ),
+    );
+  }
+
+  Stack _buildBottomSheetStack(BuildContext context) {
+    return Stack(
+      children: [
+        Container(
+          padding: const EdgeInsets.symmetric(horizontal: 12.0, vertical: 10.0),
+          decoration: BoxDecoration(
+            gradient: defaultGrad,
+            borderRadius: const BorderRadius.only(
+              topLeft: Radius.circular(24.0),
+              topRight: Radius.circular(24.0),
+            ),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black,
+                offset: Offset(0.0, 1.0), //(x,y)
+                blurRadius: 6.0,
+              ),
+            ],
+          ),
+          child: Column(
+            children: <Widget>[
+              Center(
+                child: Text(
+                  'Spatial Boundaries',
+                  softWrap: true,
+                  textAlign: TextAlign.center,
+                  style: TextStyle(
+                    fontSize: 20,
+                    fontWeight: FontWeight.bold,
+                    color: placeYellow,
+                  ),
+                ),
+              ),
+              SizedBox(height: 5),
+              Center(
+                child: Text(
+                  _directionsActive,
+                  softWrap: true,
+                  textAlign: TextAlign.center,
+                  style: TextStyle(
+                    fontSize: 18,
+                    color: Colors.white,
+                  ),
+                ),
+              ),
+              SizedBox(height: 5),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                spacing: 10,
+                children: <Widget>[
+                  Expanded(
+                    flex: 11,
+                    child: FilledButton(
+                      style: testButtonStyle,
+                      onPressed: (_polygonMode || _polylineMode)
+                          ? null
+                          : () {
+                              _doConstructedModal(context);
+                            },
+                      child: Text('Constructed'),
+                    ),
+                  ),
+                  Expanded(
+                    flex: 8,
+                    child: FilledButton(
+                      style: testButtonStyle,
+                      onPressed: (_polygonMode || _polylineMode)
+                          ? null
+                          : () {
+                              _doMaterialModal(context);
+                            },
+                      child: Text('Material'),
+                    ),
+                  ),
+                  Expanded(
+                    flex: 7,
+                    child: FilledButton(
+                      style: testButtonStyle,
+                      onPressed: (_polygonMode || _polylineMode)
+                          ? null
+                          : () {
+                              _doShelterModal(context);
+                            },
+                      child: Text('Shelter'),
+                    ),
+                  ),
+                ],
+              ),
+              SizedBox(height: 15),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                spacing: 15,
+                children: <Widget>[
+                  Expanded(
+                    flex: 9,
+                    child: EditButton(
+                      text: 'Confirm Shape',
+                      foregroundColor: Colors.green,
+                      backgroundColor: Colors.white,
+                      icon: const Icon(Icons.check),
+                      iconColor: Colors.green,
+                      onPressed: (_polygonMode && _polygonPoints.length >= 3)
+                          ? _finalizePolygon
+                          : (_polylineMode && _polylinePoints.length >= 2)
+                              ? _finalizePolyline
+                              : null,
+                    ),
+                  ),
+                  Expanded(
+                    flex: 6,
+                    child: EditButton(
+                      text: 'Cancel',
+                      foregroundColor: Colors.red,
+                      backgroundColor: Colors.white,
+                      icon: const Icon(Icons.cancel),
+                      iconColor: Colors.red,
+                      onPressed: (_polygonMode || _polylineMode)
+                          ? _resetPlacementVariables
+                          : null,
+                    ),
+                  ),
+                ],
+              ),
+              SizedBox(height: 15),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                spacing: 10,
+                children: <Widget>[
+                  Flexible(
+                    child: FilledButton.icon(
+                      style: testButtonStyle,
+                      onPressed: () {
+                        Navigator.pop(context);
+                      },
+                      label: Text('Back'),
+                      icon: Icon(Icons.chevron_left),
+                      iconAlignment: IconAlignment.start,
+                    ),
+                  ),
+                  Flexible(
+                    child: FilledButton.icon(
+                      style: testButtonStyle,
+                      onPressed: (_polygonMode || _polylineMode)
+                          ? null
+                          : () {
+                              widget.activeTest.submitData(_newData);
+                              Navigator.pop(context);
+                            },
+                      label: Text('Finish'),
+                      icon: Icon(Icons.chevron_right),
+                      iconAlignment: IconAlignment.end,
+                    ),
+                  ),
+                ],
+              ),
+            ],
+          ),
+        ),
+        _outsidePoint
+            ? Align(
+                alignment: Alignment.bottomCenter,
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(
+                      vertical: 30.0, horizontal: 100.0),
+                  child: Container(
+                    padding: EdgeInsets.symmetric(horizontal: 15, vertical: 10),
+                    decoration: BoxDecoration(
+                      color: Colors.red[900],
+                      borderRadius: const BorderRadius.all(Radius.circular(10)),
+                      boxShadow: [
+                        BoxShadow(
+                          color: Colors.black.withValues(alpha: 0.1),
+                          blurRadius: 6,
+                          offset: const Offset(0, 2),
+                        ),
+                      ],
+                    ),
+                    child: Text(
+                      'You have placed a point outside of the project area!',
+                      maxLines: 3,
+                      overflow: TextOverflow.ellipsis,
+                      style: TextStyle(
+                        fontSize: 18,
+                        fontWeight: FontWeight.w500,
+                        color: Colors.red[50],
+                      ),
+                    ),
+                  ),
+                ),
+              )
+            : SizedBox(),
+      ],
     );
   }
 }
