@@ -31,7 +31,6 @@ class _SectionCreationPageState extends State<SectionCreationPage> {
   MapType _currentMapType = MapType.satellite; // Default map type
   Project? project;
   Polyline? _polyline;
-  LatLng? _currentPoint;
   List<mp.LatLng> _projectArea = [];
   bool _sectionSet = false;
   bool _directionsVisible = true;
@@ -99,11 +98,7 @@ class _SectionCreationPageState extends State<SectionCreationPage> {
       final Polyline? polyline =
           createPolyline(_linePoints, Colors.green[600]!);
       if (polyline == null) return;
-      if (_markers.length == 2) _markers = {};
       _polyline = polyline;
-      _sectionSet = true;
-      _directions =
-          'Section set. Click confirm to save, or delete and start over.';
     });
     if (_outsidePoint) {
       // TODO: fix delay. delay will overlap with consecutive taps. this means taps do not necessarily refresh the timer and will end prematurely
