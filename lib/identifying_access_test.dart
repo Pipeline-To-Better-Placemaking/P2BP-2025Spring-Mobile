@@ -454,7 +454,6 @@ class _IdentifyingAccessState extends State<IdentifyingAccess> {
                     Row(
                       spacing: 10,
                       children: <Widget>[
-                        Spacer(),
                         TestButton(
                           flex: 6,
                           buttonText: 'Parking',
@@ -491,13 +490,11 @@ class _IdentifyingAccessState extends State<IdentifyingAccess> {
                                       );
                                     },
                         ),
-                        Spacer(),
                       ],
                     ),
                     Row(
                       spacing: 10,
                       children: <Widget>[
-                        Spacer(),
                         TestButton(
                           flex: 6,
                           onPressed: (_pointMode ||
@@ -535,7 +532,6 @@ class _IdentifyingAccessState extends State<IdentifyingAccess> {
                                       });
                                     },
                         ),
-                        Spacer(),
                       ],
                     ),
                     SizedBox(height: 20),
