@@ -641,8 +641,8 @@ class TestFinishDialog extends StatelessWidget {
             onPressed: () {
               Navigator.pop(context);
             },
-            child: Text("Cancel")),
-        TextButton(onPressed: onNext, child: Text("Next"))
+            child: Text("No, take me back.")),
+        TextButton(onPressed: onNext, child: Text("Yes, finish."))
       ],
     );
   }
@@ -673,38 +673,35 @@ class DirectionsWidget extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return visibility
-        ? Align(
-            alignment: Alignment.topCenter,
-            child: Padding(
-              padding:
-                  const EdgeInsets.symmetric(vertical: 20.0, horizontal: 25.0),
-              child: InkWell(
-                onTap: onTap,
-                child: Container(
-                    padding: EdgeInsets.symmetric(horizontal: 15, vertical: 10),
-                    decoration: BoxDecoration(
-                      color: directionsTransparency,
-                      gradient: defaultGrad,
-                      borderRadius: const BorderRadius.all(Radius.circular(10)),
-                      boxShadow: [
-                        BoxShadow(
-                          color: Colors.black.withValues(alpha: 0.1),
-                          blurRadius: 6,
-                          offset: const Offset(0, 2),
-                        ),
-                      ],
-                    ),
-                    child: Text(
-                      text,
-                      maxLines: 3,
-                      overflow: TextOverflow.ellipsis,
-                      style: TextStyle(
-                        fontSize: 18,
-                        fontWeight: FontWeight.w500,
-                        color: Colors.white,
+        ? Padding(
+            padding:
+                const EdgeInsets.symmetric(vertical: 20.0, horizontal: 25.0),
+            child: InkWell(
+              onTap: onTap,
+              child: Container(
+                  padding: EdgeInsets.symmetric(horizontal: 15, vertical: 10),
+                  decoration: BoxDecoration(
+                    color: directionsTransparency,
+                    gradient: defaultGrad,
+                    borderRadius: const BorderRadius.all(Radius.circular(10)),
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.black.withValues(alpha: 0.1),
+                        blurRadius: 6,
+                        offset: const Offset(0, 2),
                       ),
-                    )),
-              ),
+                    ],
+                  ),
+                  child: Text(
+                    text,
+                    maxLines: 3,
+                    overflow: TextOverflow.ellipsis,
+                    style: TextStyle(
+                      fontSize: 18,
+                      fontWeight: FontWeight.w500,
+                      color: Colors.white,
+                    ),
+                  )),
             ),
           )
         : Container(

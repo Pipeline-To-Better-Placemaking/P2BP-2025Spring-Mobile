@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -34,7 +36,6 @@ class _IdentifyingAccessState extends State<IdentifyingAccess> {
   bool _oldPolylinesToggle = true;
   int? _currentSpotsOrRoute;
   bool _deleteMode = false;
-  double _timerHeight = 90;
   AccessType? _type;
   String _directions = "Choose a category.";
   final double _bottomSheetHeight = 300;
@@ -42,6 +43,9 @@ class _IdentifyingAccessState extends State<IdentifyingAccess> {
   late GoogleMapController mapController;
   LatLng _location = defaultLocation; // Default location
   final AccessData _accessData = AccessData();
+  Timer? _timer;
+  int _remainingSeconds = 5;
+  bool _testIsRunning = false;
 
   Set<Polygon> _projectArea = {};
   Polyline? _currentPolyline;
@@ -63,6 +67,12 @@ class _IdentifyingAccessState extends State<IdentifyingAccess> {
   void initState() {
     super.initState();
     initProjectArea();
+  }
+
+  @override
+  void dispose() {
+    _timer?.cancel();
+    super.dispose();
   }
 
   /// Gets the project polygon, adds it to the current polygon list, and
@@ -93,7 +103,6 @@ class _IdentifyingAccessState extends State<IdentifyingAccess> {
 
   void _togglePoint(LatLng point) {
     try {
-      if (_pointMode) _pointTap(point);
       if (_polygonMode) _polygonTap(point);
       if (_polylineMode) _polylineTap(point);
     } catch (e, stacktrace) {
@@ -171,37 +180,6 @@ class _IdentifyingAccessState extends State<IdentifyingAccess> {
     }
     _currentPolyline =
         createPolyline([..._currentPolylinePoints, point], Colors.white);
-  }
-
-  // TODO: Delete if proves to be unnecessary...
-  void _pointTap(LatLng point) {
-    if (_type == null) return;
-    final markerId = MarkerId('${_type!.name}_marker_${point.toString()}');
-    setState(() {
-      // TODO: create list of markers for test, add these to it (cat, dog, etc.)
-      _markers.add(
-        Marker(
-          markerId: markerId,
-          position: point,
-          consumeTapEvents: true,
-          icon: AssetMapBitmap(
-            'assets/test_markers/${_type!.name}_marker.png',
-            width: 30,
-            height: 30,
-          ),
-          onTap: () {
-            // If placing a point or polygon, don't remove point.
-            if (_polylineMode || _polygonMode) return;
-            // If the marker is tapped again, it will be removed
-            setState(() {
-              _markers.removeWhere((marker) => marker.markerId == markerId);
-              // TODO: create list of points for test
-            });
-          },
-        ),
-      );
-    });
-    _pointMode = false;
   }
 
   void _finalizeShape() {
@@ -291,7 +269,7 @@ class _IdentifyingAccessState extends State<IdentifyingAccess> {
         _polylineMode = false;
       });
 
-      _showDialog(
+      _showInputDialog(
         text: 'How Many Parking Spots?',
         hintText: 'Enter number of spots.',
         onNext: () {
@@ -308,6 +286,72 @@ class _IdentifyingAccessState extends State<IdentifyingAccess> {
     }
   }
 
+  void _startTest() {
+    setState(() {
+      _testIsRunning = true;
+      _remainingSeconds = 5;
+    });
+    _timer = Timer.periodic(Duration(seconds: 1), (timer) {
+      setState(() {
+        if (_remainingSeconds <= 0) {
+          _endTest();
+          timer.cancel();
+          showDialog(
+              context: context,
+              builder: (context) {
+                return AlertDialog(
+                  scrollable: true,
+                  title: Center(
+                      child: Text(
+                    "Time's Up!",
+                    style: TextStyle(fontWeight: FontWeight.bold),
+                  )),
+                  content: Center(
+                      child: Text(
+                    "Would you like to submit your data?",
+                    style: TextStyle(fontSize: 15),
+                  )),
+                  actions: <Widget>[
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.end,
+                      children: [
+                        Flexible(
+                          child: TextButton(
+                            onPressed: () {
+                              setState(() {
+                                _remainingSeconds = 10;
+                              });
+                              Navigator.pop(context);
+                            },
+                            child: Text("No, take me back."),
+                          ),
+                        ),
+                        Flexible(
+                          child: TextButton(
+                            onPressed: () {
+                              Navigator.pop(context);
+                              Navigator.pop(context);
+                            },
+                            child: Text("Yes, submit."),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ],
+                );
+              });
+        } else {
+          _remainingSeconds--;
+        }
+      });
+    });
+  }
+
+  void _endTest() {
+    _testIsRunning = false;
+    _timer?.cancel();
+  }
+
   void _toggleMapType() {
     setState(() {
       _currentMapType = (_currentMapType == MapType.normal
@@ -322,32 +366,54 @@ class _IdentifyingAccessState extends State<IdentifyingAccess> {
       child: Scaffold(
         extendBodyBehindAppBar: true,
         extendBody: true,
-        appBar: PreferredSize(
-          preferredSize: Size.fromHeight(_timerHeight),
-          child: Container(
-            color: Colors.transparent,
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.end,
-              children: <Widget>[
-                TextButton(onPressed: () {}, child: Text("Start")),
-                TextButton(onPressed: () {}, child: Text("End")),
-                Padding(
-                  padding: const EdgeInsets.only(right: 20),
-                  child: Container(
-                    padding: EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-                    decoration: BoxDecoration(
-                      color: Colors.black.withValues(alpha: 0.6),
-                      borderRadius: BorderRadius.circular(8),
-                    ),
-                    child: Text(
-                      "19:00",
-                      style: TextStyle(color: Colors.white, fontSize: 16),
-                    ),
+        appBar: AppBar(
+          leading: null,
+          automaticallyImplyLeading: false,
+          systemOverlayStyle:
+              SystemUiOverlayStyle(statusBarBrightness: Brightness.light),
+          backgroundColor: Colors.transparent,
+          // Timer on the right
+          actionsPadding: EdgeInsets.only(top: 15),
+          actions: [
+            ElevatedButton(
+              style: ElevatedButton.styleFrom(
+                shape: RoundedRectangleBorder(
+                  borderRadius:
+                      BorderRadius.circular(8), // Rounded rectangle shape.
+                ),
+                backgroundColor: _testIsRunning ? Colors.red : Colors.green,
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+              ),
+              onPressed: () {
+                if (_testIsRunning) {
+                  _endTest();
+                } else {
+                  _startTest();
+                }
+              },
+              child: Text(
+                _testIsRunning ? 'End' : 'Start',
+                style: const TextStyle(color: Colors.white, fontSize: 16),
+              ),
+            ),
+            Padding(
+              padding: const EdgeInsets.only(left: 10, right: 20),
+              child: Center(
+                child: Container(
+                  padding: EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                  decoration: BoxDecoration(
+                    color: Colors.black.withValues(alpha: 0.6),
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  child: Text(
+                    formatTime(_remainingSeconds),
+                    style: TextStyle(color: Colors.white, fontSize: 16),
                   ),
                 ),
-              ],
+              ),
             ),
-          ),
+          ],
         ),
         resizeToAvoidBottomInset: false,
         body: _isLoading
@@ -387,7 +453,8 @@ class _IdentifyingAccessState extends State<IdentifyingAccess> {
                     Align(
                       alignment: Alignment.topRight,
                       child: Padding(
-                        padding: const EdgeInsets.all(20.0),
+                        padding: const EdgeInsets.only(
+                            top: kToolbarHeight + 20, right: 20.0),
                         child: Column(
                           spacing: 10,
                           mainAxisAlignment: MainAxisAlignment.start,
@@ -536,7 +603,7 @@ class _IdentifyingAccessState extends State<IdentifyingAccess> {
                                         _deleteMode)
                                     ? null
                                     : () {
-                                        _showDialog(
+                                        _showInputDialog(
                                           text: 'Enter the Route Number',
                                           hintText: 'Route Number',
                                           onNext: () {
@@ -564,7 +631,7 @@ class _IdentifyingAccessState extends State<IdentifyingAccess> {
                                         _deleteMode)
                                     ? null
                                     : () {
-                                        _showDialog(
+                                        _showInputDialog(
                                           text:
                                               'How Many Bikes/Scooters Can Fit?',
                                           hintText: 'Enter number of spots.',
@@ -722,7 +789,7 @@ class _IdentifyingAccessState extends State<IdentifyingAccess> {
     );
   }
 
-  void _showDialog(
+  void _showInputDialog(
       {required String text,
       required String hintText,
       required VoidCallback? onNext}) {
@@ -750,7 +817,7 @@ class _IdentifyingAccessState extends State<IdentifyingAccess> {
               int? parsedInt = int.tryParse(inputText);
               if (parsedInt == null) {
                 print(
-                    "Error: Could not parse int in _showDialog with type $_type");
+                    "Error: Could not parse int in _showInputDialog with type $_type");
                 print("Invalid input: defaulting to null.");
               }
               setState(() {

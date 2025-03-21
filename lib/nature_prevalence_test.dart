@@ -724,6 +724,7 @@ class _NaturePrevalenceState extends State<NaturePrevalence> {
                 _animalData.removeWhere((animal) => animal.point == point);
                 setState(() {
                   _markers.removeWhere((marker) => marker.markerId == markerId);
+                  _deleteMode = false;
                 });
               }
             },
@@ -816,14 +817,14 @@ class _NaturePrevalenceState extends State<NaturePrevalence> {
                         mapType: _currentMapType, // Use current map type
                       ),
                     ),
-                    Align(
-                      alignment: Alignment.topRight,
-                      child: Padding(
-                        padding: const EdgeInsets.all(20.0),
-                        child: Column(
-                          spacing: 10,
-                          children: [
-                            DirectionsWidget(
+                    Padding(
+                      padding: const EdgeInsets.all(20.0),
+                      child: Column(
+                        spacing: 10,
+                        children: [
+                          Align(
+                            alignment: Alignment.topRight,
+                            child: DirectionsWidget(
                                 onTap: () {
                                   setState(() {
                                     _directionsVisible = !_directionsVisible;
@@ -831,14 +832,20 @@ class _NaturePrevalenceState extends State<NaturePrevalence> {
                                 },
                                 text: _directions,
                                 visibility: _directionsVisible),
-                            CircularIconMapButton(
+                          ),
+                          Align(
+                            alignment: Alignment.topRight,
+                            child: CircularIconMapButton(
                               backgroundColor: Colors.green,
                               borderColor: Color(0xFF2D6040),
                               onPressed: _toggleMapType,
                               icon: const Icon(Icons.map),
                             ),
-                            (!_polygonMode && !_pointMode)
-                                ? CircularIconMapButton(
+                          ),
+                          (!_polygonMode && !_pointMode)
+                              ? Align(
+                                  alignment: Alignment.topRight,
+                                  child: CircularIconMapButton(
                                     borderColor: Color(0xFF2D6040),
                                     onPressed: () {
                                       setState(() {
@@ -862,10 +869,10 @@ class _NaturePrevalenceState extends State<NaturePrevalence> {
                                           : Icons.delete,
                                       size: 30,
                                     ),
-                                  )
-                                : SizedBox(),
-                          ],
-                        ),
+                                  ),
+                                )
+                              : SizedBox(),
+                        ],
                       ),
                     ),
                     Align(
