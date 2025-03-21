@@ -440,20 +440,23 @@ class _IdentifyingAccessState extends State<IdentifyingAccess> {
                       ),
                     ),
                     SizedBox(height: 15),
-                    Text(
-                      'Access Type',
-                      style: TextStyle(
-                        fontSize: 16,
-                        fontWeight: FontWeight.bold,
-                        color: Colors.white,
+                    Center(
+                      child: Text(
+                        'Access Type',
+                        style: TextStyle(
+                          fontSize: 16,
+                          fontWeight: FontWeight.bold,
+                          color: Colors.white,
+                        ),
                       ),
                     ),
                     SizedBox(height: 5),
                     Row(
                       spacing: 10,
                       children: <Widget>[
+                        Flexible(child: Spacer(flex: 1)),
                         TestButton(
-                          flex: 3,
+                          flex: 6,
                           buttonText: 'Parking',
                           onPressed:
                               (_pointMode || _polygonMode || _polylineMode)
@@ -468,7 +471,7 @@ class _IdentifyingAccessState extends State<IdentifyingAccess> {
                                     },
                         ),
                         TestButton(
-                          flex: 3,
+                          flex: 6,
                           buttonText: 'Public Transport',
                           onPressed:
                               (_pointMode || _polygonMode || _polylineMode)
@@ -488,14 +491,15 @@ class _IdentifyingAccessState extends State<IdentifyingAccess> {
                                       );
                                     },
                         ),
-                        Flexible(flex: 1, child: SizedBox()),
+                        Flexible(child: Spacer(flex: 1)),
                       ],
                     ),
                     Row(
                       spacing: 10,
                       children: <Widget>[
+                        Flexible(child: Spacer(flex: 1)),
                         TestButton(
-                          flex: 3,
+                          flex: 6,
                           onPressed: (_pointMode ||
                                   _polygonMode ||
                                   _polylineMode)
@@ -517,7 +521,7 @@ class _IdentifyingAccessState extends State<IdentifyingAccess> {
                           buttonText: 'Bike or Scooter Rack',
                         ),
                         TestButton(
-                          flex: 3,
+                          flex: 6,
                           buttonText: 'Taxi or Rideshare',
                           onPressed:
                               (_pointMode || _polygonMode || _polylineMode)
@@ -531,7 +535,7 @@ class _IdentifyingAccessState extends State<IdentifyingAccess> {
                                       });
                                     },
                         ),
-                        Flexible(flex: 1, child: SizedBox()),
+                        Flexible(child: Spacer(flex: 1)),
                       ],
                     ),
                     SizedBox(height: 20),

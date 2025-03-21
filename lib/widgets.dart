@@ -590,7 +590,7 @@ class TestButton extends StatelessWidget {
           ),
         ),
         onPressed: onPressed,
-        child: Text(buttonText),
+        child: Center(child: Text(buttonText)),
       ),
     );
   }
