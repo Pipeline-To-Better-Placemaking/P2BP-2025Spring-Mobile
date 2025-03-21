@@ -412,7 +412,7 @@ class TestCard extends StatelessWidget {
                     Icons.chevron_right,
                     color: Colors.blue,
                   ),
-                  tooltip: 'Open team settings',
+                  tooltip: 'Open test',
                   onPressed: () {
                     Navigator.push(
                       context,

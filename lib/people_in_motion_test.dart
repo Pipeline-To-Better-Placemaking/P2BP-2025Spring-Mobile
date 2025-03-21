@@ -5,6 +5,7 @@ import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:p2bp_2025spring_mobile/firestore_functions.dart';
 import 'package:p2bp_2025spring_mobile/theme.dart';
+import 'package:p2bp_2025spring_mobile/widgets.dart';
 import 'google_maps_functions.dart';
 import 'package:p2bp_2025spring_mobile/db_schema_classes.dart';
 import 'package:p2bp_2025spring_mobile/people_in_motion_instructions.dart';
@@ -59,9 +60,12 @@ class _PeopleInMotionTestPageState extends State<PeopleInMotionTestPage> {
   /// [_confirmedPolylines].
   final Set<Marker> _confirmedPolylineEndMarkers = {};
 
+  final Set<Marker> _standingPointMarkers = {};
+
   final PeopleInMotionData _newData = PeopleInMotionData();
 
   // Custom marker icons
+  BitmapDescriptor? standingPointMarker;
   BitmapDescriptor? walkingConnector;
   BitmapDescriptor? runningConnector;
   BitmapDescriptor? swimmingConnector;
@@ -111,6 +115,12 @@ class _PeopleInMotionTestPageState extends State<PeopleInMotionTestPage> {
     final ImageConfiguration configuration =
         createLocalImageConfiguration(context);
     try {
+      standingPointMarker = await AssetMapBitmap.create(
+        configuration,
+        'assets/standing_point_disabled_marker.png',
+        width: 36,
+        height: 36,
+      );
       walkingConnector = await AssetMapBitmap.create(
         configuration,
         'assets/custom_icons/test_specific/people_in_motion/square_marker_teal.png',
@@ -149,10 +159,22 @@ class _PeopleInMotionTestPageState extends State<PeopleInMotionTestPage> {
       );
       setState(() {
         _customMarkersLoaded = true;
+        _buildStandingPointMarkers();
       });
       print("Custom markers loaded successfully.");
     } catch (e) {
       print("Error loading custom markers: $e");
+    }
+  }
+
+  void _buildStandingPointMarkers() {
+    for (final point in widget.activeTest.standingPoints) {
+      _standingPointMarkers.add(Marker(
+        markerId: MarkerId(point.toString()),
+        position: point.location,
+        icon: standingPointMarker!,
+        consumeTapEvents: true,
+      ));
     }
   }
 
@@ -390,6 +412,14 @@ class _PeopleInMotionTestPageState extends State<PeopleInMotionTestPage> {
 
   @override
   Widget build(BuildContext context) {
+    Set<Marker> visibleMarkers = {
+      ..._standingPointMarkers,
+      if (_tracingMarkers.isNotEmpty) ...{
+        _tracingMarkers.first,
+        _tracingMarkers.last,
+      },
+      ..._confirmedPolylineEndMarkers
+    };
     return SafeArea(
       child: Scaffold(
         extendBodyBehindAppBar: true,
@@ -466,257 +496,128 @@ class _PeopleInMotionTestPageState extends State<PeopleInMotionTestPage> {
             )
           ],
         ),
-        body: _buildBodyStack(context),
-        bottomSheet: (_isTracingMode) ? _buildTraceConfirmSheet() : null,
-      ),
-    );
-  }
-
-  Stack _buildBodyStack(BuildContext context) {
-    Set<Marker> visibleMarkers = {
-      if (_tracingMarkers.isNotEmpty) ...{
-        _tracingMarkers.first,
-        _tracingMarkers.last,
-      },
-      ..._confirmedPolylineEndMarkers
-    };
-    return Stack(
-      children: [
-        // Full-screen map with polylines.
-        GoogleMap(
-          onMapCreated: _onMapCreated,
-          initialCameraPosition: CameraPosition(
-            target: _location,
-            zoom: 14.0,
-          ),
-          markers: visibleMarkers,
-          polygons: _polygons,
-          polylines: {
-            ..._confirmedPolylines,
-            if (_tracingPolyline != null) _tracingPolyline!
-          },
-          onTap: (_isTracingMode) ? _handleMapTap : null,
-          mapType: _currentMapType,
-          myLocationButtonEnabled: false,
-          zoomControlsEnabled: false,
-        ),
-        if (_showErrorMessage)
-          Positioned(
-            bottom: 100.0,
-            left: 0,
-            right: 0,
-            child: Center(
-              child: Container(
-                padding: EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-                decoration: BoxDecoration(
-                  color: Colors.red.withValues(alpha: 0.9),
-                  borderRadius: BorderRadius.circular(8),
-                ),
-                child: const Text(
-                  'Please place points inside the boundary.',
-                  style: TextStyle(color: Colors.white, fontSize: 16),
-                ),
+        body: Stack(
+          children: [
+            // Full-screen map with polylines.
+            GoogleMap(
+              onMapCreated: _onMapCreated,
+              initialCameraPosition: CameraPosition(
+                target: _location,
+                zoom: 14.0,
               ),
-            ),
-          ),
-
-        // Buttons in top right corner of map below timer.
-        // Button for toggling map type.
-        Positioned(
-          top: MediaQuery.of(context).padding.top + kToolbarHeight + 8.0,
-          right: 20.0,
-          child: Container(
-            decoration: BoxDecoration(
-              shape: BoxShape.circle,
-              color: const Color(0xFF7EAD80).withValues(alpha: 0.9),
-              border: Border.all(color: Color(0xFF2D6040), width: 2),
-              boxShadow: [
-                BoxShadow(
-                  color: Colors.black26,
-                  blurRadius: 6.0,
-                  offset: Offset(0, 2),
-                ),
-              ],
-            ),
-            child: IconButton(
-              icon: Center(
-                child: Icon(Icons.layers, color: Color(0xFF2D6040)),
-              ),
-              onPressed: _toggleMapType,
-            ),
-          ),
-        ),
-        // Button for toggling instructions.
-        if (!_isLoading)
-          Positioned(
-            top: MediaQuery.of(context).padding.top + kToolbarHeight + 70.0,
-            right: 20,
-            child: Container(
-              decoration: BoxDecoration(
-                shape: BoxShape.circle,
-                color: Color(0xFFBACFEB).withValues(alpha: 0.9),
-                border: Border.all(color: Color(0xFF37597D), width: 2),
-                boxShadow: [
-                  BoxShadow(
-                    color: Colors.black26,
-                    blurRadius: 6.0,
-                    offset: Offset(0, 2),
-                  ),
-                ],
-              ),
-              child: IconButton(
-                icon: Icon(FontAwesomeIcons.info, color: Color(0xFF37597D)),
-                onPressed: _showInstructionOverlay,
-              ),
-            ),
-          ),
-        // Button for toggling points menu.
-        Positioned(
-          top: MediaQuery.of(context).padding.top + kToolbarHeight + 132.0,
-          right: 20.0,
-          child: Container(
-            decoration: BoxDecoration(
-              shape: BoxShape.circle,
-              color: Color(0xFFBD9FE4).withValues(alpha: 0.9),
-              border: Border.all(color: Color(0xFF5A3E85), width: 2),
-              boxShadow: [
-                BoxShadow(
-                  color: Colors.black26,
-                  blurRadius: 6.0,
-                  offset: Offset(0, 2),
-                ),
-              ],
-            ),
-            child: IconButton(
-              icon:
-                  Icon(FontAwesomeIcons.locationDot, color: Color(0xFF5A3E85)),
-              onPressed: () {
-                setState(() {
-                  _isPointsMenuVisible = !_isPointsMenuVisible;
-                });
+              markers: visibleMarkers,
+              polygons: _polygons,
+              polylines: {
+                ..._confirmedPolylines,
+                if (_tracingPolyline != null) _tracingPolyline!
               },
+              onTap: (_isTracingMode) ? _handleMapTap : null,
+              mapType: _currentMapType,
+              myLocationButtonEnabled: false,
+              zoomControlsEnabled: false,
             ),
-          ),
-        ),
-        // Button for activating tracing mode.
-        Positioned(
-          top: MediaQuery.of(context).padding.top + kToolbarHeight + 194.0,
-          right: 20.0,
-          child: Container(
-            decoration: BoxDecoration(
-              shape: BoxShape.circle,
-              color: Color(0xFFFF9800).withValues(alpha: 0.9),
-              border: Border.all(color: Color(0xFF8C2F00), width: 2),
-              boxShadow: [
-                BoxShadow(
-                  color: Colors.black26,
-                  blurRadius: 6.0,
-                  offset: Offset(0, 2),
+
+            if (_showErrorMessage) OutsideBoundsWarning(),
+            // Buttons in top right corner of map below timer.
+            // Button for toggling map type.
+            Positioned(
+              top: MediaQuery.of(context).padding.top + kToolbarHeight + 8.0,
+              right: 20.0,
+              child: CircularIconMapButton(
+                backgroundColor: const Color(0xFF7EAD80).withValues(alpha: 0.9),
+                borderColor: Color(0xFF2D6040),
+                onPressed: _toggleMapType,
+                icon: Center(
+                  child: Icon(Icons.layers, color: Color(0xFF2D6040)),
                 ),
-              ],
-            ),
-            child: IconButton(
-              icon: Icon(
-                FontAwesomeIcons.pen,
-                color: Color(0xFF8C2F00),
               ),
-              onPressed: _isTracingMode
-                  ? null
-                  : () {
+            ),
+            // Button for toggling instructions.
+            if (!_isLoading)
+              Positioned(
+                top: MediaQuery.of(context).padding.top + kToolbarHeight + 70.0,
+                right: 20,
+                child: CircularIconMapButton(
+                  backgroundColor: Color(0xFFBACFEB).withValues(alpha: 0.9),
+                  borderColor: Color(0xFF37597D),
+                  onPressed: _showInstructionOverlay,
+                  icon: Center(
+                    child: Icon(
+                      FontAwesomeIcons.info,
+                      color: Color(0xFF37597D),
+                    ),
+                  ),
+                ),
+              ),
+            // Button for toggling points menu.
+            Positioned(
+              top: MediaQuery.of(context).padding.top + kToolbarHeight + 132.0,
+              right: 20.0,
+              child: CircularIconMapButton(
+                backgroundColor: Color(0xFFBD9FE4).withValues(alpha: 0.9),
+                borderColor: Color(0xFF5A3E85),
+                onPressed: () {
+                  setState(() {
+                    _isPointsMenuVisible = !_isPointsMenuVisible;
+                  });
+                },
+                icon: Icon(
+                  FontAwesomeIcons.locationDot,
+                  color: Color(0xFF5A3E85),
+                ),
+              ),
+            ),
+            // Button for activating tracing mode.
+            Positioned(
+              top: MediaQuery.of(context).padding.top + kToolbarHeight + 194.0,
+              right: 20.0,
+              child: CircularIconMapButton(
+                backgroundColor: Color(0xFFFF9800).withValues(alpha: 0.9),
+                borderColor: Color(0xFF8C2F00),
+                onPressed: () {
+                  setState(() {
+                    _isTracingMode = !_isTracingMode;
+                    _tracingPoints.clear();
+                    _tracingMarkers.clear();
+                    _tracingPolyline = null;
+                  });
+                },
+                icon: Icon(
+                  FontAwesomeIcons.pen,
+                  color: Color(0xFF8C2F00),
+                ),
+              ),
+            ),
+            if (_isPointsMenuVisible)
+              Center(
+                child: Padding(
+                  padding: const EdgeInsets.all(20.0),
+                  child: DataEditMenu(
+                    title: 'Route Color Guide',
+                    colorLegendItems: [
+                      for (final type in ActivityTypeInMotion.values)
+                        ColorLegendItem(
+                          label: type.displayName,
+                          color: type.color,
+                        ),
+                    ],
+                    placedDataList: _buildPlacedPolylineList(),
+                    onPressedCloseMenu: () => setState(
+                        () => _isPointsMenuVisible = !_isPointsMenuVisible),
+                    onPressedClearAll: () {
                       setState(() {
-                        _isTracingMode = true;
-                        _tracingPoints.clear();
-                        _tracingMarkers.clear();
-                        _tracingPolyline = null;
+                        // Clear all confirmed polylines.
+                        _confirmedPolylineEndMarkers.clear();
+                        _confirmedPolylines.clear();
+                        _newData.persons.clear();
                       });
                     },
-            ),
-          ),
-        ),
-        if (_isPointsMenuVisible) _buildPointsMenu(context),
-      ],
-    );
-  }
-
-  Positioned _buildPointsMenu(BuildContext context) {
-    return Positioned(
-      bottom: 135.0,
-      left: 20.0,
-      right: 20.0,
-      child: Container(
-        // Set a fixed or dynamic height as needed.
-        height: MediaQuery.of(context).size.height * 0.5,
-        decoration: BoxDecoration(
-            color: Color(0xFFDDE6F2).withValues(alpha: 0.9),
-            borderRadius: BorderRadius.circular(20),
-            border: Border.all(
-              color: Color(0xFF2F6DCF),
-              width: 2,
-            )),
-        padding: EdgeInsets.only(bottom: 8),
-        child: Column(
-          children: [
-            Padding(
-              padding: const EdgeInsets.symmetric(vertical: 8.0),
-              child: Text(
-                "Route Color Guide",
-                textAlign: TextAlign.center,
-                style: TextStyle(
-                  fontSize: 18,
-                  fontWeight: FontWeight.bold,
-                ),
-              ),
-            ),
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 16.0),
-              child: activityColorsRow(),
-            ),
-            SizedBox(height: 16),
-            Divider(
-              height: 1,
-              thickness: 1.5,
-              color: Color(0xFF2F6DCF),
-            ),
-            Expanded(
-              child: _buildPlacedPolylineList(),
-            ),
-            // Bottom row with only a Clear All button.
-            UnconstrainedBox(
-              child: Container(
-                decoration: BoxDecoration(
-                  color: Color(0xFFD32F2F),
-                  borderRadius: BorderRadius.circular(10),
-                ),
-                child: TextButton(
-                  onPressed: () {
-                    setState(() {
-                      // Clear all confirmed polylines.
-                      _confirmedPolylineEndMarkers.clear();
-                      _confirmedPolylines.clear();
-                      _newData.persons.clear();
-                    });
-                  },
-                  style: TextButton.styleFrom(
-                    padding:
-                        const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
-                    tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                  ),
-                  child: Row(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: const [
-                      Text(
-                        'Clear All',
-                        style: TextStyle(color: Colors.white),
-                      ),
-                      SizedBox(width: 8),
-                      Icon(Icons.close, color: Colors.white),
-                    ],
                   ),
                 ),
               ),
-            ),
           ],
         ),
+        bottomSheet: (_isTracingMode) ? _buildTraceConfirmSheet() : null,
       ),
     );
   }

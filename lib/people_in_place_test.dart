@@ -4,6 +4,7 @@ import 'package:flutter/services.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:p2bp_2025spring_mobile/theme.dart';
+import 'package:p2bp_2025spring_mobile/widgets.dart';
 import 'google_maps_functions.dart';
 import 'package:p2bp_2025spring_mobile/firestore_functions.dart';
 import 'package:p2bp_2025spring_mobile/db_schema_classes.dart';
@@ -44,7 +45,6 @@ class _PeopleInPlaceTestPageState extends State<PeopleInPlaceTestPage> {
 
   final Set<Marker> _standingPointMarkers = {};
 
-  // List to store backend‑compatible logged data points.
   final PeopleInPlaceData _newData = PeopleInPlaceData();
 
   // Custom marker icons
@@ -513,7 +513,6 @@ class _PeopleInPlaceTestPageState extends State<PeopleInPlaceTestPage> {
         ),
         body: Stack(
           children: [
-            // Full-screen map.
             GoogleMap(
               onMapCreated: _onMapCreated,
               initialCameraPosition: CameraPosition(
@@ -527,249 +526,129 @@ class _PeopleInPlaceTestPageState extends State<PeopleInPlaceTestPage> {
               myLocationButtonEnabled: false,
               zoomControlsEnabled: false,
             ),
-            if (_showErrorMessage)
-              Positioned(
-                bottom: 100.0,
-                left: 0,
-                right: 0,
-                child: Center(
-                  child: Container(
-                    padding: EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-                    decoration: BoxDecoration(
-                      color: Colors.red.withValues(alpha: 0.9),
-                      borderRadius: BorderRadius.circular(8),
-                    ),
-                    child: Text(
-                      'Please place points inside the boundary.',
-                      style: TextStyle(color: Colors.white, fontSize: 16),
-                    ),
-                  ),
-                ),
-              ),
-            // Overlaid button for toggling map type.
+            if (_showErrorMessage) OutsideBoundsWarning(),
+            // Buttons in top right corner of map below timer.
+            // Button for toggling map type.
             Positioned(
               top: MediaQuery.of(context).padding.top + kToolbarHeight + 8.0,
               right: 20.0,
-              child: Container(
-                decoration: BoxDecoration(
-                  shape: BoxShape.circle,
-                  color: const Color(0xFF7EAD80).withValues(alpha: 0.9),
-                  border: Border.all(color: Color(0xFF2D6040), width: 2),
-                  boxShadow: [
-                    BoxShadow(
-                      color: Colors.black26,
-                      blurRadius: 6.0,
-                      offset: Offset(0, 2),
-                    ),
-                  ],
-                ),
-                child: IconButton(
-                  icon: Center(
-                    child: Icon(Icons.layers, color: Color(0xFF2D6040)),
-                  ),
-                  onPressed: _toggleMapType,
+              child: CircularIconMapButton(
+                backgroundColor: const Color(0xFF7EAD80).withValues(alpha: 0.9),
+                borderColor: Color(0xFF2D6040),
+                onPressed: _toggleMapType,
+                icon: Center(
+                  child: Icon(Icons.layers, color: Color(0xFF2D6040)),
                 ),
               ),
             ),
-            // Overlaid button for toggling instructions.
+            // Button for toggling instructions.
             if (!_isLoading)
               Positioned(
                 top: MediaQuery.of(context).padding.top + kToolbarHeight + 70.0,
                 right: 20,
-                child: Container(
-                  decoration: BoxDecoration(
-                    shape: BoxShape.circle,
-                    color: Color(0xFFBACFEB).withValues(alpha: 0.9),
-                    border: Border.all(color: Color(0xFF37597D), width: 2),
-                    boxShadow: [
-                      BoxShadow(
-                        color: Colors.black26,
-                        blurRadius: 6.0,
-                        offset: Offset(0, 2),
-                      ),
-                    ],
-                  ),
-                  child: IconButton(
-                    icon: Icon(FontAwesomeIcons.info, color: Color(0xFF37597D)),
-                    onPressed: _showInstructionOverlay,
+                child: CircularIconMapButton(
+                  backgroundColor: Color(0xFFBACFEB).withValues(alpha: 0.9),
+                  borderColor: Color(0xFF37597D),
+                  onPressed: _showInstructionOverlay,
+                  icon: Center(
+                    child: Icon(
+                      FontAwesomeIcons.info,
+                      color: Color(0xFF37597D),
+                    ),
                   ),
                 ),
               ),
-            // Overlaid button for toggling points menu.
+            // Button for toggling points menu.
             Positioned(
               top: MediaQuery.of(context).padding.top + kToolbarHeight + 132.0,
               right: 20.0,
-              child: Container(
-                decoration: BoxDecoration(
-                  shape: BoxShape.circle,
-                  color: Color(0xFFBD9FE4).withValues(alpha: 0.9),
-                  border: Border.all(color: Color(0xFF5A3E85), width: 2),
-                  boxShadow: [
-                    BoxShadow(
-                      color: Colors.black26,
-                      blurRadius: 6.0,
-                      offset: Offset(0, 2),
-                    ),
-                  ],
-                ),
-                child: IconButton(
-                  icon: Icon(FontAwesomeIcons.locationDot,
-                      color: Color(0xFF5A3E85)),
-                  onPressed: () {
-                    setState(() {
-                      _isPointsMenuVisible = !_isPointsMenuVisible;
-                    });
-                  },
+              child: CircularIconMapButton(
+                backgroundColor: Color(0xFFBD9FE4).withValues(alpha: 0.9),
+                borderColor: Color(0xFF5A3E85),
+                onPressed: () {
+                  setState(() {
+                    _isPointsMenuVisible = !_isPointsMenuVisible;
+                  });
+                },
+                icon: Icon(
+                  FontAwesomeIcons.locationDot,
+                  color: Color(0xFF5A3E85),
                 ),
               ),
             ),
             if (_isPointsMenuVisible)
-              Positioned(
-                bottom: 220.0,
-                left: 20.0,
-                right: 20.0,
-                child: Container(
-                  height: MediaQuery.of(context).size.height * 0.4,
-                  decoration: BoxDecoration(
-                    color: Color(0xFFDDE6F2).withValues(alpha: 0.9),
-                    borderRadius: BorderRadius.circular(20),
-                    border: Border.all(
-                      color: Color(0xFF2F6DCF),
-                      width: 2,
-                    ),
-                  ),
-                  padding: EdgeInsets.only(bottom: 8),
-                  child: Stack(
-                    children: [
-                      Align(
-                        // Slightly closer to center than topRight alignment.
-                        alignment: Alignment(0.95, -0.95),
-                        child: IconButton(
-                          onPressed: () => setState(() =>
-                              _isPointsMenuVisible = !_isPointsMenuVisible),
-                          icon: Icon(Icons.close_outlined),
-                          style: ButtonStyle(
-                            backgroundColor: WidgetStatePropertyAll(Colors.red),
-                            shape: WidgetStatePropertyAll(
-                              RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(10),
-                              ),
-                            ),
-                          ),
+              Center(
+                child: Padding(
+                  padding: const EdgeInsets.all(20.0),
+                  child: DataEditMenu(
+                    title: 'Marker Color Guide',
+                    colorLegendItems: [
+                      for (final type in PostureType.values)
+                        ColorLegendItem(
+                          label: type.displayName,
+                          color: type.color,
                         ),
-                      ),
-                      Column(
-                        children: [
-                          Padding(
-                            padding: const EdgeInsets.symmetric(vertical: 8.0),
-                            child: Text(
-                              "Marker Color Guide",
-                              textAlign: TextAlign.center,
-                              style: TextStyle(
-                                  fontSize: 18, fontWeight: FontWeight.bold),
-                            ),
-                          ),
-                          Padding(
-                            padding:
-                                const EdgeInsets.symmetric(horizontal: 16.0),
-                            child: activityColorsRow(),
-                          ),
-                          Divider(
-                            height: 20,
-                            thickness: 2,
-                            color: Color(0xFF2F6DCF),
-                          ),
-                          Expanded(
-                            child: ListView.builder(
-                              padding: EdgeInsets.zero,
-                              itemCount: _loggedPoints.length,
-                              itemBuilder: (context, index) {
-                                final point = _loggedPoints[index];
-                                return ListTile(
-                                  contentPadding: const EdgeInsets.symmetric(
-                                      horizontal: 20),
-                                  title: Text(
-                                    'Point ${index + 1}',
-                                    style: const TextStyle(
-                                        fontWeight: FontWeight.bold),
-                                  ),
-                                  subtitle: Text(
-                                    '${point.latitude.toStringAsFixed(4)}, ${point.longitude.toStringAsFixed(4)}',
-                                    textAlign: TextAlign.left,
-                                  ),
-                                  trailing: IconButton(
-                                    icon: const Icon(FontAwesomeIcons.trashCan,
-                                        color: Color(0xFFD32F2F)),
-                                    onPressed: () {
-                                      setState(() {
-                                        // Construct the markerId the same way it was created.
-                                        final markerId =
-                                            MarkerId(point.toString());
-                                        // Remove the marker from the markers set.
-                                        _markers.removeWhere((marker) =>
-                                            marker.markerId == markerId);
-                                        // Remove the point from data.
-                                        _newData.persons.removeWhere((person) {
-                                          return person.location ==
-                                              _loggedPoints[index];
-                                        });
-                                        // Remove the point from the list.
-                                        _loggedPoints.removeAt(index);
-                                      });
-                                    },
-                                  ),
-                                );
-                              },
-                            ),
-                          ),
-                          Row(
-                            mainAxisAlignment: MainAxisAlignment.center,
-                            children: [
-                              Container(
-                                decoration: BoxDecoration(
-                                  color: Color(0xFFD32F2F),
-                                  borderRadius: BorderRadius.circular(10),
-                                ),
-                                child: TextButton(
-                                  onPressed: () {
-                                    setState(() {
-                                      // Clear all logged points.
-                                      _loggedPoints.clear();
-                                      _newData.persons.clear();
-                                      // Remove all associated markers.
-                                      _markers.clear();
-                                    });
-                                  },
-                                  style: TextButton.styleFrom(
-                                    padding: const EdgeInsets.symmetric(
-                                        horizontal: 10, vertical: 8),
-                                    tapTargetSize:
-                                        MaterialTapTargetSize.shrinkWrap,
-                                  ),
-                                  child: Row(
-                                    mainAxisAlignment: MainAxisAlignment.center,
-                                    children: const [
-                                      Text(
-                                        'Clear All',
-                                        style: TextStyle(color: Colors.white),
-                                      ),
-                                      SizedBox(width: 8),
-                                      Icon(Icons.close, color: Colors.white),
-                                    ],
-                                  ),
-                                ),
-                              ),
-                            ],
-                          ),
-                        ],
-                      ),
                     ],
+                    placedDataList: _buildPlacedPointList(),
+                    onPressedCloseMenu: () => setState(
+                        () => _isPointsMenuVisible = !_isPointsMenuVisible),
+                    onPressedClearAll: () {
+                      setState(() {
+                        // Clear all logged points.
+                        _loggedPoints.clear();
+                        _newData.persons.clear();
+                        // Remove all associated markers.
+                        _markers.clear();
+                      });
+                    },
                   ),
                 ),
               ),
           ],
         ),
       ),
+    );
+  }
+
+  ListView _buildPlacedPointList() {
+    Map<PostureType, int> typeCounter = {};
+    return ListView.builder(
+      padding: EdgeInsets.zero,
+      itemCount: _newData.persons.length,
+      itemBuilder: (context, index) {
+        final person = _newData.persons[index];
+        // Increment this type's count
+        typeCounter.update(person.posture, (i) => i + 1, ifAbsent: () => 1);
+
+        return ListTile(
+          contentPadding: const EdgeInsets.symmetric(horizontal: 20),
+          title: Text(
+            '${person.posture.displayName} Person ${typeCounter[person.posture]}',
+            style: const TextStyle(fontWeight: FontWeight.bold),
+          ),
+          subtitle: Text(
+            '${person.location.latitude.toStringAsFixed(4)}, '
+            '${person.location.longitude.toStringAsFixed(4)}',
+            textAlign: TextAlign.left,
+          ),
+          trailing: IconButton(
+            icon:
+                const Icon(FontAwesomeIcons.trashCan, color: Color(0xFFD32F2F)),
+            onPressed: () {
+              setState(() {
+                // Construct the markerId the same way it was created.
+                final markerId = MarkerId(person.location.toString());
+                // Remove the marker from the markers set.
+                _markers.removeWhere((marker) => marker.markerId == markerId);
+                // Remove the point from data.
+                _newData.persons.removeAt(index);
+                // Remove the point from the list.
+                _loggedPoints.removeWhere((point) => point == person.location);
+              });
+            },
+          ),
+        );
+      },
     );
   }
 }

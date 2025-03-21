@@ -2331,15 +2331,16 @@ enum ActivityTypeInPlace implements DisplayNameEnum {
 }
 
 enum PostureType implements DisplayNameEnum {
-  standing(displayName: 'Standing'),
-  sitting(displayName: 'Sitting'),
-  layingDown(displayName: 'Laying Down'),
-  squatting(displayName: 'Squatting');
+  standing(displayName: 'Standing', color: Color(0xFF4285f4)),
+  sitting(displayName: 'Sitting', color: Color(0xFF28a745)),
+  layingDown(displayName: 'Laying Down', color: Color(0xFFc41484)),
+  squatting(displayName: 'Squatting', color: Color(0xFF6f42c1));
 
-  const PostureType({required this.displayName});
+  const PostureType({required this.displayName, required this.color});
 
   @override
   final String displayName;
+  final Color color;
 
   /// Returns the enumerated type with the matching displayName.
   factory PostureType.byDisplayName(String displayName) {
@@ -2630,6 +2631,8 @@ class PeopleInMotionTest extends Test<PeopleInMotionData> with JsonToString {
   /// Static constant definition of collection ID for this test type.
   static const String collectionIDStatic = 'people_in_motion_tests';
 
+  final List<StandingPoint> standingPoints;
+
   /// Private constructor for PeopleInMotionTest.
   PeopleInMotionTest._({
     required super.title,
@@ -2638,6 +2641,7 @@ class PeopleInMotionTest extends Test<PeopleInMotionData> with JsonToString {
     required super.projectRef,
     required super.collectionID,
     required super.data,
+    required this.standingPoints,
     super.creationTime,
     super.maxResearchers,
     super.isComplete,
@@ -2661,6 +2665,7 @@ class PeopleInMotionTest extends Test<PeopleInMotionData> with JsonToString {
           projectRef: projectRef,
           collectionID: collectionID,
           data: PeopleInMotionData(),
+          standingPoints: (standingPoints as List<StandingPoint>?) ?? [],
         );
     // Register for recreating from Firestore
     Test._recreateTestConstructors[collectionIDStatic] = (testDoc) {
@@ -2684,6 +2689,7 @@ class PeopleInMotionTest extends Test<PeopleInMotionData> with JsonToString {
           );
       await testRef.set(test as PeopleInMotionTest, SetOptions(merge: true));
     };
+    Test._standingPointTestCollectionIDs.add(collectionIDStatic);
   }
 
   /// Handles data submission to Firestore when the test is completed.
@@ -2717,6 +2723,7 @@ class PeopleInMotionTest extends Test<PeopleInMotionData> with JsonToString {
       creationTime: doc['creationTime'],
       maxResearchers: doc['maxResearchers'],
       isComplete: doc['isComplete'],
+      standingPoints: StandingPoint.fromJsonList(doc['standingPoints']),
     );
   }
 
@@ -2731,6 +2738,7 @@ class PeopleInMotionTest extends Test<PeopleInMotionData> with JsonToString {
       'creationTime': creationTime,
       'maxResearchers': maxResearchers,
       'isComplete': isComplete,
+      'standingPoints': StandingPoint.toJsonList(standingPoints),
     };
   }
 }

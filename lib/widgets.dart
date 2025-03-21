@@ -362,3 +362,227 @@ class DialogTextBox extends StatelessWidget {
     );
   }
 }
+
+/// Circular button used on top of `GoogleMap` widget.
+class CircularIconMapButton extends StatelessWidget {
+  final Color backgroundColor;
+  final Color borderColor;
+  final Widget icon;
+  final void Function() onPressed;
+
+  const CircularIconMapButton({
+    super.key,
+    required this.backgroundColor,
+    required this.borderColor,
+    required this.onPressed,
+    required this.icon,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      decoration: BoxDecoration(
+        shape: BoxShape.circle,
+        color: backgroundColor,
+        border: Border.all(color: borderColor, width: 2),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black26,
+            blurRadius: 6.0,
+            offset: Offset(0, 2),
+          ),
+        ],
+      ),
+      child: IconButton(
+        icon: icon,
+        onPressed: onPressed,
+      ),
+    );
+  }
+}
+
+/// Warning used when point placed outside project polygon on test.
+class OutsideBoundsWarning extends StatelessWidget {
+  const OutsideBoundsWarning({
+    super.key,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Positioned(
+      bottom: 100.0,
+      left: 0,
+      right: 0,
+      child: Center(
+        child: Container(
+          padding: EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+          decoration: BoxDecoration(
+            color: Colors.red.withValues(alpha: 0.9),
+            borderRadius: BorderRadius.circular(8),
+          ),
+          child: const Text(
+            'Please place points inside the boundary.',
+            style: TextStyle(color: Colors.white, fontSize: 16),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+/// A row with a small circle of [color] followed by [Text(label)].
+class ColorLegendItem extends StatelessWidget {
+  final String label;
+  final Color color;
+
+  const ColorLegendItem({
+    super.key,
+    required this.label,
+    required this.color,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Container(
+          width: 20,
+          height: 20,
+          decoration: BoxDecoration(
+            color: color,
+            shape: BoxShape.circle,
+          ),
+        ),
+        SizedBox(width: 4),
+        Text(label, style: TextStyle(fontSize: 14)),
+      ],
+    );
+  }
+}
+
+/// Template for menu used for viewing a list of placed data
+/// elements in a test and optionally removing some or all of them.
+class DataEditMenu extends StatelessWidget {
+  /// Multiplier of height of context used for overall container height.
+  /// Should be a value between 0 and 1 inclusive (probably not 0).
+  final double? heightMultiplier;
+  final String title;
+  final List<Widget> colorLegendItems;
+  final ListView placedDataList;
+
+  /// Callback used with 'X' button in top right corner. Intended to
+  /// close/make invisible this menu.
+  final void Function() onPressedCloseMenu;
+
+  /// Callback used with 'Clear All' button at bottom of menu.
+  /// Intended to delete all placed data elements in the list.
+  final void Function() onPressedClearAll;
+
+  const DataEditMenu({
+    super.key,
+    this.heightMultiplier,
+    required this.title,
+    required this.colorLegendItems,
+    required this.placedDataList,
+    required this.onPressedCloseMenu,
+    required this.onPressedClearAll,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      height: MediaQuery.of(context).size.height * (heightMultiplier ?? 0.5),
+      decoration: BoxDecoration(
+        color: Color(0xFFDDE6F2).withValues(alpha: 0.9),
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(
+          color: Color(0xFF2F6DCF),
+          width: 2,
+        ),
+      ),
+      padding: EdgeInsets.only(bottom: 8),
+      child: Stack(
+        children: [
+          Align(
+            // Slightly closer to center than topRight alignment.
+            alignment: Alignment(0.95, -0.95),
+            child: IconButton(
+              onPressed: onPressedCloseMenu,
+              icon: Icon(Icons.close_outlined),
+              style: ButtonStyle(
+                backgroundColor: WidgetStatePropertyAll(Colors.red),
+                shape: WidgetStatePropertyAll(
+                  RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(10),
+                  ),
+                ),
+              ),
+            ),
+          ),
+          Column(
+            children: [
+              const SizedBox(height: 8),
+              Text(
+                title,
+                textAlign: TextAlign.center,
+                style: TextStyle(
+                  fontSize: 18,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+              const SizedBox(height: 8),
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 28.0),
+                child: Wrap(
+                  spacing: 16,
+                  runSpacing: 8,
+                  children: colorLegendItems,
+                ),
+              ),
+              SizedBox(height: 8),
+              Divider(
+                thickness: 2,
+                color: Color(0xFF2F6DCF),
+              ),
+              SizedBox(height: 8),
+              Expanded(
+                child: placedDataList,
+              ),
+              // Bottom row with only a Clear All button.
+              UnconstrainedBox(
+                child: Container(
+                  decoration: BoxDecoration(
+                    color: Color(0xFFD32F2F),
+                    borderRadius: BorderRadius.circular(10),
+                  ),
+                  child: TextButton(
+                    onPressed: onPressedClearAll,
+                    style: TextButton.styleFrom(
+                      padding: const EdgeInsets.symmetric(
+                        vertical: 8,
+                        horizontal: 10,
+                      ),
+                      tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                    ),
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: const [
+                        Text(
+                          'Clear All',
+                          style: TextStyle(color: Colors.white),
+                        ),
+                        SizedBox(width: 8),
+                        Icon(Icons.close, color: Colors.white),
+                      ],
+                    ),
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+}

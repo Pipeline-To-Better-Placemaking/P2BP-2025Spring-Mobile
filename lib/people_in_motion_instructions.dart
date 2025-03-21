@@ -231,32 +231,3 @@ Widget legendItem(IconData icon, String label, Color buttonColor,
     ),
   );
 }
-
-Widget activityColorsRow() {
-  return Wrap(
-    spacing: 16,
-    runSpacing: 8,
-    children: [
-      for (final type in ActivityTypeInMotion.values)
-        buildActivityColorItem(type.displayName, type.color),
-    ],
-  );
-}
-
-Widget buildActivityColorItem(String label, Color color) {
-  return Row(
-    mainAxisSize: MainAxisSize.min,
-    children: [
-      Container(
-        width: 20,
-        height: 20,
-        decoration: BoxDecoration(
-          color: color,
-          shape: BoxShape.circle,
-        ),
-      ),
-      SizedBox(width: 4),
-      Text(label, style: TextStyle(fontSize: 14)),
-    ],
-  );
-}

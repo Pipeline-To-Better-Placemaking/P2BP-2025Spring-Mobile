@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
-import 'package:google_maps_flutter/google_maps_flutter.dart';
 
 Widget peopleInPlaceInstructions() {
   return RichText(
@@ -192,36 +191,5 @@ Widget legendItem(IconData icon, String label, Color buttonColor,
         ),
       ],
     ),
-  );
-}
-
-Widget activityColorsRow() {
-  return Wrap(
-    spacing: 16,
-    runSpacing: 8,
-    children: [
-      buildActivityColorItem("Standing", Color(0xFF4285f4)),
-      buildActivityColorItem("Sitting", Color(0xFF28a745)),
-      buildActivityColorItem("Laying Down", Color(0xFFc41484)),
-      buildActivityColorItem("Squatting", Color(0xFF6f42c1)),
-    ],
-  );
-}
-
-Widget buildActivityColorItem(String label, Color color) {
-  return Row(
-    mainAxisSize: MainAxisSize.min,
-    children: [
-      Container(
-        width: 20,
-        height: 20,
-        decoration: BoxDecoration(
-          color: color,
-          shape: BoxShape.circle,
-        ),
-      ),
-      SizedBox(width: 4),
-      Text(label, style: TextStyle(fontSize: 14)),
-    ],
   );
 }
