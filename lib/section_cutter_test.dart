@@ -13,7 +13,7 @@ import 'home_screen.dart';
 
 class SectionCutter extends StatefulWidget {
   final Project projectData;
-  final SectionCutterTest? activeTest;
+  final SectionCutterTest activeTest;
 
   /// IMPORTANT: When navigating to this page, pass in project details. The
   /// project details page already contains project info, so you should use
@@ -66,10 +66,10 @@ class _SectionCutterState extends State<SectionCutter> {
     setState(() {
       _polygons = getProjectPolygon(widget.projectData.polygonPoints);
       _location = getPolygonCentroid(_polygons.first);
-      // Take some lattitude away to center considering bottom sheet.
+      // Take some latitude away to center considering bottom sheet.
       _location = LatLng(_location.latitude * .999999, _location.longitude);
       // TODO: dynamic zooming
-      _sectionPoints = widget.activeTest!.linePoints.toLatLngList();
+      _sectionPoints = widget.activeTest.linePoints;
       _polyline = {
         Polyline(
           polylineId:
@@ -122,8 +122,6 @@ class _SectionCutterState extends State<SectionCutter> {
                         onMapCreated: _onMapCreated,
                         initialCameraPosition:
                             CameraPosition(target: _location, zoom: _zoom),
-                        cameraTargetBounds: CameraTargetBounds(
-                            getLatLngBounds(_polyline.single.points)),
                         polygons: _polygons,
                         polylines: _polyline,
                         mapType: _currentMapType, // Use current map type

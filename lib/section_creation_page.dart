@@ -26,7 +26,7 @@ class _SectionCreationPageState extends State<SectionCreationPage> {
   Set<Marker> _markers = {}; // Set of markers for points
   MapType _currentMapType = MapType.satellite; // Default map type
   Project? project;
-  Set<Polyline> _polyline = {};
+  Polyline? _polyline;
   LatLng? _currentPoint;
   bool _sectionSet = false;
 
@@ -46,19 +46,19 @@ class _SectionCreationPageState extends State<SectionCreationPage> {
       _location = LatLng(_location.latitude * .999999, _location.longitude);
       // TODO: dynamic zooming
       if (widget.currentSection != null) {
-        final List? currentSection = widget.currentSection;
+        final List currentSection = widget.currentSection!;
         _loadCurrentSection(currentSection);
       }
       _isLoading = false;
     });
   }
 
-  void _loadCurrentSection(List? currentSection) {
+  void _loadCurrentSection(List currentSection) {
     final Polyline? polyline =
-        createPolyline(currentSection!.toLatLngList(), Colors.green[600]!);
+        createPolyline(currentSection.toLatLngList(), Colors.green[600]!);
     if (polyline == null) return;
     setState(() {
-      _polyline = {polyline};
+      _polyline = polyline;
     });
   }
 
@@ -85,7 +85,7 @@ class _SectionCreationPageState extends State<SectionCreationPage> {
           createPolyline([_currentPoint!, point], Colors.green[600]!);
       if (polyline == null) return;
       if (_markers.length == 2) _markers = {};
-      _polyline = {polyline};
+      _polyline = polyline;
       _sectionSet = true;
       _directions =
           'Section set. Click confirm to save, or delete and start over.';
@@ -132,7 +132,7 @@ class _SectionCreationPageState extends State<SectionCreationPage> {
                           initialCameraPosition:
                               CameraPosition(target: _location, zoom: 14.0),
                           polygons: _polygons,
-                          polylines: _polyline,
+                          polylines: {if (_polyline != null) _polyline!},
                           markers: _markers,
                           mapType: _currentMapType, // Use current map type
                           onTap: _polylineTap,
@@ -183,7 +183,7 @@ class _SectionCreationPageState extends State<SectionCreationPage> {
                                 setState(() {
                                   _markers = {};
                                   _currentPoint = null;
-                                  _polyline = {};
+                                  _polyline = null;
                                   _sectionSet = false;
                                   _directions =
                                       "Create your section by marking two points. Then click the check to confirm.";
@@ -235,11 +235,7 @@ class _SectionCreationPageState extends State<SectionCreationPage> {
                                           _isLoading = true;
                                         });
                                         Navigator.pop(
-                                            context,
-                                            _polyline.isEmpty
-                                                ? null
-                                                : _polyline.single.points
-                                                    .toGeoPointList());
+                                            context, _polyline?.points);
                                       } catch (e, stacktrace) {
                                         print(
                                             "Exception in confirming section (section_creation_point.dart): $e");

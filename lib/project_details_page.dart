@@ -8,6 +8,7 @@ import 'package:flutter/services.dart';
 import 'package:p2bp_2025spring_mobile/create_test_form.dart';
 import 'package:p2bp_2025spring_mobile/theme.dart';
 import 'firestore_functions.dart';
+import 'package:p2bp_2025spring_mobile/acoustic_profile_test.dart';
 
 class ProjectDetailsPage extends StatefulWidget {
   final Project projectData;
@@ -212,8 +213,22 @@ class _ProjectDetailsPageState extends State<ProjectDetailsPage> {
                           // foregroundColor: foregroundColor,
                           backgroundColor: Colors.black,
                         ),
-                        onPressed: () => {
+                        onPressed: () {
                           // TODO: Function
+                          // Create a dummy test instance (replace with a valid dummy if needed)
+                          final dummyAcousticTest = {
+                            'collectionID': 'acoustic_profile_tests',
+                            'testID': 'dummy_test_id'
+                          };
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                                builder: (context) => AcousticProfileTestPage(
+                                      activeProject: widget.projectData,
+                                      activeTest:
+                                          dummyAcousticTest, // dummy data for testing navigation
+                                    )),
+                          );
                         },
                         label: Text('View Project Area'),
                         icon: Icon(Icons.location_on),
@@ -223,6 +238,7 @@ class _ProjectDetailsPageState extends State<ProjectDetailsPage> {
                   ),
                 ),
               ),
+              SizedBox(height: 30),
               SizedBox(height: 30),
               Padding(
                 padding: const EdgeInsets.symmetric(
@@ -355,6 +371,8 @@ const Map<Type, String> _testInitialsMap = {
   SpatialBoundariesTest: 'SB',
   SectionCutterTest: 'SC',
   IdentifyingAccessTest: 'IA',
+  PeopleInPlaceTest: 'PP',
+  PeopleInMotionTest: 'PM',
   NaturePrevalenceTest: 'NP',
 };
 
@@ -394,7 +412,7 @@ class TestCard extends StatelessWidget {
                     Icons.chevron_right,
                     color: Colors.blue,
                   ),
-                  tooltip: 'Open team settings',
+                  tooltip: 'Open test',
                   onPressed: () {
                     Navigator.push(
                       context,
