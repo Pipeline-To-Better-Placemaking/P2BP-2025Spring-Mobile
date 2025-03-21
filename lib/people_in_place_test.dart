@@ -524,7 +524,6 @@ class _PeopleInPlaceTestPageState extends State<PeopleInPlaceTestPage> {
               onTap: _handleMapTap,
               mapType: _currentMapType,
               myLocationButtonEnabled: false,
-              zoomControlsEnabled: false,
             ),
             if (_showErrorMessage) OutsideBoundsWarning(),
             // Buttons in top right corner of map below timer.

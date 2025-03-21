@@ -16,7 +16,7 @@ import 'package:p2bp_2025spring_mobile/acoustic_instructions.dart'; // for _show
 /// measurements at fixed intervals.
 class AcousticProfileTestPage extends StatefulWidget {
   final Project activeProject;
-  final dynamic activeTest;
+  final AcousticProfileTest activeTest;
 
   const AcousticProfileTestPage({
     super.key,
@@ -174,7 +174,7 @@ class _AcousticProfileTestPageState extends State<AcousticProfileTestPage> {
     Set<Marker> markers = {};
     for (int i = 0; i < points.length; i++) {
       final Map point = points[i];
-      final markerId = MarkerId('standing_point_$i');
+      final markerId = MarkerId(point.toString());
 
       // Choose the appropriate icon for this standing point based on its state:
       // - Use completedIcon if the measurement for this point is complete.
@@ -693,10 +693,10 @@ class _AcousticProfileTestPageState extends State<AcousticProfileTestPage> {
 
     // Construct an AcousticMeasurement using the collected data.
     final measurement = AcousticMeasurement(
-      decibel: decibel,
+      decibels: decibel,
       soundTypes: selectedSoundTypes,
       mainSoundType: mainSoundType ?? '',
-      timestamp: DateTime.now(),
+      other: '',
     );
     // Use the selected standing point index, defaulting to 0 if none is selected.
     int index = _selectedStandingPointIndex ?? 0;
@@ -735,7 +735,7 @@ class _AcousticProfileTestPageState extends State<AcousticProfileTestPage> {
     _measurementsPerPoint.forEach((index, measurements) {
       if (measurements.isNotEmpty) {
         final avgDecibel =
-            measurements.map((m) => m.decibel).reduce((a, b) => a + b) /
+            measurements.map((m) => m.decibels).reduce((a, b) => a + b) /
                 measurements.length;
         final scaleFactor = 10;
         final circleRadius = avgDecibel * scaleFactor;

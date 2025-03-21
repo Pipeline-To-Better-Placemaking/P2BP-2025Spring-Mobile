@@ -514,7 +514,6 @@ class _PeopleInMotionTestPageState extends State<PeopleInMotionTestPage> {
               onTap: (_isTracingMode) ? _handleMapTap : null,
               mapType: _currentMapType,
               myLocationButtonEnabled: false,
-              zoomControlsEnabled: false,
             ),
 
             if (_showErrorMessage) OutsideBoundsWarning(),

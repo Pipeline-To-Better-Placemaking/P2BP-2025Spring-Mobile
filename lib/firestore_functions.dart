@@ -100,7 +100,7 @@ Future<Project> saveProject({
       'team': teamRef,
       'description': description,
       'polygonPoints': polygonPoints.toGeoPointList(),
-      'standingPoints': StandingPoint.toJsonList(standingPoints),
+      'standingPoints': standingPoints.toJsonList(),
       'polygonArea': polygonArea,
       'tests': [],
     });
