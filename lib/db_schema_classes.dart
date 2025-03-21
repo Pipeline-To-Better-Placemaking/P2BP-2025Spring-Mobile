@@ -1544,9 +1544,6 @@ class IdentifyingAccessTest extends Test<AccessData> {
   /// Static constant definition of collection ID for this test type.
   static const String collectionIDStatic = 'identifying_access_tests';
 
-  /// TODO: Remove temporary list of standing points for testing purposes
-  final List<StandingPoint> standingPoints;
-
   /// Creates a new [IdentifyingAccessTest] instance from the given arguments.
   IdentifyingAccessTest._({
     required super.title,
@@ -1555,7 +1552,6 @@ class IdentifyingAccessTest extends Test<AccessData> {
     required super.projectRef,
     required super.collectionID,
     required super.data,
-    required this.standingPoints,
     super.creationTime,
     super.maxResearchers,
     super.isComplete,
@@ -1579,7 +1575,6 @@ class IdentifyingAccessTest extends Test<AccessData> {
           projectRef: projectRef,
           collectionID: collectionID,
           data: newInitialDataDeepCopy(),
-          standingPoints: (standingPoints as List<StandingPoint>?) ?? [],
         );
     // Register for recreating a Identifying Access Test from Firestore
     Test._recreateTestConstructors[collectionIDStatic] = (testDoc) {
@@ -1594,7 +1589,6 @@ class IdentifyingAccessTest extends Test<AccessData> {
         creationTime: testDoc['creationTime'],
         maxResearchers: testDoc['maxResearchers'],
         isComplete: testDoc['isComplete'],
-        standingPoints: testDoc['standingPoints'],
       );
     };
     // Register for building a Identifying Access Test page
@@ -1614,10 +1608,8 @@ class IdentifyingAccessTest extends Test<AccessData> {
         'creationTime': test.creationTime,
         'maxResearchers': test.maxResearchers,
         'isComplete': false,
-        'standingPoints': (test as IdentifyingAccessTest).standingPoints,
       }, SetOptions(merge: true));
     };
-    Test._standingPointTestCollectionIDs.add(collectionIDStatic);
   }
 
   @override
