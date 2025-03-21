@@ -2289,7 +2289,7 @@ class NaturePrevalenceTest extends Test<NatureData> {
       output.animals = animalList;
       output.vegetation = vegetationList;
       output.waterBodies = waterBodyList;
-      if (weatherData != null) {
+      if (weatherData == null) {
         throw Exception(
             "Weather is not defined in Firestore in Nature Prevalence test .");
       } else {
