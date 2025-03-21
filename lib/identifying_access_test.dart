@@ -451,82 +451,86 @@ class _IdentifyingAccessState extends State<IdentifyingAccess> {
                     Row(
                       spacing: 10,
                       children: <Widget>[
-                        Flexible(
-                          flex: 4,
-                          child: buildTestButton(
-                            onPressed: (BuildContext context) {
-                              _showDialog(
-                                text: 'How Many Bikes/Scooters Can Fit?',
-                                hintText: 'Enter number of spots.',
-                                onNext: () {
-                                  setState(() {
-                                    _type = AccessType.bikeRack;
-                                    _polylineMode = true;
-                                    _directions =
-                                        "Mark the spot of the bike/scooter rack. Then define the path to the project area.";
-                                  });
-                                },
-                              );
-                            },
-                            context: context,
-                            text: 'Bike or Scooter Rack',
-                          ),
+                        TestButton(
+                          flex: 3,
+                          buttonText: 'Parking',
+                          onPressed:
+                              (_pointMode || _polygonMode || _polylineMode)
+                                  ? null
+                                  : () {
+                                      setState(() {
+                                        _type = AccessType.parking;
+                                        _polygonMode = true;
+                                        _directions =
+                                            'First, define the parking area by creating a polygon.';
+                                      });
+                                    },
                         ),
-                        Flexible(
-                          flex: 2,
-                          child: buildTestButton(
-                            text: 'Parking',
-                            context: context,
-                            onPressed: (BuildContext context) {
-                              setState(() {
-                                _type = AccessType.parking;
-                                _polygonMode = true;
-                                _directions =
-                                    'First, define the parking area by creating a polygon.';
-                              });
-                            },
-                          ),
+                        TestButton(
+                          flex: 3,
+                          buttonText: 'Public Transport',
+                          onPressed:
+                              (_pointMode || _polygonMode || _polylineMode)
+                                  ? null
+                                  : () {
+                                      _showDialog(
+                                        text: 'Enter the Route Number',
+                                        hintText: 'Route Number',
+                                        onNext: () {
+                                          setState(() {
+                                            _type = AccessType.transportStation;
+                                            _polylineMode = true;
+                                            _directions =
+                                                "Mark the spot of the transport station. Then define the path to the project area.";
+                                          });
+                                        },
+                                      );
+                                    },
                         ),
-                        Flexible(
-                          flex: 4,
-                          child: buildTestButton(
-                            text: 'Public Transport',
-                            context: context,
-                            onPressed: (BuildContext context) {
-                              _showDialog(
-                                text: 'Enter the Route Number',
-                                hintText: 'Route Number',
-                                onNext: () {
-                                  setState(() {
-                                    _type = AccessType.transportStation;
-                                    _polylineMode = true;
-                                    _directions =
-                                        "Mark the spot of the transport station. Then define the path to the project area.";
-                                  });
-                                },
-                              );
-                            },
-                          ),
-                        ),
-                        Flexible(flex: 0, child: SizedBox())
+                        Flexible(flex: 1, child: SizedBox()),
                       ],
                     ),
                     Row(
+                      spacing: 10,
                       children: <Widget>[
-                        Flexible(
-                          flex: 2,
-                          child: buildTestButton(
-                              context: context,
-                              text: 'Taxi or Rideshare',
-                              onPressed: (BuildContext context) {
-                                setState(() {
-                                  _type = AccessType.taxiAndRideShare;
-                                  _polylineMode = true;
-                                  _directions =
-                                      'Mark a point where the taxi dropped off. Then make a line to denote the path to the project area.';
-                                });
-                              }),
+                        TestButton(
+                          flex: 3,
+                          onPressed: (_pointMode ||
+                                  _polygonMode ||
+                                  _polylineMode)
+                              ? null
+                              : () {
+                                  _showDialog(
+                                    text: 'How Many Bikes/Scooters Can Fit?',
+                                    hintText: 'Enter number of spots.',
+                                    onNext: () {
+                                      setState(() {
+                                        _type = AccessType.bikeRack;
+                                        _polylineMode = true;
+                                        _directions =
+                                            "Mark the spot of the bike/scooter rack. Then define the path to the project area.";
+                                      });
+                                    },
+                                  );
+                                },
+                          buttonText: 'Bike or Scooter Rack',
                         ),
+                        TestButton(
+                          flex: 3,
+                          buttonText: 'Taxi or Rideshare',
+                          onPressed:
+                              (_pointMode || _polygonMode || _polylineMode)
+                                  ? null
+                                  : () {
+                                      setState(() {
+                                        _type = AccessType.taxiAndRideShare;
+                                        _polylineMode = true;
+                                        _directions =
+                                            'Mark a point where the taxi dropped off. Then make a line to denote the path to the project area.';
+                                      });
+                                    },
+                        ),
+                        Flexible(flex: 1, child: SizedBox()),
                       ],
                     ),
                     SizedBox(height: 20),
@@ -708,27 +712,6 @@ class _IdentifyingAccessState extends State<IdentifyingAccess> {
           ],
         );
       },
-    );
-  }
-
-  FilledButton buildTestButton(
-      {required BuildContext context,
-      required String text,
-      required Function(BuildContext) onPressed}) {
-    return FilledButton(
-      style: FilledButton.styleFrom(
-        padding: const EdgeInsets.only(left: 15, right: 15),
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(10.0),
-        ),
-        foregroundColor: Colors.black,
-        backgroundColor: Colors.white,
-        iconColor: Colors.black,
-        disabledBackgroundColor: disabledGrey,
-      ),
-      onPressed:
-          (_polylineMode || _polygonMode) ? null : () => onPressed(context),
-      child: Text(text),
     );
   }
 }

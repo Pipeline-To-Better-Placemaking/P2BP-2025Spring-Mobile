@@ -557,12 +557,12 @@ class VisibilitySwitch extends StatelessWidget {
   }
 }
 
-/// Test button used for test bottom sheets.
-///
-/// Takes a [buttonText] parameter for the button text and [onPressed]
-/// parameter for the function. Takes an optional [flex] parameter for flex of
-/// button. Defaults to a flex of 1 if null.
 class TestButton extends StatelessWidget {
+  /// Test button used for test bottom sheets.
+  ///
+  /// Takes a [buttonText] parameter for the button text and [onPressed]
+  /// parameter for the function. Takes an optional [flex] parameter for flex of
+  /// button. Defaults to a flex of 1 if null.
   const TestButton({
     this.flex,
     this.backgroundColor,
@@ -584,6 +584,7 @@ class TestButton extends StatelessWidget {
         style: FilledButton.styleFrom(
           backgroundColor: backgroundColor ?? Colors.white,
           foregroundColor: Colors.black,
+          disabledBackgroundColor: disabledGrey,
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(10.0),
           ),
