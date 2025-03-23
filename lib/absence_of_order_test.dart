@@ -647,7 +647,7 @@ class _MaintenanceDescriptionFormState
     'Unkept Landscape',
   ];
   final List<String> _selectedTypes = [];
-  bool _otherSelected = false;
+  bool _isOtherSelected = false;
   final TextEditingController _otherTextController = TextEditingController();
 
   /// Validates the form and if successful pops this Modal Sheet and
@@ -787,7 +787,7 @@ class _MaintenanceDescriptionFormState
                       flex: 2,
                       child: TextFormField(
                         key: _formFieldKey,
-                        enabled: _otherSelected,
+                        enabled: _isOtherSelected,
                         controller: _otherTextController,
                         decoration: InputDecoration(
                           filled: true,
@@ -797,7 +797,7 @@ class _MaintenanceDescriptionFormState
                         ),
                         validator: (value) {
                           // If other button was selected verify text box is not empty
-                          if (_otherSelected &&
+                          if (_isOtherSelected &&
                               (value == null || value.isEmpty)) {
                             return 'Please describe the misconduct.';
                           }
@@ -809,16 +809,16 @@ class _MaintenanceDescriptionFormState
                       child: TextButton(
                         style: TextButton.styleFrom(
                           backgroundColor:
-                              _otherSelected ? Colors.blue : Colors.white,
+                              _isOtherSelected ? Colors.blue : Colors.white,
                           foregroundColor:
-                              _otherSelected ? Colors.white : Colors.black,
+                              _isOtherSelected ? Colors.white : Colors.black,
                           shape: RoundedRectangleBorder(
                             borderRadius: BorderRadius.circular(8),
                           ),
                         ),
                         onPressed: () {
                           setState(() {
-                            _otherSelected = !_otherSelected;
+                            _isOtherSelected = !_isOtherSelected;
                           });
                         },
                         child: Text('Select Other'),
@@ -846,9 +846,10 @@ class _MaintenanceDescriptionFormState
                       child: FilledButton(
                         style: testButtonStyle,
                         // Confirm button disabled when no option selected
-                        onPressed: (_selectedTypes.isNotEmpty || _otherSelected)
-                            ? _submitDescription
-                            : null,
+                        onPressed:
+                            (_selectedTypes.isNotEmpty || _isOtherSelected)
+                                ? _submitDescription
+                                : null,
                         child: Text('Confirm'),
                       ),
                     ),

@@ -297,9 +297,8 @@ class _AcousticProfileTestPageState extends State<AcousticProfileTestPage> {
     });
 
     // 1. Bottom sheet for Sound Decibel Level.
-    double? decibel;
     if (!mounted) return;
-    decibel = await showModalBottomSheet<double>(
+    final decibels = await showModalBottomSheet<double>(
       context: context,
       isScrollControlled: true,
       isDismissible: false,
@@ -307,385 +306,51 @@ class _AcousticProfileTestPageState extends State<AcousticProfileTestPage> {
       backgroundColor: const Color(0xFFDDE6F2),
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
       builder: (context) {
-        final TextEditingController decibelController = TextEditingController();
-        final _formKey = GlobalKey<FormState>();
         return Padding(
-          padding: MediaQuery.of(context).viewInsets,
-          child: Container(
-            padding: const EdgeInsets.all(16),
-            child: Form(
-              key: _formKey,
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  const Text(
-                    'Sound Decibel Level',
-                    style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-                  ),
-                  const SizedBox(height: 12),
-                  Center(
-                    child: Container(
-                      width: 250,
-                      child: TextFormField(
-                        textAlign: TextAlign.center,
-                        controller: decibelController,
-                        keyboardType: TextInputType.number,
-                        style: const TextStyle(fontSize: 24),
-                        decoration: InputDecoration(
-                          label: Center(child: Text('Enter decibel value')),
-                        ),
-                        validator: (value) {
-                          if (value == null || value.trim().isEmpty) {
-                            return 'Please enter a value';
-                          }
-                          if (double.tryParse(value.trim()) == null) {
-                            return 'Enter a valid number';
-                          }
-                          return null;
-                        },
-                      ),
-                    ),
-                  ),
-                  const SizedBox(height: 12),
-                  ElevatedButton(
-                    style: ElevatedButton.styleFrom(backgroundColor: p2bpBlue),
-                    onPressed: () {
-                      if (_formKey.currentState!.validate()) {
-                        Navigator.pop(context,
-                            double.parse(decibelController.text.trim()));
-                      }
-                    },
-                    child: const Text(
-                      'Submit',
-                      style: TextStyle(color: Colors.white),
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          ),
+          padding: MediaQuery.of(context).viewInsets + const EdgeInsets.all(16),
+          child: _DecibelLevelForm(),
         );
       },
     );
-
-    // If no decibel value was entered, default to 0.
-    decibel ??= 0.0;
+    if (decibels == null) return;
 
     // 2. Bottom sheet for Sound Types (multi-select).
-    List<String> selectedSoundTypes = [];
-    selectedSoundTypes = await showModalBottomSheet<List<String>>(
-          context: context,
-          isScrollControlled: true,
-          isDismissible: false,
-          barrierColor: Colors.black.withValues(alpha: 0.5),
-          backgroundColor: const Color(0xFFDDE6F2),
-          shape:
-              RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-          builder: (context) {
-            // List of available sound types.
-            final List<String> soundOptions = [
-              'Water',
-              'Traffic',
-              'People',
-              'Animals',
-              'Wind',
-              'Music'
-            ];
-            // Use a local set to track selection.
-            final Set<String> selections = {};
-            // Form key for input validation
-            final GlobalKey<FormState> _formKey = GlobalKey<FormState>();
-            String? errorMessage;
-            // Tracks user input for the other section.
-            final TextEditingController _otherController =
-                TextEditingController();
-            bool isOtherSelected = false;
-            _otherController.addListener(() {
-              setState(() {});
-            });
-
-            return StatefulBuilder(
-              builder: (context, setState) {
-                return Padding(
-                  padding: MediaQuery.of(context).viewInsets,
-                  child: Form(
-                    key: _formKey,
-                    child: Container(
-                      padding: const EdgeInsets.all(16),
-                      child: Column(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          const Text(
-                            'Sound Types',
-                            style: TextStyle(
-                                fontSize: 18, fontWeight: FontWeight.bold),
-                          ),
-                          const SizedBox(height: 8),
-                          const Text(
-                            'Select all of the sounds you heard during the measurement',
-                            textAlign: TextAlign.center,
-                          ),
-                          const SizedBox(height: 12),
-                          GridView.count(
-                            crossAxisCount: 3, // Three columns
-                            shrinkWrap: true,
-                            physics:
-                                const NeverScrollableScrollPhysics(), // Prevent scrolling inside the sheet
-                            mainAxisSpacing: 1,
-                            crossAxisSpacing: 2,
-                            padding: const EdgeInsets.only(bottom: 8),
-                            childAspectRatio:
-                                2, // Adjust to change the height/width ratio of each cell
-                            children: soundOptions.map((option) {
-                              final bool isSelected =
-                                  selections.contains(option);
-                              return ChoiceChip(
-                                label: Text(option),
-                                selected: isSelected,
-                                onSelected: (selected) {
-                                  setState(() {
-                                    if (selected) {
-                                      selections.add(option);
-                                    } else {
-                                      selections.remove(option);
-                                    }
-                                  });
-                                },
-                                shape: RoundedRectangleBorder(
-                                  borderRadius:
-                                      BorderRadius.circular(20), // Pill shape
-                                  side: BorderSide(
-                                    color: isSelected
-                                        ? p2bpBlue
-                                        : Color(
-                                            0xFFB0C4DE), // Distinct border when selected
-                                    width: 2.0,
-                                  ),
-                                ),
-                                selectedColor: p2bpBlue
-                                    .shade100, // Background color when selected
-                                backgroundColor: Color(
-                                    0xFFE3EBF4), // Default background color
-                              );
-                            }).toList(),
-                          ),
-                          // Other option text field and select button.
-                          Row(
-                            children: [
-                              Expanded(
-                                child: TextFormField(
-                                    controller: _otherController,
-                                    decoration: InputDecoration(
-                                      labelText: 'Other',
-                                      suffixIcon:
-                                          _otherController.text.isNotEmpty
-                                              ? IconButton(
-                                                  icon: Icon(Icons.clear),
-                                                  onPressed: () {
-                                                    setState(() {
-                                                      _otherController.clear();
-                                                    });
-                                                  },
-                                                )
-                                              : null,
-                                    ),
-                                    // Validate only if the chip is selected
-                                    validator: (value) {
-                                      if (isOtherSelected &&
-                                          (value == null ||
-                                              value.trim().isEmpty)) {
-                                        return 'Please enter a value';
-                                      }
-                                      return null;
-                                    },
-                                    onChanged: (value) {
-                                      setState(() {});
-                                    }),
-                              ),
-                              const SizedBox(width: 8),
-                              // Always display the chip; disable it if there's no text.
-                              ChoiceChip(
-                                label: Text(
-                                  _otherController.text.trim().isEmpty
-                                      ? "Other"
-                                      : _otherController.text.trim(),
-                                ),
-                                // Use the selections set to determine if the chip is selected.
-                                selected: isOtherSelected,
-                                onSelected: (selected) {
-                                  if (_otherController.text.trim().isNotEmpty) {
-                                    setState(() {
-                                      isOtherSelected = selected;
-                                      if (selected) {
-                                        selections
-                                            .add(_otherController.text.trim());
-                                      } else {
-                                        selections.remove(
-                                            _otherController.text.trim());
-                                      }
-                                    });
-                                  }
-                                },
-                                backgroundColor: Color(0xFFE3EBF4),
-                                disabledColor: Color(0xFFE3EBF4),
-                                selectedColor: p2bpBlue.shade100,
-                                shape: RoundedRectangleBorder(
-                                  borderRadius: BorderRadius.circular(20),
-                                  side: BorderSide(
-                                    color: isOtherSelected
-                                        ? p2bpBlue
-                                        : Color(0xFFB0C4DE),
-                                    width: 2.0,
-                                  ),
-                                ),
-                              ),
-                            ],
-                          ),
-                          // Display an error message if no chip is selected.
-                          if (errorMessage != null)
-                            Padding(
-                              padding: const EdgeInsets.only(top: 8.0),
-                              child: Text(
-                                errorMessage!,
-                                style: const TextStyle(color: Colors.red),
-                              ),
-                            ),
-                          const SizedBox(height: 12),
-                          ElevatedButton(
-                            style: ElevatedButton.styleFrom(
-                                backgroundColor: p2bpBlue),
-                            onPressed: () {
-                              // Check that at least one chip is selected.
-                              if (selections.isEmpty) {
-                                setState(() {
-                                  errorMessage =
-                                      'Please select at least one sound type';
-                                });
-                                return;
-                              }
-                              // Validate the "Other" field if its chip is selected.
-                              if (!_formKey.currentState!.validate()) {
-                                return;
-                              }
-                              Navigator.pop(context, selections.toList());
-                            },
-                            child: const Text('Submit',
-                                style: TextStyle(color: Colors.white)),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ),
-                );
-              },
-            );
-          },
-        ) ??
-        [];
+    if (!mounted) return;
+    final soundTypeDescription =
+        await showModalBottomSheet<(Set<SoundType>, String)>(
+      context: context,
+      isScrollControlled: true,
+      isDismissible: false,
+      barrierColor: Colors.black.withValues(alpha: 0.5),
+      backgroundColor: const Color(0xFFDDE6F2),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+      builder: (context) {
+        return Padding(
+          padding: MediaQuery.of(context).viewInsets + const EdgeInsets.all(16),
+          child: _SoundTypeForm(),
+        );
+      },
+    );
+    if (soundTypeDescription == null) return;
+    final Set<SoundType> selectedSoundTypes = soundTypeDescription.$1;
+    final String otherText = soundTypeDescription.$2;
 
     // 3. Bottom sheet for Main Sound Type (single-select).
-    String? mainSoundType;
-    mainSoundType = await showModalBottomSheet<String>(
+    if (!mounted) return;
+    final mainSoundType = await showModalBottomSheet<SoundType>(
       context: context,
       isDismissible: false,
       isScrollControlled: true,
       backgroundColor: const Color(0xFFDDE6F2),
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
       builder: (context) {
-        final List<String> soundOptions = selectedSoundTypes;
-        String? selectedOption;
-        String? errorMessage;
-        return StatefulBuilder(
-          builder: (context, setState) {
-            return Padding(
-              padding: MediaQuery.of(context).viewInsets,
-              child: Container(
-                padding: const EdgeInsets.all(16),
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    const Text(
-                      'Main Sound Type',
-                      style:
-                          TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-                    ),
-                    const SizedBox(height: 8),
-                    const Text(
-                      'Select the main source of sound that you heard during the measurement',
-                      textAlign: TextAlign.center,
-                    ),
-                    const SizedBox(height: 12),
-                    GridView.count(
-                      crossAxisCount: 3, // Three columns
-                      shrinkWrap: true,
-                      physics:
-                          const NeverScrollableScrollPhysics(), // Prevent scrolling inside the sheet
-                      mainAxisSpacing: 1,
-                      crossAxisSpacing: 2,
-                      padding: const EdgeInsets.only(bottom: 8),
-                      childAspectRatio:
-                          2, // Adjust to change the height/width ratio of each cell
-                      children: soundOptions.map((option) {
-                        final bool isSelected = selectedOption == option;
-                        return ChoiceChip(
-                          label: Text(option),
-                          selected: isSelected,
-                          onSelected: (selected) {
-                            setState(() {
-                              selectedOption = selected ? option : null;
-                              // Clear error when a chip is selected.
-                              if (selectedOption != null) errorMessage = null;
-                            });
-                          },
-                          shape: RoundedRectangleBorder(
-                            borderRadius:
-                                BorderRadius.circular(20), // Pill shape
-                            side: BorderSide(
-                              color: isSelected
-                                  ? p2bpBlue
-                                  : Color(
-                                      0xFFB0C4DE), // Distinct border when selected
-                              width: 2.0,
-                            ),
-                          ),
-                          selectedColor: p2bpBlue
-                              .shade100, // Background color when selected
-                          backgroundColor: Color(0xFFE3EBF4),
-                        );
-                      }).toList(),
-                    ),
-                    if (errorMessage != null)
-                      Padding(
-                        padding: const EdgeInsets.only(top: 8.0),
-                        child: Text(
-                          errorMessage!,
-                          style: const TextStyle(color: Colors.red),
-                        ),
-                      ),
-                    const SizedBox(height: 24),
-                    ElevatedButton(
-                      style:
-                          ElevatedButton.styleFrom(backgroundColor: p2bpBlue),
-                      onPressed: () {
-                        if (selectedOption == null) {
-                          setState(() {
-                            errorMessage = 'Please select a main sound type.';
-                          });
-                          return;
-                        }
-                        Navigator.pop(context, selectedOption);
-                      },
-                      child: const Text('Submit',
-                          style: TextStyle(color: Colors.white)),
-                    ),
-                  ],
-                ),
-              ),
-            );
-          },
+        return Padding(
+          padding: MediaQuery.of(context).viewInsets + const EdgeInsets.all(16),
+          child: _MainSoundTypeForm(selectedSoundTypes),
         );
       },
     );
+    if (mainSoundType == null) return;
 
     setState(() {
       _isBottomSheetOpen = false;
@@ -693,15 +358,15 @@ class _AcousticProfileTestPageState extends State<AcousticProfileTestPage> {
 
     // Construct an AcousticMeasurement using the collected data.
     final measurement = AcousticMeasurement(
-      decibels: decibel,
+      decibels: decibels,
       soundTypes: selectedSoundTypes,
-      mainSoundType: mainSoundType ?? '',
-      other: '',
+      mainSoundType: mainSoundType,
+      other: otherText,
     );
     // Use the selected standing point index, defaulting to 0 if none is selected.
     int index = _selectedStandingPointIndex ?? 0;
 
-    // Initialize the measureme list for this standing point if it doesn't exist.
+    // Initialize the measurement list for this standing point if it doesn't exist.
     if (!_measurementsPerPoint.containsKey(index)) {
       _measurementsPerPoint[index] = [];
     }
@@ -719,7 +384,7 @@ class _AcousticProfileTestPageState extends State<AcousticProfileTestPage> {
       _isTestRunning = false;
     });
     try {
-      // TODO: Bsckend logic when interval cycle completes
+      // TODO: Backend logic when interval cycle completes
       // await _firestore
       //     .collection(widget.activeTest.collectionID)
       //     .doc(widget.activeTest.testID)
@@ -859,15 +524,13 @@ class _AcousticProfileTestPageState extends State<AcousticProfileTestPage> {
     );
   }
 
-  /// Overlay widget to display a centered message instructing the user not to leave the application
-  /// once the test has started.
+  /// Overlay widget to display a centered message instructing the user
+  /// not to leave the application once the test has started.
   Widget _buildInstructionMessage() {
-    // Only display if no bottom sheet is open.
-    if (_isBottomSheetOpen) return SizedBox.shrink();
+    // TODO below probably not needed but leaving to verify
+    // // Only display if no bottom sheet is open.
+    // if (_isBottomSheetOpen) return SizedBox.shrink();
     // Choose message based on whether the test has started.
-    String message = !_isTestRunning
-        ? "Do not leave the application once the activity has started"
-        : "Listen carefully to your surroundings";
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 16),
       child: Center(
@@ -878,7 +541,9 @@ class _AcousticProfileTestPageState extends State<AcousticProfileTestPage> {
             borderRadius: BorderRadius.circular(12),
           ),
           child: Text(
-            message,
+            !_isTestRunning
+                ? "Do not leave the application once the activity has started"
+                : "Listen carefully to your surroundings",
             style: const TextStyle(color: Colors.white, fontSize: 18),
             textAlign: TextAlign.center,
           ),
@@ -887,9 +552,6 @@ class _AcousticProfileTestPageState extends State<AcousticProfileTestPage> {
     );
   }
 
-  /// Build the main UI for Acoustic Profile.
-  /// This includes the Google Map with project boundaries, the Start button (which is enabled
-  /// upon marker selection), a timer display, and overlays for instructions and messages.
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -1050,6 +712,323 @@ class _AcousticProfileTestPageState extends State<AcousticProfileTestPage> {
           if (!_isBottomSheetOpen) _buildInstructionMessage(),
         ],
       ),
+    );
+  }
+}
+
+class _DecibelLevelForm extends StatefulWidget {
+  @override
+  State<_DecibelLevelForm> createState() => _DecibelLevelFormState();
+}
+
+class _DecibelLevelFormState extends State<_DecibelLevelForm> {
+  final TextEditingController decibelController = TextEditingController();
+  final _formKey = GlobalKey<FormState>();
+
+  @override
+  void dispose() {
+    decibelController.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Form(
+      key: _formKey,
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          const Text(
+            'Sound Decibel Level',
+            style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+          ),
+          const SizedBox(height: 12),
+          Center(
+            child: SizedBox(
+              width: 250,
+              child: TextFormField(
+                textAlign: TextAlign.center,
+                controller: decibelController,
+                keyboardType: TextInputType.number,
+                style: const TextStyle(fontSize: 24),
+                decoration: InputDecoration(
+                  label: Center(child: Text('Enter decibel value')),
+                ),
+                validator: (value) {
+                  if (value == null || value.trim().isEmpty) {
+                    return 'Please enter a value';
+                  }
+                  if (double.tryParse(value.trim()) == null) {
+                    return 'Enter a valid number';
+                  }
+                  return null;
+                },
+              ),
+            ),
+          ),
+          const SizedBox(height: 12),
+          ElevatedButton(
+            style: ElevatedButton.styleFrom(backgroundColor: p2bpBlue),
+            onPressed: () {
+              if (_formKey.currentState!.validate()) {
+                Navigator.pop(
+                    context, double.parse(decibelController.text.trim()));
+              }
+            },
+            child: const Text(
+              'Submit',
+              style: TextStyle(color: Colors.white),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _SoundTypeForm extends StatefulWidget {
+  @override
+  State<_SoundTypeForm> createState() => _SoundTypeFormState();
+}
+
+class _SoundTypeFormState extends State<_SoundTypeForm> {
+  final Set<SoundType> _selections = {};
+  final GlobalKey<FormState> _formKey = GlobalKey<FormState>();
+  final TextEditingController _otherController = TextEditingController();
+  static final List<SoundType> _chipSoundTypeList = List.generate(
+      SoundType.values.length - 1, (index) => SoundType.values[index]);
+  bool _isOtherSelected = false;
+  String? _errorMessage;
+
+  void _submitDescription() {
+    // Validate the "Other" field if its chip is selected.
+    if (!_formKey.currentState!.validate()) {
+      return;
+    }
+    Navigator.pop(context, (_selections, _otherController.text.trim()));
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    _isOtherSelected = _selections.contains(SoundType.other);
+    return Form(
+      key: _formKey,
+      child: Container(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            const Text(
+              'Sound Types',
+              style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+            ),
+            const SizedBox(height: 8),
+            const Text(
+              'Select all of the sounds you heard during the measurement',
+              textAlign: TextAlign.center,
+            ),
+            const SizedBox(height: 12),
+            GridView.count(
+              crossAxisCount: 3, // Three columns
+              shrinkWrap: true,
+              physics: const NeverScrollableScrollPhysics(),
+              mainAxisSpacing: 1,
+              crossAxisSpacing: 2,
+              padding: const EdgeInsets.only(bottom: 8),
+              childAspectRatio:
+                  2, // Adjust to change the height/width ratio of each cell
+              children: _chipSoundTypeList.map((type) {
+                final bool isSelected = _selections.contains(type);
+                return ChoiceChip(
+                  // TODO why not FilterChip?
+                  label: Text(type.displayName),
+                  selected: isSelected,
+                  onSelected: (selected) {
+                    setState(() {
+                      if (selected) {
+                        _selections.add(type);
+                      } else {
+                        _selections.remove(type);
+                      }
+                    });
+                  },
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(20), // Pill shape
+                    side: BorderSide(
+                      color: isSelected ? p2bpBlue : Color(0xFFB0C4DE),
+                      width: 2.0,
+                    ),
+                  ),
+                  selectedColor: p2bpBlue.shade100,
+                  backgroundColor: Color(0xFFE3EBF4),
+                );
+              }).toList(),
+            ),
+            // Other option text field and select button.
+            Row(
+              children: [
+                Expanded(
+                  child: TextFormField(
+                    controller: _otherController,
+                    enabled: _isOtherSelected,
+                    decoration: InputDecoration(
+                      labelText: 'Other',
+                      suffixIcon: _otherController.text.isNotEmpty
+                          ? IconButton(
+                              icon: Icon(Icons.clear),
+                              onPressed: () {
+                                setState(() {
+                                  _otherController.clear();
+                                });
+                              },
+                            )
+                          : null,
+                    ),
+                    // Validate only if the chip is selected
+                    validator: (value) {
+                      if (_isOtherSelected &&
+                          (value == null || value.trim().isEmpty)) {
+                        return 'Please enter a value';
+                      }
+                      return null;
+                    },
+                  ),
+                ),
+                const SizedBox(width: 8),
+                // Always display the chip; disable it if there's no text.
+                ChoiceChip(
+                  label: Text(
+                    // TODO this seems silly but waiting and seeing how it looks first
+                    _otherController.text.trim().isEmpty
+                        ? 'Other'
+                        : _otherController.text.trim(),
+                  ),
+                  // Use the selections set to determine if the chip is selected.
+                  selected: _isOtherSelected,
+                  onSelected: (selected) {
+                    setState(() {
+                      if (selected) {
+                        _selections.add(SoundType.other);
+                      } else {
+                        _selections.remove(SoundType.other);
+                      }
+                    });
+                  },
+                  backgroundColor: Color(0xFFE3EBF4),
+                  disabledColor: Color(0xFFE3EBF4),
+                  selectedColor: p2bpBlue.shade100,
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(20),
+                    side: BorderSide(
+                      color: _isOtherSelected ? p2bpBlue : Color(0xFFB0C4DE),
+                      width: 2.0,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+            // Display an error message if no chip is selected.
+            if (_errorMessage != null)
+              Padding(
+                padding: const EdgeInsets.only(top: 8.0),
+                child: Text(
+                  _errorMessage!,
+                  style: const TextStyle(color: Colors.red),
+                ),
+              ),
+            const SizedBox(height: 12),
+            ElevatedButton(
+              style: ElevatedButton.styleFrom(backgroundColor: p2bpBlue),
+              onPressed: (_selections.isNotEmpty) ? _submitDescription : null,
+              child:
+                  const Text('Submit', style: TextStyle(color: Colors.white)),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _MainSoundTypeForm extends StatefulWidget {
+  final Set<SoundType> selectedSoundTypes;
+
+  const _MainSoundTypeForm(this.selectedSoundTypes);
+
+  @override
+  State<_MainSoundTypeForm> createState() => _MainSoundTypeFormState();
+}
+
+class _MainSoundTypeFormState extends State<_MainSoundTypeForm> {
+  SoundType? selectedMainSound;
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        const Text(
+          'Main Sound Type',
+          style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+        ),
+        const SizedBox(height: 8),
+        const Text(
+          'Select the main source of sound that you heard during the measurement',
+          textAlign: TextAlign.center,
+        ),
+        const SizedBox(height: 12),
+        GridView.count(
+          crossAxisCount: 3, // Three columns
+          shrinkWrap: true,
+          physics:
+              const NeverScrollableScrollPhysics(), // Prevent scrolling inside the sheet
+          mainAxisSpacing: 1,
+          crossAxisSpacing: 2,
+          padding: const EdgeInsets.only(bottom: 8),
+          childAspectRatio:
+              2, // Adjust to change the height/width ratio of each cell
+          children: widget.selectedSoundTypes.map((type) {
+            final bool isSelected = selectedMainSound == type;
+            return ChoiceChip(
+              label: Text(type.displayName),
+              selected: isSelected,
+              onSelected: (selected) {
+                setState(() {
+                  selectedMainSound = selected ? type : null;
+                });
+              },
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(20),
+                side: BorderSide(
+                  color: isSelected ? p2bpBlue : Color(0xFFB0C4DE),
+                  width: 2.0,
+                ),
+              ),
+              selectedColor: p2bpBlue.shade100,
+              backgroundColor: Color(0xFFE3EBF4),
+            );
+          }).toList(),
+        ),
+        if (selectedMainSound == null)
+          const Padding(
+            padding: const EdgeInsets.only(top: 8.0),
+            child: Text(
+              'Please select a main sound type.',
+              style: const TextStyle(color: Colors.red),
+            ),
+          ),
+        const SizedBox(height: 24),
+        ElevatedButton(
+          style: ElevatedButton.styleFrom(backgroundColor: p2bpBlue),
+          onPressed: () {
+            if (selectedMainSound == null) {
+              return;
+            }
+            Navigator.pop(context, selectedMainSound);
+          },
+          child: const Text('Submit', style: TextStyle(color: Colors.white)),
+        ),
+      ],
     );
   }
 }
