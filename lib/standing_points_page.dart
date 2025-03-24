@@ -251,8 +251,7 @@ class _StandingPointsPageState extends State<StandingPointsPage> {
           child: Stack(
             children: [
               Padding(
-                padding:
-                    const EdgeInsets.only(left: 15.0, right: 15.0, top: 15.0),
+                padding: const EdgeInsets.fromLTRB(15, 15, 15, 0),
                 child: SizedBox(
                   height: _bottomSheetHeight,
                   child: ListView.separated(
@@ -298,9 +297,7 @@ class _StandingPointsPageState extends State<StandingPointsPage> {
                       );
                     },
                     separatorBuilder: (BuildContext context, int index) =>
-                        const SizedBox(
-                      height: 10,
-                    ),
+                        const SizedBox(height: 10),
                   ),
                 ),
               ),

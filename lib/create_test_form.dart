@@ -34,6 +34,58 @@ class _CreateTestFormState extends State<CreateTestForm> {
   bool _standingPointsError = false;
   bool _timerTest = false;
 
+  final List<({String value, String text})> _testStringPairs = [
+    (
+      value: AbsenceOfOrderTest.collectionIDStatic,
+      text: 'Absence of Order Locator',
+    ),
+    (
+      value: LightingProfileTest.collectionIDStatic,
+      text: 'Lighting Profile',
+    ),
+    (
+      value: SpatialBoundariesTest.collectionIDStatic,
+      text: 'Spatial Boundaries',
+    ),
+    (
+      value: SectionCutterTest.collectionIDStatic,
+      text: 'Section Cutter',
+    ),
+    (
+      value: IdentifyingAccessTest.collectionIDStatic,
+      text: 'Identifying Access',
+    ),
+    (
+      value: PeopleInPlaceTest.collectionIDStatic,
+      text: 'People in Place',
+    ),
+    (
+      value: PeopleInMotionTest.collectionIDStatic,
+      text: 'People in Motion',
+    ),
+    (
+      value: NaturePrevalenceTest.collectionIDStatic,
+      text: 'Nature Prevalence',
+    ),
+    (
+      value: AcousticProfileTest.collectionIDStatic,
+      text: 'Acoustic Profile',
+    ),
+  ];
+
+  @override
+  void initState() {
+    super.initState();
+    _testStringPairs.sort((a, b) => a.text.compareTo(b.text));
+  }
+
+  @override
+  void dispose() {
+    _dateTimeController.dispose();
+    _activityNameController.dispose();
+    super.dispose();
+  }
+
   Future<DateTime?> showDateTimePicker({
     required BuildContext context,
     DateTime? initialDate,
@@ -71,11 +123,17 @@ class _CreateTestFormState extends State<CreateTestForm> {
           );
   }
 
-  @override
-  void dispose() {
-    _dateTimeController.dispose();
-    _activityNameController.dispose();
-    super.dispose();
+  List<DropdownMenuItem<String>> _buildDropdownMenuList() {
+    return [
+      for (final strings in _testStringPairs)
+        DropdownMenuItem(
+          value: strings.value,
+          child: Text(
+            strings.text,
+            style: TextStyle(color: p2bpBlue),
+          ),
+        ),
+    ];
   }
 
   @override
@@ -185,71 +243,7 @@ class _CreateTestFormState extends State<CreateTestForm> {
                 ),
               ),
               isExpanded: true,
-              items: [
-                DropdownMenuItem(
-                  value: AbsenceOfOrderTest.collectionIDStatic,
-                  child: Text(
-                    'Absence of Order Locator',
-                    style: TextStyle(color: p2bpBlue),
-                  ),
-                ),
-                DropdownMenuItem(
-                  value: LightingProfileTest.collectionIDStatic,
-                  child: Text(
-                    'Lighting Profile',
-                    style: TextStyle(color: p2bpBlue),
-                  ),
-                ),
-                DropdownMenuItem(
-                  value: SpatialBoundariesTest.collectionIDStatic,
-                  child: Text(
-                    'Spatial Boundaries',
-                    style: TextStyle(color: p2bpBlue),
-                  ),
-                ),
-                DropdownMenuItem(
-                  value: SectionCutterTest.collectionIDStatic,
-                  child: Text(
-                    'Section Cutter',
-                    style: TextStyle(color: p2bpBlue),
-                  ),
-                ),
-                DropdownMenuItem(
-                  value: IdentifyingAccessTest.collectionIDStatic,
-                  child: Text(
-                    'Identifying Access',
-                    style: TextStyle(color: p2bpBlue),
-                  ),
-                ),
-                DropdownMenuItem(
-                  value: PeopleInPlaceTest.collectionIDStatic,
-                  child: Text(
-                    'People in Place',
-                    style: TextStyle(color: p2bpBlue),
-                  ),
-                ),
-                DropdownMenuItem(
-                  value: PeopleInMotionTest.collectionIDStatic,
-                  child: Text(
-                    'People in Motion',
-                    style: TextStyle(color: p2bpBlue),
-                  ),
-                ),
-                DropdownMenuItem(
-                  value: NaturePrevalenceTest.collectionIDStatic,
-                  child: Text(
-                    'Nature Prevalence',
-                    style: TextStyle(color: p2bpBlue),
-                  ),
-                ),
-                DropdownMenuItem(
-                  value: AcousticProfileTest.collectionIDStatic,
-                  child: Text(
-                    'Acoustic Profile',
-                    style: TextStyle(color: p2bpBlue),
-                  ),
-                ),
-              ],
+              items: _buildDropdownMenuList(),
               onChanged: (value) {
                 _selectedTest = value;
                 _standingPoints = [];

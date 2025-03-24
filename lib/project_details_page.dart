@@ -326,18 +326,6 @@ class _ProjectDetailsPageState extends State<ProjectDetailsPage> {
   }
 }
 
-const Map<Type, String> _testInitialsMap = {
-  AbsenceOfOrderTest: 'AO',
-  LightingProfileTest: 'LP',
-  SpatialBoundariesTest: 'SB',
-  SectionCutterTest: 'SC',
-  IdentifyingAccessTest: 'IA',
-  PeopleInPlaceTest: 'PP',
-  PeopleInMotionTest: 'PM',
-  NaturePrevalenceTest: 'NP',
-  AcousticProfileTest: 'AP',
-};
-
 class TestCard extends StatelessWidget {
   final Test test;
   final Project project;
@@ -368,7 +356,7 @@ class TestCard extends StatelessWidget {
                 children: <Widget>[
                   // TODO: change corresponding to test type
                   CircleAvatar(
-                    child: Text(_testInitialsMap[test.runtimeType] ?? ''),
+                    child: Text(test.getInitials()),
                   ),
                   SizedBox(width: 8),
                   Expanded(

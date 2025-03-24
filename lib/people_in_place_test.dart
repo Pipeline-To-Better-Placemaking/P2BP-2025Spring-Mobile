@@ -452,7 +452,7 @@ class _PeopleInPlaceTestPageState extends State<PeopleInPlaceTestPage> {
           leadingWidth: 100,
           // Start/End button on the left
           leading: Padding(
-            padding: const EdgeInsets.only(left: 20),
+            padding: const EdgeInsets.only(left: 20, top: 4, bottom: 4),
             child: ElevatedButton(
               style: ElevatedButton.styleFrom(
                 shape: RoundedRectangleBorder(
@@ -478,15 +478,15 @@ class _PeopleInPlaceTestPageState extends State<PeopleInPlaceTestPage> {
           ),
           // Persistent prompt in the middle with a translucent background.
           title: Container(
-            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
             decoration: BoxDecoration(
               color: Colors.black.withValues(alpha: 0.6),
               borderRadius: BorderRadius.circular(8),
             ),
             child: Text(
               'Tap to log data point',
+              textAlign: TextAlign.center,
               maxLines: 2,
-              overflow: TextOverflow.visible,
               style: const TextStyle(color: Colors.white, fontSize: 16),
             ),
           ),
@@ -513,17 +513,20 @@ class _PeopleInPlaceTestPageState extends State<PeopleInPlaceTestPage> {
         ),
         body: Stack(
           children: [
-            GoogleMap(
-              onMapCreated: _onMapCreated,
-              initialCameraPosition: CameraPosition(
-                target: _location,
-                zoom: 14.0,
+            SizedBox(
+              height: MediaQuery.of(context).size.height,
+              child: GoogleMap(
+                onMapCreated: _onMapCreated,
+                initialCameraPosition: CameraPosition(
+                  target: _location,
+                  zoom: 14.0,
+                ),
+                markers: {..._standingPointMarkers, ..._markers},
+                polygons: _polygons,
+                onTap: _handleMapTap,
+                mapType: _currentMapType,
+                myLocationButtonEnabled: false,
               ),
-              markers: {..._standingPointMarkers, ..._markers},
-              polygons: _polygons,
-              onTap: _handleMapTap,
-              mapType: _currentMapType,
-              myLocationButtonEnabled: false,
             ),
             if (_showErrorMessage) OutsideBoundsWarning(),
             // Buttons in top right corner of map below timer.

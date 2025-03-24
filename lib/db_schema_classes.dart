@@ -260,6 +260,8 @@ abstract class Test<T> {
   static final Map<Type, Future<void> Function(Test)>
       _saveToFirestoreFunctions = {};
 
+  static final Map<Type, String> _testInitialsMap = {};
+
   /// Set used internally to determine whether a [Test] subclass uses
   /// standing points. Subclasses that do are expected to register themselves
   /// into this set.
@@ -343,6 +345,11 @@ abstract class Test<T> {
     return _standingPointTestCollectionIDs.contains(collectionID);
   }
 
+  /// Returns 2-letter initials for given test type if they are registered.
+  String getInitials() {
+    return _testInitialsMap[runtimeType] ?? '';
+  }
+
   @override
   String toString() {
     return 'This is an instance of $runtimeType\n'
@@ -374,13 +381,15 @@ class StandingPoint with JsonToString {
 
   StandingPoint({required this.location, required this.title});
 
-  StandingPoint.fromJson(Map<String, dynamic> data) {
-    if (data.containsKey('point') && data['point'] is GeoPoint) {
-      location = (data['point'] as GeoPoint).toLatLng();
+  factory StandingPoint.fromJson(Map<String, dynamic> data) {
+    if (data
+        case {
+          'point': GeoPoint location,
+          'title': String title,
+        }) {
+      return StandingPoint(location: location.toLatLng(), title: title);
     }
-    if (data.containsKey('title') && data['title'] is String) {
-      title = data['title'] as String;
-    }
+    throw FormatException('Invalid JSON: $data', data);
   }
 
   @override
@@ -541,12 +550,12 @@ class LightingProfileTest extends Test<LightingProfileData> with JsonToString {
           );
       await testRef.set(test as LightingProfileTest, SetOptions(merge: true));
     };
+    Test._testInitialsMap[LightingProfileTest] = 'LP';
   }
 
   @override
   void submitData(LightingProfileData data) async {
     try {
-      // Updates data in Firestore
       await _firestore.collection(collectionID).doc(testID).update({
         'data': data.toJson(),
         'isComplete': true,
@@ -884,6 +893,7 @@ class AbsenceOfOrderTest extends Test<AbsenceOfOrderData> with JsonToString {
           );
       await testRef.set(test as AbsenceOfOrderTest, SetOptions(merge: true));
     };
+    Test._testInitialsMap[AbsenceOfOrderTest] = 'AO';
   }
 
   @override
@@ -1199,6 +1209,7 @@ class SpatialBoundariesTest extends Test<SpatialBoundariesData>
           );
       await testRef.set(test as SpatialBoundariesTest, SetOptions(merge: true));
     };
+    Test._testInitialsMap[SpatialBoundariesTest] = 'SB';
   }
 
   @override
@@ -1345,6 +1356,7 @@ class SectionCutterTest extends Test<Section> with JsonToString {
       await testRef.set(test as SectionCutterTest, SetOptions(merge: true));
     };
     Test._standingPointTestCollectionIDs.add(collectionIDStatic);
+    Test._testInitialsMap[SectionCutterTest] = 'SC';
   }
 
   @override
@@ -1666,6 +1678,7 @@ class IdentifyingAccessTest extends Test<AccessData> {
         'isComplete': false,
       }, SetOptions(merge: true));
     };
+    Test._testInitialsMap[IdentifyingAccessTest] = 'IA';
   }
 
   @override
@@ -2177,6 +2190,7 @@ class NaturePrevalenceTest extends Test<NatureData> {
       }, SetOptions(merge: true));
     };
     Test._timerTestCollectionIDs.add(collectionIDStatic);
+    Test._testInitialsMap[NaturePrevalenceTest] = 'NP';
   }
 
   @override
@@ -2603,6 +2617,7 @@ class PeopleInPlaceTest extends Test<PeopleInPlaceData>
       await testRef.set(test as PeopleInPlaceTest, SetOptions(merge: true));
     };
     Test._standingPointTestCollectionIDs.add(collectionIDStatic);
+    Test._testInitialsMap[PeopleInPlaceTest] = 'PP';
   }
 
   @override
@@ -2808,6 +2823,7 @@ class PeopleInMotionTest extends Test<PeopleInMotionData>
       await testRef.set(test as PeopleInMotionTest, SetOptions(merge: true));
     };
     Test._standingPointTestCollectionIDs.add(collectionIDStatic);
+    Test._testInitialsMap[PeopleInMotionTest] = 'PM';
   }
 
   /// Handles data submission to Firestore when the test is completed.
@@ -2879,10 +2895,10 @@ enum SoundType implements DisplayNameEnum {
 
 /// Data model to store one acoustic measurement
 class AcousticMeasurement with JsonToString {
-  late final double decibels;
-  late final Set<SoundType> soundTypes;
-  late final String other;
-  late final SoundType mainSoundType;
+  final double decibels;
+  final Set<SoundType> soundTypes;
+  final String other;
+  final SoundType mainSoundType;
 
   AcousticMeasurement({
     required this.decibels,
@@ -2890,36 +2906,38 @@ class AcousticMeasurement with JsonToString {
     required this.other,
     required this.mainSoundType,
   }) {
+    // Validation
     final hasOther = soundTypes.contains(SoundType.other);
     if ((hasOther && other.isEmpty) || (!hasOther && other.isNotEmpty)) {
       throw Exception('Other mismatch when constructing AcousticMeasurement');
     }
   }
 
-  AcousticMeasurement.fromJson(Map<String, dynamic> data) {
-    if (data.containsKey('decibels') && data['decibels'] is num) {
-      decibels = data['decibels'].toDouble();
+  factory AcousticMeasurement.fromJson(Map<String, dynamic> data) {
+    if (data
+        case {
+          'decibels': num decibels,
+          'soundTypes': List soundTypes,
+          'other': String other,
+          'mainSoundType': String mainSoundType,
+        }) {
+      if (soundTypes.isNotEmpty) {
+        return AcousticMeasurement(
+            decibels: decibels.toDouble(),
+            soundTypes: soundTypes
+                .map((string) => SoundType.values.byName(string))
+                .toSet(),
+            other: other,
+            mainSoundType: SoundType.values.byName(mainSoundType));
+      }
     }
-    if (data.containsKey('soundTypes') &&
-        data['soundTypes'] is List &&
-        data['soundTypes'].first is String) {
-      List<String> soundTypeStrings = data['soundTypes'];
-      soundTypes = soundTypeStrings
-          .map((string) => SoundType.values.byName(string))
-          .toSet();
-    }
-    if (data.containsKey('other') && data['other'] is String) {
-      other = data['other'];
-    }
-    if (data.containsKey('mainSoundType') && data['mainSoundType'] is String) {
-      mainSoundType = SoundType.values.byName(data['mainSoundType']);
-    }
+    throw FormatException('Invalid JSON: $data', data);
   }
 
   @override
   Map<String, Object> toJson() {
     return {
-      'decibel': decibels,
+      'decibels': decibels,
       'soundTypes': soundTypes.map((type) => type.name).toList(),
       'mainSoundType': mainSoundType.name,
       'other': other,
@@ -2928,29 +2946,31 @@ class AcousticMeasurement with JsonToString {
 }
 
 class AcousticDataPoint with JsonToString {
-  late final StandingPoint point;
-  late final List<AcousticMeasurement> measurements;
+  final StandingPoint standingPoint;
+  final List<AcousticMeasurement> measurements;
 
-  AcousticDataPoint({required this.point}) : measurements = [];
+  AcousticDataPoint({required this.standingPoint, required this.measurements});
 
-  AcousticDataPoint.fromJson(Map<String, dynamic> data) {
-    if (data.containsKey('point') && data['point'] is Map<String, dynamic>) {
-      point = StandingPoint(
-          location: data['point']['location'], title: data['point']['title']);
+  factory AcousticDataPoint.fromJson(Map<String, dynamic> data) {
+    if (data
+        case {
+          'standingPoint': Map<String, dynamic> point,
+          'measurements': List measurements,
+        }) {
+      return AcousticDataPoint(
+        standingPoint: StandingPoint.fromJson(point),
+        measurements: measurements
+            .map((json) => AcousticMeasurement.fromJson(json))
+            .toList(),
+      );
     }
-    if (data.containsKey('measurements') &&
-        data['measurements'] is List &&
-        data['measurements'].first is Map<String, dynamic>) {
-      final List<Map<String, dynamic>> jsonList = data['measurements'];
-      measurements =
-          jsonList.map((json) => AcousticMeasurement.fromJson(json)).toList();
-    }
+    throw FormatException('Invalid JSON: $data', data);
   }
 
   @override
   Map<String, Object> toJson() {
     return {
-      'point': point.toJson(),
+      'standingPoint': standingPoint.toJson(),
       'measurements':
           measurements.map((measurement) => measurement.toJson()).toList(),
     };
@@ -2958,18 +2978,19 @@ class AcousticDataPoint with JsonToString {
 }
 
 class AcousticProfileData with JsonToString {
-  final List<AcousticDataPoint> dataPoints = [];
+  final List<AcousticDataPoint> dataPoints;
 
-  AcousticProfileData();
+  AcousticProfileData({required this.dataPoints});
+  AcousticProfileData.empty() : dataPoints = [];
 
-  AcousticProfileData.fromJson(Map<String, dynamic> data) {
-    if (data.containsKey('dataPoints') &&
-        data['dataPoints'] is List &&
-        data['dataPoints'].first is Map) {
-      final List jsonList = data['dataPoints'];
-      dataPoints
-          .addAll(jsonList.map((json) => AcousticDataPoint.fromJson(json)));
+  factory AcousticProfileData.fromJson(Map<String, dynamic> data) {
+    if (data case {'dataPoints': List dataPoints}) {
+      return AcousticProfileData(
+          dataPoints: dataPoints
+              .map((dataPoint) => AcousticDataPoint.fromJson(dataPoint))
+              .toList());
     }
+    throw FormatException('Invalid JSON: $data', data);
   }
 
   @override
@@ -3020,7 +3041,7 @@ class AcousticProfileTest extends Test<AcousticProfileData>
           scheduledTime: scheduledTime,
           projectRef: projectRef,
           collectionID: collectionID,
-          data: AcousticProfileData(),
+          data: AcousticProfileData.empty(),
           standingPoints: (standingPoints as List<StandingPoint>?) ?? [],
         );
     Test._recreateTestConstructors[collectionIDStatic] = (testDoc) {
@@ -3043,10 +3064,11 @@ class AcousticProfileTest extends Test<AcousticProfileData>
       await testRef.set(test as AcousticProfileTest, SetOptions(merge: true));
     };
     Test._standingPointTestCollectionIDs.add(collectionIDStatic);
+    Test._testInitialsMap[AcousticProfileTest] = 'AP';
   }
 
   @override
-  void submitData(AcousticProfileData data) async {
+  Future<void> submitData(AcousticProfileData data) async {
     try {
       await _firestore.collection(collectionID).doc(testID).update({
         'data': data.toJson(),
@@ -3063,19 +3085,33 @@ class AcousticProfileTest extends Test<AcousticProfileData>
     }
   }
 
-  static AcousticProfileTest fromJson(Map<String, dynamic> doc) {
-    return AcousticProfileTest._(
-      title: doc['title'],
-      testID: doc['id'],
-      scheduledTime: doc['scheduledTime'],
-      projectRef: doc['project'],
-      collectionID: collectionIDStatic,
-      data: AcousticProfileData.fromJson(doc['data']),
-      creationTime: doc['creationTime'],
-      maxResearchers: doc['maxResearchers'],
-      isComplete: doc['isComplete'],
-      standingPoints: StandingPoint.fromJsonList(doc['standingPoints']),
-    );
+  factory AcousticProfileTest.fromJson(Map<String, dynamic> data) {
+    if (data
+        case {
+          'title': String title,
+          'id': String id,
+          'scheduledTime': Timestamp scheduledTime,
+          'project': DocumentReference project,
+          'data': Map<String, dynamic> testData,
+          'creationTime': Timestamp creationTime,
+          'maxResearchers': int maxResearchers,
+          'isComplete': bool isComplete,
+          'standingPoints': List standingPoints,
+        }) {
+      return AcousticProfileTest._(
+        title: title,
+        testID: id,
+        scheduledTime: scheduledTime,
+        projectRef: project,
+        collectionID: collectionIDStatic,
+        data: AcousticProfileData.fromJson(testData),
+        creationTime: creationTime,
+        maxResearchers: maxResearchers.toInt(),
+        isComplete: isComplete,
+        standingPoints: StandingPoint.fromJsonList(standingPoints),
+      );
+    }
+    throw FormatException('Invalid JSON: $data', data);
   }
 
   @override

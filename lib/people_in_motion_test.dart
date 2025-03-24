@@ -431,7 +431,7 @@ class _PeopleInMotionTestPageState extends State<PeopleInMotionTestPage> {
           leadingWidth: 100,
           // Start/End button on the left.
           leading: Padding(
-            padding: const EdgeInsets.only(left: 20),
+            padding: const EdgeInsets.only(left: 20, top: 4, bottom: 4),
             child: ElevatedButton(
               style: ElevatedButton.styleFrom(
                 shape: RoundedRectangleBorder(
@@ -461,7 +461,7 @@ class _PeopleInMotionTestPageState extends State<PeopleInMotionTestPage> {
               ? Container(
                   padding: const EdgeInsets.symmetric(
                     horizontal: 12,
-                    vertical: 8,
+                    vertical: 4,
                   ),
                   decoration: BoxDecoration(
                     color: Colors.black.withValues(alpha: 0.6),
@@ -469,8 +469,8 @@ class _PeopleInMotionTestPageState extends State<PeopleInMotionTestPage> {
                   ),
                   child: Text(
                     'Tap the screen to trace',
+                    textAlign: TextAlign.center,
                     maxLines: 2,
-                    overflow: TextOverflow.visible,
                     style: const TextStyle(color: Colors.white, fontSize: 16),
                   ),
                 )
@@ -499,21 +499,24 @@ class _PeopleInMotionTestPageState extends State<PeopleInMotionTestPage> {
         body: Stack(
           children: [
             // Full-screen map with polylines.
-            GoogleMap(
-              onMapCreated: _onMapCreated,
-              initialCameraPosition: CameraPosition(
-                target: _location,
-                zoom: 14.0,
+            SizedBox(
+              height: MediaQuery.of(context).size.height,
+              child: GoogleMap(
+                onMapCreated: _onMapCreated,
+                initialCameraPosition: CameraPosition(
+                  target: _location,
+                  zoom: 14.0,
+                ),
+                markers: visibleMarkers,
+                polygons: _polygons,
+                polylines: {
+                  ..._confirmedPolylines,
+                  if (_tracingPolyline != null) _tracingPolyline!
+                },
+                onTap: (_isTracingMode) ? _handleMapTap : null,
+                mapType: _currentMapType,
+                myLocationButtonEnabled: false,
               ),
-              markers: visibleMarkers,
-              polygons: _polygons,
-              polylines: {
-                ..._confirmedPolylines,
-                if (_tracingPolyline != null) _tracingPolyline!
-              },
-              onTap: (_isTracingMode) ? _handleMapTap : null,
-              mapType: _currentMapType,
-              myLocationButtonEnabled: false,
             ),
 
             if (_showErrorMessage) OutsideBoundsWarning(),

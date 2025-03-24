@@ -59,7 +59,7 @@ Future<LocationPermission> _checkLocationPermissions() async {
 Set<Polygon> finalizePolygon(List<LatLng> polygonPoints,
     [Color? polygonColor]) {
   Set<Polygon> polygon = {};
-  List<LatLng> polygonPointsCopy = List.of(polygonPoints);
+  List<LatLng> polygonPointsCopy = polygonPoints.toList();
   try {
     // Sort points in clockwise order
     List<LatLng> sortedPoints = _sortPointsClockwise(polygonPointsCopy);
@@ -170,7 +170,7 @@ Polyline? createPolyline(List<LatLng> polylinePoints, Color color) {
       polylineId: PolylineId(polylineID),
       width: 4,
       startCap: Cap.squareCap,
-      points: List.of(polylinePoints),
+      points: polylinePoints.toList(),
       color: color,
     );
   } catch (e, stacktrace) {

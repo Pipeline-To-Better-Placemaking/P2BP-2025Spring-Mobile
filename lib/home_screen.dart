@@ -53,7 +53,7 @@ class _HomeScreenState extends State<HomeScreen> {
       } else {
         _projectList = await getTeamProjects(teamRef!);
       }
-      if (context.mounted) {
+      if (mounted) {
         setState(() {
           _projectsCount = _projectList.length;
           _projectList;

@@ -1,15 +1,14 @@
 import 'dart:async';
-import 'package:cloud_firestore/cloud_firestore.dart';
+
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
+import 'package:p2bp_2025spring_mobile/acoustic_instructions.dart';
 import 'package:p2bp_2025spring_mobile/db_schema_classes.dart';
-import 'package:p2bp_2025spring_mobile/firestore_functions.dart';
 import 'package:p2bp_2025spring_mobile/google_maps_functions.dart';
-import 'package:p2bp_2025spring_mobile/project_details_page.dart';
 import 'package:p2bp_2025spring_mobile/theme.dart';
-import 'package:p2bp_2025spring_mobile/acoustic_instructions.dart'; // for _showInstructionOverlay
+import 'package:p2bp_2025spring_mobile/widgets.dart'; // for _showInstructionOverlay
 
 /// AcousticProfileTestPage displays a Google Map (with the project polygon)
 /// in the background and uses a timer to prompt the researcher for sound
@@ -30,58 +29,69 @@ class AcousticProfileTestPage extends StatefulWidget {
 }
 
 /// Icon for a standing point that hasn't been measured yet
-final AssetMapBitmap incompleteIcon = AssetMapBitmap(
+final AssetMapBitmap _incompleteIcon = AssetMapBitmap(
   'assets/standing_point_disabled.png',
   width: 48,
   height: 48,
 );
 
 /// Icon for a standing point that has completed its measurement
-final AssetMapBitmap completedIcon = AssetMapBitmap(
+final AssetMapBitmap _completeIcon = AssetMapBitmap(
   'assets/standing_point_enabled.png',
   width: 48,
   height: 48,
 );
 
 /// Icon for a standing point that is actively being measured
-final AssetMapBitmap activeIcon = AssetMapBitmap(
-  'assets/standing_point_disabled.png',
+final AssetMapBitmap _activeIcon = AssetMapBitmap(
+  'assets/standing_point_active.png',
   width: 48,
   height: 48,
 );
 
 class _AcousticProfileTestPageState extends State<AcousticProfileTestPage> {
   late GoogleMapController mapController;
-  LatLng _currentLocation = defaultLocation; // Default location
+  MapType _currentMapType = MapType.normal;
+  LatLng _location = defaultLocation; // Default location
   bool _isLoading = true;
-  Timer? _intervalTimer;
-  int _currentInterval = 0;
+  bool _isIntervalCycleRunning = false;
+  bool _isBottomSheetOpen = false;
+  bool _isErrorTextShown = false;
+  bool _isTestComplete = false;
+
   Set<Polygon> _polygons = {};
   Set<Circle> _circles = <Circle>{};
   Set<Marker> _markers = {};
-  List _standingPoints = [];
-  final int _maxIntervals = 5; // Total number of intervals
-  // List to store acoustic measurements for each interval.
-  Map<int, List<AcousticMeasurement>> _measurementsPerPoint = {};
-  List<bool> _completedStandingPoints = [];
-  // Timer (in seconds) for each interval (e.g. 4 seconds).
-  final int _intervalDuration = 4;
-  // Controls whether the test is running.
-  bool _isTestRunning = false;
-  MapType _currentMapType = MapType.normal;
-  // Firestore instance.
-  bool _showErrorMessage = false;
+  late final List<StandingPoint> _standingPoints;
+
+  Timer? _intervalTimer;
+  final int _intervalDuration = 4; // TODO replace with member of test later
+  final int _intervalCount = 3; // TODO replace with member of test later
   int _remainingSeconds = 0;
-  bool _isBottomSheetOpen = false;
-  int? _selectedStandingPointIndex;
+  late int _intervalsRemaining;
+
+  // List to store acoustic measurements for each interval.
+  final Map<MarkerId, bool> _standingPointCompletionStatus = {};
+  Marker? _activeMarker;
+
+  final AcousticProfileData _newData = AcousticProfileData.empty();
 
   @override
   void initState() {
     super.initState();
-    // Center the map based on the project polygon.
-    _initProjectArea();
-    // Delay starting the interval timer until the map is ready.
-    WidgetsBinding.instance.addPostFrameCallback((_) {});
+    _intervalsRemaining = _intervalCount;
+    _polygons = getProjectPolygon(widget.activeProject.polygonPoints);
+    if (_polygons.isNotEmpty) {
+      _location = getPolygonCentroid(_polygons.first);
+      _location = LatLng(_location.latitude * 0.999999, _location.longitude);
+    }
+    // TODO: dynamic zooming
+    _standingPoints = widget.activeTest.standingPoints.toList();
+    print(_standingPoints);
+    _setupNewData();
+    _markers = _buildStandingPointMarkers();
+
+    _isLoading = false;
   }
 
   @override
@@ -90,51 +100,10 @@ class _AcousticProfileTestPageState extends State<AcousticProfileTestPage> {
     super.dispose();
   }
 
-  /// Initializes the project area by setting up the polygon for the project,
-  /// centering the map based on the polygon's centroid, creating markers for each
-  /// standing point, and loading any pre-existing standing point data.
-  void _initProjectArea() async {
-    setState(() {
-      _polygons = getProjectPolygon(widget.activeProject.polygonPoints);
-      if (_polygons.isNotEmpty) {
-        _currentLocation = getPolygonCentroid(_polygons.first);
-        // Adjust the location slightly.
-        _currentLocation = LatLng(
-            _currentLocation.latitude * 0.999999, _currentLocation.longitude);
-      }
-      // TODO: dynamic zooming
-      _markers = _setMarkersFromPoints(widget.activeTest.standingPoints);
-      _standingPoints = widget.activeTest.standingPoints;
-      print(_standingPoints);
-      // Initialize the completion status for each standing point.
-      _completedStandingPoints = List.filled(_standingPoints.length, false);
-      _isLoading = false;
-    });
-  }
-
-  LatLngBounds _getPolygonBounds(List<LatLng> points) {
-    double minLat = points.first.latitude;
-    double maxLat = points.first.latitude;
-    double minLng = points.first.longitude;
-    double maxLng = points.first.longitude;
-
-    for (final point in points) {
-      if (point.latitude < minLat) minLat = point.latitude;
-      if (point.latitude > maxLat) maxLat = point.latitude;
-      if (point.longitude < minLng) minLng = point.longitude;
-      if (point.longitude > maxLng) maxLng = point.longitude;
-    }
-
-    return LatLngBounds(
-      southwest: LatLng(minLat, minLng),
-      northeast: LatLng(maxLat, maxLng),
-    );
-  }
-
   void _moveToCurrentLocation() {
     mapController.animateCamera(
       CameraUpdate.newCameraPosition(
-        CameraPosition(target: _currentLocation, zoom: 14.0),
+        CameraPosition(target: _location, zoom: 14.0),
       ),
     );
   }
@@ -155,63 +124,52 @@ class _AcousticProfileTestPageState extends State<AcousticProfileTestPage> {
     mapController = controller;
     setState(() {
       if (widget.activeProject.polygonPoints.isNotEmpty) {
-        _polygons = getProjectPolygon(widget.activeProject.polygonPoints);
         WidgetsBinding.instance.addPostFrameCallback((_) {
-          final bounds = _getPolygonBounds(
-              widget.activeProject.polygonPoints.toLatLngList());
-          mapController.animateCamera(CameraUpdate.newLatLngBounds(bounds, 50));
+          final bounds = getLatLngBounds(widget.activeProject.polygonPoints);
+          if (bounds != null) {
+            mapController
+                .animateCamera(CameraUpdate.newLatLngBounds(bounds, 50));
+          }
         });
       } else {
-        _moveToCurrentLocation(); // Ensure the map is centered on the current location
+        _moveToCurrentLocation();
       }
     });
   }
 
-  /// Create a marker for each standing point. Markers include an onTap callback
-  /// that toggles selection (or deselection) if the marker's interval cycle hasn't been
-  /// completed.
-  Set<Marker> _setMarkersFromPoints(List points) {
-    Set<Marker> markers = {};
-    for (int i = 0; i < points.length; i++) {
-      final Map point = points[i];
-      final markerId = MarkerId(point.toString());
+  /// Creates an [AcousticDataPoint] in [_newData] for each standing point.
+  void _setupNewData() {
+    for (final point in _standingPoints) {
+      _newData.dataPoints.add(AcousticDataPoint(
+        standingPoint: point,
+        measurements: [],
+      ));
+    }
+  }
 
-      // Choose the appropriate icon for this standing point based on its state:
-      // - Use completedIcon if the measurement for this point is complete.
-      // - Use activeIcon if this point is currently selected for measurement.
-      // - Otherwise, use incompleteIcon to indicate it hasn't been measured yet.
-      AssetMapBitmap markerIcon;
-      if (_completedStandingPoints[i]) {
-        markerIcon = completedIcon;
-      } else if (_selectedStandingPointIndex == i) {
-        markerIcon = activeIcon;
-      } else {
-        markerIcon = incompleteIcon;
-      }
+  /// Creates a marker for each standing point and returns that set of markers.
+  Set<Marker> _buildStandingPointMarkers() {
+    Set<Marker> markers = {};
+    for (final point in _standingPoints) {
+      final markerId = MarkerId(point.location.toString());
+      _standingPointCompletionStatus[markerId] = false;
 
       markers.add(
         Marker(
           markerId: markerId,
-          position: (point['point'] as GeoPoint).toLatLng(),
-          icon: markerIcon,
+          position: point.location,
+          icon: _incompleteIcon,
           infoWindow: InfoWindow(
-            title: point['title'],
-            snippet:
-                '${point['point'].latitude.toStringAsFixed(5)}, ${point['point'].latitude.toStringAsFixed(5)}',
+            title: point.title,
+            snippet: '${point.location.latitude.toStringAsFixed(5)},'
+                ' ${point.location.longitude.toStringAsFixed(5)}',
           ),
           onTap: () {
-            // Only allow selection if the marker doesn't have a completed interval cycle.
-            if (!_completedStandingPoints[i]) {
-              setState(() {
-                // Toggle marker selection: if the tapped marker is already selected, deselect it;
-                // otherwise, select it.
-                if (_selectedStandingPointIndex == i) {
-                  // Deselect if tapped again.
-                  _selectedStandingPointIndex = null;
-                } else {
-                  _selectedStandingPointIndex = i;
-                }
-              });
+            // Only allow selection if this point is incomplete.
+            if (_standingPointCompletionStatus[markerId] == false) {
+              final Marker thisMarker = _markers
+                  .singleWhere(((marker) => marker.markerId == markerId));
+              _setActiveMarker(thisMarker);
             }
           },
         ),
@@ -220,84 +178,125 @@ class _AcousticProfileTestPageState extends State<AcousticProfileTestPage> {
     return markers;
   }
 
-  // Helper method to format elapsed seconds into mm:ss
-  String _formatTime(int seconds) {
-    final minutes = seconds ~/ 60;
-    final secs = seconds % 60;
-    return '${minutes.toString().padLeft(2, '0')}:${secs.toString().padLeft(2, '0')}';
+  /// Sets given marker as [_activeMarker] as long as it is incomplete.
+  ///
+  /// This includes exchanging the marker's icon for the [_activeIcon].
+  void _setActiveMarker(Marker marker) {
+    if (marker.icon == _incompleteIcon) {
+      // If activeMarker already set then change icon back to incomplete.
+      if (_activeMarker != null) {
+        final newMarker = _activeMarker!.copyWith(iconParam: _incompleteIcon);
+        setState(() {
+          _markers.add(newMarker);
+          _markers.remove(_activeMarker);
+        });
+      }
+      // Change selected marker icon to active icon and assign to _activeMarker.
+      final newActiveMarker = marker.copyWith(iconParam: _activeIcon);
+      setState(() {
+        _markers.add(newActiveMarker);
+        _activeMarker = newActiveMarker;
+        _markers.remove(marker);
+      });
+    } else if (marker.icon == _completeIcon) {
+      print('_setActiveMarker called on complete marker');
+      return;
+    } else if (marker.icon == _activeIcon) {
+      print('_setActiveMarker called on active marker');
+      return;
+    }
   }
 
-  /// Starts the interval timer. Every [_intervalDuration] seconds, this timer
-  /// pauses and launches the acoustic measurement sequence.
-  void _startAcousticTest() {
-    // Begin the acoustic test by setting the test running flag, resetting the interval counter,
-    // and initializing the countdown timer.
-    setState(() {
-      _isTestRunning = true;
-      _currentInterval = 0;
-      _remainingSeconds =
-          _intervalDuration; // Start the countdown at the interval duration.
-    });
+  void _startIntervalCycles() async {
+    // Find dataPoint connected to selected marker.
+    final thisDataPoint = _newData.dataPoints.singleWhere((dataPoint) =>
+        dataPoint.standingPoint.location == _activeMarker!.position);
 
-    _executeIntervalCycle();
-  }
-
-  /// Execute a single interval cycle:
-  /// - Start a countdown using a periodic timer
-  /// - Update the remaining seconds each tick.
-  /// - Once the countdown reaches zero, trigger the bottom sheet sequence to collect data,
-  ///   then move on to the next interval or end the cycle if all intervals are complete
-  void _executeIntervalCycle() {
-    // Record the exact start time for this interval.
-    final DateTime intervalStart = DateTime.now();
-    // Set the initial remaining time.
     setState(() {
+      _isIntervalCycleRunning = true;
+      _intervalsRemaining = _intervalCount;
       _remainingSeconds = _intervalDuration;
     });
 
-    // Create a periodic timer that fires every second.
-    _intervalTimer = Timer.periodic(Duration(seconds: 1), (timer) async {
-      // Calculate elapsed seconds using the stored start time.
-      final int elapsed = DateTime.now().difference(intervalStart).inSeconds;
-      final int remaining = _intervalDuration - elapsed;
-
-      // Update the remaining seconds for the UI.
+    while (_intervalsRemaining > 0) {
       setState(() {
-        _remainingSeconds = remaining;
+        _intervalsRemaining--;
+        _remainingSeconds = _intervalDuration;
       });
 
-      // When the countdown reaches 0 or less, stop the timer and launch the measurement sequence.
-      if (remaining <= 0) {
-        timer.cancel();
-        // Proceed with the asynchronous bottom sheet sequence.
-        await _showAcousticBottomSheetSequence();
-        _currentInterval++;
+      // Start timer and wait for it to end before proceeding.
+      _intervalTimer = _startIntervalTimer();
+      while (_intervalTimer!.isActive) {
+        await Future.delayed(Duration(seconds: 1));
+      }
+      if (!mounted) return;
 
-        // If there are still intervals left, restart the next inerval.
-        if (_currentInterval < _maxIntervals) {
-          _executeIntervalCycle();
-        } else {
-          // Cycle is complete.
-          await _endTest();
-        }
+      setState(() {
+        _isBottomSheetOpen = true;
+      });
+      final measurement = await _doBottomSheetSequence();
+      setState(() {
+        _isBottomSheetOpen = false;
+      });
+
+      // If user closed a sheet without entering data then show error
+      // and restart interval.
+      if (measurement == null) {
+        setState(() {
+          _isErrorTextShown = true;
+          _intervalsRemaining++;
+        });
+        continue;
+      } else {
+        setState(() {
+          _isErrorTextShown = false;
+        });
+      }
+
+      // Add measurement to _newData.
+      if (thisDataPoint.measurements.length < _intervalCount) {
+        thisDataPoint.measurements.add(measurement);
+        print('_newData: $_newData');
+      } else {
+        throw Exception('More measurements than intervals somehow');
+      }
+    }
+
+    // Reset values related to cycle and then change this marker to complete.
+    setState(() {
+      _isIntervalCycleRunning = false;
+      _intervalsRemaining = _intervalCount;
+      _remainingSeconds = 0;
+    });
+    final newMarker = _activeMarker!.copyWith(iconParam: _completeIcon);
+    _standingPointCompletionStatus[_activeMarker!.markerId] = true;
+    setState(() {
+      _markers.add(newMarker);
+      _markers.remove(_activeMarker);
+      _activeMarker = null;
+    });
+
+    if (_standingPointCompletionStatus.values.every((status) => status)) {
+      _endTest();
+    }
+  }
+
+  Timer _startIntervalTimer() {
+    return Timer.periodic(Duration(seconds: 1), (timer) {
+      setState(() {
+        _remainingSeconds--;
+      });
+      if (_remainingSeconds <= 0) {
+        setState(() {
+          timer.cancel();
+        });
       }
     });
   }
 
-  /// Displays a series of bottom sheets in sequence:
-  /// 1. Sound Decibel Level input.
-  /// 2. Sound Types multi-select.
-  /// 3. Main Sound Type single-select.
-  ///
-  /// Each step collects data which is then stored as an AcousticMeasurement for the current
-  /// standing point.
-  Future<void> _showAcousticBottomSheetSequence() async {
-    setState(() {
-      _isBottomSheetOpen = true;
-    });
-
+  Future<AcousticMeasurement?> _doBottomSheetSequence() async {
     // 1. Bottom sheet for Sound Decibel Level.
-    if (!mounted) return;
+    if (!mounted) return null;
     final decibels = await showModalBottomSheet<double>(
       context: context,
       isScrollControlled: true,
@@ -312,10 +311,10 @@ class _AcousticProfileTestPageState extends State<AcousticProfileTestPage> {
         );
       },
     );
-    if (decibels == null) return;
+    if (decibels == null) return null;
 
     // 2. Bottom sheet for Sound Types (multi-select).
-    if (!mounted) return;
+    if (!mounted) return null;
     final soundTypeDescription =
         await showModalBottomSheet<(Set<SoundType>, String)>(
       context: context,
@@ -331,12 +330,12 @@ class _AcousticProfileTestPageState extends State<AcousticProfileTestPage> {
         );
       },
     );
-    if (soundTypeDescription == null) return;
+    if (soundTypeDescription == null) return null;
     final Set<SoundType> selectedSoundTypes = soundTypeDescription.$1;
     final String otherText = soundTypeDescription.$2;
 
     // 3. Bottom sheet for Main Sound Type (single-select).
-    if (!mounted) return;
+    if (!mounted) return null;
     final mainSoundType = await showModalBottomSheet<SoundType>(
       context: context,
       isDismissible: false,
@@ -350,27 +349,15 @@ class _AcousticProfileTestPageState extends State<AcousticProfileTestPage> {
         );
       },
     );
-    if (mainSoundType == null) return;
-
-    setState(() {
-      _isBottomSheetOpen = false;
-    });
+    if (mainSoundType == null) return null;
 
     // Construct an AcousticMeasurement using the collected data.
-    final measurement = AcousticMeasurement(
+    return AcousticMeasurement(
       decibels: decibels,
       soundTypes: selectedSoundTypes,
       mainSoundType: mainSoundType,
       other: otherText,
     );
-    // Use the selected standing point index, defaulting to 0 if none is selected.
-    int index = _selectedStandingPointIndex ?? 0;
-
-    // Initialize the measurement list for this standing point if it doesn't exist.
-    if (!_measurementsPerPoint.containsKey(index)) {
-      _measurementsPerPoint[index] = [];
-    }
-    _measurementsPerPoint[index]!.add(measurement);
   }
 
   /// Finalize the interval cycle by stopping the test-running state.
@@ -380,95 +367,12 @@ class _AcousticProfileTestPageState extends State<AcousticProfileTestPage> {
   /// Update the completed status of each standing point
   /// If all points are completed, navigate to the Project Details Page
   Future<void> _endTest() async {
-    setState(() {
-      _isTestRunning = false;
-    });
-    try {
-      // TODO: Backend logic when interval cycle completes
-      // await _firestore
-      //     .collection(widget.activeTest.collectionID)
-      //     .doc(widget.activeTest.testID)
-      //     .update({
-      //   'data': acousticMeasurementsToJson(measurements),
-      //   'isComplete': true,
-      // });
-      print("Acoustic Profile test data submitted successfully.");
-    } catch (e, stacktrace) {
-      print("Error submitting Acoustic Profile test data: $e");
-      print("Stacktrace: $stacktrace");
-    }
-    _measurementsPerPoint.forEach((index, measurements) {
-      if (measurements.isNotEmpty) {
-        final avgDecibel =
-            measurements.map((m) => m.decibels).reduce((a, b) => a + b) /
-                measurements.length;
-        final scaleFactor = 10;
-        final circleRadius = avgDecibel * scaleFactor;
-
-        // Calculate the most frequently chosen main sound type.
-        Map<String, int> mainSoundTypeCount = {};
-        for (final measurement in measurements) {
-          final type = measurement.mainSoundType;
-          mainSoundTypeCount[type] = (mainSoundTypeCount[type] ?? 0) + 1;
-        }
-        String mainSoundTypeMode = '';
-        int maxCount = 0;
-        mainSoundTypeCount.forEach((type, cnt) {
-          if (cnt > maxCount) {
-            maxCount = cnt;
-            mainSoundTypeMode = type;
-          }
-        });
-
-        // Determine the center for the circle.
-        // Use the selected marker index. If none is selected, default to 0.
-        int index = _selectedStandingPointIndex ?? 0;
-        LatLng circleCenter = _currentLocation;
-        if (_standingPoints.isNotEmpty && index < _standingPoints.length) {
-          final currentStandingPoint = _standingPoints[index];
-          if (currentStandingPoint is Map &&
-              currentStandingPoint.containsKey('point') &&
-              currentStandingPoint['point'] is GeoPoint) {
-            circleCenter =
-                (currentStandingPoint['point'] as GeoPoint).toLatLng();
-          }
-        }
-
-        setState(() {
-          _circles.add(
-            Circle(
-              circleId: CircleId('acousticHeatmap_$index'),
-              center: circleCenter,
-              radius: circleRadius,
-              fillColor: Colors.purple.shade100.withValues(alpha: 0.3),
-              strokeWidth: 0,
-            ),
-          );
-          // Mark this standing point as completed.
-          if (index < _completedStandingPoints.length) {
-            _completedStandingPoints[index] = true;
-          }
-
-          // Clear the current selection.
-          _selectedStandingPointIndex = null;
-          // Refresh markers so that the icon updates.
-          _markers = _setMarkersFromPoints(_standingPoints);
-        });
-      } else {
-        print("No measurements available to calculate average decibel.");
-      }
-    });
-
-    // If all standing points have a corresponding circle, navigate out to Project Details Page.
-    if (_completedStandingPoints.every((completed) => completed)) {
-      Navigator.pushReplacement(
-        context,
-        MaterialPageRoute(
-          builder: (context) =>
-              ProjectDetailsPage(projectData: widget.activeProject),
-        ),
-      );
-    }
+    _intervalTimer?.cancel();
+    widget.activeTest.submitData(_newData);
+    _isTestComplete = true;
+    await Future.delayed(Duration(seconds: 3));
+    if (!mounted) return;
+    Navigator.pop(context);
   }
 
   /// Displays an instruction overlay that explains how Acoustic Profile works.
@@ -524,193 +428,194 @@ class _AcousticProfileTestPageState extends State<AcousticProfileTestPage> {
     );
   }
 
-  /// Overlay widget to display a centered message instructing the user
-  /// not to leave the application once the test has started.
-  Widget _buildInstructionMessage() {
-    // TODO below probably not needed but leaving to verify
-    // // Only display if no bottom sheet is open.
-    // if (_isBottomSheetOpen) return SizedBox.shrink();
-    // Choose message based on whether the test has started.
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 16),
-      child: Center(
-        child: Container(
-          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
-          decoration: BoxDecoration(
-            color: Colors.black.withValues(alpha: 0.75),
-            borderRadius: BorderRadius.circular(12),
-          ),
-          child: Text(
-            !_isTestRunning
-                ? "Do not leave the application once the activity has started"
-                : "Listen carefully to your surroundings",
-            style: const TextStyle(color: Colors.white, fontSize: 18),
-            textAlign: TextAlign.center,
-          ),
-        ),
-      ),
-    );
-  }
-
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      extendBodyBehindAppBar: true,
-      appBar: AppBar(
-        systemOverlayStyle:
-            const SystemUiOverlayStyle(statusBarBrightness: Brightness.light),
-        backgroundColor: Colors.transparent,
-        elevation: 0,
-        leadingWidth: 100,
-        // Start/End button (for this test, we rely solely on the interval timer)
-        leading: Padding(
-          padding: const EdgeInsets.only(left: 20),
-          child: ElevatedButton(
-            style: ElevatedButton.styleFrom(
-              shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(20)),
-              backgroundColor: _isTestRunning ? Colors.grey : Colors.green,
-              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-            ),
-            onPressed: (!_isTestRunning && _selectedStandingPointIndex != null)
-                ? () {
-                    setState(() {
-                      _isTestRunning = true;
-                      _startAcousticTest(); // Start the countdown timer when pressed
-                    });
-                  }
-                : null,
-            child: const Text(
-              'Start',
-              style: TextStyle(color: Colors.white, fontSize: 16),
+    return SafeArea(
+      child: Scaffold(
+        extendBodyBehindAppBar: true,
+        appBar: AppBar(
+          systemOverlayStyle:
+              const SystemUiOverlayStyle(statusBarBrightness: Brightness.light),
+          backgroundColor: Colors.transparent,
+          elevation: 0,
+          leadingWidth: 100,
+          // Start/End button (for this test, we rely solely on the interval timer)
+          leading: Padding(
+            padding: const EdgeInsets.only(left: 20, top: 4, bottom: 4),
+            child: ElevatedButton(
+              style: ElevatedButton.styleFrom(
+                shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(20)),
+                backgroundColor: Colors.green,
+                padding: EdgeInsets.zero,
+              ),
+              onPressed: (!_isIntervalCycleRunning && _activeMarker != null)
+                  ? _startIntervalCycles
+                  : null,
+              child: const Text(
+                'Start',
+                style: TextStyle(color: Colors.white, fontSize: 16),
+              ),
             ),
           ),
-        ),
-        // Centered message reminding the user not to leave the app.
-        title: Column(
-          children: [
-            Container(
-              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-              decoration: BoxDecoration(
-                color: Colors.black.withValues(alpha: 0.6),
-                borderRadius: BorderRadius.circular(8),
-              ),
-              child: // Interval counter (e.g. "Interval 3/15")
-                  Text(
-                '${_currentInterval + 1} / $_maxIntervals',
-                style: const TextStyle(color: Colors.white, fontSize: 14),
+          // Interval counter (e.g. "Interval 3/15")
+          title: Container(
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+            decoration: BoxDecoration(
+              color: Colors.black.withValues(alpha: 0.6),
+              borderRadius: BorderRadius.circular(8),
+            ),
+            child: Text(
+              '${_intervalCount - _intervalsRemaining} / $_intervalCount',
+              style: const TextStyle(color: Colors.white, fontSize: 14),
+            ),
+          ),
+          centerTitle: true,
+          // Timer display on the right
+          actions: [
+            Padding(
+              padding: const EdgeInsets.only(right: 20),
+              child: Center(
+                child: Container(
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                  decoration: BoxDecoration(
+                    color: Colors.black.withValues(alpha: 0.6),
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  child: Text(
+                    formatTime(_remainingSeconds),
+                    style: const TextStyle(color: Colors.white, fontSize: 16),
+                  ),
+                ),
               ),
             ),
           ],
         ),
-        centerTitle: true,
-        // Timer display on the right (shows remaining seconds for current interval)
-        actions: [
-          Padding(
-            padding: const EdgeInsets.only(right: 20),
-            child: Center(
-              child: Container(
-                padding:
-                    const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-                decoration: BoxDecoration(
-                  color: Colors.black.withValues(alpha: 0.6),
-                  borderRadius: BorderRadius.circular(8),
-                ),
-                child: Text(
-                  _formatTime(_remainingSeconds),
-                  style: const TextStyle(color: Colors.white, fontSize: 16),
-                ),
-              ),
-            ),
-          ),
-        ],
+        body: _isLoading
+            ? const Center(child: CircularProgressIndicator())
+            : _buildBody(context),
       ),
-      body: Stack(
-        children: [
-          // Full-screen map displaying the project polygon.
-          GoogleMap(
+    );
+  }
+
+  /// Builds the main body of this page including the map and overlaid buttons.
+  Widget _buildBody(BuildContext context) {
+    return Stack(
+      children: [
+        SizedBox(
+          height: MediaQuery.sizeOf(context).height,
+          child: GoogleMap(
             onMapCreated: _onMapCreated,
-            initialCameraPosition:
-                CameraPosition(target: _currentLocation, zoom: 14.0),
+            initialCameraPosition: CameraPosition(
+              target: _location,
+              zoom: 14.0,
+            ),
+            markers: _markers,
             polygons: _polygons,
             circles: _circles,
             mapType: _currentMapType,
             myLocationButtonEnabled: false,
-            zoomControlsEnabled: false,
           ),
-          // Optionally, display an error message if the user taps outside the polygon.
-          if (_showErrorMessage)
-            Positioned(
-              bottom: 100.0,
-              left: 0,
-              right: 0,
-              child: Center(
-                child: Container(
-                  padding:
-                      const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-                  decoration: BoxDecoration(
-                    color: Colors.red.withValues(alpha: 0.9),
-                    borderRadius: BorderRadius.circular(8),
-                  ),
-                  child: const Text(
-                    'Please place points inside the boundary.',
-                    style: TextStyle(color: Colors.white, fontSize: 16),
+        ),
+        Align(
+          alignment: Alignment.topRight,
+          child: Padding(
+            padding: const EdgeInsets.only(top: kToolbarHeight, right: 20),
+            child: Column(
+              spacing: 10,
+              children: [
+                CircularIconMapButton(
+                  backgroundColor:
+                      const Color(0xFF7EAD80).withValues(alpha: 0.9),
+                  borderColor: Color(0xFF2D6040),
+                  onPressed: _toggleMapType,
+                  icon: Icon(
+                    Icons.layers,
+                    color: Color(0xFF2D6040),
                   ),
                 ),
-              ),
-            ),
-          // Overlaid button for toggling map type.
-          Positioned(
-            top: MediaQuery.of(context).padding.top + kToolbarHeight + 8.0,
-            right: 20.0,
-            child: Container(
-              decoration: BoxDecoration(
-                shape: BoxShape.circle,
-                color: const Color(0xFF7EAD80).withValues(alpha: 0.9),
-                border: Border.all(color: const Color(0xFF2D6040), width: 2),
-                boxShadow: const [
-                  BoxShadow(
-                    color: Colors.black26,
-                    blurRadius: 6.0,
-                    offset: Offset(0, 2),
-                  ),
-                ],
-              ),
-              child: IconButton(
-                icon: Center(
-                  child: Icon(Icons.layers, color: const Color(0xFF2D6040)),
-                ),
-                onPressed: _toggleMapType,
-              ),
-            ),
-          ),
-          // Overlaid button for toggling instructions.
-          if (!_isLoading)
-            Positioned(
-              top: MediaQuery.of(context).padding.top + kToolbarHeight + 70.0,
-              right: 20,
-              child: Container(
-                decoration: BoxDecoration(
-                  shape: BoxShape.circle,
-                  color: const Color(0xFFBACFEB).withValues(alpha: 0.9),
-                  border: Border.all(color: const Color(0xFF37597D), width: 2),
-                  boxShadow: const [
-                    BoxShadow(
-                      color: Colors.black26,
-                      blurRadius: 6.0,
-                      offset: Offset(0, 2),
-                    ),
-                  ],
-                ),
-                child: IconButton(
-                  icon: Icon(FontAwesomeIcons.info,
-                      color: const Color(0xFF37597D)),
+                CircularIconMapButton(
+                  backgroundColor: Color(0xFFBACFEB).withValues(alpha: 0.9),
+                  borderColor: Color(0xFF37597D),
                   onPressed: _showInstructionOverlay,
+                  icon: Icon(
+                    FontAwesomeIcons.info,
+                    color: Color(0xFF37597D),
+                  ),
                 ),
-              ),
+              ],
             ),
-          if (!_isBottomSheetOpen) _buildInstructionMessage(),
-        ],
+          ),
+        ),
+        if (!_isBottomSheetOpen)
+          (!_isTestComplete)
+              ? Align(
+                  alignment: Alignment.topLeft,
+                  child: Padding(
+                    padding: const EdgeInsets.fromLTRB(
+                        16, kToolbarHeight + 8, 80, 16),
+                    child: _buildDirections(),
+                  ),
+                )
+              : Center(
+                  child: Padding(
+                    padding: const EdgeInsets.all(16),
+                    child: _DirectionsTextBox(
+                      text: 'Test completed! Now returning to previous screen.',
+                      backgroundColor: Colors.black.withValues(alpha: 0.75),
+                    ),
+                  ),
+                ),
+      ],
+    );
+  }
+
+  Widget _buildDirections() {
+    if (_isErrorTextShown) {
+      return _DirectionsTextBox(
+        text: 'No information received for that measurement. Please do '
+            'not close bottom panels without providing the requested info.',
+        backgroundColor: Colors.red.withValues(alpha: 0.9),
+      );
+    } else {
+      return _DirectionsTextBox(
+        text: (_activeMarker == null)
+            ? 'Tap one of the marked standing points to begin '
+                'measurements at that location'
+            : (!_isIntervalCycleRunning)
+                ? 'Press Start once you have arrived at the selected location'
+                : 'Listen carefully to your surroundings',
+        backgroundColor: Colors.black.withValues(alpha: 0.75),
+      );
+    }
+  }
+}
+
+class _DirectionsTextBox extends StatelessWidget {
+  final String text;
+  final Color backgroundColor;
+
+  const _DirectionsTextBox({
+    required this.text,
+    required this.backgroundColor,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.symmetric(
+        horizontal: 10,
+        vertical: 5,
+      ),
+      decoration: BoxDecoration(
+        color: backgroundColor,
+        borderRadius: BorderRadius.circular(12),
+      ),
+      child: Text(
+        text,
+        style: const TextStyle(color: Colors.white, fontSize: 18),
+        textAlign: TextAlign.center,
       ),
     );
   }
@@ -798,14 +703,21 @@ class _SoundTypeFormState extends State<_SoundTypeForm> {
   static final List<SoundType> _chipSoundTypeList = List.generate(
       SoundType.values.length - 1, (index) => SoundType.values[index]);
   bool _isOtherSelected = false;
-  String? _errorMessage;
 
   void _submitDescription() {
     // Validate the "Other" field if its chip is selected.
     if (!_formKey.currentState!.validate()) {
       return;
     }
-    Navigator.pop(context, (_selections, _otherController.text.trim()));
+    Navigator.pop(
+      context,
+      (
+        _selections,
+        (_selections.contains(SoundType.other))
+            ? _otherController.text.trim()
+            : '',
+      ),
+    );
   }
 
   @override
@@ -927,15 +839,6 @@ class _SoundTypeFormState extends State<_SoundTypeForm> {
                 ),
               ],
             ),
-            // Display an error message if no chip is selected.
-            if (_errorMessage != null)
-              Padding(
-                padding: const EdgeInsets.only(top: 8.0),
-                child: Text(
-                  _errorMessage!,
-                  style: const TextStyle(color: Colors.red),
-                ),
-              ),
             const SizedBox(height: 12),
             ElevatedButton(
               style: ElevatedButton.styleFrom(backgroundColor: p2bpBlue),
@@ -1009,23 +912,14 @@ class _MainSoundTypeFormState extends State<_MainSoundTypeForm> {
             );
           }).toList(),
         ),
-        if (selectedMainSound == null)
-          const Padding(
-            padding: const EdgeInsets.only(top: 8.0),
-            child: Text(
-              'Please select a main sound type.',
-              style: const TextStyle(color: Colors.red),
-            ),
-          ),
         const SizedBox(height: 24),
         ElevatedButton(
           style: ElevatedButton.styleFrom(backgroundColor: p2bpBlue),
-          onPressed: () {
-            if (selectedMainSound == null) {
-              return;
-            }
-            Navigator.pop(context, selectedMainSound);
-          },
+          onPressed: (selectedMainSound != null)
+              ? () {
+                  Navigator.pop(context, selectedMainSound);
+                }
+              : null,
           child: const Text('Submit', style: TextStyle(color: Colors.white)),
         ),
       ],
