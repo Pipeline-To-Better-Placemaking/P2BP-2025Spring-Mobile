@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -47,6 +49,10 @@ class _NaturePrevalenceState extends State<NaturePrevalence> {
   MapType _currentMapType = MapType.satellite; // Default map type
   bool _oldVisibility = true;
 
+  Timer? _timer;
+  int _remainingSeconds = -1;
+  bool _testIsRunning = false;
+
   final NatureData _natureData = NatureData();
 
   final List<Animal> _animalData = [];
@@ -72,6 +78,79 @@ class _NaturePrevalenceState extends State<NaturePrevalence> {
     WidgetsBinding.instance.addPostFrameCallback((_) async {
       _setWeatherData();
     });
+  }
+
+  @override
+  void dispose() {
+    _timer?.cancel();
+    super.dispose();
+  }
+
+  void _startTest() {
+    setState(() {
+      _testIsRunning = true;
+    });
+    _timer = Timer.periodic(Duration(seconds: 1), (timer) {
+      setState(() {
+        if (_remainingSeconds <= 0) {
+          _endTest();
+          timer.cancel();
+          showDialog(
+              context: context,
+              builder: (context) {
+                return AlertDialog(
+                  scrollable: true,
+                  title: Center(
+                      child: Text(
+                    "Time's Up!",
+                    style: TextStyle(fontWeight: FontWeight.bold),
+                  )),
+                  content: Center(
+                      child: Text(
+                    "Would you like to submit your data?",
+                    style: TextStyle(fontSize: 15),
+                  )),
+                  actions: <Widget>[
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.end,
+                      children: [
+                        Flexible(
+                          child: TextButton(
+                            onPressed: () {
+                              setState(() {
+                                _remainingSeconds = 10;
+                              });
+                              Navigator.pop(context);
+                            },
+                            child: Text("No, take me back."),
+                          ),
+                        ),
+                        Flexible(
+                          child: TextButton(
+                            onPressed: () {
+                              Navigator.pop(context);
+                              Navigator.pop(context);
+                            },
+                            child: Text("Yes, submit."),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ],
+                );
+              });
+        } else {
+          _remainingSeconds--;
+        }
+      });
+    });
+  }
+
+  void _endTest() {
+    setState(() {
+      _testIsRunning = false;
+    });
+    _timer?.cancel();
   }
 
   /// Sets all type variables to null.
@@ -109,6 +188,7 @@ class _NaturePrevalenceState extends State<NaturePrevalence> {
       // Take some latitude away to center considering bottom sheet.
       _location = LatLng(_location.latitude * .999999, _location.longitude);
       _projectArea = _projectPolygon.first.toMPLatLngList();
+      _remainingSeconds = widget.activeTest.testDuration;
       // TODO: dynamic zooming
       _isLoading = false;
     });
@@ -793,6 +873,56 @@ class _NaturePrevalenceState extends State<NaturePrevalence> {
       child: Scaffold(
         resizeToAvoidBottomInset: false,
         extendBody: true,
+        extendBodyBehindAppBar: true,
+        appBar: AppBar(
+          leading: null,
+          automaticallyImplyLeading: false,
+          systemOverlayStyle:
+              SystemUiOverlayStyle(statusBarBrightness: Brightness.light),
+          backgroundColor: Colors.transparent,
+          // Timer on the right
+          actionsPadding: EdgeInsets.only(top: 15),
+          actions: [
+            ElevatedButton(
+              style: ElevatedButton.styleFrom(
+                shape: RoundedRectangleBorder(
+                  borderRadius:
+                      BorderRadius.circular(8), // Rounded rectangle shape.
+                ),
+                backgroundColor: _testIsRunning ? Colors.red : Colors.green,
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+              ),
+              onPressed: () {
+                if (_testIsRunning) {
+                  _endTest();
+                } else {
+                  _startTest();
+                }
+              },
+              child: Text(
+                _testIsRunning ? 'End' : 'Start',
+                style: const TextStyle(color: Colors.white, fontSize: 16),
+              ),
+            ),
+            Padding(
+              padding: const EdgeInsets.only(left: 10, right: 20),
+              child: Center(
+                child: Container(
+                  padding: EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                  decoration: BoxDecoration(
+                    color: Colors.black.withValues(alpha: 0.6),
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  child: Text(
+                    formatTime(_remainingSeconds),
+                    style: TextStyle(color: Colors.white, fontSize: 16),
+                  ),
+                ),
+              ),
+            ),
+          ],
+        ),
         body: _isLoading
             ? const Center(child: CircularProgressIndicator())
             : Center(
@@ -818,7 +948,8 @@ class _NaturePrevalenceState extends State<NaturePrevalence> {
                       ),
                     ),
                     Padding(
-                      padding: const EdgeInsets.all(20.0),
+                      padding: const EdgeInsets.only(
+                          top: kToolbarHeight + 20, right: 20.0),
                       child: Column(
                         spacing: 10,
                         children: [
@@ -1060,7 +1191,8 @@ class _NaturePrevalenceState extends State<NaturePrevalence> {
                                           color: Colors.black),
                                       onPressed: (_pointMode ||
                                               _polygonMode ||
-                                              _deleteMode)
+                                              _deleteMode ||
+                                              _testIsRunning)
                                           ? null
                                           : () {
                                               showDialog(

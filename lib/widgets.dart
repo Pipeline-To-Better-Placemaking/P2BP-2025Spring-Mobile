@@ -380,6 +380,54 @@ class DialogTextBox extends StatelessWidget {
   }
 }
 
+class TimeFormField extends StatelessWidget {
+  const TimeFormField({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    return TextFormField(
+      decoration: InputDecoration(
+        alignLabelWithHint: true,
+        counterStyle: const TextStyle(color: Colors.black),
+        errorBorder: const OutlineInputBorder(
+          borderRadius: BorderRadius.all(Radius.circular(10)),
+          borderSide: BorderSide(
+            color: Color(0xFFD32F2F),
+            width: 1.5,
+          ),
+        ),
+        focusedErrorBorder: const OutlineInputBorder(
+          borderRadius: BorderRadius.all(Radius.circular(10)),
+          borderSide: BorderSide(
+            color: Color(0xFFD32F2F),
+            width: 2,
+          ),
+        ),
+        enabledBorder: const OutlineInputBorder(
+          borderRadius: BorderRadius.all(Radius.circular(10)),
+          borderSide: BorderSide(
+            width: 1.5,
+            color: Color(0xFF6A89B8),
+          ),
+        ),
+        focusedBorder: const OutlineInputBorder(
+          borderRadius: BorderRadius.all(Radius.circular(10)),
+          borderSide: BorderSide(
+            width: 2,
+            color: Color(0xFF5C78A1),
+          ),
+        ),
+        hintText: "A",
+        label: Text("Hour"),
+        hintStyle: const TextStyle(
+          fontWeight: FontWeight.w300,
+          color: Color(0xA9000000),
+        ),
+      ),
+    );
+  }
+}
+
 /// Circular button used on top of `GoogleMap` widget.
 class CircularIconMapButton extends StatelessWidget {
   final Color backgroundColor;

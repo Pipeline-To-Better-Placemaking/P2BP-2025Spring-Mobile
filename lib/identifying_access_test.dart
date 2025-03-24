@@ -1,5 +1,3 @@
-import 'dart:async';
-
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -43,9 +41,6 @@ class _IdentifyingAccessState extends State<IdentifyingAccess> {
   late GoogleMapController mapController;
   LatLng _location = defaultLocation; // Default location
   final AccessData _accessData = AccessData();
-  Timer? _timer;
-  int _remainingSeconds = 5;
-  bool _testIsRunning = false;
 
   Set<Polygon> _projectArea = {};
   Polyline? _currentPolyline;
@@ -67,12 +62,6 @@ class _IdentifyingAccessState extends State<IdentifyingAccess> {
   void initState() {
     super.initState();
     initProjectArea();
-  }
-
-  @override
-  void dispose() {
-    _timer?.cancel();
-    super.dispose();
   }
 
   /// Gets the project polygon, adds it to the current polygon list, and
@@ -286,72 +275,6 @@ class _IdentifyingAccessState extends State<IdentifyingAccess> {
     }
   }
 
-  void _startTest() {
-    setState(() {
-      _testIsRunning = true;
-      _remainingSeconds = 5;
-    });
-    _timer = Timer.periodic(Duration(seconds: 1), (timer) {
-      setState(() {
-        if (_remainingSeconds <= 0) {
-          _endTest();
-          timer.cancel();
-          showDialog(
-              context: context,
-              builder: (context) {
-                return AlertDialog(
-                  scrollable: true,
-                  title: Center(
-                      child: Text(
-                    "Time's Up!",
-                    style: TextStyle(fontWeight: FontWeight.bold),
-                  )),
-                  content: Center(
-                      child: Text(
-                    "Would you like to submit your data?",
-                    style: TextStyle(fontSize: 15),
-                  )),
-                  actions: <Widget>[
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.end,
-                      children: [
-                        Flexible(
-                          child: TextButton(
-                            onPressed: () {
-                              setState(() {
-                                _remainingSeconds = 10;
-                              });
-                              Navigator.pop(context);
-                            },
-                            child: Text("No, take me back."),
-                          ),
-                        ),
-                        Flexible(
-                          child: TextButton(
-                            onPressed: () {
-                              Navigator.pop(context);
-                              Navigator.pop(context);
-                            },
-                            child: Text("Yes, submit."),
-                          ),
-                        ),
-                      ],
-                    ),
-                  ],
-                );
-              });
-        } else {
-          _remainingSeconds--;
-        }
-      });
-    });
-  }
-
-  void _endTest() {
-    _testIsRunning = false;
-    _timer?.cancel();
-  }
-
   void _toggleMapType() {
     setState(() {
       _currentMapType = (_currentMapType == MapType.normal
@@ -364,57 +287,7 @@ class _IdentifyingAccessState extends State<IdentifyingAccess> {
   Widget build(BuildContext context) {
     return SafeArea(
       child: Scaffold(
-        extendBodyBehindAppBar: true,
         extendBody: true,
-        appBar: AppBar(
-          leading: null,
-          automaticallyImplyLeading: false,
-          systemOverlayStyle:
-              SystemUiOverlayStyle(statusBarBrightness: Brightness.light),
-          backgroundColor: Colors.transparent,
-          // Timer on the right
-          actionsPadding: EdgeInsets.only(top: 15),
-          actions: [
-            ElevatedButton(
-              style: ElevatedButton.styleFrom(
-                shape: RoundedRectangleBorder(
-                  borderRadius:
-                      BorderRadius.circular(8), // Rounded rectangle shape.
-                ),
-                backgroundColor: _testIsRunning ? Colors.red : Colors.green,
-                padding:
-                    const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-              ),
-              onPressed: () {
-                if (_testIsRunning) {
-                  _endTest();
-                } else {
-                  _startTest();
-                }
-              },
-              child: Text(
-                _testIsRunning ? 'End' : 'Start',
-                style: const TextStyle(color: Colors.white, fontSize: 16),
-              ),
-            ),
-            Padding(
-              padding: const EdgeInsets.only(left: 10, right: 20),
-              child: Center(
-                child: Container(
-                  padding: EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-                  decoration: BoxDecoration(
-                    color: Colors.black.withValues(alpha: 0.6),
-                    borderRadius: BorderRadius.circular(8),
-                  ),
-                  child: Text(
-                    formatTime(_remainingSeconds),
-                    style: TextStyle(color: Colors.white, fontSize: 16),
-                  ),
-                ),
-              ),
-            ),
-          ],
-        ),
         resizeToAvoidBottomInset: false,
         body: _isLoading
             ? const Center(child: CircularProgressIndicator())
@@ -453,8 +326,7 @@ class _IdentifyingAccessState extends State<IdentifyingAccess> {
                     Align(
                       alignment: Alignment.topRight,
                       child: Padding(
-                        padding: const EdgeInsets.only(
-                            top: kToolbarHeight + 20, right: 20.0),
+                        padding: const EdgeInsets.only(top: 20.0, right: 20.0),
                         child: Column(
                           spacing: 10,
                           mainAxisAlignment: MainAxisAlignment.start,

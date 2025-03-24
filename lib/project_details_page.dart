@@ -313,6 +313,9 @@ class _ProjectDetailsPageState extends State<ProjectDetailsPage> {
       standingPoints: newTestInfo.containsKey('standingPoints')
           ? newTestInfo['standingPoints']
           : null,
+      testDuration: newTestInfo.containsKey('testDuration')
+          ? newTestInfo['testDuration']
+          : null,
     );
     setState(() {
       widget.projectData.tests?.add(test);
