@@ -809,13 +809,7 @@ class _SoundTypeFormState extends State<_SoundTypeForm> {
                 const SizedBox(width: 8),
                 // Always display the chip; disable it if there's no text.
                 ChoiceChip(
-                  label: Text(
-                    // TODO this seems silly but waiting and seeing how it looks first
-                    _otherController.text.trim().isEmpty
-                        ? 'Other'
-                        : _otherController.text.trim(),
-                  ),
-                  // Use the selections set to determine if the chip is selected.
+                  label: Text('Other'),
                   selected: _isOtherSelected,
                   onSelected: (selected) {
                     setState(() {
