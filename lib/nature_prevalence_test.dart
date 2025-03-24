@@ -80,12 +80,6 @@ class _NaturePrevalenceState extends State<NaturePrevalence> {
     });
   }
 
-  @override
-  void dispose() {
-    _timer?.cancel();
-    super.dispose();
-  }
-
   void _startTest() {
     setState(() {
       _testIsRunning = true;
@@ -1078,7 +1072,8 @@ class _NaturePrevalenceState extends State<NaturePrevalence> {
                               DisplayModalButton(
                                   onPressed: (_pointMode ||
                                           _polygonMode ||
-                                          _deleteMode)
+                                          _deleteMode ||
+                                          !_testIsRunning)
                                       ? null
                                       : () {
                                           showModalAnimal(context);
@@ -1088,7 +1083,8 @@ class _NaturePrevalenceState extends State<NaturePrevalence> {
                               DisplayModalButton(
                                   onPressed: (_pointMode ||
                                           _polygonMode ||
-                                          _deleteMode)
+                                          _deleteMode ||
+                                          !_testIsRunning)
                                       ? null
                                       : () {
                                           showModalVegetation(context);
@@ -1116,7 +1112,8 @@ class _NaturePrevalenceState extends State<NaturePrevalence> {
                               DisplayModalButton(
                                   onPressed: (_pointMode ||
                                           _polygonMode ||
-                                          _deleteMode)
+                                          _deleteMode ||
+                                          !_testIsRunning)
                                       ? null
                                       : () {
                                           showModalWaterBody(context);
