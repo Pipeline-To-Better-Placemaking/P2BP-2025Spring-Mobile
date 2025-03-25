@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:dropdown_button2/dropdown_button2.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'dart:ui';
+import 'theme.dart';
 
 class ManageTeamBottomSheet extends StatefulWidget {
   @override
@@ -114,7 +115,7 @@ class _ManageTeamBottomSheetState extends State<ManageTeamBottomSheet> {
                                                 24.0,
                                                 14.0), // similar to AlertDialog's content padding
                                             decoration: BoxDecoration(
-                                              color: Color(0xFF2F6DCF).withValues(
+                                              color: p2bpBlue.withValues(
                                                   alpha:
                                                       0.65), // frosted glass effect
                                               borderRadius:

@@ -13,7 +13,7 @@ class SignUpScreen extends StatelessWidget {
     return Scaffold(
       resizeToAvoidBottomInset: true,
       body: Container(
-        decoration: const BoxDecoration(
+        decoration: BoxDecoration(
           gradient: defaultGrad,
         ),
         padding: const EdgeInsets.symmetric(horizontal: 20.0),

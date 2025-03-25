@@ -1,5 +1,6 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:p2bp_2025spring_mobile/firestore_functions.dart';
 import 'package:p2bp_2025spring_mobile/project_details_page.dart';
@@ -29,23 +30,27 @@ class _NaturePrevalenceState extends State<NaturePrevalence> {
   bool _polygonMode = false;
   bool _pointMode = false;
   bool _outsidePoint = false;
+  Set<Polygon> _projectPolygon = {};
   List<mp.LatLng> _projectArea = [];
   String _directions = "Choose a category.";
+  bool _directionsVisible = true;
   double _bottomSheetHeight = 300;
   late DocumentReference teamRef;
   late GoogleMapController mapController;
   LatLng _location = defaultLocation; // Default location
   List<LatLng> _polygonPoints = []; // Points for the polygon
   Set<Polygon> _polygons = {}; // Set of polygons
-  Set<Marker> _markers = {}; // Set of markers for points
+  final Set<Marker> _markers = {}; // Set of markers for points
   Set<Marker> _polygonMarkers = {}; // Set of markers for polygon creation
   MapType _currentMapType = MapType.satellite; // Default map type
+  bool _oldVisibility = true;
 
-  NatureData natureData = NatureData();
+  final NatureData _natureData = NatureData();
 
-  List<Animal> animalData = [];
-  List<Vegetation> vegetationData = [];
-  List<WaterBody> waterBodyData = [];
+  final List<Animal> _animalData = [];
+  final List<Vegetation> _vegetationData = [];
+  final List<WaterBody> _waterBodyData = [];
+  WeatherData? _weatherData;
 
   AnimalType? _animalType;
   VegetationType? _vegetationType;
@@ -62,6 +67,9 @@ class _NaturePrevalenceState extends State<NaturePrevalence> {
   void initState() {
     super.initState();
     initProjectArea();
+    WidgetsBinding.instance.addPostFrameCallback((_) async {
+      _setWeatherData();
+    });
   }
 
   /// Sets all type variables to null.
@@ -94,698 +102,515 @@ class _NaturePrevalenceState extends State<NaturePrevalence> {
   /// centers the map over it.
   void initProjectArea() {
     setState(() {
-      _polygons = getProjectPolygon(widget.activeProject.polygonPoints);
-      _location = getPolygonCentroid(_polygons.first);
+      _projectPolygon = getProjectPolygon(widget.activeProject.polygonPoints);
+      _location = getPolygonCentroid(_projectPolygon.first);
       // Take some latitude away to center considering bottom sheet.
       _location = LatLng(_location.latitude * .999999, _location.longitude);
-      _projectArea = _polygons.first.toMPLatLngList();
+      _projectArea = _projectPolygon.first.toMPLatLngList();
       // TODO: dynamic zooming
       _isLoading = false;
     });
   }
 
-  void showModalWaterBody(BuildContext context) {
-    showModalBottomSheet<void>(
-      sheetAnimationStyle:
-          AnimationStyle(reverseDuration: Duration(milliseconds: 100)),
-      context: context,
-      isScrollControlled: true,
-      useSafeArea: true,
-      builder: (context) {
-        return SingleChildScrollView(
-          child: Padding(
-            padding: MediaQuery.of(context).viewInsets,
-            child: Container(
-              // Container decoration- rounded corners and gradient
-              decoration: BoxDecoration(
-                gradient: defaultGrad,
-                borderRadius: const BorderRadius.only(
-                  topLeft: Radius.circular(24.0),
-                  topRight: Radius.circular(24.0),
-                ),
-              ),
-              child: Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 10.0),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: <Widget>[
-                    const BarIndicator(),
-                    Center(
-                      child: Text(
-                        'Select the Body of Water',
-                        style: TextStyle(
-                          fontSize: 20,
-                          fontWeight: FontWeight.bold,
-                          color: placeYellow,
-                        ),
-                      ),
-                    ),
-                    SizedBox(height: 5),
-                    Center(
-                      child: Text(
-                        'Then mark the boundaries on the map.',
-                        style: TextStyle(
-                          fontSize: 16,
-                          fontStyle: FontStyle.italic,
-                          color: Colors.grey[400],
-                        ),
-                      ),
-                    ),
-                    SizedBox(height: 10),
+  void _setWeatherData() async {
+    WeatherData? weatherData;
+    double? temperature;
+    bool erroredTemp = false;
+    bool erroredSelect = false;
+    Map<Weather, bool> selectedMap = {
+      Weather.stormy: false,
+      Weather.sunny: false,
+      Weather.rainy: false,
+      Weather.windy: false,
+      Weather.cloudy: false,
+    };
+    try {
+      weatherData = await showDialog(
+          barrierDismissible: false,
+          context: context,
+          builder: (context) {
+            return StatefulBuilder(builder: (context, StateSetter setState) {
+              return AlertDialog(
+                scrollable: true,
+                title: Column(
+                  children: [
                     Text(
-                      'Body of Waster Type',
+                      'Weather',
                       style: TextStyle(
-                        fontSize: 16,
                         fontWeight: FontWeight.bold,
-                        color: Colors.white,
                       ),
                     ),
-                    SizedBox(height: 5),
-                    Row(
-                      spacing: 20,
-                      children: <Widget>[
-                        Expanded(
-                          flex: 1,
-                          child: FilledButton(
-                            style: FilledButton.styleFrom(
-                              backgroundColor: Colors.white,
-                              foregroundColor: Colors.black,
-                              shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(10.0),
-                              ),
-                            ),
-                            onPressed: () {
-                              setState(() {
-                                _natureType = NatureType.waterBody;
-                                _waterBodyType = WaterBodyType.ocean;
-                                _polygonMode = true;
-                                _directions =
-                                    'Place points to create an outline, then click confirm shape to build the polygon.';
-                              });
-                              Navigator.pop(context);
-                            },
-                            child: Text('Ocean'),
-                          ),
-                        ),
-                        Expanded(
-                          flex: 1,
-                          child: FilledButton(
-                            style: FilledButton.styleFrom(
-                              backgroundColor: Colors.white,
-                              foregroundColor: Colors.black,
-                              shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(10.0),
-                              ),
-                            ),
-                            onPressed: () {
-                              setState(() {
-                                _natureType = NatureType.waterBody;
-                                _waterBodyType = WaterBodyType.lake;
-                                _polygonMode = true;
-                                _directions =
-                                    'Place points to create an outline, then click confirm shape to build the polygon.';
-                              });
-                              Navigator.pop(context);
-                            },
-                            child: Text('Lake'),
-                          ),
-                        ),
-                        Expanded(
-                          flex: 1,
-                          child: FilledButton(
-                            style: FilledButton.styleFrom(
-                              backgroundColor: Colors.white,
-                              foregroundColor: Colors.black,
-                              shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(10.0),
-                              ),
-                            ),
-                            onPressed: () {
-                              setState(() {
-                                _natureType = NatureType.waterBody;
-                                _waterBodyType = WaterBodyType.river;
-                                _polygonMode = true;
-                                _directions =
-                                    'Place points to create an outline, then click confirm shape to build the polygon.';
-                              });
-                              Navigator.pop(context);
-                            },
-                            child: Text('River', textAlign: TextAlign.center),
-                          ),
-                        ),
-                      ],
-                    ),
-                    SizedBox(height: 5),
-                    Row(
-                      spacing: 20,
-                      children: <Widget>[
-                        Expanded(
-                          flex: 1,
-                          child: FilledButton(
-                            style: FilledButton.styleFrom(
-                              backgroundColor: Colors.white,
-                              foregroundColor: Colors.black,
-                              shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(10.0),
-                              ),
-                            ),
-                            onPressed: () {
-                              setState(() {
-                                _natureType = NatureType.waterBody;
-                                _waterBodyType = WaterBodyType.swamp;
-                                _polygonMode = true;
-                                _directions =
-                                    'Place points to create an outline, then click confirm shape to build the polygon.';
-                              });
-                              Navigator.pop(context);
-                            },
-                            child: Text('Swamp'),
-                          ),
-                        ),
-                        Flexible(
-                          flex: 1,
-                          child: SizedBox(),
-                        ),
-                        Flexible(
-                          flex: 1,
-                          child: SizedBox(),
-                        ),
-                      ],
-                    ),
-                    SizedBox(height: 25),
-                    Align(
-                      alignment: Alignment.bottomRight,
-                      child: InkWell(
-                        child: const Padding(
-                          padding: EdgeInsets.only(right: 20, bottom: 0),
-                          child: Text(
-                            'Cancel',
-                            style: TextStyle(
-                                fontSize: 16,
-                                fontWeight: FontWeight.w500,
-                                color: Color(0xFFFFD700)),
-                          ),
-                        ),
-                        onTap: () {
-                          setState(() {
-                            _clearTypes();
-                          });
-                          Navigator.pop(context);
-                        },
-                      ),
-                    ),
-                    SizedBox(height: 50),
                   ],
                 ),
-              ),
-            ),
+                content: Column(
+                  children: [
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      spacing: 10,
+                      children: [
+                        Flexible(
+                          child: Text(
+                            'Temperature: ',
+                            style: TextStyle(
+                                fontWeight: FontWeight.bold, fontSize: 16),
+                          ),
+                        ),
+                        Flexible(
+                          child: DialogTextBox(
+                            inputFormatter: [
+                              FilteringTextInputFormatter.allow(
+                                  RegExp('[1234567890.-]'))
+                            ],
+                            keyboardType: TextInputType.numberWithOptions(
+                                signed: true, decimal: true),
+                            maxLength: 6,
+                            labelText: 'Temp.',
+                            onChanged: (inputText) {
+                              setState(() {
+                                erroredTemp = false;
+                              });
+                              temperature = double.tryParse(inputText);
+                            },
+                          ),
+                        ),
+                        Flexible(
+                            child: Text(
+                          '°F',
+                          style: TextStyle(fontSize: 14),
+                        ))
+                      ],
+                    ),
+                    erroredTemp
+                        ? Text(
+                            "Please input a value!",
+                            style: TextStyle(color: Colors.red[900]),
+                          )
+                        : SizedBox(),
+                    SizedBox(height: 30),
+                    Center(child: Text("Type")),
+                    Row(
+                      spacing: 5,
+                      children: <Widget>[
+                        TestButton(
+                            buttonText: "Sunny",
+                            backgroundColor: selectedMap[Weather.sunny] == true
+                                ? Colors.blue
+                                : null,
+                            onPressed: () {
+                              setState(() {
+                                erroredSelect = false;
+                                selectedMap[Weather.sunny] =
+                                    !selectedMap[Weather.sunny]!;
+                              });
+                            }),
+                        TestButton(
+                            buttonText: "Cloudy",
+                            backgroundColor: selectedMap[Weather.cloudy] == true
+                                ? Colors.blue
+                                : null,
+                            onPressed: () {
+                              setState(() {
+                                erroredSelect = false;
+                                selectedMap[Weather.cloudy] =
+                                    !selectedMap[Weather.cloudy]!;
+                              });
+                            }),
+                        TestButton(
+                            buttonText: "Rainy",
+                            backgroundColor: selectedMap[Weather.rainy] == true
+                                ? Colors.blue
+                                : null,
+                            onPressed: () {
+                              setState(() {
+                                erroredSelect = false;
+                                selectedMap[Weather.rainy] =
+                                    !selectedMap[Weather.rainy]!;
+                              });
+                            })
+                      ],
+                    ),
+                    Row(
+                      spacing: 5,
+                      children: <Widget>[
+                        TestButton(
+                            buttonText: "Windy",
+                            backgroundColor: selectedMap[Weather.windy] == true
+                                ? Colors.blue
+                                : null,
+                            onPressed: () {
+                              setState(() {
+                                erroredSelect = false;
+                                selectedMap[Weather.windy] =
+                                    !selectedMap[Weather.windy]!;
+                              });
+                            }),
+                        TestButton(
+                            buttonText: "Stormy",
+                            backgroundColor: selectedMap[Weather.stormy] == true
+                                ? Colors.blue
+                                : null,
+                            onPressed: () {
+                              setState(() {
+                                erroredSelect = false;
+                                selectedMap[Weather.stormy] =
+                                    !selectedMap[Weather.stormy]!;
+                              });
+                            })
+                      ],
+                    ),
+                    erroredSelect
+                        ? Text(
+                            "Please select a type!",
+                            style: TextStyle(color: Colors.red[900]),
+                          )
+                        : SizedBox(),
+                  ],
+                ),
+                actions: <Widget>[
+                  TextButton(
+                    onPressed: () {
+                      Navigator.pop(context, null);
+                    },
+                    child: const Text('Cancel'),
+                  ),
+                  TextButton(
+                    onPressed: () {
+                      List<Weather> selectedWeather = [];
+                      for (Weather weatherType in selectedMap.keys) {
+                        if (selectedMap[weatherType] != null &&
+                            selectedMap[weatherType] == true) {
+                          selectedWeather.add(weatherType);
+                        }
+                      }
+                      if (temperature == null) {
+                        setState(() {
+                          erroredTemp = true;
+                        });
+                      }
+                      print(erroredSelect);
+                      if (selectedWeather.isEmpty) {
+                        print("\n");
+                        setState(() {
+                          erroredSelect = true;
+                        });
+                      }
+                      if (erroredSelect || erroredTemp) {
+                        return;
+                      }
+                      weatherData = WeatherData(
+                          weatherTypes: selectedWeather, temp: temperature!);
+                      Navigator.pop(context, weatherData);
+                      print('${weatherData!.weatherTypes} temp: $temperature');
+                    },
+                    child: const Text('Next'),
+                  ),
+                ],
+              );
+            });
+          });
+      if (weatherData == null && mounted) {
+        Navigator.pop(context);
+      } else {
+        _weatherData = weatherData;
+      }
+    } catch (e, stacktrace) {
+      print('Error in nature_prevalence_test.dart, _setWeatherData(): $e');
+      print('Stacktrace: $stacktrace');
+    }
+  }
+
+  void _chooseWaterBodyType(WaterBodyType waterBodyType) {
+    setState(() {
+      _natureType = NatureType.waterBody;
+      _waterBodyType = waterBodyType;
+      _polygonMode = true;
+      _directions =
+          'Place points to create an outline, then click confirm shape to build the polygon.';
+    });
+  }
+
+  void showModalWaterBody(BuildContext context) {
+    _showTestModalGeneric(
+      context,
+      title: 'Select the Body of Water',
+      subtitle: 'Then mark the boundary on the map.',
+      contentList: <Widget>[
+        Text(
+          'Body of Waster Type',
+          style: TextStyle(
+            fontSize: 16,
+            fontWeight: FontWeight.bold,
+            color: Colors.white,
           ),
-        );
-      },
+        ),
+        SizedBox(height: 5),
+        Row(
+          spacing: 20,
+          children: <Widget>[
+            TestButton(
+              buttonText: 'Ocean',
+              onPressed: () {
+                _chooseWaterBodyType(WaterBodyType.ocean);
+                Navigator.pop(context);
+              },
+            ),
+            TestButton(
+              buttonText: 'Lake',
+              onPressed: () {
+                _chooseWaterBodyType(WaterBodyType.lake);
+                Navigator.pop(context);
+              },
+            ),
+            TestButton(
+              buttonText: 'River',
+              onPressed: () {
+                _chooseWaterBodyType(WaterBodyType.river);
+                Navigator.pop(context);
+              },
+            ),
+          ],
+        ),
+        SizedBox(height: 5),
+        Row(
+          spacing: 20,
+          children: <Widget>[
+            TestButton(
+              buttonText: 'Swamp',
+              onPressed: () {
+                _chooseWaterBodyType(WaterBodyType.swamp);
+                Navigator.pop(context);
+              },
+            ),
+            Flexible(
+              flex: 1,
+              child: SizedBox(),
+            ),
+            Flexible(
+              flex: 1,
+              child: SizedBox(),
+            ),
+          ],
+        ),
+      ],
     );
+  }
+
+  void _chooseVegetationType(VegetationType vegetationType) {
+    setState(() {
+      _natureType = NatureType.vegetation;
+      _vegetationType = vegetationType;
+      _polygonMode = true;
+      _directions =
+          'Place points to create an outline, then click confirm shape to build the polygon.';
+    });
   }
 
   void showModalVegetation(BuildContext context) {
-    showModalBottomSheet<void>(
-      sheetAnimationStyle:
-          AnimationStyle(reverseDuration: Duration(milliseconds: 100)),
-      context: context,
-      isScrollControlled: true,
-      useSafeArea: true,
-      builder: (context) {
-        return SingleChildScrollView(
-          child: Padding(
-            padding: MediaQuery.of(context).viewInsets,
-            child: Container(
-              // Container decoration- rounded corners and gradient
-              decoration: BoxDecoration(
-                gradient: defaultGrad,
-                borderRadius: const BorderRadius.only(
-                  topLeft: Radius.circular(24.0),
-                  topRight: Radius.circular(24.0),
-                ),
-              ),
-              child: Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 10.0),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: <Widget>[
-                    const BarIndicator(),
-                    Center(
-                      child: Text(
-                        'Select the Type of the Vegetation',
-                        style: TextStyle(
-                          fontSize: 20,
-                          fontWeight: FontWeight.bold,
-                          color: placeYellow,
-                        ),
-                      ),
-                    ),
-                    Center(
-                      child: Text(
-                        'Then mark the boundaries on the map.',
-                        style: TextStyle(
-                          fontSize: 16,
-                          fontStyle: FontStyle.italic,
-                          color: Colors.grey[400],
-                        ),
-                      ),
-                    ),
-                    SizedBox(height: 10),
-                    Text(
-                      'Vegetation Type',
-                      style: TextStyle(
-                        fontSize: 16,
-                        fontWeight: FontWeight.bold,
-                        color: Colors.white,
-                      ),
-                    ),
-                    SizedBox(height: 5),
-                    Row(
-                      spacing: 20,
-                      children: <Widget>[
-                        Expanded(
-                          flex: 1,
-                          child: FilledButton(
-                            style: FilledButton.styleFrom(
-                              backgroundColor: Colors.white,
-                              foregroundColor: Colors.black,
-                              shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(10.0),
-                              ),
-                            ),
-                            onPressed: () {
-                              setState(() {
-                                _natureType = NatureType.vegetation;
-                                _vegetationType = VegetationType.native;
-                                _polygonMode = true;
-                                _directions =
-                                    'Place points to create an outline, then click confirm shape to build the polygon.';
-                              });
-                              Navigator.pop(context);
-                            },
-                            child: Text('Native'),
-                          ),
-                        ),
-                        Expanded(
-                          flex: 1,
-                          child: FilledButton(
-                            style: FilledButton.styleFrom(
-                              backgroundColor: Colors.white,
-                              foregroundColor: Colors.black,
-                              shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(10.0),
-                              ),
-                            ),
-                            onPressed: () {
-                              setState(() {
-                                _natureType = NatureType.vegetation;
-                                _vegetationType = VegetationType.design;
-                                _polygonMode = true;
-                                _directions =
-                                    'Place points to create an outline, then click confirm shape to build the polygon.';
-                              });
-                              Navigator.pop(context);
-                            },
-                            child: Text('Design'),
-                          ),
-                        ),
-                        Expanded(
-                          flex: 1,
-                          child: FilledButton(
-                            style: FilledButton.styleFrom(
-                              backgroundColor: Colors.white,
-                              foregroundColor: Colors.black,
-                              shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(10.0),
-                              ),
-                            ),
-                            onPressed: () {
-                              setState(() {
-                                _natureType = NatureType.vegetation;
-                                _vegetationType = VegetationType.openField;
-                                _polygonMode = true;
-                                _directions =
-                                    'Place points to create an outline, then click confirm shape to build the polygon.';
-                              });
-
-                              Navigator.pop(context);
-                            },
-                            child:
-                                Text('Open Field', textAlign: TextAlign.center),
-                          ),
-                        ),
-                      ],
-                    ),
-                    SizedBox(height: 25),
-                    Align(
-                      alignment: Alignment.bottomRight,
-                      child: InkWell(
-                        child: const Padding(
-                          padding: EdgeInsets.only(right: 20, bottom: 0),
-                          child: Text(
-                            'Cancel',
-                            style: TextStyle(
-                                fontSize: 16,
-                                fontWeight: FontWeight.w500,
-                                color: Color(0xFFFFD700)),
-                          ),
-                        ),
-                        onTap: () {
-                          setState(() {
-                            _clearTypes();
-                          });
-                          Navigator.pop(context);
-                        },
-                      ),
-                    ),
-                    SizedBox(height: 50),
-                  ],
-                ),
-              ),
-            ),
+    _showTestModalGeneric(
+      context,
+      title: 'Vegetation Type',
+      subtitle: 'Then mark the boundaries on the map',
+      contentList: <Widget>[
+        Text(
+          'Vegetation Type',
+          style: TextStyle(
+            fontSize: 16,
+            fontWeight: FontWeight.bold,
+            color: Colors.white,
           ),
-        );
-      },
+        ),
+        Row(
+          spacing: 20,
+          children: <Widget>[
+            TestButton(
+              buttonText: 'Native',
+              onPressed: () {
+                _chooseVegetationType(VegetationType.native);
+                Navigator.pop(context);
+              },
+            ),
+            TestButton(
+              buttonText: 'Design',
+              onPressed: () {
+                _chooseVegetationType(VegetationType.design);
+                Navigator.pop(context);
+              },
+            ),
+            TestButton(
+              buttonText: 'Open Field',
+              onPressed: () {
+                _chooseVegetationType(VegetationType.openField);
+                Navigator.pop(context);
+              },
+            ),
+          ],
+        ),
+      ],
     );
   }
 
-  void showModalAnimal(BuildContext context) {
-    showModalBottomSheet<void>(
-      sheetAnimationStyle:
-          AnimationStyle(reverseDuration: Duration(milliseconds: 100)),
-      context: context,
-      isScrollControlled: true,
-      useSafeArea: true,
-      builder: (context) {
-        return SingleChildScrollView(
-          child: Padding(
-            padding: MediaQuery.of(context).viewInsets,
-            child: Container(
-              // Container decoration- rounded corners and gradient
-              decoration: BoxDecoration(
-                gradient: defaultGrad,
-                borderRadius: const BorderRadius.only(
-                  topLeft: Radius.circular(24.0),
-                  topRight: Radius.circular(24.0),
-                ),
-              ),
-              child: Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 10.0),
-                child: Column(
-                  spacing: 5,
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: <Widget>[
-                    const BarIndicator(),
-                    Center(
-                      child: Text(
-                        'What Animal Do You See?',
-                        style: TextStyle(
-                          fontSize: 20,
-                          fontWeight: FontWeight.bold,
-                          color: placeYellow,
-                        ),
-                      ),
-                    ),
-                    Text(
-                      'Domesticated',
-                      style: TextStyle(
-                        fontSize: 16,
-                        fontWeight: FontWeight.bold,
-                        color: Colors.white,
-                      ),
-                    ),
-                    Row(
-                      spacing: 20,
-                      children: <Widget>[
-                        Expanded(
-                          flex: 1,
-                          child: FilledButton(
-                            style: FilledButton.styleFrom(
-                              backgroundColor: Colors.white,
-                              foregroundColor: Colors.black,
-                              shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(10.0),
-                              ),
-                            ),
-                            onPressed: () {
-                              setState(() {
-                                _natureType = NatureType.animal;
-                                _animalType = AnimalType.cat;
-                                _pointMode = true;
-                                _directions =
-                                    'Place a point where you see the ${_animalType?.name}.';
-                              });
-                              Navigator.pop(context);
-                            },
-                            child: Text('Cat'),
-                          ),
-                        ),
-                        Expanded(
-                          flex: 1,
-                          child: FilledButton(
-                            style: FilledButton.styleFrom(
-                              backgroundColor: Colors.white,
-                              foregroundColor: Colors.black,
-                              shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(10.0),
-                              ),
-                            ),
-                            child: Text('Dog'),
-                            onPressed: () {
-                              setState(() {
-                                _natureType = NatureType.animal;
-                                _animalType = AnimalType.dog;
-                                _pointMode = true;
-                                _directions =
-                                    'Place a point where you see the ${_animalType?.name}.';
-                              });
-                              Navigator.pop(context);
-                            },
-                          ),
-                        ),
-                        Flexible(flex: 1, child: SizedBox()),
-                      ],
-                    ),
-                    SizedBox(height: 20),
-                    Text(
-                      'Wild',
-                      style: TextStyle(
-                        fontSize: 16,
-                        fontWeight: FontWeight.bold,
-                        color: Colors.white,
-                      ),
-                    ),
-                    Row(
-                      spacing: 20,
-                      children: <Widget>[
-                        Expanded(
-                          flex: 1,
-                          child: FilledButton(
-                            style: FilledButton.styleFrom(
-                              backgroundColor: Colors.white,
-                              foregroundColor: Colors.black,
-                              shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(10.0),
-                              ),
-                            ),
-                            onPressed: () {
-                              setState(() {
-                                _natureType = NatureType.animal;
-                                _animalType = AnimalType.squirrel;
-                                _pointMode = true;
-                                _directions =
-                                    'Place a point where you see the ${_animalType?.name}.';
-                              });
-                              Navigator.pop(context);
-                            },
-                            child: Text('Squirrel'),
-                          ),
-                        ),
-                        Expanded(
-                          flex: 1,
-                          child: FilledButton(
-                            style: FilledButton.styleFrom(
-                              backgroundColor: Colors.white,
-                              foregroundColor: Colors.black,
-                              shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(10.0),
-                              ),
-                            ),
-                            onPressed: () {
-                              setState(() {
-                                _natureType = NatureType.animal;
-                                _animalType = AnimalType.bird;
-                                _pointMode = true;
-                                _directions =
-                                    'Place a point where you see the ${_animalType?.name}.';
-                              });
+  void _chooseAnimalType(AnimalType animalType) {
+    setState(() {
+      _natureType = NatureType.animal;
+      _animalType = animalType;
+      _pointMode = true;
+      _directions = 'Place a point where you see the ${animalType.name}.';
+    });
+  }
 
-                              Navigator.pop(context);
-                            },
-                            child: Text('Bird'),
-                          ),
-                        ),
-                        Expanded(
-                          flex: 1,
-                          child: FilledButton(
-                            style: FilledButton.styleFrom(
-                              backgroundColor: Colors.white,
-                              foregroundColor: Colors.black,
-                              shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(10.0),
-                              ),
-                            ),
-                            onPressed: () {
-                              setState(() {
-                                _natureType = NatureType.animal;
-                                _animalType = AnimalType.rabbit;
-                                _pointMode = true;
-                                _directions =
-                                    'Place a point where you see the ${_animalType?.name}.';
-                              });
-                              Navigator.pop(context);
-                            },
-                            child: Text('Rabbit'),
-                          ),
-                        ),
-                      ],
-                    ),
-                    Row(
-                      spacing: 20,
-                      children: <Widget>[
-                        Expanded(
-                          flex: 1,
-                          child: FilledButton(
-                            style: FilledButton.styleFrom(
-                              backgroundColor: Colors.white,
-                              foregroundColor: Colors.black,
-                              shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(10.0),
-                              ),
-                            ),
-                            onPressed: () {
-                              setState(() {
-                                _natureType = NatureType.animal;
-                                _animalType = AnimalType.turtle;
-                                _pointMode = true;
-                                _directions =
-                                    'Place a point where you see the ${_animalType?.name}.';
-                              });
-                              Navigator.pop(context);
-                            },
-                            child: Text('Turtle'),
-                          ),
-                        ),
-                        Expanded(
-                          flex: 1,
-                          child: FilledButton(
-                            style: FilledButton.styleFrom(
-                              backgroundColor: Colors.white,
-                              foregroundColor: Colors.black,
-                              shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(10.0),
-                              ),
-                            ),
-                            onPressed: () {
-                              setState(() {
-                                _natureType = NatureType.animal;
-                                _animalType = AnimalType.duck;
-                                _pointMode = true;
-                                _directions =
-                                    'Place a point where you see the ${_animalType?.name}.';
-                              });
-                              Navigator.pop(context);
-                            },
-                            child: Text('Duck'),
-                          ),
-                        ),
-                        Flexible(flex: 1, child: SizedBox())
-                      ],
-                    ),
-                    SizedBox(height: 20),
-                    Text(
-                      'Other',
-                      style: TextStyle(
-                        fontSize: 16,
-                        fontWeight: FontWeight.bold,
-                        color: Colors.white,
-                      ),
-                    ),
-                    Row(
-                      children: <Widget>[
-                        Flexible(
-                          flex: 3,
-                          child: TextField(
-                            onChanged: (otherText) {
-                              _otherType = otherText;
-                            },
-                            decoration: InputDecoration(
-                                filled: true,
-                                fillColor: Colors.white,
-                                border: OutlineInputBorder(),
-                                floatingLabelBehavior:
-                                    FloatingLabelBehavior.never,
-                                labelText: 'Enter animal name'),
-                          ),
-                        ),
-                        SizedBox(width: 10),
-                        Flexible(
-                          flex: 2,
-                          child: FilledButton(
-                            onPressed: () {
-                              setState(() {
-                                _natureType = NatureType.animal;
-                                _animalType = AnimalType.other;
-                                _pointMode = true;
-                                _directions =
-                                    'Place a point where you see the animal.';
-                              });
-                              Navigator.pop(context);
-                            },
-                            style: FilledButton.styleFrom(
-                              backgroundColor: Colors.white,
-                              foregroundColor: Colors.black,
-                              shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(2.0),
-                              ),
-                            ),
-                            child: Text('Submit other'),
-                          ),
-                        ),
-                        Flexible(flex: 1, child: SizedBox())
-                      ],
-                    ),
-                    SizedBox(height: 15),
-                    Align(
-                      alignment: Alignment.bottomRight,
-                      child: InkWell(
-                        child: const Padding(
-                          padding: EdgeInsets.only(right: 20, bottom: 0),
-                          child: Text(
-                            'Cancel',
-                            style: TextStyle(
-                                fontSize: 16,
-                                fontWeight: FontWeight.w500,
-                                color: Color(0xFFFFD700)),
-                          ),
-                        ),
-                        onTap: () {
-                          setState(() {
-                            _clearTypes();
-                          });
-                          Navigator.pop(context);
-                        },
-                      ),
-                    ),
-                    SizedBox(height: 50),
-                  ],
-                ),
+  void _showTestModalGeneric(BuildContext context,
+      {required String title,
+      required String? subtitle,
+      required List<Widget> contentList}) {
+    showTestModalGeneric(context, onCancel: () {
+      setState(() {
+        _clearTypes();
+      });
+      Navigator.pop(context);
+    }, title: title, subtitle: subtitle, contentList: contentList);
+  }
+
+  void showModalAnimal(BuildContext context) {
+    _showTestModalGeneric(
+      context,
+      title: 'What animal do you see?',
+      subtitle: null,
+      contentList: <Widget>[
+        Text(
+          'Domesticated',
+          style: TextStyle(
+            fontSize: 16,
+            fontWeight: FontWeight.bold,
+            color: Colors.white,
+          ),
+        ),
+        Row(
+          spacing: 20,
+          children: <Widget>[
+            TestButton(
+              buttonText: 'Cat',
+              onPressed: () {
+                _chooseAnimalType(AnimalType.cat);
+                Navigator.pop(context);
+              },
+            ),
+            TestButton(
+              buttonText: 'Dog',
+              onPressed: () {
+                _chooseAnimalType(AnimalType.dog);
+                Navigator.pop(context);
+              },
+            ),
+            Flexible(flex: 1, child: SizedBox()),
+          ],
+        ),
+        SizedBox(height: 20),
+        Text(
+          'Wild',
+          style: TextStyle(
+            fontSize: 16,
+            fontWeight: FontWeight.bold,
+            color: Colors.white,
+          ),
+        ),
+        Row(
+          spacing: 20,
+          children: <Widget>[
+            TestButton(
+              buttonText: 'Squirrel',
+              onPressed: () {
+                _chooseAnimalType(AnimalType.squirrel);
+                Navigator.pop(context);
+              },
+            ),
+            TestButton(
+              buttonText: 'Bird',
+              onPressed: () {
+                _chooseAnimalType(AnimalType.bird);
+                Navigator.pop(context);
+              },
+            ),
+            TestButton(
+              buttonText: 'Rabbit',
+              onPressed: () {
+                _chooseAnimalType(AnimalType.rabbit);
+                Navigator.pop(context);
+              },
+            ),
+          ],
+        ),
+        Row(
+          spacing: 20,
+          children: <Widget>[
+            TestButton(
+              buttonText: 'Turtle',
+              onPressed: () {
+                _chooseAnimalType(AnimalType.turtle);
+                Navigator.pop(context);
+              },
+            ),
+            TestButton(
+              buttonText: 'Duck',
+              onPressed: () {
+                _chooseAnimalType(AnimalType.duck);
+                Navigator.pop(context);
+              },
+            ),
+            Flexible(flex: 1, child: SizedBox())
+          ],
+        ),
+        SizedBox(height: 20),
+        Text(
+          'Other',
+          style: TextStyle(
+            fontSize: 16,
+            fontWeight: FontWeight.bold,
+            color: Colors.white,
+          ),
+        ),
+        Row(
+          children: <Widget>[
+            Flexible(
+              flex: 3,
+              child: TextField(
+                onChanged: (otherText) {
+                  _otherType = otherText;
+                },
+                decoration: InputDecoration(
+                    filled: true,
+                    fillColor: Colors.white,
+                    border: OutlineInputBorder(),
+                    floatingLabelBehavior: FloatingLabelBehavior.never,
+                    labelText: 'Enter animal name'),
               ),
             ),
-          ),
-        );
-      },
+            SizedBox(width: 10),
+            Flexible(
+              flex: 2,
+              child: FilledButton(
+                onPressed: () {
+                  setState(() {
+                    _natureType = NatureType.animal;
+                    _animalType = AnimalType.other;
+                    _pointMode = true;
+                    _directions = 'Place a point where you see the animal.';
+                  });
+                  Navigator.pop(context);
+                },
+                style: FilledButton.styleFrom(
+                  backgroundColor: Colors.white,
+                  foregroundColor: Colors.black,
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(2.0),
+                  ),
+                ),
+                child: Text('Submit other'),
+              ),
+            ),
+            Flexible(flex: 1, child: SizedBox())
+          ],
+        ),
+      ],
     );
   }
 
@@ -870,7 +695,7 @@ class _NaturePrevalenceState extends State<NaturePrevalence> {
               // If placing a point or polygon, don't remove point.
               if (_pointMode || _polygonMode) return;
               // If the marker is tapped again, it will be removed
-              animalData.removeWhere((animal) => animal.point == point);
+              _animalData.removeWhere((animal) => animal.point == point);
               setState(() {
                 _markers.removeWhere((marker) => marker.markerId == markerId);
               });
@@ -879,7 +704,7 @@ class _NaturePrevalenceState extends State<NaturePrevalence> {
         );
         _directions = 'Choose a category. Or, click finish to submit.';
       });
-      animalData.add(Animal(
+      _animalData.add(Animal(
           animalType: _animalType!, point: point, otherType: _otherType));
       _pointMode = false;
     }
@@ -888,17 +713,21 @@ class _NaturePrevalenceState extends State<NaturePrevalence> {
   void _finalizePolygon() {
     Set<Polygon> tempPolygon;
     try {
-      tempPolygon = finalizePolygon(_polygonPoints);
-      // Create polygon.
-      _polygons = {..._polygons, ...tempPolygon};
-
       if (_natureType == NatureType.vegetation) {
-        vegetationData.add(Vegetation(
+        tempPolygon = finalizePolygon(
+            _polygonPoints, Vegetation.vegetationTypeToColor[_vegetationType]);
+        // Create polygon.
+        _polygons = {..._polygons, ...tempPolygon};
+        _vegetationData.add(Vegetation(
             vegetationType: _vegetationType!,
             polygon: tempPolygon.first,
             otherType: _otherType));
       } else if (_natureType == NatureType.waterBody) {
-        waterBodyData.add(WaterBody(
+        tempPolygon = finalizePolygon(
+            _polygonPoints, WaterBody.waterBodyTypeToColor[_waterBodyType]);
+        // Create polygon.
+        _polygons = {..._polygons, ...tempPolygon};
+        _waterBodyData.add(WaterBody(
             waterBodyType: _waterBodyType!, polygon: tempPolygon.first));
       } else {
         throw Exception("Invalid nature type in _finalizePolygon(), "
@@ -946,43 +775,38 @@ class _NaturePrevalenceState extends State<NaturePrevalence> {
                         onMapCreated: _onMapCreated,
                         initialCameraPosition:
                             CameraPosition(target: _location, zoom: 14),
-                        polygons: _polygons,
-                        markers: {..._markers, ..._polygonMarkers},
-                        onTap: _togglePoint,
+                        polygons: (_oldVisibility || _polygons.isEmpty)
+                            ? {..._polygons, ..._projectPolygon}
+                            : {_polygons.last, ..._projectPolygon},
+                        markers: (_oldVisibility || _markers.isEmpty)
+                            ? {..._markers, ..._polygonMarkers}
+                            : {_markers.last, ..._polygonMarkers},
+                        onTap:
+                            (_pointMode || _polygonMode) ? _togglePoint : null,
                         mapType: _currentMapType, // Use current map type
                       ),
                     ),
+                    DirectionsWidget(
+                        onTap: () {
+                          setState(() {
+                            _directionsVisible = !_directionsVisible;
+                          });
+                        },
+                        text: _directions,
+                        visibility: _directionsVisible),
                     Align(
-                      alignment: Alignment.topCenter,
+                      alignment: Alignment.bottomLeft,
                       child: Padding(
-                        padding: const EdgeInsets.symmetric(
-                            vertical: 20.0, horizontal: 25.0),
-                        child: Container(
-                          padding: EdgeInsets.symmetric(
-                              horizontal: 15, vertical: 10),
-                          decoration: BoxDecoration(
-                            color: directionsTransparency,
-                            gradient: defaultGrad,
-                            borderRadius:
-                                const BorderRadius.all(Radius.circular(10)),
-                            boxShadow: [
-                              BoxShadow(
-                                color: Colors.black.withValues(alpha: 0.1),
-                                blurRadius: 6,
-                                offset: const Offset(0, 2),
-                              ),
-                            ],
-                          ),
-                          child: Text(
-                            _directions,
-                            maxLines: 3,
-                            overflow: TextOverflow.ellipsis,
-                            style: TextStyle(
-                              fontSize: 18,
-                              fontWeight: FontWeight.w500,
-                              color: Colors.white,
-                            ),
-                          ),
+                        padding: EdgeInsets.only(
+                            bottom: _bottomSheetHeight + 35, left: 5),
+                        child: VisibilitySwitch(
+                          visibility: _oldVisibility,
+                          onChanged: (value) {
+                            // This is called when the user toggles the switch.
+                            setState(() {
+                              _oldVisibility = value;
+                            });
+                          },
                         ),
                       ),
                     ),
@@ -990,7 +814,7 @@ class _NaturePrevalenceState extends State<NaturePrevalence> {
                       alignment: Alignment.bottomLeft,
                       child: Padding(
                         padding: EdgeInsets.only(
-                            bottom: _bottomSheetHeight + 50, left: 5),
+                            bottom: _bottomSheetHeight + 130, left: 5),
                         child: FloatingActionButton(
                           heroTag: null,
                           onPressed: _toggleMapType,
@@ -1052,25 +876,22 @@ class _NaturePrevalenceState extends State<NaturePrevalence> {
                           Row(
                             spacing: 10,
                             children: [
-                              Flexible(
-                                child: buildTestButton(
-                                    onPressed: (BuildContext context) {
-                                      showModalWaterBody(context);
-                                    },
-                                    context: context,
-                                    text: 'Body of Water',
-                                    icon: Icon(Icons.water)),
-                              ),
-                              Flexible(
-                                child: buildTestButton(
+                              DisplayModalButton(
+                                  onPressed: (_pointMode || _polygonMode)
+                                      ? null
+                                      : () {
+                                          showModalAnimal(context);
+                                        },
+                                  text: 'Animal',
+                                  icon: Icon(Icons.pets)),
+                              DisplayModalButton(
+                                  onPressed: (_pointMode || _polygonMode)
+                                      ? null
+                                      : () {
+                                          showModalVegetation(context);
+                                        },
                                   text: 'Vegetation',
-                                  icon: Icon(Icons.grass, color: Colors.black),
-                                  context: context,
-                                  onPressed: (BuildContext context) {
-                                    showModalVegetation(context);
-                                  },
-                                ),
-                              ),
+                                  icon: Icon(Icons.grass)),
                             ],
                           ),
                           SizedBox(
@@ -1089,16 +910,14 @@ class _NaturePrevalenceState extends State<NaturePrevalence> {
                             mainAxisAlignment: MainAxisAlignment.spaceBetween,
                             spacing: 10,
                             children: [
-                              Flexible(
-                                child: buildTestButton(
-                                  text: 'Animal',
-                                  icon: Icon(Icons.pets, color: Colors.black),
-                                  context: context,
-                                  onPressed: (BuildContext context) {
-                                    showModalAnimal(context);
-                                  },
-                                ),
-                              ),
+                              DisplayModalButton(
+                                  onPressed: (_pointMode || _polygonMode)
+                                      ? null
+                                      : () {
+                                          showModalWaterBody(context);
+                                        },
+                                  text: 'Body of Water',
+                                  icon: Icon(Icons.water)),
                             ],
                           ),
                           SizedBox(height: 20),
@@ -1117,7 +936,8 @@ class _NaturePrevalenceState extends State<NaturePrevalence> {
                                           backgroundColor: Colors.white,
                                           icon: const Icon(Icons.check),
                                           iconColor: Colors.green,
-                                          onPressed: (_polygonMode)
+                                          onPressed: (_polygonMode &&
+                                                  _polygonPoints.length >= 3)
                                               ? () {
                                                   _finalizePolygon();
                                                   setState(() {
@@ -1162,27 +982,43 @@ class _NaturePrevalenceState extends State<NaturePrevalence> {
                                       backgroundColor: Colors.white,
                                       icon: const Icon(Icons.chevron_right,
                                           color: Colors.black),
-                                      onPressed: () async {
-                                        natureData.animals = animalData;
-                                        natureData.vegetation = vegetationData;
-                                        natureData.waterBodies = waterBodyData;
-                                        widget.activeTest
-                                            .submitData(natureData);
-                                        Navigator.pushReplacement(
-                                            context,
-                                            MaterialPageRoute(
-                                              builder: (context) =>
-                                                  HomeScreen(),
-                                            ));
-                                        Navigator.push(
-                                            context,
-                                            MaterialPageRoute(
-                                              builder: (context) =>
-                                                  ProjectDetailsPage(
-                                                      projectData:
-                                                          widget.activeProject),
-                                            ));
-                                      },
+                                      onPressed: (_pointMode || _polygonMode)
+                                          ? null
+                                          : () {
+                                              showDialog(
+                                                  context: context,
+                                                  builder: (context) {
+                                                    return TestFinishDialog(
+                                                        onNext: () {
+                                                      _natureData.animals =
+                                                          _animalData;
+                                                      _natureData.vegetation =
+                                                          _vegetationData;
+                                                      _natureData.waterBodies =
+                                                          _waterBodyData;
+                                                      _natureData.weather =
+                                                          _weatherData;
+                                                      widget.activeTest
+                                                          .submitData(
+                                                              _natureData);
+                                                      Navigator.pushReplacement(
+                                                          context,
+                                                          MaterialPageRoute(
+                                                            builder: (context) =>
+                                                                HomeScreen(),
+                                                          ));
+                                                      Navigator.push(
+                                                          context,
+                                                          MaterialPageRoute(
+                                                            builder: (context) =>
+                                                                ProjectDetailsPage(
+                                                                    projectData:
+                                                                        widget
+                                                                            .activeProject),
+                                                          ));
+                                                    });
+                                                  });
+                                            },
                                     ),
                                   ),
                                 ),
@@ -1192,69 +1028,46 @@ class _NaturePrevalenceState extends State<NaturePrevalence> {
                         ],
                       ),
                     ),
-                    _outsidePoint
-                        ? Align(
-                            alignment: Alignment.bottomCenter,
-                            child: Padding(
-                              padding: const EdgeInsets.symmetric(
-                                  vertical: 30.0, horizontal: 100.0),
-                              child: Container(
-                                padding: EdgeInsets.symmetric(
-                                    horizontal: 15, vertical: 10),
-                                decoration: BoxDecoration(
-                                  color: Colors.red[900],
-                                  borderRadius: const BorderRadius.all(
-                                      Radius.circular(10)),
-                                  boxShadow: [
-                                    BoxShadow(
-                                      color:
-                                          Colors.black.withValues(alpha: 0.1),
-                                      blurRadius: 6,
-                                      offset: const Offset(0, 2),
-                                    ),
-                                  ],
-                                ),
-                                child: Text(
-                                  'You have placed a point outside of the project area!',
-                                  maxLines: 3,
-                                  overflow: TextOverflow.ellipsis,
-                                  style: TextStyle(
-                                    fontSize: 18,
-                                    fontWeight: FontWeight.w500,
-                                    color: Colors.red[50],
-                                  ),
-                                ),
-                              ),
-                            ),
-                          )
-                        : SizedBox(),
+                    _outsidePoint ? TestErrorText() : SizedBox(),
                   ],
                 ),
               ),
       ),
     );
   }
+}
 
-  FilledButton buildTestButton(
-      {required BuildContext context,
-      required String text,
-      required Function(BuildContext) onPressed,
-      required Icon icon}) {
-    return FilledButton.icon(
-      style: FilledButton.styleFrom(
-        padding: const EdgeInsets.only(left: 15, right: 15),
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(10.0),
+class DisplayModalButton extends StatelessWidget {
+  const DisplayModalButton({
+    super.key,
+    required this.text,
+    required this.icon,
+    required this.onPressed,
+  });
+
+  final VoidCallback? onPressed;
+  final Widget icon;
+  final String text;
+
+  @override
+  Widget build(BuildContext context) {
+    return Flexible(
+      child: FilledButton.icon(
+        style: FilledButton.styleFrom(
+          padding: const EdgeInsets.only(left: 15, right: 15),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(10.0),
+          ),
+          foregroundColor: Colors.black,
+          backgroundColor: Colors.white,
+          iconColor: Colors.black,
+          disabledBackgroundColor: disabledGrey,
         ),
-        foregroundColor: Colors.black,
-        backgroundColor: Colors.white,
-        iconColor: Colors.black,
-        disabledBackgroundColor: disabledGrey,
+        onPressed: onPressed,
+        label: Text(text),
+        icon: icon,
+        iconAlignment: IconAlignment.end,
       ),
-      onPressed: (_pointMode || _polygonMode) ? null : () => onPressed(context),
-      label: Text(text),
-      icon: icon,
-      iconAlignment: IconAlignment.end,
     );
   }
 }

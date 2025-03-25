@@ -2,9 +2,17 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:dropdown_button2/dropdown_button2.dart';
 import 'package:p2bp_2025spring_mobile/db_schema_classes.dart';
+import 'package:p2bp_2025spring_mobile/section_creation_page.dart';
+import 'package:p2bp_2025spring_mobile/standing_points_page.dart';
+import 'package:google_maps_flutter/google_maps_flutter.dart';
+import 'google_maps_functions.dart';
+import 'firestore_functions.dart';
+import 'theme.dart';
+import 'section_creation_page.dart';
 
 class CreateTestForm extends StatefulWidget {
-  const CreateTestForm({super.key});
+  final Project activeProject;
+  const CreateTestForm({super.key, required this.activeProject});
 
   @override
   State<CreateTestForm> createState() => _CreateTestFormState();
@@ -18,6 +26,65 @@ class _CreateTestFormState extends State<CreateTestForm> {
 
   DateTime? _selectedDateTime;
   String? _selectedTest;
+
+  List _standingPoints = [];
+
+  bool _standingPointsTest = false;
+  String _standingPointType = '';
+  bool _standingPointsError = false;
+  bool _timerTest = false;
+
+  final List<({String value, String text})> _testStringPairs = [
+    (
+      value: AbsenceOfOrderTest.collectionIDStatic,
+      text: 'Absence of Order Locator',
+    ),
+    (
+      value: LightingProfileTest.collectionIDStatic,
+      text: 'Lighting Profile',
+    ),
+    (
+      value: SpatialBoundariesTest.collectionIDStatic,
+      text: 'Spatial Boundaries',
+    ),
+    (
+      value: SectionCutterTest.collectionIDStatic,
+      text: 'Section Cutter',
+    ),
+    (
+      value: IdentifyingAccessTest.collectionIDStatic,
+      text: 'Identifying Access',
+    ),
+    (
+      value: PeopleInPlaceTest.collectionIDStatic,
+      text: 'People in Place',
+    ),
+    (
+      value: PeopleInMotionTest.collectionIDStatic,
+      text: 'People in Motion',
+    ),
+    (
+      value: NaturePrevalenceTest.collectionIDStatic,
+      text: 'Nature Prevalence',
+    ),
+    (
+      value: AcousticProfileTest.collectionIDStatic,
+      text: 'Acoustic Profile',
+    ),
+  ];
+
+  @override
+  void initState() {
+    super.initState();
+    _testStringPairs.sort((a, b) => a.text.compareTo(b.text));
+  }
+
+  @override
+  void dispose() {
+    _dateTimeController.dispose();
+    _activityNameController.dispose();
+    super.dispose();
+  }
 
   Future<DateTime?> showDateTimePicker({
     required BuildContext context,
@@ -56,11 +123,17 @@ class _CreateTestFormState extends State<CreateTestForm> {
           );
   }
 
-  @override
-  void dispose() {
-    _dateTimeController.dispose();
-    _activityNameController.dispose();
-    super.dispose();
+  List<DropdownMenuItem<String>> _buildDropdownMenuList() {
+    return [
+      for (final strings in _testStringPairs)
+        DropdownMenuItem(
+          value: strings.value,
+          child: Text(
+            strings.text,
+            style: TextStyle(color: p2bpBlue),
+          ),
+        ),
+    ];
   }
 
   @override
@@ -93,10 +166,10 @@ class _CreateTestFormState extends State<CreateTestForm> {
               decoration: InputDecoration(
                 labelText: "Activity Name",
                 floatingLabelBehavior: FloatingLabelBehavior.always,
-                labelStyle: TextStyle(color: Color(0xFF2F6DCF)),
+                labelStyle: TextStyle(color: p2bpBlue),
                 floatingLabelStyle: TextStyle(color: Color(0xFF1A3C70)),
-                enabledBorder: OutlineInputBorder(
-                    borderSide: BorderSide(color: Color(0xFF2F6DCF))),
+                enabledBorder:
+                    OutlineInputBorder(borderSide: BorderSide(color: p2bpBlue)),
                 focusedBorder: OutlineInputBorder(
                     borderSide: BorderSide(color: Color(0xFF1A3C70))),
                 border: OutlineInputBorder(),
@@ -117,10 +190,10 @@ class _CreateTestFormState extends State<CreateTestForm> {
               decoration: InputDecoration(
                 labelText: 'Scheduled Time',
                 floatingLabelBehavior: FloatingLabelBehavior.always,
-                labelStyle: TextStyle(color: Color(0xFF2F6DCF)),
+                labelStyle: TextStyle(color: p2bpBlue),
                 floatingLabelStyle: TextStyle(color: Color(0xFF1A3C70)),
-                enabledBorder: OutlineInputBorder(
-                    borderSide: BorderSide(color: Color(0xFF2F6DCF))),
+                enabledBorder:
+                    OutlineInputBorder(borderSide: BorderSide(color: p2bpBlue)),
                 focusedBorder: OutlineInputBorder(
                     borderSide: BorderSide(color: Color(0xFF1A3C70))),
                 border: OutlineInputBorder(),
@@ -153,10 +226,10 @@ class _CreateTestFormState extends State<CreateTestForm> {
                 floatingLabelBehavior: FloatingLabelBehavior.never,
                 // filled: true,
                 // fillColor: Color.fromRGBO(47, 109, 207, 0.1),
-                labelStyle: TextStyle(color: Color(0xFF2F6DCF)),
+                labelStyle: TextStyle(color: p2bpBlue),
                 floatingLabelStyle: TextStyle(color: Color(0xFF1A3C70)),
-                enabledBorder: OutlineInputBorder(
-                    borderSide: BorderSide(color: Color(0xFF2F6DCF))),
+                enabledBorder:
+                    OutlineInputBorder(borderSide: BorderSide(color: p2bpBlue)),
                 focusedBorder: OutlineInputBorder(
                     borderSide: BorderSide(color: Color(0xFF1A3C70))),
                 border: OutlineInputBorder(),
@@ -170,45 +243,20 @@ class _CreateTestFormState extends State<CreateTestForm> {
                 ),
               ),
               isExpanded: true,
-              items: [
-                DropdownMenuItem(
-                  value: AbsenceOfOrderTest.collectionIDStatic,
-                  child: Text(
-                    'Absence of Order Locator',
-                    style: TextStyle(color: Color(0xFF2F6DCF)),
-                  ),
-                ),
-                DropdownMenuItem(
-                  value: LightingProfileTest.collectionIDStatic,
-                  child: Text(
-                    'Lighting Profile',
-                    style: TextStyle(color: Color(0xFF2F6DCF)),
-                  ),
-                ),
-                DropdownMenuItem(
-                  value: SectionCutterTest.collectionIDStatic,
-                  child: Text(
-                    'Section Cutter',
-                    style: TextStyle(color: Color(0xFF2F6DCF)),
-                  ),
-                ),
-                DropdownMenuItem(
-                  value: IdentifyingAccessTest.collectionIDStatic,
-                  child: Text(
-                    'Identifying Access',
-                    style: TextStyle(color: Color(0xFF2F6DCF)),
-                  ),
-                ),
-                DropdownMenuItem(
-                  value: NaturePrevalenceTest.collectionIDStatic,
-                  child: Text(
-                    'Nature Prevalence',
-                    style: TextStyle(color: Color(0xFF2F6DCF)),
-                  ),
-                ),
-              ],
+              items: _buildDropdownMenuList(),
               onChanged: (value) {
                 _selectedTest = value;
+                _standingPoints = [];
+                setState(() {
+                  _standingPointsTest = Test.isStandingPointTest(_selectedTest);
+                  if (_selectedTest
+                          ?.compareTo(SectionCutterTest.collectionIDStatic) ==
+                      0) {
+                    _standingPointType = 'A Section Line';
+                  } else if (_standingPointsTest) {
+                    _standingPointType = 'Standing Points';
+                  }
+                });
               },
               autovalidateMode: AutovalidateMode.onUserInteraction,
               validator: (value) {
@@ -219,48 +267,173 @@ class _CreateTestFormState extends State<CreateTestForm> {
               },
             ),
             SizedBox(height: 32),
-            // Placeholder for an interactable map
-            Container(
-              height: 200,
-              decoration: BoxDecoration(
-                color: Colors.grey[300],
-                borderRadius: BorderRadius.circular(10),
-              ),
-              child: Center(
-                child: Text(
-                  "Interactable Map Placeholder",
-                  style: TextStyle(color: Colors.black54),
-                ),
-              ),
-            ),
+            _standingPointsTest
+                ? Row(
+                    children: [
+                      Spacer(flex: 1),
+                      Expanded(
+                        flex: 2,
+                        child: ElevatedButton(
+                          onPressed: () async {
+                            final List tempPoints;
+                            tempPoints = await Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                builder: (context) => (_selectedTest?.compareTo(
+                                            SectionCutterTest
+                                                .collectionIDStatic) ==
+                                        0)
+                                    ? SectionCreationPage(
+                                        activeProject: widget.activeProject,
+                                        currentSection:
+                                            _standingPoints.isNotEmpty
+                                                ? _standingPoints
+                                                : null,
+                                      )
+                                    : StandingPointsPage(
+                                        activeProject: widget.activeProject,
+                                        currentStandingPoints:
+                                            _standingPoints.isNotEmpty
+                                                ? _standingPoints
+                                                    as List<StandingPoint>
+                                                : null,
+                                      ),
+                              ),
+                            );
+                            setState(() {
+                              _standingPoints = tempPoints;
+                            });
+                          },
+                          style: ElevatedButton.styleFrom(
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(10.0),
+                              side: (_standingPointsError)
+                                  ? BorderSide(color: Color(0xFFB3261E))
+                                  : BorderSide(color: Colors.transparent),
+                            ),
+                            backgroundColor: Color(0xFF2F6DCF),
+                          ),
+                          child: Text(
+                            _standingPoints.isEmpty
+                                ? 'Add $_standingPointType'
+                                : 'Edit $_standingPointType',
+                            style: TextStyle(color: Colors.white),
+                          ),
+                        ),
+                      ),
+                      Expanded(
+                        flex: 1,
+                        child: SizedBox(
+                          child: Align(
+                            alignment: Alignment.centerLeft,
+                            child: Padding(
+                              padding: const EdgeInsets.only(left: 8.0),
+                              child: _standingPoints.isNotEmpty
+                                  ? Icon(Icons.check_circle,
+                                      color: Colors.green)
+                                  : SizedBox(),
+                            ),
+                          ),
+                        ),
+                      ),
+                    ],
+                  )
+                : SizedBox(),
+            (_standingPointsError)
+                ? Center(
+                    child: Text(
+                        'Please add ${_standingPointType.toLowerCase()} first.',
+                        style: TextStyle(color: Color(0xFFB3261E))),
+                  )
+                : SizedBox(),
             SizedBox(height: 32),
             // Optional: A button to submit the form
             Align(
               alignment: Alignment.center,
               child: ElevatedButton(
                 onPressed: () {
-                  if (_formKey.currentState!.validate()) {
+                  final bool validated = _formKey.currentState!.validate();
+                  if (_standingPointsTest) {
+                    if (_standingPoints.isEmpty) {
+                      setState(() {
+                        _standingPointsError = true;
+                      });
+                      return;
+                    }
+                  }
+                  if (validated) {
                     final Map<String, dynamic> newTestInfo = {
                       'title': _activityNameController.text,
                       'scheduledTime': Timestamp.fromDate(_selectedDateTime!),
                       'collectionID': _selectedTest,
                     };
+                    if (_standingPointsTest) {
+                      newTestInfo.update(
+                          'standingPoints', (value) => _standingPoints,
+                          ifAbsent: () => _standingPoints);
+                    }
                     // Handle form submission
                     Navigator.of(context).pop(newTestInfo);
                   }
                 },
                 style: ElevatedButton.styleFrom(
-                  backgroundColor: Color(0xFF2F6DCF),
+                  backgroundColor:
+                      p2bpBlue, // Using the Save Activity button color
+                  padding: EdgeInsets.symmetric(horizontal: 20, vertical: 14),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(30),
+                  ),
+                  elevation: 3,
                 ),
                 child: Text(
                   "Save Activity",
-                  style: TextStyle(color: Colors.white),
+                  textAlign: TextAlign.center,
+                  style: TextStyle(
+                    color: Colors.white,
+                    fontSize: 16,
+                    fontWeight: FontWeight.bold,
+                  ),
                 ),
               ),
             ),
           ],
         ),
       ),
+    );
+  }
+
+  Route _customRoute() {
+    return PageRouteBuilder(
+      pageBuilder: (context, animation, secondaryAnimation) {
+        // Conditional navigation based on _selectedTest
+        if (_selectedTest?.compareTo(SectionCutterTest.collectionIDStatic) ==
+            0) {
+          return SectionCreationPage(
+            activeProject: widget.activeProject,
+            currentSection: _standingPoints.isNotEmpty ? _standingPoints : null,
+          );
+        } else {
+          return StandingPointsPage(
+            activeProject: widget.activeProject,
+            currentStandingPoints: _standingPoints.isNotEmpty
+                ? _standingPoints as List<StandingPoint>
+                : null,
+          );
+        }
+      },
+      transitionsBuilder: (context, animation, secondaryAnimation, child) {
+        const begin = Offset(0.0, 1.0); // Start from bottom of screen
+        const end = Offset.zero; // End at original position
+        const curve = Curves.easeInOut;
+        var tween =
+            Tween(begin: begin, end: end).chain(CurveTween(curve: curve));
+        var offsetAnimation = animation.drive(tween);
+
+        return SlideTransition(
+          position: offsetAnimation,
+          child: child,
+        );
+      },
     );
   }
 }

@@ -1,6 +1,5 @@
 import 'dart:io';
 import 'dart:ui';
-import 'package:file_selector/file_selector.dart';
 import 'package:flutter/material.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:image_picker/image_picker.dart';
@@ -290,8 +289,8 @@ void showProjectOptionsDialog(BuildContext context) {
                     padding: EdgeInsets.fromLTRB(24.0, 20.0, 24.0,
                         14.0), // similar to AlertDialog's content padding
                     decoration: BoxDecoration(
-                      color: Color(0xFF2F6DCF)
-                          .withValues(alpha: 0.55), // frosted glass effect
+                      color: p2bpBlue.withValues(
+                          alpha: 0.55), // frosted glass effect
                       borderRadius: BorderRadius.circular(18.0),
                     ),
                     child: Column(

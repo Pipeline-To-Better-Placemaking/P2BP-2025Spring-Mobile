@@ -28,18 +28,23 @@ class _ProjectMapCreationState extends State<ProjectMapCreation> {
   late DocumentReference teamRef;
   late GoogleMapController mapController;
   LatLng _currentLocation = defaultLocation; // Default location
+  bool _deleteMode = false;
   bool _isLoading = true;
-
+  bool _pointMode = false;
+  bool _polygonMode = true;
+  bool _outsidePoint = false;
+  String? _pointName;
+  String _directions =
+      "Place points for your polygon, and click the check to confirm it. When you're satisfied click next.";
+  String _errorText = 'You tried to place a point outside of the project area!';
   List<LatLng> _polygonPoints = []; // Points for the polygon
+  List<StandingPoint> _standingPoints = [];
   List<mp.LatLng> _mapToolsPolygonPoints = [];
-  Set<Polygon> _polygon = {}; // Set of polygons
-  List<GeoPoint> _polygonAsGeoPoints =
-      []; // The current polygon represented as points (for Firestore).
+  Set<Polygon> _polygons = {}; // Set of polygons
   Set<Marker> _markers = {}; // Set of markers for points
+  final _formKey = GlobalKey<FormState>();
 
   MapType _currentMapType = MapType.satellite; // Default map type
-
-  Project? project;
 
   @override
   void initState() {
@@ -61,7 +66,7 @@ class _ProjectMapCreationState extends State<ProjectMapCreation> {
       });
     } catch (e, stacktrace) {
       print('Exception fetching location in project_map_creation.dart: $e');
-      print('Stracktrace: $stacktrace');
+      print('Stacktrace: $stacktrace');
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
@@ -83,6 +88,57 @@ class _ProjectMapCreationState extends State<ProjectMapCreation> {
   }
 
   void _togglePoint(LatLng point) {
+    if (_pointMode == true) {
+      if (_deleteMode) return;
+      if (!mp.PolygonUtil.containsLocationAtLatLng(
+          point.latitude, point.longitude, _mapToolsPolygonPoints, true)) {
+        setState(() {
+          _outsidePoint = true;
+        });
+        // TODO: change logic for this
+        Future.delayed(Duration(seconds: 2), () {
+          setState(() {
+            _outsidePoint = false;
+          });
+        });
+        return;
+      }
+      _showDialog(point);
+    } else if (_polygonMode == true) {
+      _polygonTap(point);
+    }
+  }
+
+  void _pointTap(LatLng point, String? title) {
+    if (title == null) return;
+    final markerId = MarkerId(point.toString());
+    _standingPoints.add(StandingPoint(location: point, title: title));
+    setState(() {
+      _markers.add(
+        Marker(
+          markerId: markerId,
+          position: point,
+          infoWindow: InfoWindow(
+              title: title,
+              snippet:
+                  '${point.latitude.toStringAsFixed(5)}, ${point.latitude.toStringAsFixed(5)}',
+              onTap: () {}),
+          icon: BitmapDescriptor.defaultMarkerWithHue(100),
+          onTap: () {
+            if (_deleteMode) {
+              setState(() {
+                _markers.removeWhere((marker) => marker.markerId == markerId);
+                _standingPoints.removeWhere(
+                    (standingPoint) => standingPoint.location == point);
+              });
+            }
+          },
+        ),
+      );
+    });
+  }
+
+  void _polygonTap(LatLng point) {
     final markerId = MarkerId(point.toString());
     _polygonPoints.add(point);
     setState(() {
@@ -101,25 +157,16 @@ class _ProjectMapCreationState extends State<ProjectMapCreation> {
         ),
       );
     });
-    print(_polygonPoints);
   }
 
   void _finalizePolygon() {
     try {
       // Create polygon.
-      _polygon = finalizePolygon(_polygonPoints);
+      _polygons = finalizePolygon(_polygonPoints);
 
-      // Cleans up current polygon representations.
-      _polygonAsGeoPoints = [];
-      _mapToolsPolygonPoints = [];
-
-      // Creating points representations for Firestore storage and area calculation
-      for (LatLng coordinate in _polygonPoints) {
-        _polygonAsGeoPoints
-            .add(GeoPoint(coordinate.latitude, coordinate.longitude));
-        _mapToolsPolygonPoints
-            .add(mp.LatLng(coordinate.latitude, coordinate.longitude));
-      }
+      // Creates Maps Toolkit representation of Polygon for checking if point
+      // is inside area.
+      _mapToolsPolygonPoints = _polygons.first.toMPLatLngList();
 
       // Clears polygon points and enter add points mode.
       _polygonPoints = [];
@@ -129,7 +176,7 @@ class _ProjectMapCreationState extends State<ProjectMapCreation> {
         _markers.clear();
       });
     } catch (e, stacktrace) {
-      print('Excpetion in _finalize_polygon(): $e');
+      print('Exception in _finalize_polygon(): $e');
       print('Stacktrace: $stacktrace');
     }
   }
@@ -151,7 +198,6 @@ class _ProjectMapCreationState extends State<ProjectMapCreation> {
             : Stack(
                 children: [
                   SizedBox(
-                    // TODO: Explore alternative approaches. Maps widgets automatically sizes to infinity unless declared.
                     height: MediaQuery.of(context).size.height,
                     child: Stack(
                       children: [
@@ -159,7 +205,7 @@ class _ProjectMapCreationState extends State<ProjectMapCreation> {
                           onMapCreated: _onMapCreated,
                           initialCameraPosition: CameraPosition(
                               target: _currentLocation, zoom: 14.0),
-                          polygons: _polygon,
+                          polygons: _polygons,
                           markers: _markers,
                           onTap: _togglePoint,
                           mapType: _currentMapType, // Use current map type
@@ -186,7 +232,7 @@ class _ProjectMapCreationState extends State<ProjectMapCreation> {
                                 ],
                               ),
                               child: Text(
-                                "Place points for your polygon, and click the check to confirm it. When you're satisfied click finish.",
+                                _directions,
                                 maxLines: 3,
                                 overflow: TextOverflow.ellipsis,
                                 style: TextStyle(
@@ -201,8 +247,8 @@ class _ProjectMapCreationState extends State<ProjectMapCreation> {
                         Align(
                           alignment: Alignment.bottomLeft,
                           child: Padding(
-                            padding: const EdgeInsets.only(
-                                left: 10.0, bottom: 130.0),
+                            padding:
+                                const EdgeInsets.only(left: 10.0, bottom: 50.0),
                             child: FloatingActionButton(
                               heroTag: null,
                               onPressed: _toggleMapType,
@@ -211,86 +257,248 @@ class _ProjectMapCreationState extends State<ProjectMapCreation> {
                             ),
                           ),
                         ),
-                        Align(
-                          alignment: Alignment.bottomLeft,
-                          child: Padding(
-                            padding:
-                                const EdgeInsets.only(left: 10.0, bottom: 53.0),
-                            child: FloatingActionButton(
-                              heroTag: null,
-                              onPressed: () {
-                                setState(() {
-                                  if (_polygonPoints.length >= 3) {
-                                    _finalizePolygon();
-                                  }
-                                });
-                              },
-                              backgroundColor: Colors.blue,
-                              child: const Icon(
-                                Icons.check,
-                                size: 35,
+                        _polygonMode
+                            ? Align(
+                                alignment: Alignment.bottomLeft,
+                                child: Padding(
+                                  padding: const EdgeInsets.only(
+                                      left: 10.0, bottom: 130.0),
+                                  child: FloatingActionButton(
+                                    heroTag: null,
+                                    onPressed: () {
+                                      setState(() {
+                                        if (_polygonPoints.length >= 3) {
+                                          _finalizePolygon();
+                                        }
+                                      });
+                                    },
+                                    backgroundColor: Colors.blue,
+                                    child: const Icon(
+                                      Icons.check,
+                                      size: 35,
+                                    ),
+                                  ),
+                                ),
+                              )
+                            : Align(
+                                alignment: Alignment.bottomLeft,
+                                child: Padding(
+                                  padding: const EdgeInsets.only(
+                                      left: 10.0, bottom: 130.0),
+                                  child: FloatingActionButton(
+                                    heroTag: null,
+                                    onPressed: () {
+                                      setState(() {
+                                        _deleteMode = !_deleteMode;
+                                        if (_deleteMode == true) {
+                                          _outsidePoint = false;
+                                          _errorText =
+                                              'You are in delete mode.';
+                                        } else {
+                                          _outsidePoint = false;
+                                          _errorText =
+                                              'You tried to place a point outside of the project area!';
+                                        }
+                                      });
+                                    },
+                                    backgroundColor:
+                                        _deleteMode ? Colors.blue : Colors.red,
+                                    child: Icon(
+                                      _deleteMode
+                                          ? Icons.location_on
+                                          : Icons.delete,
+                                      size: 30,
+                                    ),
+                                  ),
+                                ),
                               ),
-                            ),
-                          ),
-                        ),
                       ],
                     ),
                   ),
-                  Padding(
-                    padding: EdgeInsets.symmetric(vertical: 15),
-                    child: Align(
-                      alignment: Alignment.bottomCenter,
-                      child: EditButton(
-                        text: 'Finish',
-                        foregroundColor: Colors.white,
-                        backgroundColor: const Color(0xFF4871AE),
-                        icon: const Icon(Icons.chevron_right),
-                        onPressed: _isLoading
-                            ? null
-                            : () async {
-                                if (_polygon.isNotEmpty) {
-                                  setState(() {
-                                    _isLoading = true;
-                                  });
-                                  await saveProject(
-                                    projectTitle:
-                                        widget.partialProjectData.title,
-                                    description:
-                                        widget.partialProjectData.description,
-                                    teamRef: await getCurrentTeam(),
-                                    polygonPoints: _polygonAsGeoPoints,
-                                    // Polygon area is square feet, returned in
-                                    // (meters)^2, multiplied by (feet/meter)^2
-                                    polygonArea: mp.SphericalUtil.computeArea(
-                                            _mapToolsPolygonPoints) *
-                                        pow(feetPerMeter, 2),
-                                  );
-                                  if (!context.mounted) return;
-                                  Navigator.pushReplacement(
-                                      context,
-                                      MaterialPageRoute(
-                                        builder: (context) => HomeScreen(),
-                                      ));
-                                  // TODO: Push to project details page.
-                                  Navigator.push(
-                                      context,
-                                      MaterialPageRoute(
-                                        builder: (context) => HomeScreen(),
-                                      ));
-                                } else {
-                                  ScaffoldMessenger.of(context).showSnackBar(
-                                    const SnackBar(
-                                        content: Text(
-                                            'Please designate your project area, and confirm with the check button.')),
-                                  );
-                                }
-                              },
-                      ),
-                    ),
-                  ),
+                  _polygonMode
+                      ? Padding(
+                          padding: EdgeInsets.symmetric(vertical: 15),
+                          child: Align(
+                            alignment: Alignment.bottomCenter,
+                            child: EditButton(
+                              text: 'Next',
+                              foregroundColor: Colors.white,
+                              backgroundColor: const Color(0xFF4871AE),
+                              icon: const Icon(Icons.chevron_right),
+                              onPressed: _isLoading
+                                  ? null
+                                  : () {
+                                      if (_polygons.isNotEmpty) {
+                                        setState(() {
+                                          _markers = {};
+                                          _polygonPoints = [];
+                                          _pointMode = true;
+                                          _polygonMode = false;
+                                          _directions =
+                                              "Place your standings points in the project area. When you're satisfied click finish.";
+                                        });
+                                      } else {
+                                        ScaffoldMessenger.of(context)
+                                            .showSnackBar(
+                                          const SnackBar(
+                                              content: Text(
+                                                  'Please designate your project area, and confirm with the check button.')),
+                                        );
+                                      }
+                                    },
+                            ),
+                          ),
+                        )
+                      : Padding(
+                          padding: EdgeInsets.symmetric(vertical: 15),
+                          child: Align(
+                            alignment: Alignment.bottomCenter,
+                            child: EditButton(
+                              text: 'Finish',
+                              foregroundColor: Colors.white,
+                              backgroundColor: const Color(0xFF4871AE),
+                              icon: const Icon(Icons.chevron_right),
+                              onPressed: _isLoading
+                                  ? null
+                                  : () async {
+                                      if (_standingPoints.isNotEmpty) {
+                                        setState(() {
+                                          _isLoading = true;
+                                        });
+                                        await saveProject(
+                                          projectTitle:
+                                              widget.partialProjectData.title,
+                                          description: widget
+                                              .partialProjectData.description,
+                                          teamRef: await getCurrentTeam(),
+                                          polygonPoints: _polygons.first.points,
+                                          // Polygon area is square feet, returned in
+                                          // (meters)^2, multiplied by (feet/meter)^2
+                                          // TODO: move to constructor
+                                          polygonArea: _polygons.first
+                                              .getAreaInSquareFeet(),
+                                          standingPoints: _standingPoints,
+                                        );
+                                        if (!context.mounted) return;
+                                        Navigator.pushReplacement(
+                                            context,
+                                            MaterialPageRoute(
+                                              builder: (context) =>
+                                                  HomeScreen(),
+                                            ));
+                                        // TODO: Push to project details page.
+                                        Navigator.push(
+                                            context,
+                                            MaterialPageRoute(
+                                              builder: (context) =>
+                                                  HomeScreen(),
+                                            ));
+                                      } else {
+                                        ScaffoldMessenger.of(context)
+                                            .showSnackBar(
+                                          const SnackBar(
+                                              content: Text(
+                                                  'Please designate at least one standing point.')),
+                                        );
+                                      }
+                                    },
+                            ),
+                          ),
+                        ),
+                  _outsidePoint || _deleteMode
+                      ? Align(
+                          alignment: Alignment.bottomCenter,
+                          child: Padding(
+                            padding: const EdgeInsets.symmetric(
+                                vertical: 30.0, horizontal: 100.0),
+                            child: Container(
+                              padding: EdgeInsets.symmetric(
+                                  horizontal: 15, vertical: 10),
+                              decoration: BoxDecoration(
+                                color: Colors.red[900],
+                                borderRadius:
+                                    const BorderRadius.all(Radius.circular(10)),
+                                boxShadow: [
+                                  BoxShadow(
+                                    color: Colors.black.withValues(alpha: 0.1),
+                                    blurRadius: 6,
+                                    offset: const Offset(0, 2),
+                                  ),
+                                ],
+                              ),
+                              child: Text(
+                                _errorText,
+                                maxLines: 3,
+                                overflow: TextOverflow.ellipsis,
+                                style: TextStyle(
+                                  fontSize: 18,
+                                  fontWeight: FontWeight.w500,
+                                  color: Colors.red[50],
+                                ),
+                              ),
+                            ),
+                          ),
+                        )
+                      : SizedBox(),
                 ],
               ),
       ),
+    );
+  }
+
+  void _showDialog(LatLng point) {
+    showDialog(
+      context: context,
+      builder: (context) {
+        return AlertDialog(
+          scrollable: true,
+          title: Column(
+            children: [
+              Text(
+                'Enter Standing Point Title',
+                style: TextStyle(
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+            ],
+          ),
+          content: Form(
+            key: _formKey,
+            child: DialogTextBox(
+              maxLength: 60,
+              labelText: 'Enter the name of the standing point',
+              errorMessage: 'Please enter at least 3 characters.',
+              onChanged: (inputText) {
+                setState(() {
+                  _pointName = inputText;
+                });
+              },
+            ),
+          ),
+          actions: <Widget>[
+            TextButton(
+              onPressed: () {
+                Navigator.pop(context, 'Cancel');
+                {
+                  _pointName = null;
+                }
+              },
+              child: const Text('Cancel'),
+            ),
+            TextButton(
+              onPressed: () {
+                if (_formKey.currentState!.validate() &&
+                    _pointName != null &&
+                    _pointName!.characters.length > 2) {
+                  _pointTap(point, _pointName);
+                  Navigator.pop(context, 'Next');
+                }
+              },
+              child: const Text('Next'),
+            ),
+          ],
+        );
+      },
     );
   }
 }
