@@ -397,11 +397,8 @@ class _SpatialBoundariesTestPageState extends State<SpatialBoundariesTestPage> {
       context: context,
       barrierDismissible: false,
       builder: (context) {
-        final screenSize = MediaQuery.of(context).size;
         return AlertDialog(
-          insetPadding: EdgeInsets.symmetric(
-              horizontal: screenSize.width * 0.05,
-              vertical: screenSize.height * 0.005),
+          insetPadding: EdgeInsets.all(10),
           actionsPadding: EdgeInsets.zero,
           title: const Text(
             'How It Works:',
@@ -410,7 +407,7 @@ class _SpatialBoundariesTestPageState extends State<SpatialBoundariesTestPage> {
           ),
           content: SingleChildScrollView(
             child: SizedBox(
-              width: screenSize.width * 0.95,
+              width: MediaQuery.sizeOf(context).width * 0.95,
               child: Column(
                 mainAxisSize: MainAxisSize.min,
                 children: [
@@ -549,131 +546,119 @@ class _SpatialBoundariesTestPageState extends State<SpatialBoundariesTestPage> {
 
   @override
   Widget build(BuildContext context) {
-    double screenHeight = MediaQuery.of(context).size.height;
     return AdaptiveSafeArea(
       child: Scaffold(
         extendBodyBehindAppBar: true,
         appBar: _buildAppBar(),
         body: _isLoading
             ? const Center(child: CircularProgressIndicator())
-            : Center(
-                child: Stack(
-                  children: <Widget>[
-                    SizedBox(
-                      height: screenHeight,
-                      child: GoogleMap(
-                        padding: EdgeInsets.only(bottom: _bottomSheetHeight),
-                        onMapCreated: _onMapCreated,
-                        initialCameraPosition:
-                            CameraPosition(target: _location, zoom: 15),
-                        markers: {..._polygonMarkers, ..._polylineMarkers},
-                        polygons: _boundariesVisible
-                            ? _projectPolygon.union(_userPolygons)
-                            : _projectPolygon,
-                        polylines:
-                            _boundariesVisible ? _polylines : <Polyline>{},
-                        onTap: _togglePoint,
-                        mapType: _currentMapType,
-                        myLocationButtonEnabled: false,
-                      ),
+            : Stack(
+                children: <Widget>[
+                  SizedBox(
+                    height: MediaQuery.sizeOf(context).height,
+                    child: GoogleMap(
+                      padding: EdgeInsets.only(bottom: _bottomSheetHeight),
+                      onMapCreated: _onMapCreated,
+                      initialCameraPosition:
+                          CameraPosition(target: _location, zoom: 15),
+                      markers: {..._polygonMarkers, ..._polylineMarkers},
+                      polygons: _boundariesVisible
+                          ? _projectPolygon.union(_userPolygons)
+                          : _projectPolygon,
+                      polylines: _boundariesVisible ? _polylines : <Polyline>{},
+                      onTap: _togglePoint,
+                      mapType: _currentMapType,
+                      myLocationButtonEnabled: false,
                     ),
-                    // Button for toggling the map mode
-                    Positioned(
-                        bottom: _bottomSheetHeight + 154,
-                        right: 20.0,
-                        child: CircularIconMapButton(
+                  ),
+                  Align(
+                    alignment: Alignment.topRight,
+                    child: Padding(
+                      padding:
+                          const EdgeInsets.only(top: kToolbarHeight, right: 20),
+                      child: Column(
+                        spacing: 10,
+                        children: [
+                          // Button for toggling the map mode
+                          CircularIconMapButton(
                             backgroundColor:
                                 Color(0xFF7EAD80).withValues(alpha: 0.9),
                             borderColor: Color(0xFF2D6040),
                             onPressed: _toggleMapType,
-                            icon: Icon(Icons.layers))),
-                    // Button for toggling instructon overlay
-                    if (!_isLoading)
-                      Positioned(
-                        bottom: _bottomSheetHeight + 92,
-                        right: 20,
-                        child: CircularIconMapButton(
-                          backgroundColor:
-                              Color(0xFFBACFEB).withValues(alpha: 0.9),
-                          borderColor: Color(0xFF37597D),
-                          onPressed: _showInstructionOverlay,
-                          icon: Icon(FontAwesomeIcons.info),
-                        ),
-                      ),
-                    Positioned(
-                      bottom: _bottomSheetHeight + 30,
-                      right: 20.0,
-                      child: CircularIconMapButton(
-                        backgroundColor:
-                            Color(0xFFBD9FE4).withValues(alpha: 0.9),
-                        borderColor: Color(0xFF5A3E85),
-                        onPressed: () {
-                          setState(() {
-                            _isBoundariesMenuVisible =
-                                !_isBoundariesMenuVisible;
-                          });
-                        },
-                        icon: Icon(
-                          Icons.shape_line,
-                          color: Color(0xFF5A3E85),
-                        ),
+                            icon: Icon(Icons.layers),
+                          ),
+                          // Button for toggling instruction overlay
+                          CircularIconMapButton(
+                            backgroundColor:
+                                Color(0xFFBACFEB).withValues(alpha: 0.9),
+                            borderColor: Color(0xFF37597D),
+                            onPressed: _showInstructionOverlay,
+                            icon: Icon(FontAwesomeIcons.info),
+                          ),
+                          CircularIconMapButton(
+                            backgroundColor:
+                                Color(0xFFBD9FE4).withValues(alpha: 0.9),
+                            borderColor: Color(0xFF5A3E85),
+                            onPressed: () {
+                              setState(() {
+                                _isBoundariesMenuVisible =
+                                    !_isBoundariesMenuVisible;
+                              });
+                            },
+                            icon: Icon(
+                              Icons.shape_line,
+                              color: Color(0xFF5A3E85),
+                            ),
+                          ),
+                        ],
                       ),
                     ),
-                    // Button for toggling polygon/polyline visibility on the map
-                    Positioned(
-                      bottom: _bottomSheetHeight + 45,
-                      left: 10.0,
-                      child: CircularIconMapButton(
-                        backgroundColor:
-                            Color(0xFFE4E9EF).withValues(alpha: 0.9),
-                        borderColor: Color(0xFF4A5D75),
-                        onPressed: _toggleBoundariesVisibility,
-                        icon: Icon(
+                  ),
+                  // Button for toggling polygon/polyline visibility on the map
+                  Positioned(
+                    bottom: _bottomSheetHeight + 45,
+                    left: 10.0,
+                    child: CircularIconMapButton(
+                      backgroundColor: Color(0xFFE4E9EF).withValues(alpha: 0.9),
+                      borderColor: Color(0xFF4A5D75),
+                      onPressed: _toggleBoundariesVisibility,
+                      icon: Transform.translate(
+                        offset: Offset(-2.0, 0),
+                        child: Icon(
                           _boundariesVisible
                               ? FontAwesomeIcons.solidEyeSlash
                               : FontAwesomeIcons.solidEye,
                           color: Color(0xFF4A5D75),
                         ),
-                        iconOffset: Offset(-2.0, 0),
                       ),
                     ),
-                    // Displays the list of confirmed boundaries and the color legend
-                    if (_isBoundariesMenuVisible)
-                      Padding(
-                        padding: EdgeInsets.only(
-                          top: MediaQuery.of(context).padding.top +
-                              kToolbarHeight +
-                              30,
-                          bottom: _bottomSheetHeight + 30.0,
-                          left: 20.0,
-                          right: 20.0,
-                        ),
-                        child: DataEditMenu(
-                          heightMultiplier: (MediaQuery.of(context)
-                                      .size
-                                      .height -
-                                  MediaQuery.of(context).padding.top -
-                                  kToolbarHeight -
-                                  _bottomSheetHeight -
-                                  60.0) / // 60.0 accounts for padding spaces
-                              MediaQuery.of(context).size.height,
-                          title: 'Boundary Color Guide',
-                          colorLegendItems: [
-                            for (final type in SpatialBoundaryType.values)
-                              ColorLegendItem(
-                                label: type.displayName,
-                                color: type.color,
-                              ),
-                          ],
-                          placedDataList: _buildPlacedBoundariesList(),
-                          onPressedCloseMenu: () => setState(() =>
-                              _isBoundariesMenuVisible =
-                                  !_isBoundariesMenuVisible),
-                          onPressedClearAll: () {},
-                        ),
+                  ),
+                  // Displays the list of confirmed boundaries and the color legend
+                  if (_isBoundariesMenuVisible)
+                    Padding(
+                      padding: EdgeInsets.only(
+                        top: kToolbarHeight + 20,
+                        bottom: _bottomSheetHeight + 30.0,
+                        left: 20.0,
+                        right: 20.0,
                       ),
-                  ],
-                ),
+                      child: DataEditMenu(
+                        title: 'Boundary Color Guide',
+                        colorLegendItems: [
+                          for (final type in SpatialBoundaryType.values)
+                            ColorLegendItem(
+                              label: type.displayName,
+                              color: type.color,
+                            ),
+                        ],
+                        placedDataList: _buildPlacedBoundariesList(),
+                        onPressedCloseMenu: () => setState(() =>
+                            _isBoundariesMenuVisible =
+                                !_isBoundariesMenuVisible),
+                        onPressedClearAll: () {},
+                      ),
+                    ),
+                ],
               ),
         bottomSheet: _isLoading
             ? SizedBox()

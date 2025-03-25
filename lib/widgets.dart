@@ -2,8 +2,6 @@ import 'dart:io';
 
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:google_maps_flutter/google_maps_flutter.dart';
-import 'package:p2bp_2025spring_mobile/google_maps_functions.dart';
 import 'package:p2bp_2025spring_mobile/theme.dart';
 
 /// Bar Indicator for the Sliding Up Panels (Edit Project, Results)
@@ -387,7 +385,6 @@ class CircularIconMapButton extends StatelessWidget {
   final Color borderColor;
   final Widget icon;
   final void Function() onPressed;
-  final Offset iconOffset;
 
   const CircularIconMapButton({
     super.key,
@@ -395,13 +392,11 @@ class CircularIconMapButton extends StatelessWidget {
     required this.borderColor,
     required this.onPressed,
     required this.icon,
-    this.iconOffset = Offset.zero,
   });
 
   @override
   Widget build(BuildContext context) {
     return Container(
-      alignment: Alignment.center,
       decoration: BoxDecoration(
         shape: BoxShape.circle,
         color: backgroundColor,
@@ -415,10 +410,7 @@ class CircularIconMapButton extends StatelessWidget {
         ],
       ),
       child: IconButton(
-        icon: Transform.translate(
-          offset: iconOffset,
-          child: icon,
-        ),
+        icon: icon,
         onPressed: onPressed,
       ),
     );
@@ -516,7 +508,7 @@ class DataEditMenu extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      height: MediaQuery.of(context).size.height * (heightMultiplier ?? 0.5),
+      height: MediaQuery.sizeOf(context).height * (heightMultiplier ?? 0.5),
       decoration: BoxDecoration(
         color: Color(0xFFC5CFDD).withValues(alpha: 0.9),
         borderRadius: BorderRadius.circular(20),
@@ -529,37 +521,38 @@ class DataEditMenu extends StatelessWidget {
       child: Stack(
         children: [
           Align(
-              // Slightly closer to center than topRight alignment
-              alignment: Alignment(0.90, -0.95),
-              child: Container(
-                width: 30,
-                height: 30,
-                decoration: BoxDecoration(
-                  color: Color(0xFFD1D7E1).withValues(alpha: 0.95),
-                  shape: BoxShape.circle,
-                  border: Border.all(
-                    color: Color(0xFF2F6DCF),
-                    width: 1.5,
-                  ),
-                  boxShadow: [
-                    BoxShadow(
-                      color: Colors.black.withValues(alpha: 0.12),
-                      spreadRadius: 0.5,
-                      blurRadius: 3,
-                      offset: Offset(0, 1),
-                    ),
-                  ],
+            // Slightly closer to center than topRight alignment
+            alignment: Alignment(0.95, -0.95),
+            child: Container(
+              width: 30,
+              height: 30,
+              decoration: BoxDecoration(
+                color: Color(0xFFD1D7E1).withValues(alpha: 0.95),
+                shape: BoxShape.circle,
+                border: Border.all(
+                  color: Color(0xFF2F6DCF),
+                  width: 1.5,
                 ),
-                child: IconButton(
-                  padding: EdgeInsets.zero,
-                  iconSize: 16,
-                  icon: Icon(
-                    Icons.close,
-                    color: Color(0xFF2F6DCF),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withValues(alpha: 0.12),
+                    spreadRadius: 0.5,
+                    blurRadius: 3,
+                    offset: Offset(0, 1),
                   ),
-                  onPressed: onPressedCloseMenu,
+                ],
+              ),
+              child: IconButton(
+                padding: EdgeInsets.zero,
+                iconSize: 16,
+                icon: Icon(
+                  Icons.close,
+                  color: Color(0xFF2F6DCF),
                 ),
-              )),
+                onPressed: onPressedCloseMenu,
+              ),
+            ),
+          ),
           Column(
             children: [
               const SizedBox(height: 8),
