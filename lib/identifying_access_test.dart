@@ -49,7 +49,7 @@ class _IdentifyingAccessState extends State<IdentifyingAccess> {
   Set<Marker> _visiblePolylineMarkers = {};
   Set<Polygon> _currentPolygon = {};
   List<LatLng> _polygonPoints = []; // Points for the polygon
-  Set<Polygon> _polygons = {}; // Set of polygons
+  final Set<Polygon> _polygons = {}; // Set of polygons
   final Set<Marker> _markers = {}; // Set of markers for points
   Set<Marker> _polygonMarkers = {}; // Set of markers for polygon creation
   bool _directionsVisible = true;
@@ -67,7 +67,7 @@ class _IdentifyingAccessState extends State<IdentifyingAccess> {
   /// centers the map over it.
   void initProjectArea() {
     setState(() {
-      _projectArea = getProjectPolygon(widget.activeProject.polygonPoints);
+      _polygons.add(getProjectPolygon(widget.activeProject.polygonPoints));
       _location = getPolygonCentroid(_projectArea.first);
       // Take some latitude away to center considering bottom sheet.
       _location = LatLng(_location.latitude * .999999, _location.longitude);
@@ -207,7 +207,7 @@ class _IdentifyingAccessState extends State<IdentifyingAccess> {
     if (_polylineMode) {
       // If parking, then make sure to save the polygon also.
       if (_type == AccessType.parking) {
-        _polygons = {..._polygons, ..._currentPolygon};
+        _polygons.addAll(_currentPolygon);
       }
       _finalizePolyline();
     }

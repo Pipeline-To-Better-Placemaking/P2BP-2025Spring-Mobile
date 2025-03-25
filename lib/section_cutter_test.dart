@@ -12,14 +12,14 @@ import 'package:file_selector/file_selector.dart';
 import 'home_screen.dart';
 
 class SectionCutter extends StatefulWidget {
-  final Project projectData;
+  final Project activeProject;
   final SectionCutterTest activeTest;
 
   /// IMPORTANT: When navigating to this page, pass in project details. The
   /// project details page already contains project info, so you should use
   /// that data.
   const SectionCutter(
-      {super.key, required this.projectData, required this.activeTest});
+      {super.key, required this.activeProject, required this.activeTest});
 
   @override
   State<SectionCutter> createState() => _SectionCutterState();
@@ -43,7 +43,7 @@ class _SectionCutterState extends State<SectionCutter> {
   late GoogleMapController mapController;
   LatLng _location = defaultLocation; // Default location
   SectionCutterTest? currentTest;
-  Set<Polygon> _polygons = {}; // Set of polygons
+  final Set<Polygon> _polygons = {}; // Set of polygons
   Set<Polyline> _polyline = {};
   List<LatLng> _sectionPoints = [];
   bool _directionsVisible = true;
@@ -64,7 +64,7 @@ class _SectionCutterState extends State<SectionCutter> {
   /// centers the map over it.
   void initProjectArea() {
     setState(() {
-      _polygons = getProjectPolygon(widget.projectData.polygonPoints);
+      _polygons.add(getProjectPolygon(widget.activeProject.polygonPoints));
       _location = getPolygonCentroid(_polygons.first);
       // Take some latitude away to center considering bottom sheet.
       _location = LatLng(_location.latitude * .999999, _location.longitude);
@@ -364,7 +364,7 @@ class _SectionCutterState extends State<SectionCutter> {
                                           builder: (context) =>
                                               ProjectDetailsPage(
                                                   projectData:
-                                                      widget.projectData),
+                                                      widget.activeProject),
                                         ));
                                   }
                                 },

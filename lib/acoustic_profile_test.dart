@@ -59,8 +59,8 @@ class _AcousticProfileTestPageState extends State<AcousticProfileTestPage> {
   bool _isErrorTextShown = false;
   bool _isTestComplete = false;
 
-  Set<Polygon> _polygons = {};
-  Set<Circle> _circles = <Circle>{};
+  final Set<Polygon> _polygons = {};
+  final Set<Circle> _circles = <Circle>{};
   Set<Marker> _markers = {};
   late final List<StandingPoint> _standingPoints;
 
@@ -80,7 +80,7 @@ class _AcousticProfileTestPageState extends State<AcousticProfileTestPage> {
   void initState() {
     super.initState();
     _intervalsRemaining = _intervalCount;
-    _polygons = getProjectPolygon(widget.activeProject.polygonPoints);
+    _polygons.add(getProjectPolygon(widget.activeProject.polygonPoints));
     if (_polygons.isNotEmpty) {
       _location = getPolygonCentroid(_polygons.first);
       _location = LatLng(_location.latitude * 0.999999, _location.longitude);

@@ -1338,7 +1338,7 @@ class SectionCutterTest extends Test<Section> with JsonToString {
     };
     // Register for Map for Test.getPage
     Test._pageBuilders[SectionCutterTest] = (project, test) => SectionCutter(
-          projectData: project,
+          activeProject: project,
           activeTest: test as SectionCutterTest,
         );
     // Register for Map for Test.saveToFirestore

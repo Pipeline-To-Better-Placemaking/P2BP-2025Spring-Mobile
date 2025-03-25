@@ -39,7 +39,7 @@ class _NaturePrevalenceState extends State<NaturePrevalence> {
   late GoogleMapController mapController;
   LatLng _location = defaultLocation; // Default location
   List<LatLng> _polygonPoints = []; // Points for the polygon
-  Set<Polygon> _polygons = {}; // Set of polygons
+  final Set<Polygon> _polygons = {}; // Set of polygons
   final Set<Marker> _markers = {}; // Set of markers for points
   Set<Marker> _polygonMarkers = {}; // Set of markers for polygon creation
   MapType _currentMapType = MapType.satellite; // Default map type
@@ -102,7 +102,7 @@ class _NaturePrevalenceState extends State<NaturePrevalence> {
   /// centers the map over it.
   void initProjectArea() {
     setState(() {
-      _projectPolygon = getProjectPolygon(widget.activeProject.polygonPoints);
+      _polygons.add(getProjectPolygon(widget.activeProject.polygonPoints));
       _location = getPolygonCentroid(_projectPolygon.first);
       // Take some latitude away to center considering bottom sheet.
       _location = LatLng(_location.latitude * .999999, _location.longitude);
@@ -717,7 +717,7 @@ class _NaturePrevalenceState extends State<NaturePrevalence> {
         tempPolygon = finalizePolygon(
             _polygonPoints, Vegetation.vegetationTypeToColor[_vegetationType]);
         // Create polygon.
-        _polygons = {..._polygons, ...tempPolygon};
+        _polygons.addAll(tempPolygon);
         _vegetationData.add(Vegetation(
             vegetationType: _vegetationType!,
             polygon: tempPolygon.first,
@@ -726,7 +726,7 @@ class _NaturePrevalenceState extends State<NaturePrevalence> {
         tempPolygon = finalizePolygon(
             _polygonPoints, WaterBody.waterBodyTypeToColor[_waterBodyType]);
         // Create polygon.
-        _polygons = {..._polygons, ...tempPolygon};
+        _polygons.addAll(tempPolygon);
         _waterBodyData.add(WaterBody(
             waterBodyType: _waterBodyType!, polygon: tempPolygon.first));
       } else {

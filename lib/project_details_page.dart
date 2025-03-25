@@ -193,7 +193,7 @@ class _ProjectDetailsPageState extends State<ProjectDetailsPage> {
                 child: ClipRRect(
                   borderRadius: BorderRadius.circular(16.0),
                   child: MiniMap(
-                    projectData: widget.projectData,
+                    activeProject: widget.projectData,
                   ),
                 ),
               ),

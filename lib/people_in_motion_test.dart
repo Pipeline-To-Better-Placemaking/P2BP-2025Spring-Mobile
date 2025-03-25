@@ -38,7 +38,7 @@ class _PeopleInMotionTestPageState extends State<PeopleInMotionTestPage> {
   Timer? _timer;
 
   List<mp.LatLng> _projectArea = [];
-  Set<Polygon> _polygons = {}; // Only has project polygon.
+  final Set<Polygon> _polygons = {}; // Only gets project polygon.
   MapType _currentMapType = MapType.normal;
 
   /// Markers placed while in TracingMode.
@@ -99,7 +99,7 @@ class _PeopleInMotionTestPageState extends State<PeopleInMotionTestPage> {
   /// centers the map over it.
   void _initProjectArea() {
     setState(() {
-      _polygons = getProjectPolygon(widget.activeProject.polygonPoints);
+      _polygons.add(getProjectPolygon(widget.activeProject.polygonPoints));
       print(_polygons);
       _location = getPolygonCentroid(_polygons.first);
       // Take some latitude away to center considering bottom sheet.

@@ -33,12 +33,12 @@ class _SpatialBoundariesTestPageState extends State<SpatialBoundariesTestPage> {
   MapType _currentMapType = MapType.satellite; // Default map type
   List<mp.LatLng> _projectArea = [];
 
-  Set<Polygon> _polygons = {}; // Set of polygons
-  List<LatLng> _polygonPoints = []; // Points for the polygon
-  Set<Marker> _polygonMarkers = {}; // Set of markers for polygon creation
-  Set<Polyline> _polylines = {};
-  Set<Marker> _polylineMarkers = {};
-  List<LatLng> _polylinePoints = [];
+  final Set<Polygon> _polygons = {}; // Set of polygons
+  final List<LatLng> _polygonPoints = []; // Points for the polygon
+  final Set<Marker> _polygonMarkers = {}; // Set of markers for polygon creation
+  final Set<Polyline> _polylines = {};
+  final Set<Marker> _polylineMarkers = {};
+  final List<LatLng> _polylinePoints = [];
 
   final SpatialBoundariesData _newData = SpatialBoundariesData();
   BoundaryType? _boundaryType;
@@ -64,7 +64,7 @@ class _SpatialBoundariesTestPageState extends State<SpatialBoundariesTestPage> {
   /// centers the map over it.
   void _initProjectArea() {
     setState(() {
-      _polygons = getProjectPolygon(widget.activeProject.polygonPoints);
+      _polygons.add(getProjectPolygon(widget.activeProject.polygonPoints));
       _location = getPolygonCentroid(_polygons.first);
       // Take some latitude away to center considering bottom sheet.
       _location = LatLng(_location.latitude * .999999, _location.longitude);

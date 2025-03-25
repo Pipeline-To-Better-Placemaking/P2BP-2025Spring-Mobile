@@ -4,8 +4,8 @@ import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'google_maps_functions.dart';
 
 class MiniMap extends StatefulWidget {
-  final Project projectData;
-  const MiniMap({super.key, required this.projectData});
+  final Project activeProject;
+  const MiniMap({super.key, required this.activeProject});
 
   @override
   State<MiniMap> createState() => _MiniMapState();
@@ -20,7 +20,7 @@ class _MiniMapState extends State<MiniMap> {
   late GoogleMapController mapController;
   LatLng _location = defaultLocation;
   final LatLng _currentLocation = defaultLocation;
-  Set<Polygon> _polygons = {};
+  final Set<Polygon> _polygons = {};
 
   @override
   void initState() {
@@ -32,7 +32,7 @@ class _MiniMapState extends State<MiniMap> {
   /// centers the map over it.
   void _initProjectArea() {
     setState(() {
-      _polygons = getProjectPolygon(widget.projectData.polygonPoints);
+      _polygons.add(getProjectPolygon(widget.activeProject.polygonPoints));
       _location = getPolygonCentroid(_polygons.first);
       // Take some latitude away to center considering bottom sheet.
       _location = LatLng(_location.latitude * .999999, _location.longitude);

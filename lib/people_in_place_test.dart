@@ -34,7 +34,7 @@ class _PeopleInPlaceTestPageState extends State<PeopleInPlaceTestPage> {
   bool _isTestRunning = false;
   int _remainingSeconds = 300;
   Timer? _timer;
-  Set<Polygon> _polygons = {}; // Set of polygons
+  final Set<Polygon> _polygons = {}; // Set of polygons
   MapType _currentMapType = MapType.normal; // Default map type
   bool _showErrorMessage = false;
   bool _isPointsMenuVisible = false;
@@ -93,7 +93,7 @@ class _PeopleInPlaceTestPageState extends State<PeopleInPlaceTestPage> {
   /// centers the map over it.
   void _initProjectArea() {
     setState(() {
-      _polygons = getProjectPolygon(widget.activeProject.polygonPoints);
+      _polygons.add(getProjectPolygon(widget.activeProject.polygonPoints));
       _location = getPolygonCentroid(_polygons.first);
       // Take some latitude away to center considering bottom sheet.
       _location = LatLng(_location.latitude * .999999, _location.longitude);

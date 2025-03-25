@@ -118,26 +118,14 @@ double _calculateAngle(double centerX, double centerY, double x, double y) {
 /// <br/> Note: This should render the points in the correct order. However, if
 /// points are **not** connected in the correct order, change function to call
 /// _sortPointsClockwise first.
-Set<Polygon> getProjectPolygon(List<LatLng> polygonPoints) {
-  Set<Polygon> projectPolygon = {};
-  try {
-    projectPolygon.add(Polygon(
-      polygonId: PolygonId('project_polygon'),
-      points: polygonPoints.toList(),
-      fillColor: Color(0x52F34236),
-      strokeColor: Colors.red,
-      strokeWidth: 1,
-    ));
-
-    return projectPolygon;
-  } catch (e, stacktrace) {
-    print("Error creating project area (getProjectPolygon()) in "
-        "google_maps_functions.dart. \nThis is likely due to an incorrect "
-        "parameter type. Must be a list of GeoPoints.");
-    print("The error is as follows: $e");
-    print("Stacktrace: $stacktrace");
-  }
-  return projectPolygon;
+Polygon getProjectPolygon(List<LatLng> polygonPoints) {
+  return Polygon(
+    polygonId: PolygonId('project_polygon'),
+    points: polygonPoints.toList(),
+    fillColor: Color(0x52F34236),
+    strokeColor: Colors.red,
+    strokeWidth: 1,
+  );
 }
 
 LatLng getPolygonCentroid(Polygon polygon) {
@@ -157,8 +145,8 @@ LatLng getPolygonCentroid(Polygon polygon) {
 }
 
 /// Finds the distance between given [centroid] and all [points] and returns
-/// the largest distance value.
-double getMaxDistanceFromCentroid(mp.LatLng centroid, List<mp.LatLng> points) {
+/// the largest distance value in meters.
+double getMaxDistanceFromCentroid(List<mp.LatLng> points, mp.LatLng centroid) {
   double maxDistance = 0;
   for (final point in points) {
     final double distance =
@@ -237,4 +225,13 @@ String formatTime(int time) {
   final minutes = time ~/ 60;
   final seconds = time % 60;
   return '${minutes.toString().padLeft(2, '0')}:${seconds.toString().padLeft(2, '0')}';
+}
+
+/// Calculates a zoom value that will fit all of the given points on screen.
+///
+/// Returns a value to be used as the zoom in a [CameraPosition] of a
+/// [GoogleMap] Widget.
+double getIdealZoom(List<mp.LatLng> points, mp.LatLng centroid) {
+  final maxDistanceInMeters = getMaxDistanceFromCentroid(points, centroid);
+  return (log(40000000.0 / maxDistanceInMeters) / log(2)) - 0.75;
 }

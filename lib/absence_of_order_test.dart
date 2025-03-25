@@ -58,7 +58,7 @@ class _AbsenceOfOrderTestPageState extends State<AbsenceOfOrderTestPage> {
   List<mp.LatLng> _projectArea = [];
 
   final Set<Marker> _markers = {}; // Set of markers visible on map
-  Set<Polygon> _polygons = {}; // Set of polygons
+  final Set<Polygon> _polygons = {}; // Set of polygons
   final AbsenceOfOrderData _newData = AbsenceOfOrderData();
   DataPoint? _tempDataPoint;
 
@@ -74,7 +74,7 @@ class _AbsenceOfOrderTestPageState extends State<AbsenceOfOrderTestPage> {
   /// centers the map over it.
   void _initProjectArea() {
     setState(() {
-      _polygons = getProjectPolygon(widget.activeProject.polygonPoints);
+      _polygons.add(getProjectPolygon(widget.activeProject.polygonPoints));
       print(_polygons);
       _location = getPolygonCentroid(_polygons.first);
       // Take some latitude away to center considering bottom sheet.
