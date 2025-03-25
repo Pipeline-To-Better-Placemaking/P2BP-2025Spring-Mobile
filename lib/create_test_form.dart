@@ -161,7 +161,7 @@ class _CreateTestFormState extends State<CreateTestForm> {
             _timerTest
                 ? TextFormField(
                     decoration: InputDecoration(
-                      labelText: 'Timer Time (mm:ss)',
+                      labelText: 'Test Duration (mm:ss)',
                       hintText: 'mm:ss',
                       floatingLabelBehavior: FloatingLabelBehavior.always,
                       labelStyle: TextStyle(color: Color(0xFF2F6DCF)),
