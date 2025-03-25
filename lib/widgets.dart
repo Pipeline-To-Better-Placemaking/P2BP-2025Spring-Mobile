@@ -1,5 +1,9 @@
+import 'dart:io';
+
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:google_maps_flutter/google_maps_flutter.dart';
+import 'package:p2bp_2025spring_mobile/google_maps_functions.dart';
 import 'package:p2bp_2025spring_mobile/theme.dart';
 
 /// Bar Indicator for the Sliding Up Panels (Edit Project, Results)
@@ -82,6 +86,7 @@ class EditButton extends StatelessWidget {
   final VoidCallback? onPressed;
   final Color iconColor;
   final IconAlignment iconAlignment;
+  final OutlinedBorder? shape;
 
   const EditButton({
     super.key,
@@ -92,6 +97,7 @@ class EditButton extends StatelessWidget {
     this.icon,
     this.iconColor = Colors.white,
     this.iconAlignment = IconAlignment.end,
+    this.shape,
   });
 
   @override
@@ -99,9 +105,7 @@ class EditButton extends StatelessWidget {
     return FilledButton.icon(
       style: FilledButton.styleFrom(
         padding: const EdgeInsets.only(left: 15, right: 15),
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(10.0),
-        ),
+        shape: shape,
         foregroundColor: foregroundColor,
         backgroundColor: backgroundColor,
         iconColor: iconColor,
@@ -383,6 +387,7 @@ class CircularIconMapButton extends StatelessWidget {
   final Color borderColor;
   final Widget icon;
   final void Function() onPressed;
+  final Offset iconOffset;
 
   const CircularIconMapButton({
     super.key,
@@ -390,11 +395,13 @@ class CircularIconMapButton extends StatelessWidget {
     required this.borderColor,
     required this.onPressed,
     required this.icon,
+    this.iconOffset = Offset.zero,
   });
 
   @override
   Widget build(BuildContext context) {
     return Container(
+      alignment: Alignment.center,
       decoration: BoxDecoration(
         shape: BoxShape.circle,
         color: backgroundColor,
@@ -408,7 +415,10 @@ class CircularIconMapButton extends StatelessWidget {
         ],
       ),
       child: IconButton(
-        icon: icon,
+        icon: Transform.translate(
+          offset: iconOffset,
+          child: icon,
+        ),
         onPressed: onPressed,
       ),
     );
@@ -508,7 +518,7 @@ class DataEditMenu extends StatelessWidget {
     return Container(
       height: MediaQuery.of(context).size.height * (heightMultiplier ?? 0.5),
       decoration: BoxDecoration(
-        color: Color(0xFFDDE6F2).withValues(alpha: 0.9),
+        color: Color(0xFFC5CFDD).withValues(alpha: 0.9),
         borderRadius: BorderRadius.circular(20),
         border: Border.all(
           color: Color(0xFF2F6DCF),
@@ -519,21 +529,37 @@ class DataEditMenu extends StatelessWidget {
       child: Stack(
         children: [
           Align(
-            // Slightly closer to center than topRight alignment.
-            alignment: Alignment(0.95, -0.95),
-            child: IconButton(
-              onPressed: onPressedCloseMenu,
-              icon: Icon(Icons.close_outlined),
-              style: ButtonStyle(
-                backgroundColor: WidgetStatePropertyAll(Colors.red),
-                shape: WidgetStatePropertyAll(
-                  RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(10),
+              // Slightly closer to center than topRight alignment
+              alignment: Alignment(0.90, -0.95),
+              child: Container(
+                width: 30,
+                height: 30,
+                decoration: BoxDecoration(
+                  color: Color(0xFFD1D7E1).withValues(alpha: 0.95),
+                  shape: BoxShape.circle,
+                  border: Border.all(
+                    color: Color(0xFF2F6DCF),
+                    width: 1.5,
                   ),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black.withValues(alpha: 0.12),
+                      spreadRadius: 0.5,
+                      blurRadius: 3,
+                      offset: Offset(0, 1),
+                    ),
+                  ],
                 ),
-              ),
-            ),
-          ),
+                child: IconButton(
+                  padding: EdgeInsets.zero,
+                  iconSize: 16,
+                  icon: Icon(
+                    Icons.close,
+                    color: Color(0xFF2F6DCF),
+                  ),
+                  onPressed: onPressedCloseMenu,
+                ),
+              )),
           Column(
             children: [
               const SizedBox(height: 8),
@@ -958,5 +984,29 @@ class TestErrorText extends StatelessWidget {
         ),
       ),
     );
+  }
+}
+
+/// Conditionally wraps its child in a SafeArea depending on the platform.
+///
+/// On Android, it wraps its child widget in a SafeArea to prevent system UI elements
+/// (like the status bar or navigation buttons) from overlapping your content.
+/// On iOS, it simply returns the child without extra padding, so you don't get unwanted
+/// blank spaces at the top or bottom.
+///
+/// Example:
+/// ```dart
+/// AdaptiveSafeArea(
+///   child: YourWidget(),
+/// );
+/// ```
+class AdaptiveSafeArea extends StatelessWidget {
+  final Widget child;
+  const AdaptiveSafeArea({super.key, required this.child});
+
+  @override
+  Widget build(BuildContext context) {
+    // Wrap with SafeArea only on Android
+    return Platform.isAndroid ? SafeArea(child: child) : child;
   }
 }

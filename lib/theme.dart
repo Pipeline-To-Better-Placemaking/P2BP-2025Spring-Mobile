@@ -48,17 +48,26 @@ final LinearGradient verticalBlueGrad = LinearGradient(
   ],
 );
 
+const LinearGradient formGradient = LinearGradient(
+  begin: Alignment.topCenter,
+  end: Alignment.bottomCenter,
+  colors: [
+    Color(0xFFDDE6F2),
+    Color(0xFFBACFEB),
+  ],
+);
+
 /// Style for buttons on Test pages that are not toggleable
 /// requiring custom conditional color values.
 final ButtonStyle testButtonStyle = FilledButton.styleFrom(
   padding: const EdgeInsets.symmetric(horizontal: 15),
   foregroundColor: Colors.black,
-  backgroundColor: Colors.white,
+  backgroundColor: Color(0xFFE3EBF4),
   disabledBackgroundColor: Color(0xCD6C6C6C),
   iconColor: Colors.black,
   shape: RoundedRectangleBorder(
-    borderRadius: BorderRadius.circular(10),
-  ),
+      borderRadius: BorderRadius.circular(15),
+      side: BorderSide(color: Color(0xFFB0C4DE), width: 2)),
   textStyle: TextStyle(fontSize: 14),
 );
 

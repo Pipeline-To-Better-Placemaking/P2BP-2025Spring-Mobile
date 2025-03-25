@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_core/firebase_core.dart';
+import 'package:flutter/services.dart';
 import 'package:p2bp_2025spring_mobile/db_schema_classes.dart';
 import 'project_details_page.dart';
 import 'results_panel.dart';
@@ -29,6 +30,11 @@ void registerTestTypes() {
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
+
+  // Lock device orientation to portrait mode
+  await SystemChrome.setPreferredOrientations([
+    DeviceOrientation.portraitUp,
+  ]);
   try {
     // Ensure Firebase is initialized correctly
     await Firebase.initializeApp(

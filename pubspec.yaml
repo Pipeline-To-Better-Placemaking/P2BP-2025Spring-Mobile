@@ -52,7 +52,7 @@ dependencies:
   shared_preferences: ^2.0.15
 
 dependency_overrides:
-  google_maps_flutter_ios: 2.13.1
+  # google_maps_flutter_ios: 2.13.1
 
 dev_dependencies:
   flutter_test:

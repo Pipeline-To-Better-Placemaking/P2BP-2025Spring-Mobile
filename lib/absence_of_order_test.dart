@@ -1,4 +1,8 @@
+import 'dart:async';
+import 'dart:io';
+
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:maps_toolkit/maps_toolkit.dart' as mp;
 import 'package:p2bp_2025spring_mobile/firestore_functions.dart';
@@ -63,6 +67,14 @@ class _AbsenceOfOrderTestPageState extends State<AbsenceOfOrderTestPage> {
   DataPoint? _tempDataPoint;
 
   static const double _bottomSheetHeight = 220;
+
+  bool _isTestRunning = false;
+
+  int _remainingSeconds = 300;
+
+  Timer? _timer;
+
+  Timer? _hintTimer;
 
   @override
   void initState() {
@@ -181,12 +193,120 @@ class _AbsenceOfOrderTestPageState extends State<AbsenceOfOrderTestPage> {
     });
   }
 
+  // Method to start the test and timer
+  void _startTest() {
+    setState(() {
+      _isTestRunning = true;
+      _remainingSeconds = 300;
+    });
+    _timer = Timer.periodic(Duration(seconds: 1), (timer) {
+      setState(() {
+        if (_remainingSeconds <= 0) {
+          timer.cancel();
+        } else {
+          _remainingSeconds--;
+        }
+      });
+    });
+  }
+
+  void _endTest() {
+    _isTestRunning = false;
+    _timer?.cancel();
+    _hintTimer?.cancel();
+    widget.activeTest.submitData(_newData);
+    Navigator.pop(context);
+  }
+
+  AppBar _buildAppBar() {
+    return AppBar(
+      // Only apply systemOverlayStyle on iOS.
+      // Define the systemOverlayStyle based on map type.
+      systemOverlayStyle: Platform.isIOS
+          ? (_currentMapType == MapType.normal
+              // Sets a darker status bar in map view for better visibility.
+              ? SystemUiOverlayStyle.dark.copyWith(
+                  statusBarColor: Colors.transparent,
+                )
+              // Sets a lighter status bar in satellite view for better visibility.
+              : SystemUiOverlayStyle.light.copyWith(
+                  statusBarColor: Colors.transparent,
+                ))
+          : null,
+      toolbarHeight: kToolbarHeight + 10,
+      backgroundColor: Colors.transparent,
+      elevation: 0,
+      leadingWidth: 100,
+      // Start/End button on the left
+      leading: Padding(
+        padding: const EdgeInsets.only(top: 5, bottom: 5, left: 20),
+        child: ElevatedButton(
+          style: ElevatedButton.styleFrom(
+            shape: RoundedRectangleBorder(
+              borderRadius:
+                  BorderRadius.circular(20), // Rounded rectangle shape.
+            ),
+            backgroundColor: _isTestRunning ? Colors.red : Colors.green,
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+          ),
+          onPressed: () {
+            if (_isTestRunning) {
+              _endTest();
+            } else {
+              _startTest();
+            }
+          },
+          child: Text(
+            _isTestRunning ? 'End' : 'Start',
+            style: const TextStyle(color: Colors.white, fontSize: 16),
+          ),
+        ),
+      ),
+      // Persistent prompt in the middle with a translucent background.
+      title: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+        decoration: BoxDecoration(
+          color: Colors.black.withValues(alpha: 0.6),
+          borderRadius: BorderRadius.circular(8),
+        ),
+        child: Text(
+          'Tap to log data point',
+          maxLines: 2,
+          overflow: TextOverflow.visible,
+          style: const TextStyle(color: Colors.white, fontSize: 16),
+        ),
+      ),
+      centerTitle: true,
+      // Timer on the right
+      actions: [
+        Padding(
+          padding: const EdgeInsets.only(right: 20),
+          child: Center(
+            child: Container(
+              padding: EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+              decoration: BoxDecoration(
+                color: Colors.black.withValues(alpha: 0.6),
+                borderRadius: BorderRadius.circular(8),
+              ),
+              child: Text(
+                formatTime(_remainingSeconds),
+                style: TextStyle(color: Colors.white, fontSize: 16),
+              ),
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     // Updates flag for whether _tempDataPoint has a description for data point
     bool isDescriptionReady = (_tempDataPoint != null);
-    return SafeArea(
+    return AdaptiveSafeArea(
       child: Scaffold(
+        appBar: _buildAppBar(),
+        extendBodyBehindAppBar: true,
         resizeToAvoidBottomInset: false,
         extendBody: true,
         body: _isLoading

@@ -961,6 +961,32 @@ enum ShelterBoundaryType {
   constructed,
 }
 
+enum SpatialBoundaryType implements DisplayNameEnum {
+  constructed(displayName: 'Constructed', color: Color(0xFFD81860)),
+  material(displayName: 'Material', color: Color(0xFF00897B)),
+  shelter(displayName: 'Shelter', color: Color(0xFFF57C00));
+
+  const SpatialBoundaryType({
+    required this.displayName,
+    required this.color,
+  });
+
+  @override
+  final String displayName;
+  final Color color;
+
+  factory SpatialBoundaryType.byDisplayName(String displayName) {
+    try {
+      for (final type in SpatialBoundaryType.values) {
+        if (type.displayName == displayName) return type;
+      }
+      throw Exception('Invalid SpatialBoundaryType displayName');
+    } catch (e, s) {
+      throw Exception('Error: $e\nStacktrace: $s');
+    }
+  }
+}
+
 class ConstructedBoundary {
   static Color polylineColor = Colors.purpleAccent;
   late final Polyline polyline;
