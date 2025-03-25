@@ -5,12 +5,10 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:p2bp_2025spring_mobile/firestore_functions.dart';
-import 'package:p2bp_2025spring_mobile/project_details_page.dart';
 import 'package:p2bp_2025spring_mobile/theme.dart';
 import 'package:p2bp_2025spring_mobile/widgets.dart';
 import 'db_schema_classes.dart';
 import 'google_maps_functions.dart';
-import 'home_screen.dart';
 import 'package:maps_toolkit/maps_toolkit.dart' as mp;
 
 class NaturePrevalence extends StatefulWidget {
@@ -38,7 +36,7 @@ class _NaturePrevalenceState extends State<NaturePrevalence> {
   List<mp.LatLng> _projectArea = [];
   String _directions = "Choose a category.";
   bool _directionsVisible = false;
-  double _bottomSheetHeight = 300;
+  static const double _bottomSheetHeight = 300;
   late DocumentReference teamRef;
   late GoogleMapController mapController;
   LatLng _location = defaultLocation; // Default location
@@ -92,34 +90,38 @@ class _NaturePrevalenceState extends State<NaturePrevalence> {
     });
     _timer = Timer.periodic(Duration(seconds: 1), (timer) {
       setState(() {
+        _remainingSeconds--;
         if (_remainingSeconds <= 0) {
-          _endTest();
+          _testIsRunning = false;
           timer.cancel();
           showDialog(
-              context: context,
-              builder: (context) {
-                return TimerEndDialog(onSubmit: () {
-                  Navigator.pop(context);
-                  Navigator.pop(context);
-                }, onBack: () {
-                  setState(() {
-                    _remainingSeconds = widget.activeTest.testDuration;
-                  });
-                  Navigator.pop(context);
+            context: context,
+            builder: (context) {
+              return TimerEndDialog(onSubmit: () {
+                Navigator.pop(context);
+                _endTest();
+              }, onBack: () {
+                setState(() {
+                  _remainingSeconds = widget.activeTest.testDuration;
                 });
+                Navigator.pop(context);
               });
-        } else {
-          _remainingSeconds--;
+            },
+          );
         }
       });
     });
   }
 
+  /// Cancels timer, compiles and submits data, and then pops test page.
   void _endTest() {
-    setState(() {
-      _testIsRunning = false;
-    });
     _timer?.cancel();
+    _natureData.animals = _animalData;
+    _natureData.vegetation = _vegetationData;
+    _natureData.waterBodies = _waterBodyData;
+    _natureData.weather = _weatherData;
+    widget.activeTest.submitData(_natureData);
+    Navigator.pop(context);
   }
 
   /// Sets all type variables to null.
@@ -880,8 +882,11 @@ class _NaturePrevalenceState extends State<NaturePrevalence> {
                             TimerButtonAndDisplay(
                               onPressed: () {
                                 if (_testIsRunning) {
-                                  _endTest();
-                                  _clearTypes();
+                                  setState(() {
+                                    _testIsRunning = false;
+                                    _timer?.cancel();
+                                    _clearTypes();
+                                  });
                                 } else {
                                   _startTest();
                                 }
@@ -1165,32 +1170,8 @@ class _NaturePrevalenceState extends State<NaturePrevalence> {
                                                   builder: (context) {
                                                     return TestFinishDialog(
                                                         onNext: () {
-                                                      _natureData.animals =
-                                                          _animalData;
-                                                      _natureData.vegetation =
-                                                          _vegetationData;
-                                                      _natureData.waterBodies =
-                                                          _waterBodyData;
-                                                      _natureData.weather =
-                                                          _weatherData;
-                                                      widget.activeTest
-                                                          .submitData(
-                                                              _natureData);
-                                                      Navigator.pushReplacement(
-                                                          context,
-                                                          MaterialPageRoute(
-                                                            builder: (context) =>
-                                                                HomeScreen(),
-                                                          ));
-                                                      Navigator.push(
-                                                          context,
-                                                          MaterialPageRoute(
-                                                            builder: (context) =>
-                                                                ProjectDetailsPage(
-                                                                    projectData:
-                                                                        widget
-                                                                            .activeProject),
-                                                          ));
+                                                      Navigator.pop(context);
+                                                      _endTest();
                                                     });
                                                   });
                                             },
