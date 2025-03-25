@@ -135,19 +135,6 @@ class _SpatialBoundariesTestPageState extends State<SpatialBoundariesTestPage> {
           ? MapType.satellite
           : MapType.normal);
     });
-
-    if (_currentMapType == MapType.normal) {
-      // Sets a darker status bar in map view for better visibility on iOS.
-      SystemChrome.setSystemUIOverlayStyle(SystemUiOverlayStyle(
-        statusBarColor: Colors.black,
-        statusBarIconBrightness: Brightness.light,
-      ));
-    } else {
-      // Sets a lighter status bar in satellite view for better visibility.
-      SystemChrome.setSystemUIOverlayStyle(SystemUiOverlayStyle(
-          statusBarColor: Colors.black,
-          statusBarIconBrightness: Brightness.dark));
-    }
   }
 
   /// Called whenever map is tapped
