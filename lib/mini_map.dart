@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:p2bp_2025spring_mobile/db_schema_classes.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
+import 'package:p2bp_2025spring_mobile/firestore_functions.dart';
 import 'google_maps_functions.dart';
 
 class MiniMap extends StatefulWidget {
@@ -20,37 +21,31 @@ class _MiniMapState extends State<MiniMap> {
   late GoogleMapController mapController;
   LatLng _location = defaultLocation;
   final LatLng _currentLocation = defaultLocation;
+  double _zoom = 18;
   final Set<Polygon> _polygons = {};
 
   @override
   void initState() {
     super.initState();
-    _initProjectArea();
-  }
-
-  /// Gets the project polygon, adds it to the current polygon list, and
-  /// centers the map over it.
-  void _initProjectArea() {
-    setState(() {
-      _polygons.add(getProjectPolygon(widget.activeProject.polygonPoints));
-      _location = getPolygonCentroid(_polygons.first);
-      // Take some latitude away to center considering bottom sheet.
-      _location = LatLng(_location.latitude * .999999, _location.longitude);
-      // TODO: dynamic zooming
-    });
-  }
-
-  void _moveToLocation() {
-    mapController.animateCamera(
-      CameraUpdate.newCameraPosition(
-        CameraPosition(target: _location, zoom: 14.0),
-      ),
-    );
+    _polygons.add(getProjectPolygon(widget.activeProject.polygonPoints));
+    _location = getPolygonCentroid(_polygons.first);
+    _zoom =
+        getIdealZoom(_polygons.first.toMPLatLngList(), _location.toMPLatLng());
+    _zoom--;
   }
 
   void _onMapCreated(GoogleMapController controller) {
     mapController = controller;
-    _moveToLocation(); // Ensure the map is centered on the current location
+    _moveToLocation();
+  }
+
+  /// Moves camera to project location.
+  void _moveToLocation() {
+    mapController.animateCamera(
+      CameraUpdate.newCameraPosition(
+        CameraPosition(target: _location, zoom: _zoom),
+      ),
+    );
   }
 
   @override
@@ -66,7 +61,7 @@ class _MiniMapState extends State<MiniMap> {
               onMapCreated: _onMapCreated,
               initialCameraPosition: CameraPosition(
                 target: _currentLocation,
-                zoom: 14.0,
+                zoom: _zoom,
               ),
               polygons: _polygons,
               liteModeEnabled: true,

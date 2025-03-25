@@ -31,7 +31,7 @@ class _LightingProfileTestPageState extends State<LightingProfileTestPage> {
 
   late GoogleMapController mapController;
   LatLng _location = defaultLocation;
-  double _zoom = 14;
+  double _zoom = 18;
   MapType _currentMapType = MapType.satellite; // Default map type
   List<mp.LatLng> _projectArea = [];
 
@@ -53,9 +53,10 @@ class _LightingProfileTestPageState extends State<LightingProfileTestPage> {
 
   void _onMapCreated(GoogleMapController controller) {
     mapController = controller;
-    _moveToLocation(); // Ensure the map is centered on the current location
+    _moveToLocation();
   }
 
+  /// Moves camera to project location.
   void _moveToLocation() {
     mapController.animateCamera(
       CameraUpdate.newCameraPosition(

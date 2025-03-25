@@ -30,7 +30,9 @@ class _NaturePrevalenceState extends State<NaturePrevalence> {
   bool _polygonMode = false;
   bool _pointMode = false;
   bool _outsidePoint = false;
-  Set<Polygon> _projectPolygon = {};
+
+  double _zoom = 18;
+  late final Polygon _projectPolygon;
   List<mp.LatLng> _projectArea = [];
   String _directions = "Choose a category.";
   bool _directionsVisible = true;
@@ -66,7 +68,11 @@ class _NaturePrevalenceState extends State<NaturePrevalence> {
   @override
   void initState() {
     super.initState();
-    initProjectArea();
+    _projectPolygon = getProjectPolygon(widget.activeProject.polygonPoints);
+    _location = getPolygonCentroid(_projectPolygon);
+    _projectArea = _projectPolygon.toMPLatLngList();
+    _zoom = getIdealZoom(_projectArea, _location.toMPLatLng());
+    _isLoading = false;
     WidgetsBinding.instance.addPostFrameCallback((_) async {
       _setWeatherData();
     });
@@ -96,20 +102,6 @@ class _NaturePrevalenceState extends State<NaturePrevalence> {
       case NatureType.animal:
         return _animalType?.name;
     }
-  }
-
-  /// Gets the project polygon, adds it to the current polygon list, and
-  /// centers the map over it.
-  void initProjectArea() {
-    setState(() {
-      _polygons.add(getProjectPolygon(widget.activeProject.polygonPoints));
-      _location = getPolygonCentroid(_projectPolygon.first);
-      // Take some latitude away to center considering bottom sheet.
-      _location = LatLng(_location.latitude * .999999, _location.longitude);
-      _projectArea = _projectPolygon.first.toMPLatLngList();
-      // TODO: dynamic zooming
-      _isLoading = false;
-    });
   }
 
   void _setWeatherData() async {
@@ -616,13 +608,14 @@ class _NaturePrevalenceState extends State<NaturePrevalence> {
 
   void _onMapCreated(GoogleMapController controller) {
     mapController = controller;
-    _moveToLocation(); // Ensure the map is centered on the current location
+    _moveToLocation();
   }
 
+  /// Moves camera to project location.
   void _moveToLocation() {
     mapController.animateCamera(
       CameraUpdate.newCameraPosition(
-        CameraPosition(target: _location, zoom: 14),
+        CameraPosition(target: _location, zoom: _zoom),
       ),
     );
   }
@@ -774,10 +767,10 @@ class _NaturePrevalenceState extends State<NaturePrevalence> {
                         padding: EdgeInsets.only(bottom: _bottomSheetHeight),
                         onMapCreated: _onMapCreated,
                         initialCameraPosition:
-                            CameraPosition(target: _location, zoom: 14),
+                            CameraPosition(target: _location, zoom: _zoom),
                         polygons: (_oldVisibility || _polygons.isEmpty)
-                            ? {..._polygons, ..._projectPolygon}
-                            : {_polygons.last, ..._projectPolygon},
+                            ? {..._polygons, _projectPolygon}
+                            : {_polygons.last, _projectPolygon},
                         markers: (_oldVisibility || _markers.isEmpty)
                             ? {..._markers, ..._polygonMarkers}
                             : {_markers.last, ..._polygonMarkers},

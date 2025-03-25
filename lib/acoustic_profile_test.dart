@@ -6,6 +6,7 @@ import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:p2bp_2025spring_mobile/acoustic_instructions.dart';
 import 'package:p2bp_2025spring_mobile/db_schema_classes.dart';
+import 'package:p2bp_2025spring_mobile/firestore_functions.dart';
 import 'package:p2bp_2025spring_mobile/google_maps_functions.dart';
 import 'package:p2bp_2025spring_mobile/theme.dart';
 import 'package:p2bp_2025spring_mobile/widgets.dart'; // for _showInstructionOverlay
@@ -50,14 +51,16 @@ final AssetMapBitmap _activeIcon = AssetMapBitmap(
 );
 
 class _AcousticProfileTestPageState extends State<AcousticProfileTestPage> {
-  late GoogleMapController mapController;
-  MapType _currentMapType = MapType.normal;
-  LatLng _location = defaultLocation; // Default location
   bool _isLoading = true;
   bool _isIntervalCycleRunning = false;
   bool _isBottomSheetOpen = false;
   bool _isErrorTextShown = false;
   bool _isTestComplete = false;
+
+  late GoogleMapController mapController;
+  LatLng _location = defaultLocation;
+  double _zoom = 18;
+  MapType _currentMapType = MapType.satellite;
 
   final Set<Polygon> _polygons = {};
   final Set<Circle> _circles = <Circle>{};
@@ -68,7 +71,7 @@ class _AcousticProfileTestPageState extends State<AcousticProfileTestPage> {
   final int _intervalDuration = 4; // TODO replace with member of test later
   final int _intervalCount = 3; // TODO replace with member of test later
   int _remainingSeconds = 0;
-  late int _intervalsRemaining;
+  int _intervalsRemaining = 0;
 
   // List to store acoustic measurements for each interval.
   final Map<MarkerId, bool> _standingPointCompletionStatus = {};
@@ -81,70 +84,21 @@ class _AcousticProfileTestPageState extends State<AcousticProfileTestPage> {
     super.initState();
     _intervalsRemaining = _intervalCount;
     _polygons.add(getProjectPolygon(widget.activeProject.polygonPoints));
-    if (_polygons.isNotEmpty) {
-      _location = getPolygonCentroid(_polygons.first);
-      _location = LatLng(_location.latitude * 0.999999, _location.longitude);
-    }
-    // TODO: dynamic zooming
-    _standingPoints = widget.activeTest.standingPoints.toList();
-    print(_standingPoints);
-    _setupNewData();
-    _markers = _buildStandingPointMarkers();
-
-    _isLoading = false;
-  }
-
-  @override
-  void dispose() {
-    _intervalTimer?.cancel();
-    super.dispose();
-  }
-
-  void _moveToCurrentLocation() {
-    mapController.animateCamera(
-      CameraUpdate.newCameraPosition(
-        CameraPosition(target: _location, zoom: 14.0),
-      ),
+    _location = getPolygonCentroid(_polygons.first);
+    _zoom = getIdealZoom(
+      _polygons.first.toMPLatLngList(),
+      _location.toMPLatLng(),
     );
-  }
-
-  /// Toggle the map type between normal and satellite view.
-  void _toggleMapType() {
-    setState(() {
-      _currentMapType = (_currentMapType == MapType.normal
-          ? MapType.satellite
-          : MapType.normal);
-    });
-  }
-
-  /// Initialize the map controller and adjust the camera:
-  /// - If the project has defined polygon points, zoom to fit the project area.
-  /// - Otherwise, center the map on the user's current location
-  void _onMapCreated(GoogleMapController controller) {
-    mapController = controller;
-    setState(() {
-      if (widget.activeProject.polygonPoints.isNotEmpty) {
-        WidgetsBinding.instance.addPostFrameCallback((_) {
-          final bounds = getLatLngBounds(widget.activeProject.polygonPoints);
-          if (bounds != null) {
-            mapController
-                .animateCamera(CameraUpdate.newLatLngBounds(bounds, 50));
-          }
-        });
-      } else {
-        _moveToCurrentLocation();
-      }
-    });
-  }
-
-  /// Creates an [AcousticDataPoint] in [_newData] for each standing point.
-  void _setupNewData() {
+    _standingPoints = widget.activeTest.standingPoints.toList();
+    // Create an AcousticDataPoint in _newData for each standing point.
     for (final point in _standingPoints) {
       _newData.dataPoints.add(AcousticDataPoint(
         standingPoint: point,
         measurements: [],
       ));
     }
+    _markers = _buildStandingPointMarkers();
+    _isLoading = false;
   }
 
   /// Creates a marker for each standing point and returns that set of markers.
@@ -176,6 +130,35 @@ class _AcousticProfileTestPageState extends State<AcousticProfileTestPage> {
       );
     }
     return markers;
+  }
+
+  @override
+  void dispose() {
+    _intervalTimer?.cancel();
+    super.dispose();
+  }
+
+  /// Toggle the map type between normal and satellite view.
+  void _toggleMapType() {
+    setState(() {
+      _currentMapType = (_currentMapType == MapType.normal
+          ? MapType.satellite
+          : MapType.normal);
+    });
+  }
+
+  void _onMapCreated(GoogleMapController controller) {
+    mapController = controller;
+    _moveToLocation();
+  }
+
+  /// Moves camera to project location.
+  void _moveToLocation() {
+    mapController.animateCamera(
+      CameraUpdate.newCameraPosition(
+        CameraPosition(target: _location, zoom: _zoom),
+      ),
+    );
   }
 
   /// Sets given marker as [_activeMarker] as long as it is incomplete.
@@ -509,7 +492,7 @@ class _AcousticProfileTestPageState extends State<AcousticProfileTestPage> {
             onMapCreated: _onMapCreated,
             initialCameraPosition: CameraPosition(
               target: _location,
-              zoom: 14.0,
+              zoom: _zoom,
             ),
             markers: _markers,
             polygons: _polygons,

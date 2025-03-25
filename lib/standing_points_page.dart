@@ -1,6 +1,7 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
+import 'package:p2bp_2025spring_mobile/firestore_functions.dart';
 import 'package:p2bp_2025spring_mobile/theme.dart';
 import 'google_maps_functions.dart';
 import 'db_schema_classes.dart';
@@ -28,17 +29,18 @@ final AssetMapBitmap enabledIcon = AssetMapBitmap(
 
 class _StandingPointsPageState extends State<StandingPointsPage> {
   DocumentReference? teamRef;
-  GoogleMapController? mapController;
-  LatLng _location = defaultLocation; // Default location
+  late GoogleMapController mapController;
+  double _zoom = 18;
+  LatLng _location = defaultLocation;
   bool _isLoading = true;
   final String _directions =
       "Select the standing points you want to use in this test. Then click confirm.";
-  final Set<Polygon> _polygons = {}; // Set of polygons
-  Set<Marker> _markers = {}; // Set of markers for points
+  final Set<Polygon> _polygons = {};
+  Set<Marker> _markers = {};
   List<StandingPoint> _standingPoints = [];
   Marker? _currentMarker;
   static const double _bottomSheetHeight = 300;
-  MapType _currentMapType = MapType.satellite; // Default map type
+  MapType _currentMapType = MapType.satellite;
   final List<bool> _checkboxValues = [];
   Project? project;
 
@@ -52,28 +54,21 @@ class _StandingPointsPageState extends State<StandingPointsPage> {
   @override
   void initState() {
     super.initState();
-    initProjectArea();
-  }
+    _polygons.add(getProjectPolygon(widget.activeProject.polygonPoints));
+    _location = getPolygonCentroid(_polygons.first);
+    _zoom = getIdealZoom(
+      _polygons.first.toMPLatLngList(),
+      _location.toMPLatLng(),
+    );
 
-  /// Initialize the project area: create the polygon boundary, center the map, set markers for each
-  /// standing point, and load any pre-existing standing point data.
-  void initProjectArea() {
-    setState(() {
-      _polygons.add(getProjectPolygon(widget.activeProject.polygonPoints));
-      _location = getPolygonCentroid(_polygons.first);
-      // Take some latitude away to center considering bottom sheet.
-      _location = LatLng(_location.latitude * .999999, _location.longitude);
-      // TODO: dynamic zooming
-      _markers =
-          _setMarkersFromStandingPoints(widget.activeProject.standingPoints);
-      _standingPoints = widget.activeProject.standingPoints.toList();
-      if (widget.currentStandingPoints != null) {
-        final List<StandingPoint> currentStandingPoints =
-            widget.currentStandingPoints!;
-        _loadCurrentStandingPoints(currentStandingPoints);
-      }
-      _isLoading = false;
-    });
+    _standingPoints = widget.activeProject.standingPoints.toList();
+    _markers = _setMarkersFromStandingPoints(_standingPoints);
+    if (widget.currentStandingPoints != null) {
+      final List<StandingPoint> currentStandingPoints =
+          widget.currentStandingPoints!;
+      _loadCurrentStandingPoints(currentStandingPoints);
+    }
+    _isLoading = false;
   }
 
   /// Takes a list of points and creates the default markers from their title
@@ -147,14 +142,14 @@ class _StandingPointsPageState extends State<StandingPointsPage> {
 
   void _onMapCreated(GoogleMapController controller) {
     mapController = controller;
-    _moveToLocation(); // Ensure the map is centered on the current location
+    _moveToLocation();
   }
 
+  /// Moves camera to project location.
   void _moveToLocation() {
-    if (mapController == null) return;
-    mapController!.animateCamera(
+    mapController.animateCamera(
       CameraUpdate.newCameraPosition(
-        CameraPosition(target: _location, zoom: 14.0),
+        CameraPosition(target: _location, zoom: _zoom),
       ),
     );
   }
@@ -183,7 +178,7 @@ class _StandingPointsPageState extends State<StandingPointsPage> {
                           padding: EdgeInsets.only(bottom: _bottomSheetHeight),
                           onMapCreated: _onMapCreated,
                           initialCameraPosition:
-                              CameraPosition(target: _location, zoom: 14.0),
+                              CameraPosition(target: _location, zoom: _zoom),
                           polygons: _polygons,
                           markers: _markers,
                           mapType: _currentMapType, // Use current map type

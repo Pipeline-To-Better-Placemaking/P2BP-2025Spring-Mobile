@@ -22,6 +22,7 @@ class _SectionCreationPageState extends State<SectionCreationPage> {
   DocumentReference? teamRef;
   GoogleMapController? mapController;
   LatLng _location = defaultLocation; // Default location
+  double _zoom = 18;
   bool _isLoading = true;
   String _directions =
       "Create your section by marking your points. Then click confirm.";
@@ -39,34 +40,20 @@ class _SectionCreationPageState extends State<SectionCreationPage> {
   @override
   void initState() {
     super.initState();
-    initProjectArea();
-  }
+    _polygons.add(getProjectPolygon(widget.activeProject.polygonPoints));
+    _location = getPolygonCentroid(_polygons.first);
+    _projectArea = _polygons.first.toMPLatLngList();
+    _zoom = getIdealZoom(_projectArea, _location.toMPLatLng());
 
-  /// Gets the project polygon, adds it to the current polygon list, and
-  /// centers the map over it.
-  void initProjectArea() {
-    setState(() {
-      _polygons.add(getProjectPolygon(widget.activeProject.polygonPoints));
-      _projectArea = _polygons.first.toMPLatLngList();
-      _location = getPolygonCentroid(_polygons.first);
-      // Take some latitude away to center considering bottom sheet.
-      _location = LatLng(_location.latitude * .999999, _location.longitude);
-      // TODO: dynamic zooming
-      if (widget.currentSection != null) {
-        final List currentSection = widget.currentSection!;
-        _loadCurrentSection(currentSection);
-      }
-      _isLoading = false;
-    });
-  }
-
-  void _loadCurrentSection(List currentSection) {
-    final Polyline? polyline =
-        createPolyline(currentSection.toLatLngList(), Colors.green[600]!);
-    if (polyline == null) return;
-    setState(() {
-      _polyline = polyline;
-    });
+    if (widget.currentSection != null) {
+      final List currentSection = widget.currentSection!;
+      final Polyline? polyline = createPolyline(
+        currentSection.toLatLngList(),
+        Colors.green[600]!,
+      );
+      if (polyline != null) _polyline = polyline;
+    }
+    _isLoading = false;
   }
 
   Future<void> _polylineTap(LatLng point) async {
@@ -111,14 +98,14 @@ class _SectionCreationPageState extends State<SectionCreationPage> {
 
   void _onMapCreated(GoogleMapController controller) {
     mapController = controller;
-    _moveToLocation(); // Ensure the map is centered on the current location
+    _moveToLocation();
   }
 
+  /// Moves camera to project location.
   void _moveToLocation() {
-    if (mapController == null) return;
     mapController!.animateCamera(
       CameraUpdate.newCameraPosition(
-        CameraPosition(target: _location, zoom: 14.0),
+        CameraPosition(target: _location, zoom: _zoom),
       ),
     );
   }
@@ -146,7 +133,7 @@ class _SectionCreationPageState extends State<SectionCreationPage> {
                         GoogleMap(
                           onMapCreated: _onMapCreated,
                           initialCameraPosition:
-                              CameraPosition(target: _location, zoom: 14.0),
+                              CameraPosition(target: _location, zoom: _zoom),
                           polygons: _polygons,
                           polylines: {if (_polyline != null) _polyline!},
                           markers: (_markers.isNotEmpty)

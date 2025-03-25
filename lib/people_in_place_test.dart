@@ -26,26 +26,26 @@ class PeopleInPlaceTestPage extends StatefulWidget {
 }
 
 class _PeopleInPlaceTestPageState extends State<PeopleInPlaceTestPage> {
+  bool _isLoading = true;
+  bool _isTestRunning = false;
+
+  double _zoom = 18;
   late GoogleMapController mapController;
   LatLng _location = defaultLocation; // Default location
-  bool _isLoading = true;
-  Timer? _hintTimer;
-  bool _showHint = false;
-  bool _isTestRunning = false;
-  int _remainingSeconds = 300;
-  Timer? _timer;
+
   final Set<Polygon> _polygons = {}; // Set of polygons
   MapType _currentMapType = MapType.normal; // Default map type
   bool _showErrorMessage = false;
   bool _isPointsMenuVisible = false;
   List<mp.LatLng> _projectArea = [];
-
   final Set<Marker> _markers = {}; // Set of markers for points
   final List<LatLng> _loggedPoints = [];
-
   final Set<Marker> _standingPointMarkers = {};
 
   final PeopleInPlaceData _newData = PeopleInPlaceData();
+
+  int _remainingSeconds = 300;
+  Timer? _timer;
 
   // Custom marker icons
   BitmapDescriptor? standingPointMarker;
@@ -74,7 +74,11 @@ class _PeopleInPlaceTestPageState extends State<PeopleInPlaceTestPage> {
   @override
   void initState() {
     super.initState();
-    _initProjectArea();
+    _polygons.add(getProjectPolygon(widget.activeProject.polygonPoints));
+    _location = getPolygonCentroid(_polygons.first);
+    _projectArea = _polygons.first.toMPLatLngList();
+    _zoom = getIdealZoom(_projectArea, _location.toMPLatLng());
+    _isLoading = false;
     WidgetsBinding.instance.addPostFrameCallback((_) {
       print("PostFrameCallback fired");
       _loadCustomMarkers();
@@ -85,22 +89,7 @@ class _PeopleInPlaceTestPageState extends State<PeopleInPlaceTestPage> {
   @override
   void dispose() {
     _timer?.cancel();
-    _hintTimer?.cancel();
     super.dispose();
-  }
-
-  /// Gets the project polygon, adds it to the current polygon list, and
-  /// centers the map over it.
-  void _initProjectArea() {
-    setState(() {
-      _polygons.add(getProjectPolygon(widget.activeProject.polygonPoints));
-      _location = getPolygonCentroid(_polygons.first);
-      // Take some latitude away to center considering bottom sheet.
-      _location = LatLng(_location.latitude * .999999, _location.longitude);
-      _projectArea = _polygons.first.toMPLatLngList();
-      // TODO: dynamic zooming
-      _isLoading = false;
-    });
   }
 
   // Function to load custom marker icons using AssetMapBitmap.
@@ -110,7 +99,7 @@ class _PeopleInPlaceTestPageState extends State<PeopleInPlaceTestPage> {
     try {
       standingPointMarker = await AssetMapBitmap.create(
         configuration,
-        'assets/standing_point_disabled_marker.png',
+        'assets/standing_point_disabled.png',
         width: 36,
         height: 36,
       );
@@ -264,43 +253,16 @@ class _PeopleInPlaceTestPageState extends State<PeopleInPlaceTestPage> {
     );
   }
 
-  void _resetHintTimer() {
-    // Cancel any existing timer.
-    _hintTimer?.cancel();
-    // Hide the hint if it was showing.
-    setState(() {
-      _showHint = false;
-    });
-    // Start a new timer.
-    _hintTimer = Timer(Duration(seconds: 10), () {
-      setState(() {
-        _showHint = true;
-      });
-    });
-  }
-
   void _onMapCreated(GoogleMapController controller) {
     mapController = controller;
-    setState(() {
-      if (widget.activeProject.polygonPoints.isNotEmpty) {
-        WidgetsBinding.instance.addPostFrameCallback((_) {
-          final bounds = getLatLngBounds(
-              widget.activeProject.polygonPoints.toLatLngList());
-          if (bounds != null) {
-            mapController
-                .animateCamera(CameraUpdate.newLatLngBounds(bounds, 50));
-          }
-        });
-      } else {
-        _moveToCurrentLocation(); // Ensure the map is centered on the current location
-      }
-    });
+    _moveToCurrentLocation();
   }
 
+  /// Moves camera to project location.
   void _moveToCurrentLocation() {
     mapController.animateCamera(
       CameraUpdate.newCameraPosition(
-        CameraPosition(target: _location, zoom: 14.0),
+        CameraPosition(target: _location, zoom: _zoom),
       ),
     );
   }
@@ -344,7 +306,6 @@ class _PeopleInPlaceTestPageState extends State<PeopleInPlaceTestPage> {
 
   // Tap handler for People In Place
   Future<void> _handleMapTap(LatLng point) async {
-    _resetHintTimer();
     // If point is outside the project boundary, display error message
     if (!isPointInsidePolygon(point, _polygons.first)) {
       setState(() {
@@ -434,7 +395,6 @@ class _PeopleInPlaceTestPageState extends State<PeopleInPlaceTestPage> {
   void _endTest() {
     _isTestRunning = false;
     _timer?.cancel();
-    _hintTimer?.cancel();
     widget.activeTest.submitData(_newData);
     Navigator.pop(context);
   }
@@ -519,7 +479,7 @@ class _PeopleInPlaceTestPageState extends State<PeopleInPlaceTestPage> {
                 onMapCreated: _onMapCreated,
                 initialCameraPosition: CameraPosition(
                   target: _location,
-                  zoom: 14.0,
+                  zoom: _zoom,
                 ),
                 markers: {..._standingPointMarkers, ..._markers},
                 polygons: _polygons,

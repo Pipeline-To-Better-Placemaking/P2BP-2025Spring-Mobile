@@ -231,7 +231,16 @@ String formatTime(int time) {
 ///
 /// Returns a value to be used as the zoom in a [CameraPosition] of a
 /// [GoogleMap] Widget.
+///
+/// This works based on the furthest zoom level in Google Maps showing
+/// 40,000 km on the screen, basically enough to see the entire planet.
+/// The zoom levels then scale logarithmically such that adding 1 zoom
+/// to that furthest level will show half as much distance, so 20,000 km.
+///
+/// Ultimately, this uses a condensed (read: optimized, hopefully) version
+/// of a formula for converting distance visible on screen to zoom level
+/// found here: https://stackoverflow.com/a/46764320.
 double getIdealZoom(List<mp.LatLng> points, mp.LatLng centroid) {
   final maxDistanceInMeters = getMaxDistanceFromCentroid(points, centroid);
-  return (log(40000000.0 / maxDistanceInMeters) / log(2)) - 0.75;
+  return (log(20000000.0 / maxDistanceInMeters) / log(2));
 }
