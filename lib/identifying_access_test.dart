@@ -324,20 +324,35 @@ class _IdentifyingAccessState extends State<IdentifyingAccess> {
                       ),
                     ),
                     Align(
+                      alignment: Alignment.topCenter,
+                      child: _directionsVisible
+                          ? Padding(
+                              padding:
+                                  const EdgeInsets.only(top: 15.0, right: 15.0),
+                              child: DirectionsText(
+                                  onTap: () {
+                                    setState(() {
+                                      _directionsVisible = !_directionsVisible;
+                                    });
+                                  },
+                                  text: _directions),
+                            )
+                          : SizedBox(),
+                    ),
+                    Align(
                       alignment: Alignment.topRight,
                       child: Padding(
-                        padding: const EdgeInsets.only(top: 20.0, right: 20.0),
+                        padding: const EdgeInsets.only(top: 15.0, right: 15.0),
                         child: Column(
                           spacing: 10,
                           mainAxisAlignment: MainAxisAlignment.start,
                           children: [
-                            DirectionsWidget(
+                            DirectionsButton(
                                 onTap: () {
                                   setState(() {
                                     _directionsVisible = !_directionsVisible;
                                   });
                                 },
-                                text: _directions,
                                 visibility: _directionsVisible),
                             CircularIconMapButton(
                               backgroundColor: Colors.green,

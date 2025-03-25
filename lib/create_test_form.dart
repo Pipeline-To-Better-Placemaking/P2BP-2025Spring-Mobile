@@ -5,7 +5,6 @@ import 'package:flutter/services.dart';
 import 'package:p2bp_2025spring_mobile/db_schema_classes.dart';
 import 'package:p2bp_2025spring_mobile/section_creation_page.dart';
 import 'package:p2bp_2025spring_mobile/standing_points_page.dart';
-import 'package:p2bp_2025spring_mobile/widgets.dart';
 
 class CreateTestForm extends StatefulWidget {
   final Project activeProject;
@@ -159,6 +158,41 @@ class _CreateTestFormState extends State<CreateTestForm> {
               },
             ),
             SizedBox(height: 16),
+            _timerTest
+                ? TextFormField(
+                    decoration: InputDecoration(
+                      labelText: 'Timer Time (mm:ss)',
+                      hintText: 'mm:ss',
+                      floatingLabelBehavior: FloatingLabelBehavior.always,
+                      labelStyle: TextStyle(color: Color(0xFF2F6DCF)),
+                      floatingLabelStyle: TextStyle(color: Color(0xFF1A3C70)),
+                      enabledBorder: OutlineInputBorder(
+                          borderSide: BorderSide(color: Color(0xFF2F6DCF))),
+                      focusedBorder: OutlineInputBorder(
+                          borderSide: BorderSide(color: Color(0xFF1A3C70))),
+                      border: OutlineInputBorder(),
+                    ),
+                    onChanged: (value) {
+                      if (value.length != 5) return;
+                      int? seconds;
+                      int? minutes;
+                      seconds = int.tryParse(value.substring(3)) ?? 0;
+                      minutes = int.tryParse(value.substring(0, 2)) ?? 0;
+                      seconds += minutes * 60;
+                      _timerSeconds = seconds;
+                    },
+                    inputFormatters: [MinSecondsFormatter()],
+                    keyboardType: TextInputType.number,
+                    autovalidateMode: AutovalidateMode.onUserInteraction,
+                    validator: (value) {
+                      if (value == null || value.isEmpty) {
+                        return 'Set a time for the timer. Format as mm:ss.';
+                      }
+                      return null;
+                    },
+                  )
+                : SizedBox(),
+            SizedBox(height: _timerTest ? 16 : 0),
             // Dropdown menu for selecting an activity
             DropdownButtonFormField2<String>(
               decoration: InputDecoration(
@@ -265,40 +299,6 @@ class _CreateTestFormState extends State<CreateTestForm> {
               },
             ),
             SizedBox(height: 16),
-            _timerTest
-                ? TextFormField(
-                    decoration: InputDecoration(
-                      labelText: 'Timer Time (mm:ss)',
-                      hintText: 'mm:ss',
-                      floatingLabelBehavior: FloatingLabelBehavior.always,
-                      labelStyle: TextStyle(color: Color(0xFF2F6DCF)),
-                      floatingLabelStyle: TextStyle(color: Color(0xFF1A3C70)),
-                      enabledBorder: OutlineInputBorder(
-                          borderSide: BorderSide(color: Color(0xFF2F6DCF))),
-                      focusedBorder: OutlineInputBorder(
-                          borderSide: BorderSide(color: Color(0xFF1A3C70))),
-                      border: OutlineInputBorder(),
-                    ),
-                    onChanged: (value) {
-                      if (value.length != 5) return;
-                      int? seconds;
-                      int? minutes;
-                      seconds = int.tryParse(value.substring(3)) ?? 0;
-                      minutes = int.tryParse(value.substring(0, 2)) ?? 0;
-                      seconds += minutes * 60;
-                      _timerSeconds = seconds;
-                    },
-                    inputFormatters: [MinSecondsFormatter()],
-                    autovalidateMode: AutovalidateMode.onUserInteraction,
-                    validator: (value) {
-                      if (value == null || value.isEmpty) {
-                        return 'Set a time for the timer. Format as mm:ss.';
-                      }
-                      return null;
-                    },
-                  )
-                : SizedBox(),
-            SizedBox(height: _timerTest ? 16 : 0),
             _standingPointsTest
                 ? Row(
                     children: [

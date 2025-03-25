@@ -545,6 +545,7 @@ class LightingProfileTest extends Test<LightingProfileData> with JsonToString {
           );
       await testRef.set(test as LightingProfileTest, SetOptions(merge: true));
     };
+    Test._timerTestCollectionIDs.add(collectionIDStatic);
   }
 
   @override
@@ -577,7 +578,8 @@ class LightingProfileTest extends Test<LightingProfileData> with JsonToString {
       creationTime: doc['creationTime'],
       maxResearchers: doc['maxResearchers'],
       isComplete: doc['isComplete'],
-      testDuration: doc['testDuration'],
+      testDuration:
+          doc.containsKey('testDuration') ? doc['testDuration'] ?? -1 : -1,
     );
   }
 
@@ -895,6 +897,7 @@ class AbsenceOfOrderTest extends Test<AbsenceOfOrderData> with JsonToString {
           );
       await testRef.set(test as AbsenceOfOrderTest, SetOptions(merge: true));
     };
+    Test._timerTestCollectionIDs.add(collectionIDStatic);
   }
 
   @override
@@ -932,7 +935,8 @@ class AbsenceOfOrderTest extends Test<AbsenceOfOrderData> with JsonToString {
       creationTime: doc['creationTime'],
       maxResearchers: doc['maxResearchers'],
       isComplete: doc['isComplete'],
-      testDuration: doc['testDuration'],
+      testDuration:
+          doc.containsKey('testDuration') ? doc['testDuration'] ?? -1 : -1,
     );
   }
 
@@ -1248,7 +1252,8 @@ class SpatialBoundariesTest extends Test<SpatialBoundariesData>
       creationTime: doc['creationTime'],
       maxResearchers: doc['maxResearchers'],
       isComplete: doc['isComplete'],
-      testDuration: doc['testDuration'],
+      testDuration:
+          doc.containsKey('testDuration') ? doc['testDuration'] ?? -1 : -1,
     );
   }
 
@@ -2183,7 +2188,10 @@ class NaturePrevalenceTest extends Test<NatureData> {
         creationTime: testDoc['creationTime'],
         maxResearchers: testDoc['maxResearchers'],
         isComplete: testDoc['isComplete'],
-        testDuration: testDoc['testDuration'],
+        // TODO: delete after database purged. Temporary for existing tests.
+        testDuration: testDoc.data()!.containsKey('testDuration')
+            ? (testDoc['testDuration'] ?? -1)
+            : -1,
       );
     };
     // Register for building a Nature Prevalence Test page
@@ -2636,6 +2644,7 @@ class PeopleInPlaceTest extends Test<PeopleInPlaceData> with JsonToString {
       await testRef.set(test as PeopleInPlaceTest, SetOptions(merge: true));
     };
     Test._standingPointTestCollectionIDs.add(collectionIDStatic);
+    Test._timerTestCollectionIDs.add(collectionIDStatic);
   }
 
   @override
@@ -2668,7 +2677,8 @@ class PeopleInPlaceTest extends Test<PeopleInPlaceData> with JsonToString {
       maxResearchers: doc['maxResearchers'],
       isComplete: doc['isComplete'],
       standingPoints: StandingPoint.fromJsonList(doc['standingPoints']),
-      testDuration: doc['testDuration'],
+      testDuration:
+          doc.containsKey('testDuration') ? doc['testDuration'] ?? -1 : -1,
     );
   }
 
@@ -2846,6 +2856,7 @@ class PeopleInMotionTest extends Test<PeopleInMotionData> with JsonToString {
       await testRef.set(test as PeopleInMotionTest, SetOptions(merge: true));
     };
     Test._standingPointTestCollectionIDs.add(collectionIDStatic);
+    Test._timerTestCollectionIDs.add(collectionIDStatic);
   }
 
   /// Handles data submission to Firestore when the test is completed.
@@ -2880,7 +2891,8 @@ class PeopleInMotionTest extends Test<PeopleInMotionData> with JsonToString {
       maxResearchers: doc['maxResearchers'],
       isComplete: doc['isComplete'],
       standingPoints: StandingPoint.fromJsonList(doc['standingPoints']),
-      testDuration: doc['testDuration'],
+      testDuration:
+          doc.containsKey('testDuration') ? doc['testDuration'] ?? -1 : -1,
     );
   }
 

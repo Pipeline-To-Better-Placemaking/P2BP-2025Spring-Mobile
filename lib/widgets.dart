@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:p2bp_2025spring_mobile/theme.dart';
 
+import 'google_maps_functions.dart';
+
 /// Bar Indicator for the Sliding Up Panels (Edit Project, Results)
 class BarIndicator extends StatelessWidget {
   const BarIndicator({
@@ -284,12 +286,6 @@ class PasswordTextFormField extends StatelessWidget {
   }
 }
 
-/// Text form field used for dialog boxes.
-///
-/// Enter an [errorMessage] for error validation. Put in a form for validation.
-/// Takes a [maxLength], [labelText] and optional [errorMessage], [icon], and
-/// [onChanged]. Optional [minChars] parameter to specify the minimum number of
-/// characters for validation (default: 3)
 class DialogTextBox extends StatelessWidget {
   final int? maxLength;
   final String labelText;
@@ -302,6 +298,12 @@ class DialogTextBox extends StatelessWidget {
   final int? minChars;
   final TextAlign? textAlign;
 
+  /// Text form field used for dialog boxes.
+  ///
+  /// Enter an [errorMessage] for error validation. Put in a form for validation.
+  /// Takes a [maxLength], [labelText] and optional [errorMessage], [icon], and
+  /// [onChanged]. Optional [minChars] parameter to specify the minimum number of
+  /// characters for validation (default: 3)
   const DialogTextBox({
     super.key,
     this.maxLength,
@@ -380,61 +382,99 @@ class DialogTextBox extends StatelessWidget {
   }
 }
 
-class TimeFormField extends StatelessWidget {
-  const TimeFormField({super.key});
+class TimerButtonAndDisplay extends StatelessWidget {
+  const TimerButtonAndDisplay(
+      {required this.onPressed,
+      required this.testIsRunning,
+      required this.remainingSeconds,
+      super.key});
+
+  final VoidCallback onPressed;
+  final bool testIsRunning;
+  final int remainingSeconds;
 
   @override
   Widget build(BuildContext context) {
-    return TextFormField(
-      decoration: InputDecoration(
-        alignLabelWithHint: true,
-        counterStyle: const TextStyle(color: Colors.black),
-        errorBorder: const OutlineInputBorder(
-          borderRadius: BorderRadius.all(Radius.circular(10)),
-          borderSide: BorderSide(
-            color: Color(0xFFD32F2F),
-            width: 1.5,
+    return Column(children: <Widget>[
+      ElevatedButton(
+        style: ElevatedButton.styleFrom(
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(8), // Rounded rectangle shape.
           ),
+          backgroundColor: testIsRunning ? Colors.red : Colors.green,
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
         ),
-        focusedErrorBorder: const OutlineInputBorder(
-          borderRadius: BorderRadius.all(Radius.circular(10)),
-          borderSide: BorderSide(
-            color: Color(0xFFD32F2F),
-            width: 2,
-          ),
-        ),
-        enabledBorder: const OutlineInputBorder(
-          borderRadius: BorderRadius.all(Radius.circular(10)),
-          borderSide: BorderSide(
-            width: 1.5,
-            color: Color(0xFF6A89B8),
-          ),
-        ),
-        focusedBorder: const OutlineInputBorder(
-          borderRadius: BorderRadius.all(Radius.circular(10)),
-          borderSide: BorderSide(
-            width: 2,
-            color: Color(0xFF5C78A1),
-          ),
-        ),
-        hintText: "A",
-        label: Text("Hour"),
-        hintStyle: const TextStyle(
-          fontWeight: FontWeight.w300,
-          color: Color(0xA9000000),
+        onPressed: onPressed,
+        child: Text(
+          testIsRunning ? 'End' : 'Start',
+          style: const TextStyle(color: Colors.white, fontSize: 16),
         ),
       ),
+      Container(
+        padding: EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+        decoration: BoxDecoration(
+          color: Colors.black.withValues(alpha: 0.6),
+          borderRadius: BorderRadius.circular(8),
+        ),
+        child: Text(
+          formatTime(remainingSeconds),
+          style: TextStyle(color: Colors.white, fontSize: 16),
+        ),
+      ),
+    ]);
+  }
+}
+
+class TimerEndDialog extends StatelessWidget {
+  /// Dialog displayed when timer runs out.
+  const TimerEndDialog(
+      {required this.onSubmit, required this.onBack, super.key});
+  final VoidCallback? onSubmit;
+  final VoidCallback? onBack;
+  @override
+  Widget build(BuildContext context) {
+    return AlertDialog(
+      scrollable: true,
+      title: Center(
+          child: Text(
+        "Time's Up!",
+        style: TextStyle(fontWeight: FontWeight.bold),
+      )),
+      content: Center(
+          child: Text(
+        "Would you like to submit your data?",
+        style: TextStyle(fontSize: 15),
+      )),
+      actions: <Widget>[
+        Row(
+          mainAxisAlignment: MainAxisAlignment.end,
+          children: [
+            Flexible(
+              child: TextButton(
+                onPressed: onBack,
+                child: Text("No, take me back."),
+              ),
+            ),
+            Flexible(
+              child: TextButton(
+                onPressed: onSubmit,
+                child: Text("Yes, submit."),
+              ),
+            ),
+          ],
+        ),
+      ],
     );
   }
 }
 
-/// Circular button used on top of `GoogleMap` widget.
 class CircularIconMapButton extends StatelessWidget {
   final Color backgroundColor;
   final Color borderColor;
   final Widget icon;
   final void Function() onPressed;
 
+  /// Circular button used on top of `GoogleMap` widget.
   const CircularIconMapButton({
     super.key,
     required this.backgroundColor,
@@ -466,8 +506,8 @@ class CircularIconMapButton extends StatelessWidget {
   }
 }
 
-/// Warning used when point placed outside project polygon on test.
 class OutsideBoundsWarning extends StatelessWidget {
+  /// Warning used when point placed outside project polygon on test.
   const OutsideBoundsWarning({
     super.key,
   });
@@ -495,11 +535,11 @@ class OutsideBoundsWarning extends StatelessWidget {
   }
 }
 
-/// A row with a small circle of [color] followed by [Text(label)].
 class ColorLegendItem extends StatelessWidget {
   final String label;
   final Color color;
 
+  /// A row with a small circle of [color] followed by [Text(label)].
   const ColorLegendItem({
     super.key,
     required this.label,
@@ -652,12 +692,12 @@ class DataEditMenu extends StatelessWidget {
   }
 }
 
-/// Dialog for test finish confirmation.
-///
-/// Takes only an [onNext] parameter. This should contain the function to be
-/// called when finish the test (i.e. saving the data, pushing to the next
-/// page).
 class TestFinishDialog extends StatelessWidget {
+  /// Dialog for test finish confirmation.
+  ///
+  /// Takes only an [onNext] parameter. This should contain the function to be
+  /// called when finish the test (i.e. saving the data, pushing to the next
+  /// page).
   const TestFinishDialog({
     super.key,
     required this.onNext,
@@ -696,93 +736,100 @@ class TestFinishDialog extends StatelessWidget {
   }
 }
 
-class DirectionsWidget extends StatelessWidget {
+class DirectionsButton extends StatelessWidget {
   /// Directions widget used for tests.
   ///
   /// Pass through a [visibility] variable. This should be of type [bool] and
   /// control the visibility of the directions. The [onTap] function passed
   /// should toggle the [visibility] boolean in a [setState]. It may do other
-  /// things on top of this if desired. The [text] should be the directions
-  /// variable which controls the text to display.
+  /// things on top of this if desired.
   /// Should be placed in a Column w/ other widgets (delete mode, map type)
-  const DirectionsWidget({
+  const DirectionsButton({
     super.key,
     required this.onTap,
-    required this.text,
     required this.visibility,
     this.buttonPadding,
   });
 
   final VoidCallback? onTap;
   final EdgeInsets? buttonPadding;
-  final String text;
   final bool visibility;
 
   @override
   Widget build(BuildContext context) {
-    return visibility
-        ? Padding(
-            padding:
-                const EdgeInsets.symmetric(vertical: 20.0, horizontal: 25.0),
-            child: InkWell(
-              onTap: onTap,
-              child: Container(
-                  padding: EdgeInsets.symmetric(horizontal: 15, vertical: 10),
-                  decoration: BoxDecoration(
-                    color: directionsTransparency,
-                    gradient: defaultGrad,
-                    borderRadius: const BorderRadius.all(Radius.circular(10)),
-                    boxShadow: [
-                      BoxShadow(
-                        color: Colors.black.withValues(alpha: 0.1),
-                        blurRadius: 6,
-                        offset: const Offset(0, 2),
-                      ),
-                    ],
-                  ),
-                  child: Text(
-                    text,
-                    maxLines: 3,
-                    overflow: TextOverflow.ellipsis,
-                    style: TextStyle(
-                      fontSize: 18,
-                      fontWeight: FontWeight.w500,
-                      color: Colors.white,
-                    ),
-                  )),
+    return Container(
+      decoration: BoxDecoration(
+          borderRadius: const BorderRadius.all(Radius.circular(50)),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withValues(alpha: 0.1),
+              blurRadius: 6,
+              offset: const Offset(0, 2),
             ),
-          )
-        : Container(
-            decoration: BoxDecoration(
-                borderRadius: const BorderRadius.all(Radius.circular(50)),
-                boxShadow: [
-                  BoxShadow(
-                    color: Colors.black.withValues(alpha: 0.1),
-                    blurRadius: 6,
-                    offset: const Offset(0, 2),
-                  ),
-                ],
-                gradient: defaultGrad,
-                color: directionsTransparency),
-            child: IconButton(
-                color: Colors.white,
-                onPressed: onTap,
-                icon: Icon(
-                  Icons.help_outline,
-                  size: 35,
-                )),
-          );
+          ],
+          gradient: defaultGrad,
+          color: directionsTransparency),
+      child: IconButton(
+          color: Colors.white,
+          onPressed: onTap,
+          icon: Icon(
+            Icons.help_outline,
+            size: 35,
+          )),
+    );
   }
 }
 
-/// Visibility switch widget for tests page.
-///
-/// Toggles visibility for the old shapes on test pages. Takes in a [visibility]
-/// variable and an [onChanged] function. The [onChanged] function is of type
-/// [Function(bool)?]. It takes a [bool] parameter and should change the
-/// [visibility] variable to the value of the [bool] parameter. Should be in a
-/// [setState].
+class DirectionsText extends StatelessWidget {
+  const DirectionsText({
+    super.key,
+    required this.onTap,
+    required this.text,
+  });
+
+  final VoidCallback? onTap;
+  final String text;
+
+  @override
+  Widget build(BuildContext context) {
+    return InkWell(
+      onTap: onTap,
+      child: Container(
+          padding: EdgeInsets.symmetric(horizontal: 15, vertical: 10),
+          decoration: BoxDecoration(
+            color: directionsTransparency,
+            gradient: defaultGrad,
+            borderRadius: const BorderRadius.all(Radius.circular(10)),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withValues(alpha: 0.1),
+                blurRadius: 6,
+                offset: const Offset(0, 2),
+              ),
+            ],
+          ),
+          child: Text(
+            text,
+            maxLines: 3,
+            overflow: TextOverflow.ellipsis,
+            style: TextStyle(
+              fontSize: 18,
+              fontWeight: FontWeight.w500,
+              color: Colors.white,
+            ),
+          )),
+    );
+  }
+}
+
 class VisibilitySwitch extends StatelessWidget {
+  /// Visibility switch widget for tests page.
+  ///
+  /// Toggles visibility for the old shapes on test pages. Takes in a [visibility]
+  /// variable and an [onChanged] function. The [onChanged] function is of type
+  /// [Function(bool)?]. It takes a [bool] parameter and should change the
+  /// [visibility] variable to the value of the [bool] parameter. Should be in a
+  /// [setState].
   const VisibilitySwitch({
     super.key,
     required bool visibility,
@@ -959,11 +1006,11 @@ void showTestModalGeneric(BuildContext context,
       });
 }
 
-/// Error text for test pages.
-///
-/// Displays a text error at bottom of screen with the text specified by the
-/// [text] parameter. Defaults to point placed outside of polygon error text.
 class TestErrorText extends StatelessWidget {
+  /// Error text for test pages.
+  ///
+  /// Displays a text error at bottom of screen with the text specified by the
+  /// [text] parameter. Defaults to point placed outside of polygon error text.
   const TestErrorText({
     this.text,
     super.key,

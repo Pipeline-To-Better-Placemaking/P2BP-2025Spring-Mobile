@@ -125,13 +125,12 @@ class _SectionCutterState extends State<SectionCutter> {
                   mapType: _currentMapType, // Use current map type
                 ),
               ),
-              DirectionsWidget(
+              DirectionsButton(
                   onTap: () {
                     setState(() {
                       _directionsVisible = !_directionsVisible;
                     });
                   },
-                  text: _directions,
                   visibility: _directionsVisible),
               Align(
                 alignment: Alignment.bottomLeft,

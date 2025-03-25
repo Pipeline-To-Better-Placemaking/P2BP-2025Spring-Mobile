@@ -80,6 +80,12 @@ class _NaturePrevalenceState extends State<NaturePrevalence> {
     });
   }
 
+  @override
+  void dispose() {
+    _timer?.cancel();
+    super.dispose();
+  }
+
   void _startTest() {
     setState(() {
       _testIsRunning = true;
@@ -92,46 +98,15 @@ class _NaturePrevalenceState extends State<NaturePrevalence> {
           showDialog(
               context: context,
               builder: (context) {
-                return AlertDialog(
-                  scrollable: true,
-                  title: Center(
-                      child: Text(
-                    "Time's Up!",
-                    style: TextStyle(fontWeight: FontWeight.bold),
-                  )),
-                  content: Center(
-                      child: Text(
-                    "Would you like to submit your data?",
-                    style: TextStyle(fontSize: 15),
-                  )),
-                  actions: <Widget>[
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.end,
-                      children: [
-                        Flexible(
-                          child: TextButton(
-                            onPressed: () {
-                              setState(() {
-                                _remainingSeconds = 10;
-                              });
-                              Navigator.pop(context);
-                            },
-                            child: Text("No, take me back."),
-                          ),
-                        ),
-                        Flexible(
-                          child: TextButton(
-                            onPressed: () {
-                              Navigator.pop(context);
-                              Navigator.pop(context);
-                            },
-                            child: Text("Yes, submit."),
-                          ),
-                        ),
-                      ],
-                    ),
-                  ],
-                );
+                return TimerEndDialog(onSubmit: () {
+                  Navigator.pop(context);
+                  Navigator.pop(context);
+                }, onBack: () {
+                  setState(() {
+                    _remainingSeconds = widget.activeTest.testDuration;
+                  });
+                  Navigator.pop(context);
+                });
               });
         } else {
           _remainingSeconds--;
@@ -156,6 +131,8 @@ class _NaturePrevalenceState extends State<NaturePrevalence> {
     _vegetationType = null;
     _waterBodyType = null;
     _otherType = null;
+    _polygonMode = false;
+    _pointMode = false;
     _directions = 'Choose a category. Or, click finish to submit.';
   }
 
@@ -868,156 +845,147 @@ class _NaturePrevalenceState extends State<NaturePrevalence> {
         resizeToAvoidBottomInset: false,
         extendBody: true,
         extendBodyBehindAppBar: true,
-        appBar: AppBar(
-          leading: null,
-          automaticallyImplyLeading: false,
-          systemOverlayStyle:
-              SystemUiOverlayStyle(statusBarBrightness: Brightness.light),
-          backgroundColor: Colors.transparent,
-          // Timer on the right
-          actionsPadding: EdgeInsets.only(top: 15),
-          actions: [
-            ElevatedButton(
-              style: ElevatedButton.styleFrom(
-                shape: RoundedRectangleBorder(
-                  borderRadius:
-                      BorderRadius.circular(8), // Rounded rectangle shape.
-                ),
-                backgroundColor: _testIsRunning ? Colors.red : Colors.green,
-                padding:
-                    const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-              ),
-              onPressed: () {
-                if (_testIsRunning) {
-                  _endTest();
-                } else {
-                  _startTest();
-                }
-              },
-              child: Text(
-                _testIsRunning ? 'End' : 'Start',
-                style: const TextStyle(color: Colors.white, fontSize: 16),
-              ),
-            ),
-            Padding(
-              padding: const EdgeInsets.only(left: 10, right: 20),
-              child: Center(
-                child: Container(
-                  padding: EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-                  decoration: BoxDecoration(
-                    color: Colors.black.withValues(alpha: 0.6),
-                    borderRadius: BorderRadius.circular(8),
-                  ),
-                  child: Text(
-                    formatTime(_remainingSeconds),
-                    style: TextStyle(color: Colors.white, fontSize: 16),
-                  ),
-                ),
-              ),
-            ),
-          ],
-        ),
         body: _isLoading
             ? const Center(child: CircularProgressIndicator())
-            : Center(
-                child: Stack(
-                  children: [
-                    SizedBox(
-                      height: MediaQuery.of(context).size.height,
-                      child: GoogleMap(
-                        // TODO: size based off of bottomsheet container
-                        padding: EdgeInsets.only(bottom: _bottomSheetHeight),
-                        onMapCreated: _onMapCreated,
-                        initialCameraPosition:
-                            CameraPosition(target: _location, zoom: 14),
-                        polygons: (_oldVisibility || _polygons.isEmpty)
-                            ? {..._polygons, ..._projectPolygon}
-                            : {_polygons.last, ..._projectPolygon},
-                        markers: (_oldVisibility || _markers.isEmpty)
-                            ? {..._markers, ..._polygonMarkers}
-                            : {_markers.last, ..._polygonMarkers},
-                        onTap:
-                            (_pointMode || _polygonMode) ? _togglePoint : null,
-                        mapType: _currentMapType, // Use current map type
-                      ),
+            : Stack(
+                children: [
+                  SizedBox(
+                    height: MediaQuery.of(context).size.height,
+                    child: GoogleMap(
+                      // TODO: size based off of bottomsheet container
+                      padding: EdgeInsets.only(bottom: _bottomSheetHeight),
+                      onMapCreated: _onMapCreated,
+                      initialCameraPosition:
+                          CameraPosition(target: _location, zoom: 14),
+                      polygons: (_oldVisibility || _polygons.isEmpty)
+                          ? {..._polygons, ..._projectPolygon}
+                          : {_polygons.last, ..._projectPolygon},
+                      markers: (_oldVisibility || _markers.isEmpty)
+                          ? {..._markers, ..._polygonMarkers}
+                          : {_markers.last, ..._polygonMarkers},
+                      onTap: (_pointMode || _polygonMode) ? _togglePoint : null,
+                      mapType: _currentMapType, // Use current map type
                     ),
-                    Padding(
-                      padding: const EdgeInsets.only(
-                          top: kToolbarHeight + 20, right: 20.0),
-                      child: Column(
-                        spacing: 10,
-                        children: [
-                          Align(
-                            alignment: Alignment.topRight,
-                            child: DirectionsWidget(
-                                onTap: () {
-                                  setState(() {
-                                    _directionsVisible = !_directionsVisible;
-                                  });
-                                },
-                                text: _directions,
-                                visibility: _directionsVisible),
-                          ),
-                          Align(
-                            alignment: Alignment.topRight,
-                            child: CircularIconMapButton(
-                              backgroundColor: Colors.green,
-                              borderColor: Color(0xFF2D6040),
-                              onPressed: _toggleMapType,
-                              icon: const Icon(Icons.map),
-                            ),
-                          ),
-                          (!_polygonMode && !_pointMode)
-                              ? Align(
-                                  alignment: Alignment.topRight,
-                                  child: CircularIconMapButton(
-                                    borderColor: Color(0xFF2D6040),
-                                    onPressed: () {
-                                      setState(() {
-                                        _deleteMode = !_deleteMode;
-                                        if (_deleteMode == true) {
-                                          _outsidePoint = false;
-                                          _errorText =
-                                              'You are in delete mode.';
-                                        } else {
-                                          _outsidePoint = false;
-                                          _errorText =
-                                              'You tried to place a point outside of the project area!';
-                                        }
-                                      });
-                                    },
-                                    backgroundColor:
-                                        _deleteMode ? Colors.blue : Colors.red,
-                                    icon: Icon(
-                                      _deleteMode
-                                          ? Icons.location_on
-                                          : Icons.delete,
-                                      size: 30,
-                                    ),
-                                  ),
-                                )
-                              : SizedBox(),
-                        ],
-                      ),
-                    ),
-                    Align(
-                      alignment: Alignment.bottomLeft,
-                      child: Padding(
-                        padding: EdgeInsets.only(
-                            bottom: _bottomSheetHeight + 35, left: 5),
-                        child: VisibilitySwitch(
-                          visibility: _oldVisibility,
-                          onChanged: (value) {
-                            // This is called when the user toggles the switch.
-                            setState(() {
-                              _oldVisibility = value;
-                            });
-                          },
+                  ),
+                  Row(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: <Widget>[
+                      Padding(
+                        padding: const EdgeInsets.only(top: 15.0, left: 15.0),
+                        child: Column(
+                          mainAxisSize: MainAxisSize.min,
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: <Widget>[
+                            TimerButtonAndDisplay(
+                              onPressed: () {
+                                if (_testIsRunning) {
+                                  _endTest();
+                                  _clearTypes();
+                                } else {
+                                  _startTest();
+                                }
+                              },
+                              testIsRunning: _testIsRunning,
+                              remainingSeconds: _remainingSeconds,
+                            )
+                          ],
                         ),
                       ),
+                      Flexible(
+                        child: _directionsVisible
+                            ? Padding(
+                                padding: const EdgeInsets.symmetric(
+                                    horizontal: 15.0, vertical: 15.0),
+                                child: DirectionsText(
+                                    onTap: () {
+                                      setState(() {
+                                        _directionsVisible =
+                                            !_directionsVisible;
+                                      });
+                                    },
+                                    text: _directions),
+                              )
+                            : SizedBox(),
+                      ),
+                      Padding(
+                        padding: const EdgeInsets.only(top: 15.0, right: 15.0),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.end,
+                          spacing: 10,
+                          children: [
+                            Align(
+                              alignment: Alignment.topRight,
+                              child: DirectionsButton(
+                                  onTap: () {
+                                    setState(() {
+                                      _directionsVisible = !_directionsVisible;
+                                    });
+                                  },
+                                  visibility: _directionsVisible),
+                            ),
+                            Align(
+                              alignment: Alignment.topRight,
+                              child: CircularIconMapButton(
+                                backgroundColor: Colors.green,
+                                borderColor: Color(0xFF2D6040),
+                                onPressed: _toggleMapType,
+                                icon: const Icon(Icons.map),
+                              ),
+                            ),
+                            (!_polygonMode && !_pointMode)
+                                ? Align(
+                                    alignment: Alignment.topRight,
+                                    child: CircularIconMapButton(
+                                      borderColor: Color(0xFF2D6040),
+                                      onPressed: () {
+                                        setState(() {
+                                          _deleteMode = !_deleteMode;
+                                          if (_deleteMode == true) {
+                                            _outsidePoint = false;
+                                            _errorText =
+                                                'You are in delete mode.';
+                                          } else {
+                                            _outsidePoint = false;
+                                            _errorText =
+                                                'You tried to place a point outside of the project area!';
+                                          }
+                                        });
+                                      },
+                                      backgroundColor: _deleteMode
+                                          ? Colors.blue
+                                          : Colors.red,
+                                      icon: Icon(
+                                        _deleteMode
+                                            ? Icons.location_on
+                                            : Icons.delete,
+                                        size: 30,
+                                      ),
+                                    ),
+                                  )
+                                : SizedBox(),
+                          ],
+                        ),
+                      ),
+                    ],
+                  ),
+                  Align(
+                    alignment: Alignment.bottomLeft,
+                    child: Padding(
+                      padding: EdgeInsets.only(
+                          bottom: _bottomSheetHeight + 35, left: 5),
+                      child: VisibilitySwitch(
+                        visibility: _oldVisibility,
+                        onChanged: (value) {
+                          // This is called when the user toggles the switch.
+                          setState(() {
+                            _oldVisibility = value;
+                          });
+                        },
+                      ),
                     ),
-                  ],
-                ),
+                  ),
+                ],
               ),
         bottomSheet: _isLoading
             ? SizedBox()
