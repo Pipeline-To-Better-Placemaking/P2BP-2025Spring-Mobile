@@ -2,6 +2,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
+import 'package:p2bp_2025spring_mobile/firestore_functions.dart';
 import 'package:p2bp_2025spring_mobile/theme.dart';
 import 'package:p2bp_2025spring_mobile/widgets.dart';
 import 'project_details_page.dart';
@@ -32,6 +33,7 @@ class _IdentifyingAccessState extends State<IdentifyingAccess> {
   bool _pointMode = false;
   bool _polylineMode = false;
   bool _oldPolylinesToggle = true;
+
   int? _currentSpotsOrRoute;
   bool _deleteMode = false;
   AccessType? _type;
@@ -40,6 +42,8 @@ class _IdentifyingAccessState extends State<IdentifyingAccess> {
   late DocumentReference teamRef;
   late GoogleMapController mapController;
   LatLng _location = defaultLocation; // Default location
+  double _zoom = 18;
+
   final AccessData _accessData = AccessData();
 
   Set<Polygon> _projectArea = {};
@@ -50,7 +54,7 @@ class _IdentifyingAccessState extends State<IdentifyingAccess> {
   Set<Marker> _visiblePolylineMarkers = {};
   Set<Polygon> _currentPolygon = {};
   List<LatLng> _polygonPoints = []; // Points for the polygon
-  Set<Polygon> _polygons = {}; // Set of polygons
+  final Set<Polygon> _polygons = {}; // Set of polygons
   final Set<Marker> _markers = {}; // Set of markers for points
   Set<Marker> _polygonMarkers = {}; // Set of markers for polygon creation
   bool _directionsVisible = false;
@@ -61,20 +65,13 @@ class _IdentifyingAccessState extends State<IdentifyingAccess> {
   @override
   void initState() {
     super.initState();
-    initProjectArea();
-  }
-
-  /// Gets the project polygon, adds it to the current polygon list, and
-  /// centers the map over it.
-  void initProjectArea() {
-    setState(() {
-      _projectArea = getProjectPolygon(widget.activeProject.polygonPoints);
-      _location = getPolygonCentroid(_projectArea.first);
-      // Take some latitude away to center considering bottom sheet.
-      _location = LatLng(_location.latitude * .999999, _location.longitude);
-      // TODO: dynamic zooming
-      _isLoading = false;
-    });
+    _polygons.add(getProjectPolygon(widget.activeProject.polygonPoints));
+    _location = getPolygonCentroid(_polygons.first);
+    _zoom = getIdealZoom(
+      _polygons.first.toMPLatLngList(),
+      _location.toMPLatLng(),
+    );
+    _isLoading = false;
   }
 
   void _onMapCreated(GoogleMapController controller) {
@@ -82,10 +79,11 @@ class _IdentifyingAccessState extends State<IdentifyingAccess> {
     _moveToLocation(); // Ensure the map is centered on the current location
   }
 
+  /// Moves camera to project location.
   void _moveToLocation() {
     mapController.animateCamera(
       CameraUpdate.newCameraPosition(
-        CameraPosition(target: _location, zoom: 14),
+        CameraPosition(target: _location, zoom: _zoom),
       ),
     );
   }
@@ -176,7 +174,7 @@ class _IdentifyingAccessState extends State<IdentifyingAccess> {
     if (_polylineMode) {
       // If parking, then make sure to save the polygon also.
       if (_type == AccessType.parking) {
-        _polygons = {..._polygons, ..._currentPolygon};
+        _polygons.addAll(_currentPolygon);
       }
       _finalizePolyline();
     }
@@ -306,7 +304,7 @@ class _IdentifyingAccessState extends State<IdentifyingAccess> {
                         padding: EdgeInsets.only(bottom: _bottomSheetHeight),
                         onMapCreated: _onMapCreated,
                         initialCameraPosition:
-                            CameraPosition(target: _location, zoom: 14),
+                            CameraPosition(target: _location, zoom: _zoom),
                         polygons: _oldPolylinesToggle
                             ? {
                                 ..._projectArea,

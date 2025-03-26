@@ -5,6 +5,11 @@ import 'package:flutter/services.dart';
 import 'package:p2bp_2025spring_mobile/db_schema_classes.dart';
 import 'package:p2bp_2025spring_mobile/section_creation_page.dart';
 import 'package:p2bp_2025spring_mobile/standing_points_page.dart';
+import 'package:google_maps_flutter/google_maps_flutter.dart';
+import 'google_maps_functions.dart';
+import 'firestore_functions.dart';
+import 'theme.dart';
+import 'section_creation_page.dart';
 
 class CreateTestForm extends StatefulWidget {
   final Project activeProject;
@@ -30,6 +35,58 @@ class _CreateTestFormState extends State<CreateTestForm> {
   String _standingPointType = '';
   bool _standingPointsError = false;
   bool _timerTest = false;
+
+  final List<({String value, String text})> _testStringPairs = [
+    (
+      value: AbsenceOfOrderTest.collectionIDStatic,
+      text: 'Absence of Order Locator',
+    ),
+    (
+      value: LightingProfileTest.collectionIDStatic,
+      text: 'Lighting Profile',
+    ),
+    (
+      value: SpatialBoundariesTest.collectionIDStatic,
+      text: 'Spatial Boundaries',
+    ),
+    (
+      value: SectionCutterTest.collectionIDStatic,
+      text: 'Section Cutter',
+    ),
+    (
+      value: IdentifyingAccessTest.collectionIDStatic,
+      text: 'Identifying Access',
+    ),
+    (
+      value: PeopleInPlaceTest.collectionIDStatic,
+      text: 'People in Place',
+    ),
+    (
+      value: PeopleInMotionTest.collectionIDStatic,
+      text: 'People in Motion',
+    ),
+    (
+      value: NaturePrevalenceTest.collectionIDStatic,
+      text: 'Nature Prevalence',
+    ),
+    (
+      value: AcousticProfileTest.collectionIDStatic,
+      text: 'Acoustic Profile',
+    ),
+  ];
+
+  @override
+  void initState() {
+    super.initState();
+    _testStringPairs.sort((a, b) => a.text.compareTo(b.text));
+  }
+
+  @override
+  void dispose() {
+    _dateTimeController.dispose();
+    _activityNameController.dispose();
+    super.dispose();
+  }
 
   Future<DateTime?> showDateTimePicker({
     required BuildContext context,
@@ -68,11 +125,17 @@ class _CreateTestFormState extends State<CreateTestForm> {
           );
   }
 
-  @override
-  void dispose() {
-    _dateTimeController.dispose();
-    _activityNameController.dispose();
-    super.dispose();
+  List<DropdownMenuItem<String>> _buildDropdownMenuList() {
+    return [
+      for (final strings in _testStringPairs)
+        DropdownMenuItem(
+          value: strings.value,
+          child: Text(
+            strings.text,
+            style: TextStyle(color: p2bpBlue),
+          ),
+        ),
+    ];
   }
 
   @override
@@ -105,10 +168,10 @@ class _CreateTestFormState extends State<CreateTestForm> {
               decoration: InputDecoration(
                 labelText: "Activity Name",
                 floatingLabelBehavior: FloatingLabelBehavior.always,
-                labelStyle: TextStyle(color: Color(0xFF2F6DCF)),
+                labelStyle: TextStyle(color: p2bpBlue),
                 floatingLabelStyle: TextStyle(color: Color(0xFF1A3C70)),
-                enabledBorder: OutlineInputBorder(
-                    borderSide: BorderSide(color: Color(0xFF2F6DCF))),
+                enabledBorder:
+                    OutlineInputBorder(borderSide: BorderSide(color: p2bpBlue)),
                 focusedBorder: OutlineInputBorder(
                     borderSide: BorderSide(color: Color(0xFF1A3C70))),
                 border: OutlineInputBorder(),
@@ -129,10 +192,10 @@ class _CreateTestFormState extends State<CreateTestForm> {
               decoration: InputDecoration(
                 labelText: 'Scheduled Time',
                 floatingLabelBehavior: FloatingLabelBehavior.always,
-                labelStyle: TextStyle(color: Color(0xFF2F6DCF)),
+                labelStyle: TextStyle(color: p2bpBlue),
                 floatingLabelStyle: TextStyle(color: Color(0xFF1A3C70)),
-                enabledBorder: OutlineInputBorder(
-                    borderSide: BorderSide(color: Color(0xFF2F6DCF))),
+                enabledBorder:
+                    OutlineInputBorder(borderSide: BorderSide(color: p2bpBlue)),
                 focusedBorder: OutlineInputBorder(
                     borderSide: BorderSide(color: Color(0xFF1A3C70))),
                 border: OutlineInputBorder(),
@@ -200,10 +263,10 @@ class _CreateTestFormState extends State<CreateTestForm> {
                 floatingLabelBehavior: FloatingLabelBehavior.never,
                 // filled: true,
                 // fillColor: Color.fromRGBO(47, 109, 207, 0.1),
-                labelStyle: TextStyle(color: Color(0xFF2F6DCF)),
+                labelStyle: TextStyle(color: p2bpBlue),
                 floatingLabelStyle: TextStyle(color: Color(0xFF1A3C70)),
-                enabledBorder: OutlineInputBorder(
-                    borderSide: BorderSide(color: Color(0xFF2F6DCF))),
+                enabledBorder:
+                    OutlineInputBorder(borderSide: BorderSide(color: p2bpBlue)),
                 focusedBorder: OutlineInputBorder(
                     borderSide: BorderSide(color: Color(0xFF1A3C70))),
                 border: OutlineInputBorder(),
@@ -217,64 +280,7 @@ class _CreateTestFormState extends State<CreateTestForm> {
                 ),
               ),
               isExpanded: true,
-              items: [
-                DropdownMenuItem(
-                  value: AbsenceOfOrderTest.collectionIDStatic,
-                  child: Text(
-                    'Absence of Order Locator',
-                    style: TextStyle(color: Color(0xFF2F6DCF)),
-                  ),
-                ),
-                DropdownMenuItem(
-                  value: LightingProfileTest.collectionIDStatic,
-                  child: Text(
-                    'Lighting Profile',
-                    style: TextStyle(color: Color(0xFF2F6DCF)),
-                  ),
-                ),
-                DropdownMenuItem(
-                  value: SpatialBoundariesTest.collectionIDStatic,
-                  child: Text(
-                    'Spatial Boundaries',
-                    style: TextStyle(color: Color(0xFF2F6DCF)),
-                  ),
-                ),
-                DropdownMenuItem(
-                  value: SectionCutterTest.collectionIDStatic,
-                  child: Text(
-                    'Section Cutter',
-                    style: TextStyle(color: Color(0xFF2F6DCF)),
-                  ),
-                ),
-                DropdownMenuItem(
-                  value: IdentifyingAccessTest.collectionIDStatic,
-                  child: Text(
-                    'Identifying Access',
-                    style: TextStyle(color: Color(0xFF2F6DCF)),
-                  ),
-                ),
-                DropdownMenuItem(
-                  value: PeopleInPlaceTest.collectionIDStatic,
-                  child: Text(
-                    'People in Place',
-                    style: TextStyle(color: Color(0xFF2F6DCF)),
-                  ),
-                ),
-                DropdownMenuItem(
-                  value: PeopleInMotionTest.collectionIDStatic,
-                  child: Text(
-                    'People in Motion',
-                    style: TextStyle(color: Color(0xFF2F6DCF)),
-                  ),
-                ),
-                DropdownMenuItem(
-                  value: NaturePrevalenceTest.collectionIDStatic,
-                  child: Text(
-                    'Nature Prevalence',
-                    style: TextStyle(color: Color(0xFF2F6DCF)),
-                  ),
-                ),
-              ],
+              items: _buildDropdownMenuList(),
               onChanged: (value) {
                 _selectedTest = value;
                 _standingPoints = [];
@@ -414,17 +420,63 @@ class _CreateTestFormState extends State<CreateTestForm> {
                   }
                 },
                 style: ElevatedButton.styleFrom(
-                  backgroundColor: Color(0xFF2F6DCF),
+                  backgroundColor:
+                      p2bpBlue, // Using the Save Activity button color
+                  padding: EdgeInsets.symmetric(horizontal: 20, vertical: 14),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(30),
+                  ),
+                  elevation: 3,
                 ),
                 child: Text(
                   "Save Activity",
-                  style: TextStyle(color: Colors.white),
+                  textAlign: TextAlign.center,
+                  style: TextStyle(
+                    color: Colors.white,
+                    fontSize: 16,
+                    fontWeight: FontWeight.bold,
+                  ),
                 ),
               ),
             ),
           ],
         ),
       ),
+    );
+  }
+
+  Route _customRoute() {
+    return PageRouteBuilder(
+      pageBuilder: (context, animation, secondaryAnimation) {
+        // Conditional navigation based on _selectedTest
+        if (_selectedTest?.compareTo(SectionCutterTest.collectionIDStatic) ==
+            0) {
+          return SectionCreationPage(
+            activeProject: widget.activeProject,
+            currentSection: _standingPoints.isNotEmpty ? _standingPoints : null,
+          );
+        } else {
+          return StandingPointsPage(
+            activeProject: widget.activeProject,
+            currentStandingPoints: _standingPoints.isNotEmpty
+                ? _standingPoints as List<StandingPoint>
+                : null,
+          );
+        }
+      },
+      transitionsBuilder: (context, animation, secondaryAnimation, child) {
+        const begin = Offset(0.0, 1.0); // Start from bottom of screen
+        const end = Offset.zero; // End at original position
+        const curve = Curves.easeInOut;
+        var tween =
+            Tween(begin: begin, end: end).chain(CurveTween(curve: curve));
+        var offsetAnimation = animation.drive(tween);
+
+        return SlideTransition(
+          position: offsetAnimation,
+          child: child,
+        );
+      },
     );
   }
 }

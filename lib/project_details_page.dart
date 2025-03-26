@@ -8,6 +8,9 @@ import 'package:p2bp_2025spring_mobile/create_test_form.dart';
 import 'package:p2bp_2025spring_mobile/theme.dart';
 import 'firestore_functions.dart';
 import 'package:intl/intl.dart';
+import 'package:p2bp_2025spring_mobile/acoustic_profile_test.dart';
+import 'package:google_maps_flutter/google_maps_flutter.dart';
+import 'mini_map.dart';
 
 class ProjectDetailsPage extends StatefulWidget {
   final Project projectData;
@@ -30,6 +33,7 @@ class _ProjectDetailsPageState extends State<ProjectDetailsPage> {
   bool _isLoading = true;
   Project? project;
   late Widget _testListView;
+  late GoogleMapController mapController;
 
   @override
   Widget build(BuildContext context) {
@@ -64,8 +68,7 @@ class _ProjectDetailsPageState extends State<ProjectDetailsPage> {
                 child: IconButton(
                   padding: EdgeInsets.zero,
                   constraints: BoxConstraints(),
-                  icon: Icon(Icons.arrow_back,
-                      color: Color(0xFF2F6DCF), size: 20),
+                  icon: Icon(Icons.arrow_back, color: p2bpBlue, size: 20),
                   onPressed: () {
                     Navigator.pop(context);
                   },
@@ -92,7 +95,7 @@ class _ProjectDetailsPageState extends State<ProjectDetailsPage> {
                         constraints: BoxConstraints(),
                         icon: Icon(
                           Icons.more_vert,
-                          color: Color(0xFF2F6DCF),
+                          color: p2bpBlue,
                         ),
                         onPressed: () => showProjectOptionsDialog(context),
                       ),
@@ -181,42 +184,16 @@ class _ProjectDetailsPageState extends State<ProjectDetailsPage> {
               ),
             ),
             SizedBox(height: 30),
-            Center(
-              child: Container(
-                width: 300,
+            Padding(
+              padding:
+                  const EdgeInsets.symmetric(horizontal: 20.0, vertical: 10.0),
+              child: SizedBox(
                 height: 200,
-                decoration: BoxDecoration(
-                  color: Color(0x699F9F9F),
-                  borderRadius: BorderRadius.circular(10),
-                  boxShadow: [
-                    BoxShadow(
-                      color: Color(0x98474747),
-                      spreadRadius: 3,
-                      blurRadius: 3,
-                      offset: Offset(0, 3),
-                    ),
-                  ],
-                ),
-                child: Padding(
-                  padding: EdgeInsets.symmetric(horizontal: 50, vertical: 77.5),
-                  child: SizedBox(
-                    width: 200,
-                    child: FilledButton.icon(
-                      style: FilledButton.styleFrom(
-                        padding: const EdgeInsets.only(left: 15, right: 15),
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(10.0),
-                        ),
-                        // foregroundColor: foregroundColor,
-                        backgroundColor: Colors.black,
-                      ),
-                      onPressed: () => {
-                        // TODO: Function
-                      },
-                      label: Text('View Project Area'),
-                      icon: Icon(Icons.location_on),
-                      iconAlignment: IconAlignment.start,
-                    ),
+                width: double.infinity,
+                child: ClipRRect(
+                  borderRadius: BorderRadius.circular(16.0),
+                  child: MiniMap(
+                    activeProject: widget.projectData,
                   ),
                 ),
               ),
@@ -243,6 +220,8 @@ class _ProjectDetailsPageState extends State<ProjectDetailsPage> {
                       shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(10.0),
                       ),
+                      // foregroundColor: foregroundColor,
+                      // backgroundColor: backgroundColor,
                     ),
                     onPressed: _showCreateTestModal,
                     label: Text('Create'),
@@ -281,9 +260,9 @@ class _ProjectDetailsPageState extends State<ProjectDetailsPage> {
           Colors.transparent, // makes the sheet's corners rounded if desired
       builder: (BuildContext context) {
         return DraggableScrollableSheet(
-          initialChildSize: 0.7, // initial height as 50% of screen height
-          minChildSize: 0.3, // minimum height when dragged down
-          maxChildSize: 0.9, // maximum height when dragged up
+          initialChildSize: 0.7,
+          minChildSize: 0.3,
+          maxChildSize: 0.9,
           builder: (BuildContext context, ScrollController scrollController) {
             return Container(
               decoration: BoxDecoration(
@@ -350,17 +329,6 @@ class _ProjectDetailsPageState extends State<ProjectDetailsPage> {
   }
 }
 
-const Map<Type, String> _testInitialsMap = {
-  AbsenceOfOrderTest: 'AO',
-  LightingProfileTest: 'LP',
-  SpatialBoundariesTest: 'SB',
-  SectionCutterTest: 'SC',
-  IdentifyingAccessTest: 'IA',
-  PeopleInPlaceTest: 'PP',
-  PeopleInMotionTest: 'PM',
-  NaturePrevalenceTest: 'NP',
-};
-
 class TestCard extends StatelessWidget {
   final Test test;
   final Project project;
@@ -391,7 +359,7 @@ class TestCard extends StatelessWidget {
                 children: <Widget>[
                   // TODO: change corresponding to test type
                   CircleAvatar(
-                    child: Text(_testInitialsMap[test.runtimeType] ?? ''),
+                    child: Text(test.getInitials()),
                   ),
                   SizedBox(width: 8),
                   Expanded(

@@ -26,19 +26,20 @@ class PeopleInMotionTestPage extends StatefulWidget {
 }
 
 class _PeopleInMotionTestPageState extends State<PeopleInMotionTestPage> {
-  late GoogleMapController mapController;
-  LatLng _location = defaultLocation; // Default location
   bool _isLoading = true;
-  Timer? _hintTimer;
-  bool _showHint = false;
   bool _isTestRunning = false;
   bool _isTracingMode = false;
   bool _showErrorMessage = false;
   bool _isPointsMenuVisible = false;
+
+  double _zoom = 18;
+  late GoogleMapController mapController;
+  LatLng _location = defaultLocation;
+  List<mp.LatLng> _projectArea = [];
+  final Set<Polygon> _polygons = {}; // Only gets project polygon.
+
   Timer? _timer;
 
-  List<mp.LatLng> _projectArea = [];
-  Set<Polygon> _polygons = {}; // Only has project polygon.
   MapType _currentMapType = MapType.normal;
 
   /// Markers placed while in TracingMode.
@@ -80,7 +81,11 @@ class _PeopleInMotionTestPageState extends State<PeopleInMotionTestPage> {
   @override
   void initState() {
     super.initState();
-    _initProjectArea();
+    _polygons.add(getProjectPolygon(widget.activeProject.polygonPoints));
+    _location = getPolygonCentroid(_polygons.first);
+    _projectArea = _polygons.first.toMPLatLngList();
+    _zoom = getIdealZoom(_projectArea, _location.toMPLatLng());
+    _isLoading = false;
     WidgetsBinding.instance.addPostFrameCallback((_) {
       print("PostFrameCallback fired");
       _loadCustomMarkers();
@@ -91,23 +96,7 @@ class _PeopleInMotionTestPageState extends State<PeopleInMotionTestPage> {
   @override
   void dispose() {
     _timer?.cancel();
-    _hintTimer?.cancel();
     super.dispose();
-  }
-
-  /// Gets the project polygon, adds it to the current polygon list, and
-  /// centers the map over it.
-  void _initProjectArea() {
-    setState(() {
-      _polygons = getProjectPolygon(widget.activeProject.polygonPoints);
-      print(_polygons);
-      _location = getPolygonCentroid(_polygons.first);
-      // Take some latitude away to center considering bottom sheet.
-      _location = LatLng(_location.latitude * .999999, _location.longitude);
-      _projectArea = _polygons.first.toMPLatLngList();
-      // TODO: dynamic zooming
-      _isLoading = false;
-    });
   }
 
   // Function to load custom marker icons using AssetMapBitmap.
@@ -117,7 +106,7 @@ class _PeopleInMotionTestPageState extends State<PeopleInMotionTestPage> {
     try {
       standingPointMarker = await AssetMapBitmap.create(
         configuration,
-        'assets/standing_point_disabled_marker.png',
+        'assets/standing_point_disabled.png',
         width: 36,
         height: 36,
       );
@@ -252,37 +241,16 @@ class _PeopleInMotionTestPageState extends State<PeopleInMotionTestPage> {
     );
   }
 
-  void _resetHintTimer() {
-    _hintTimer?.cancel();
-    setState(() {
-      _showHint = false;
-    });
-    _hintTimer = Timer(Duration(seconds: 10), () {
-      setState(() {
-        _showHint = true;
-      });
-    });
-  }
-
   void _onMapCreated(GoogleMapController controller) {
     mapController = controller;
-    if (widget.activeProject.polygonPoints.isNotEmpty) {
-      WidgetsBinding.instance.addPostFrameCallback((_) {
-        final latLngPoints = widget.activeProject.polygonPoints;
-        final bounds = getLatLngBounds(latLngPoints);
-        if (bounds != null) {
-          mapController.animateCamera(CameraUpdate.newLatLngBounds(bounds, 50));
-        }
-      });
-    } else {
-      _moveToCurrentLocation(); // Center on current location.
-    }
+    _moveToCurrentLocation();
   }
 
+  /// Moves camera to project location.
   void _moveToCurrentLocation() {
     mapController.animateCamera(
       CameraUpdate.newCameraPosition(
-        CameraPosition(target: _location, zoom: 14.0),
+        CameraPosition(target: _location, zoom: _zoom),
       ),
     );
   }
@@ -297,7 +265,6 @@ class _PeopleInMotionTestPageState extends State<PeopleInMotionTestPage> {
 
   // When in tracing mode, each tap creates a dot marker and updates the temporary polyline
   Future<void> _handleMapTap(LatLng point) async {
-    _resetHintTimer();
     // If point is outside the project boundary, display error message
     if (!isPointInsidePolygon(point, _polygons.first)) {
       setState(() {
@@ -405,7 +372,6 @@ class _PeopleInMotionTestPageState extends State<PeopleInMotionTestPage> {
   void _endTest() async {
     _isTestRunning = false;
     _timer?.cancel();
-    _hintTimer?.cancel();
     widget.activeTest.submitData(_newData);
     Navigator.pop(context);
   }
@@ -431,7 +397,7 @@ class _PeopleInMotionTestPageState extends State<PeopleInMotionTestPage> {
           leadingWidth: 100,
           // Start/End button on the left.
           leading: Padding(
-            padding: const EdgeInsets.only(left: 20),
+            padding: const EdgeInsets.only(left: 20, top: 4, bottom: 4),
             child: ElevatedButton(
               style: ElevatedButton.styleFrom(
                 shape: RoundedRectangleBorder(
@@ -461,7 +427,7 @@ class _PeopleInMotionTestPageState extends State<PeopleInMotionTestPage> {
               ? Container(
                   padding: const EdgeInsets.symmetric(
                     horizontal: 12,
-                    vertical: 8,
+                    vertical: 4,
                   ),
                   decoration: BoxDecoration(
                     color: Colors.black.withValues(alpha: 0.6),
@@ -469,8 +435,8 @@ class _PeopleInMotionTestPageState extends State<PeopleInMotionTestPage> {
                   ),
                   child: Text(
                     'Tap the screen to trace',
+                    textAlign: TextAlign.center,
                     maxLines: 2,
-                    overflow: TextOverflow.visible,
                     style: const TextStyle(color: Colors.white, fontSize: 16),
                   ),
                 )
@@ -499,22 +465,24 @@ class _PeopleInMotionTestPageState extends State<PeopleInMotionTestPage> {
         body: Stack(
           children: [
             // Full-screen map with polylines.
-            GoogleMap(
-              onMapCreated: _onMapCreated,
-              initialCameraPosition: CameraPosition(
-                target: _location,
-                zoom: 14.0,
+            SizedBox(
+              height: MediaQuery.of(context).size.height,
+              child: GoogleMap(
+                onMapCreated: _onMapCreated,
+                initialCameraPosition: CameraPosition(
+                  target: _location,
+                  zoom: _zoom,
+                ),
+                markers: visibleMarkers,
+                polygons: _polygons,
+                polylines: {
+                  ..._confirmedPolylines,
+                  if (_tracingPolyline != null) _tracingPolyline!
+                },
+                onTap: (_isTracingMode) ? _handleMapTap : null,
+                mapType: _currentMapType,
+                myLocationButtonEnabled: false,
               ),
-              markers: visibleMarkers,
-              polygons: _polygons,
-              polylines: {
-                ..._confirmedPolylines,
-                if (_tracingPolyline != null) _tracingPolyline!
-              },
-              onTap: (_isTracingMode) ? _handleMapTap : null,
-              mapType: _currentMapType,
-              myLocationButtonEnabled: false,
-              zoomControlsEnabled: false,
             ),
 
             if (_showErrorMessage) OutsideBoundsWarning(),

@@ -12,14 +12,14 @@ import 'package:file_selector/file_selector.dart';
 import 'home_screen.dart';
 
 class SectionCutter extends StatefulWidget {
-  final Project projectData;
+  final Project activeProject;
   final SectionCutterTest activeTest;
 
   /// IMPORTANT: When navigating to this page, pass in project details. The
   /// project details page already contains project info, so you should use
   /// that data.
   const SectionCutter(
-      {super.key, required this.projectData, required this.activeTest});
+      {super.key, required this.activeProject, required this.activeTest});
 
   @override
   State<SectionCutter> createState() => _SectionCutterState();
@@ -34,59 +34,54 @@ class _SectionCutterState extends State<SectionCutter> {
   bool _isLoadingUpload = false;
   bool _uploaded = false;
   bool _failedToUpload = false;
+
   String _errorText = 'Failed to upload new image.';
   String _directions =
       "Go to designated section. Then upload the section drawing here.";
   XFile? sectionCutterFile;
   final double _bottomSheetHeight = 300;
   late DocumentReference teamRef;
+
+  double _zoom = 18;
   late GoogleMapController mapController;
-  LatLng _location = defaultLocation; // Default location
+  LatLng _location = defaultLocation;
+  MapType _currentMapType = MapType.satellite;
+
   SectionCutterTest? currentTest;
-  Set<Polygon> _polygons = {}; // Set of polygons
+  final Set<Polygon> _polygons = {};
   Set<Polyline> _polyline = {};
   List<LatLng> _sectionPoints = [];
   bool _directionsVisible = false;
 
-  MapType _currentMapType = MapType.satellite; // Default map type
-
   Project? project;
-
-  double _zoom = 14;
 
   @override
   void initState() {
     super.initState();
-    initProjectArea();
-  }
-
-  /// Gets the project polygon, adds it to the current polygon list, and
-  /// centers the map over it.
-  void initProjectArea() {
-    setState(() {
-      _polygons = getProjectPolygon(widget.projectData.polygonPoints);
-      _location = getPolygonCentroid(_polygons.first);
-      // Take some latitude away to center considering bottom sheet.
-      _location = LatLng(_location.latitude * .999999, _location.longitude);
-      // TODO: dynamic zooming
-      _sectionPoints = widget.activeTest.linePoints;
-      _polyline = {
-        Polyline(
-          polylineId:
-              PolylineId(DateTime.now().millisecondsSinceEpoch.toString()),
-          points: _sectionPoints,
-          color: Colors.green,
-          width: 4,
-        )
-      };
-    });
+    _polygons.add(getProjectPolygon(widget.activeProject.polygonPoints));
+    _location = getPolygonCentroid(_polygons.first);
+    _zoom = getIdealZoom(
+      _polygons.first.toMPLatLngList(),
+      _location.toMPLatLng(),
+    );
+    _sectionPoints = widget.activeTest.linePoints;
+    _polyline = {
+      Polyline(
+        polylineId:
+            PolylineId(DateTime.now().millisecondsSinceEpoch.toString()),
+        points: _sectionPoints,
+        color: Colors.green,
+        width: 4,
+      )
+    };
   }
 
   void _onMapCreated(GoogleMapController controller) {
     mapController = controller;
-    _moveToLocation(); // Ensure the map is centered on the current location
+    _moveToLocation();
   }
 
+  /// Moves camera to project location.
   void _moveToLocation() {
     mapController.animateCamera(
       CameraUpdate.newCameraPosition(
@@ -363,7 +358,7 @@ class _SectionCutterState extends State<SectionCutter> {
                                           builder: (context) =>
                                               ProjectDetailsPage(
                                                   projectData:
-                                                      widget.projectData),
+                                                      widget.activeProject),
                                         ));
                                   }
                                 },

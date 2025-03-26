@@ -32,7 +32,9 @@ class _NaturePrevalenceState extends State<NaturePrevalence> {
   bool _outsidePoint = false;
   bool _deleteMode = false;
   String _errorText = '';
-  Set<Polygon> _projectPolygon = {};
+
+  double _zoom = 18;
+  late final Polygon _projectPolygon;
   List<mp.LatLng> _projectArea = [];
   String _directions = "Choose a category.";
   bool _directionsVisible = false;
@@ -41,7 +43,7 @@ class _NaturePrevalenceState extends State<NaturePrevalence> {
   late GoogleMapController mapController;
   LatLng _location = defaultLocation; // Default location
   List<LatLng> _polygonPoints = []; // Points for the polygon
-  Set<Polygon> _polygons = {}; // Set of polygons
+  final Set<Polygon> _polygons = {}; // Set of polygons
   final Set<Marker> _markers = {}; // Set of markers for points
   Set<Marker> _polygonMarkers = {}; // Set of markers for polygon creation
   MapType _currentMapType = MapType.satellite; // Default map type
@@ -72,7 +74,12 @@ class _NaturePrevalenceState extends State<NaturePrevalence> {
   @override
   void initState() {
     super.initState();
-    initProjectArea();
+    _projectPolygon = getProjectPolygon(widget.activeProject.polygonPoints);
+    _location = getPolygonCentroid(_projectPolygon);
+    _projectArea = _projectPolygon.toMPLatLngList();
+    _zoom = getIdealZoom(_projectArea, _location.toMPLatLng());
+    _remainingSeconds = widget.activeTest.testDuration;
+    _isLoading = false;
     WidgetsBinding.instance.addPostFrameCallback((_) async {
       _setWeatherData();
     });
@@ -150,21 +157,6 @@ class _NaturePrevalenceState extends State<NaturePrevalence> {
       case NatureType.animal:
         return _animalType?.name;
     }
-  }
-
-  /// Gets the project polygon, adds it to the current polygon list, and
-  /// centers the map over it.
-  void initProjectArea() {
-    setState(() {
-      _projectPolygon = getProjectPolygon(widget.activeProject.polygonPoints);
-      _location = getPolygonCentroid(_projectPolygon.first);
-      // Take some latitude away to center considering bottom sheet.
-      _location = LatLng(_location.latitude * .999999, _location.longitude);
-      _projectArea = _projectPolygon.first.toMPLatLngList();
-      _remainingSeconds = widget.activeTest.testDuration;
-      // TODO: dynamic zooming
-      _isLoading = false;
-    });
   }
 
   void _setWeatherData() async {
@@ -692,13 +684,14 @@ class _NaturePrevalenceState extends State<NaturePrevalence> {
 
   void _onMapCreated(GoogleMapController controller) {
     mapController = controller;
-    _moveToLocation(); // Ensure the map is centered on the current location
+    _moveToLocation();
   }
 
+  /// Moves camera to project location.
   void _moveToLocation() {
     mapController.animateCamera(
       CameraUpdate.newCameraPosition(
-        CameraPosition(target: _location, zoom: 14),
+        CameraPosition(target: _location, zoom: _zoom),
       ),
     );
   }
@@ -801,7 +794,7 @@ class _NaturePrevalenceState extends State<NaturePrevalence> {
           polygonColor: Vegetation.vegetationTypeToColor[_vegetationType],
         );
         // Create polygon.
-        _polygons = {..._polygons, ...tempPolygon};
+        _polygons.addAll(tempPolygon);
         _vegetationData.add(Vegetation(
             vegetationType: _vegetationType!,
             polygon: tempPolygon.first,
@@ -810,7 +803,7 @@ class _NaturePrevalenceState extends State<NaturePrevalence> {
         tempPolygon = finalizePolygon(_polygonPoints,
             polygonColor: WaterBody.waterBodyTypeToColor[_waterBodyType]);
         // Create polygon.
-        _polygons = {..._polygons, ...tempPolygon};
+        _polygons.addAll(tempPolygon);
         _waterBodyData.add(WaterBody(
             waterBodyType: _waterBodyType!, polygon: tempPolygon.first));
       } else {
@@ -860,8 +853,8 @@ class _NaturePrevalenceState extends State<NaturePrevalence> {
                       initialCameraPosition:
                           CameraPosition(target: _location, zoom: 14),
                       polygons: (_oldVisibility || _polygons.isEmpty)
-                          ? {..._polygons, ..._projectPolygon}
-                          : {_polygons.last, ..._projectPolygon},
+                          ? {..._polygons, _projectPolygon}
+                          : {_polygons.last, _projectPolygon},
                       markers: (_oldVisibility || _markers.isEmpty)
                           ? {..._markers, ..._polygonMarkers}
                           : {_markers.last, ..._polygonMarkers},

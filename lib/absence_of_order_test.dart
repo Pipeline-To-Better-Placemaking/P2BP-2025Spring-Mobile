@@ -54,11 +54,12 @@ class _AbsenceOfOrderTestPageState extends State<AbsenceOfOrderTestPage> {
 
   late GoogleMapController mapController;
   LatLng _location = defaultLocation;
+  double _zoom = 18;
   MapType _currentMapType = MapType.satellite; // Default map type
   List<mp.LatLng> _projectArea = [];
 
   final Set<Marker> _markers = {}; // Set of markers visible on map
-  Set<Polygon> _polygons = {}; // Set of polygons
+  final Set<Polygon> _polygons = {}; // Set of polygons
   final AbsenceOfOrderData _newData = AbsenceOfOrderData();
   DataPoint? _tempDataPoint;
 
@@ -67,34 +68,23 @@ class _AbsenceOfOrderTestPageState extends State<AbsenceOfOrderTestPage> {
   @override
   void initState() {
     super.initState();
-    _initProjectArea();
-  }
-
-  /// Gets the project polygon, adds it to the current polygon list, and
-  /// centers the map over it.
-  void _initProjectArea() {
-    setState(() {
-      _polygons = getProjectPolygon(widget.activeProject.polygonPoints);
-      print(_polygons);
-      _location = getPolygonCentroid(_polygons.first);
-      // Take some latitude away to center considering bottom sheet.
-      _location = LatLng(_location.latitude * .999999, _location.longitude);
-      _projectArea = _polygons.first.toMPLatLngList();
-      // TODO: dynamic zooming
-      _isLoading = false;
-    });
+    _polygons.add(getProjectPolygon(widget.activeProject.polygonPoints));
+    _location = getPolygonCentroid(_polygons.first);
+    _projectArea = _polygons.first.toMPLatLngList();
+    _zoom = getIdealZoom(_projectArea, _location.toMPLatLng());
+    _isLoading = false;
   }
 
   void _onMapCreated(GoogleMapController controller) {
     mapController = controller;
-    _moveToLocation(); // Ensure the map is centered on the current location
+    _moveToLocation();
   }
 
   /// Moves camera to project location.
   void _moveToLocation() {
     mapController.animateCamera(
       CameraUpdate.newCameraPosition(
-        CameraPosition(target: _location, zoom: 17.0),
+        CameraPosition(target: _location, zoom: _zoom),
       ),
     );
   }
@@ -200,7 +190,7 @@ class _AbsenceOfOrderTestPageState extends State<AbsenceOfOrderTestPage> {
                         padding: EdgeInsets.only(bottom: _bottomSheetHeight),
                         onMapCreated: _onMapCreated,
                         initialCameraPosition:
-                            CameraPosition(target: _location, zoom: 15),
+                            CameraPosition(target: _location, zoom: _zoom),
                         markers: _markers,
                         polygons: _polygons,
                         onTap: isDescriptionReady ? _togglePoint : null,
@@ -647,7 +637,7 @@ class _MaintenanceDescriptionFormState
     'Unkept Landscape',
   ];
   final List<String> _selectedTypes = [];
-  bool _otherSelected = false;
+  bool _isOtherSelected = false;
   final TextEditingController _otherTextController = TextEditingController();
 
   /// Validates the form and if successful pops this Modal Sheet and
@@ -787,7 +777,7 @@ class _MaintenanceDescriptionFormState
                       flex: 2,
                       child: TextFormField(
                         key: _formFieldKey,
-                        enabled: _otherSelected,
+                        enabled: _isOtherSelected,
                         controller: _otherTextController,
                         decoration: InputDecoration(
                           filled: true,
@@ -797,7 +787,7 @@ class _MaintenanceDescriptionFormState
                         ),
                         validator: (value) {
                           // If other button was selected verify text box is not empty
-                          if (_otherSelected &&
+                          if (_isOtherSelected &&
                               (value == null || value.isEmpty)) {
                             return 'Please describe the misconduct.';
                           }
@@ -809,16 +799,16 @@ class _MaintenanceDescriptionFormState
                       child: TextButton(
                         style: TextButton.styleFrom(
                           backgroundColor:
-                              _otherSelected ? Colors.blue : Colors.white,
+                              _isOtherSelected ? Colors.blue : Colors.white,
                           foregroundColor:
-                              _otherSelected ? Colors.white : Colors.black,
+                              _isOtherSelected ? Colors.white : Colors.black,
                           shape: RoundedRectangleBorder(
                             borderRadius: BorderRadius.circular(8),
                           ),
                         ),
                         onPressed: () {
                           setState(() {
-                            _otherSelected = !_otherSelected;
+                            _isOtherSelected = !_isOtherSelected;
                           });
                         },
                         child: Text('Select Other'),
@@ -846,9 +836,10 @@ class _MaintenanceDescriptionFormState
                       child: FilledButton(
                         style: testButtonStyle,
                         // Confirm button disabled when no option selected
-                        onPressed: (_selectedTypes.isNotEmpty || _otherSelected)
-                            ? _submitDescription
-                            : null,
+                        onPressed:
+                            (_selectedTypes.isNotEmpty || _isOtherSelected)
+                                ? _submitDescription
+                                : null,
                         child: Text('Confirm'),
                       ),
                     ),

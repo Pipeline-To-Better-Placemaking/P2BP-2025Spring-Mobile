@@ -4,6 +4,7 @@ import 'settings_page.dart';
 import 'teams_and_invites_page.dart';
 import 'create_project_and_teams.dart';
 import 'home_screen.dart';
+import 'theme.dart';
 
 // Floating bottom navigation bar to be invoked with every page that has a navigation bar.
 class BottomFloatingNavBar extends StatefulWidget {
@@ -63,30 +64,30 @@ class _BottomFloatingNavBarState extends State<BottomFloatingNavBar> {
               selectedItemColor: Colors.yellow,
               showSelectedLabels: false,
               showUnselectedLabels: false,
-              items: const [
+              items: [
                 BottomNavigationBarItem(
-                  backgroundColor: Color(0xFF2F6DCF),
+                  backgroundColor: p2bpBlue,
                   icon: Icon(Icons.home),
                   label: 'Home',
                 ),
                 BottomNavigationBarItem(
-                  backgroundColor: Color(0xFF2F6DCF),
+                  backgroundColor: p2bpBlue,
                   // TODO: which icon?
                   icon: Icon(Icons.short_text),
                   label: 'Projects',
                 ),
                 BottomNavigationBarItem(
-                  backgroundColor: Color(0xFF2F6DCF),
+                  backgroundColor: p2bpBlue,
                   icon: Icon(Icons.add_circle_outline),
                   label: 'Add Project or Team',
                 ),
                 BottomNavigationBarItem(
-                  backgroundColor: Color(0xFF2F6DCF),
+                  backgroundColor: p2bpBlue,
                   icon: Icon(Icons.bar_chart),
                   label: 'Results',
                 ),
                 BottomNavigationBarItem(
-                  backgroundColor: Color(0xFF2F6DCF),
+                  backgroundColor: p2bpBlue,
                   icon: Icon(Icons.person),
                   label: 'Profile',
                 ),
