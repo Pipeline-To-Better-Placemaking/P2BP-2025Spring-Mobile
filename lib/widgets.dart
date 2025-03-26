@@ -409,7 +409,7 @@ class TimerButtonAndDisplay extends StatelessWidget {
           ),
           onPressed: onPressed,
           child: Text(
-            isTestRunning ? 'End' : 'Start',
+            isTestRunning ? 'Stop' : 'Start',
             style: const TextStyle(color: Colors.white, fontSize: 16),
           ),
         ),
@@ -1027,7 +1027,7 @@ class TestErrorText extends StatelessWidget {
       alignment: Alignment.bottomCenter,
       child: Padding(
         padding: padding ??
-            const EdgeInsets.symmetric(vertical: 30.0, horizontal: 50.0),
+            const EdgeInsets.symmetric(vertical: 20.0, horizontal: 50.0),
         child: Container(
           padding: EdgeInsets.symmetric(horizontal: 15, vertical: 10),
           decoration: BoxDecoration(
@@ -1043,6 +1043,7 @@ class TestErrorText extends StatelessWidget {
           ),
           child: Text(
             text ?? 'You have placed a point outside of the project area!',
+            textAlign: TextAlign.center,
             maxLines: 3,
             overflow: TextOverflow.ellipsis,
             style: TextStyle(

@@ -1,11 +1,14 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:maps_toolkit/maps_toolkit.dart' as mp;
 import 'package:p2bp_2025spring_mobile/firestore_functions.dart';
 import 'package:p2bp_2025spring_mobile/theme.dart';
 import 'package:p2bp_2025spring_mobile/widgets.dart';
-import 'google_maps_functions.dart';
+
 import 'db_schema_classes.dart';
+import 'google_maps_functions.dart';
 
 /// Returns a `List<TextButton>` using [options] as `Text` child.
 /// [selectedList] should be a reference to a list containing the values
@@ -64,6 +67,7 @@ class _AbsenceOfOrderTestPageState extends State<AbsenceOfOrderTestPage> {
   final AbsenceOfOrderData _newData = AbsenceOfOrderData();
   DataPoint? _tempDataPoint;
 
+  Timer? _timer;
   int _remainingSeconds = -1;
   static const double _bottomSheetHeight = 165;
 
@@ -74,7 +78,14 @@ class _AbsenceOfOrderTestPageState extends State<AbsenceOfOrderTestPage> {
     _location = getPolygonCentroid(_polygons.first);
     _projectArea = _polygons.first.toMPLatLngList();
     _zoom = getIdealZoom(_projectArea, _location.toMPLatLng());
+    _remainingSeconds = widget.activeTest.testDuration;
     _isLoading = false;
+  }
+
+  @override
+  void dispose() {
+    _timer?.cancel();
+    super.dispose();
   }
 
   void _onMapCreated(GoogleMapController controller) {
@@ -108,7 +119,6 @@ class _AbsenceOfOrderTestPageState extends State<AbsenceOfOrderTestPage> {
           mp.LatLng(point.latitude, point.longitude), _projectArea, true)) {
         setState(() {
           _outsidePoint = true;
-          print('outside!');
         });
       }
       // Add point to data and then add to AbsenceOfOrderData list
@@ -148,6 +158,42 @@ class _AbsenceOfOrderTestPageState extends State<AbsenceOfOrderTestPage> {
     }
   }
 
+  void _startTest() {
+    setState(() {
+      _isTestRunning = true;
+    });
+    _timer = Timer.periodic(Duration(seconds: 1), (timer) {
+      setState(() {
+        _remainingSeconds--;
+        if (_remainingSeconds <= 0) {
+          _isTestRunning = false;
+          timer.cancel();
+          showDialog(
+            context: context,
+            builder: (context) {
+              return TimerEndDialog(onSubmit: () {
+                Navigator.pop(context);
+                _endTest();
+              }, onBack: () {
+                setState(() {
+                  _remainingSeconds = widget.activeTest.testDuration;
+                });
+                Navigator.pop(context);
+              });
+            },
+          );
+        }
+      });
+    });
+  }
+
+  /// Cancels timer, submits data, and pops test page.
+  void _endTest() {
+    _timer?.cancel();
+    widget.activeTest.submitData(_newData);
+    Navigator.pop(context);
+  }
+
   /// Uses [showModalBottomSheet] on [_BehaviorDescriptionForm] and then
   /// stores the results in [_tempDataPoint].
   void _doBehaviorModal(BuildContext context) async {
@@ -172,11 +218,6 @@ class _AbsenceOfOrderTestPageState extends State<AbsenceOfOrderTestPage> {
     setState(() {
       _tempDataPoint = maintenancePoint;
     });
-  }
-
-  void _endTest() {
-    widget.activeTest.submitData(_newData);
-    Navigator.pop(context);
   }
 
   @override
@@ -213,7 +254,14 @@ class _AbsenceOfOrderTestPageState extends State<AbsenceOfOrderTestPage> {
                         child: TimerButtonAndDisplay(
                           onPressed: () {
                             setState(() {
-                              _isTestRunning = !_isTestRunning;
+                              if (_isTestRunning) {
+                                setState(() {
+                                  _isTestRunning = false;
+                                  _timer?.cancel();
+                                });
+                              } else {
+                                _startTest();
+                              }
                             });
                           },
                           isTestRunning: _isTestRunning,
@@ -262,10 +310,9 @@ class _AbsenceOfOrderTestPageState extends State<AbsenceOfOrderTestPage> {
                     ],
                   ),
                   if (_outsidePoint)
-                    Padding(
-                      padding:
-                          const EdgeInsets.only(bottom: _bottomSheetHeight),
-                      child: TestErrorText(),
+                    TestErrorText(
+                      padding: EdgeInsets.fromLTRB(
+                          50, 0, 50, _bottomSheetHeight + 20),
                     ),
                 ],
               ),
@@ -310,7 +357,7 @@ class _AbsenceOfOrderTestPageState extends State<AbsenceOfOrderTestPage> {
                           Expanded(
                             child: FilledButton(
                               style: testButtonStyle,
-                              onPressed: isDescriptionReady
+                              onPressed: (isDescriptionReady || !_isTestRunning)
                                   ? null
                                   : () {
                                       _doBehaviorModal(context);
@@ -321,7 +368,7 @@ class _AbsenceOfOrderTestPageState extends State<AbsenceOfOrderTestPage> {
                           Expanded(
                             child: FilledButton(
                               style: testButtonStyle,
-                              onPressed: isDescriptionReady
+                              onPressed: (isDescriptionReady || !_isTestRunning)
                                   ? null
                                   : () {
                                       _doMaintenanceModal(context);
@@ -348,16 +395,17 @@ class _AbsenceOfOrderTestPageState extends State<AbsenceOfOrderTestPage> {
                           Flexible(
                             child: FilledButton.icon(
                               style: testButtonStyle,
-                              onPressed: (isDescriptionReady)
+                              onPressed: (isDescriptionReady || _isTestRunning)
                                   ? null
                                   : () {
                                       showDialog(
-                                          context: context,
-                                          builder: (context) =>
-                                              TestFinishDialog(onNext: () {
-                                                Navigator.pop(context);
-                                                _endTest();
-                                              }));
+                                        context: context,
+                                        builder: (context) =>
+                                            TestFinishDialog(onNext: () {
+                                          Navigator.pop(context);
+                                          _endTest();
+                                        }),
+                                      );
                                     },
                               label: Text('Finish'),
                               icon: Icon(Icons.chevron_right),
@@ -447,7 +495,7 @@ class _BehaviorDescriptionFormState extends State<_BehaviorDescriptionForm> {
     }
     return SingleChildScrollView(
       child: Padding(
-        padding: MediaQuery.of(context).viewInsets,
+        padding: MediaQuery.viewInsetsOf(context),
         child: Container(
           decoration: BoxDecoration(
             gradient: defaultGrad,
@@ -689,7 +737,7 @@ class _MaintenanceDescriptionFormState
     }
     return SingleChildScrollView(
       child: Padding(
-        padding: MediaQuery.of(context).viewInsets,
+        padding: MediaQuery.viewInsetsOf(context),
         child: Container(
           decoration: BoxDecoration(
             gradient: defaultGrad,
