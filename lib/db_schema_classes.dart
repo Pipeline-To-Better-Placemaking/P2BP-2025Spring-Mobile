@@ -980,7 +980,31 @@ class AbsenceOfOrderTest extends Test<AbsenceOfOrderData> with JsonToString {
   }
 }
 
-enum BoundaryType { constructed, material, shelter }
+enum BoundaryType implements DisplayNameEnum {
+  constructed(displayName: 'Constructed', color: Color(0xFFD81860)),
+  material(displayName: 'Material', color: Color(0xFF00897B)),
+  shelter(displayName: 'Shelter', color: Color(0xFFF57C00));
+
+  const BoundaryType({
+    required this.displayName,
+    required this.color,
+  });
+
+  @override
+  final String displayName;
+  final Color color;
+
+  factory BoundaryType.byDisplayName(String displayName) {
+    try {
+      for (final type in BoundaryType.values) {
+        if (type.displayName == displayName) return type;
+      }
+      throw Exception('Invalid BoundaryType displayName');
+    } catch (e, s) {
+      throw Exception('Error: $e\nStacktrace: $s');
+    }
+  }
+}
 
 enum ConstructedBoundaryType {
   curb,

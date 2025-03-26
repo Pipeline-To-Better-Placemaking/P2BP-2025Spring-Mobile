@@ -226,7 +226,7 @@ class _AbsenceOfOrderTestPageState extends State<AbsenceOfOrderTestPage> {
 
   @override
   Widget build(BuildContext context) {
-    return SafeArea(
+    return AdaptiveSafeArea(
       child: Scaffold(
         resizeToAvoidBottomInset: false,
         extendBody: true,

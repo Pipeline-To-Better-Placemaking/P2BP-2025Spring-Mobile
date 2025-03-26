@@ -182,7 +182,7 @@ class _LightingProfileTestPageState extends State<LightingProfileTestPage> {
 
   @override
   Widget build(BuildContext context) {
-    return SafeArea(
+    return AdaptiveSafeArea(
       child: Scaffold(
         resizeToAvoidBottomInset: false,
         extendBody: true,
