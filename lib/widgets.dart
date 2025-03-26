@@ -383,45 +383,49 @@ class DialogTextBox extends StatelessWidget {
 }
 
 class TimerButtonAndDisplay extends StatelessWidget {
-  const TimerButtonAndDisplay(
-      {required this.onPressed,
-      required this.testIsRunning,
-      required this.remainingSeconds,
-      super.key});
+  const TimerButtonAndDisplay({
+    super.key,
+    required this.onPressed,
+    required this.isTestRunning,
+    required this.remainingSeconds,
+  });
 
   final VoidCallback onPressed;
-  final bool testIsRunning;
+  final bool isTestRunning;
   final int remainingSeconds;
 
   @override
   Widget build(BuildContext context) {
-    return Column(children: <Widget>[
-      ElevatedButton(
-        style: ElevatedButton.styleFrom(
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(8), // Rounded rectangle shape.
+    return SizedBox(
+      width: 66,
+      child: Column(children: <Widget>[
+        ElevatedButton(
+          style: ElevatedButton.styleFrom(
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(8),
+            ),
+            backgroundColor: isTestRunning ? Colors.red : Colors.green,
+            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
           ),
-          backgroundColor: testIsRunning ? Colors.red : Colors.green,
-          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+          onPressed: onPressed,
+          child: Text(
+            isTestRunning ? 'End' : 'Start',
+            style: const TextStyle(color: Colors.white, fontSize: 16),
+          ),
         ),
-        onPressed: onPressed,
-        child: Text(
-          testIsRunning ? 'End' : 'Start',
-          style: const TextStyle(color: Colors.white, fontSize: 16),
+        Container(
+          padding: EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+          decoration: BoxDecoration(
+            color: Colors.black.withValues(alpha: 0.6),
+            borderRadius: BorderRadius.circular(8),
+          ),
+          child: Text(
+            formatTime(remainingSeconds),
+            style: TextStyle(color: Colors.white, fontSize: 16),
+          ),
         ),
-      ),
-      Container(
-        padding: EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-        decoration: BoxDecoration(
-          color: Colors.black.withValues(alpha: 0.6),
-          borderRadius: BorderRadius.circular(8),
-        ),
-        child: Text(
-          formatTime(remainingSeconds),
-          style: TextStyle(color: Colors.white, fontSize: 16),
-        ),
-      ),
-    ]);
+      ]),
+    );
   }
 }
 
@@ -747,13 +751,9 @@ class DirectionsButton extends StatelessWidget {
   const DirectionsButton({
     super.key,
     required this.onTap,
-    required this.visibility,
-    this.buttonPadding,
   });
 
   final VoidCallback? onTap;
-  final EdgeInsets? buttonPadding;
-  final bool visibility;
 
   @override
   Widget build(BuildContext context) {
@@ -810,6 +810,7 @@ class DirectionsText extends StatelessWidget {
           ),
           child: Text(
             text,
+            textAlign: TextAlign.center,
             maxLines: 3,
             overflow: TextOverflow.ellipsis,
             style: TextStyle(
@@ -1012,18 +1013,21 @@ class TestErrorText extends StatelessWidget {
   /// Displays a text error at bottom of screen with the text specified by the
   /// [text] parameter. Defaults to point placed outside of polygon error text.
   const TestErrorText({
-    this.text,
     super.key,
+    this.text,
+    this.padding,
   });
 
   final String? text;
+  final EdgeInsets? padding;
 
   @override
   Widget build(BuildContext context) {
     return Align(
       alignment: Alignment.bottomCenter,
       child: Padding(
-        padding: const EdgeInsets.symmetric(vertical: 30.0, horizontal: 100.0),
+        padding: padding ??
+            const EdgeInsets.symmetric(vertical: 30.0, horizontal: 50.0),
         child: Container(
           padding: EdgeInsets.symmetric(horizontal: 15, vertical: 10),
           decoration: BoxDecoration(

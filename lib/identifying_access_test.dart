@@ -289,115 +289,115 @@ class _IdentifyingAccessState extends State<IdentifyingAccess> {
         resizeToAvoidBottomInset: false,
         body: _isLoading
             ? const Center(child: CircularProgressIndicator())
-            : Center(
-                child: Stack(
-                  children: [
-                    SizedBox(
-                      height: MediaQuery.of(context).size.height,
-                      child: GoogleMap(
-                        // TODO: size based off of bottomsheet container
-                        polylines: _currentPolyline == null
-                            ? (_oldPolylinesToggle ? _polylines : {})
-                            : (_oldPolylinesToggle
-                                ? {..._polylines, _currentPolyline!}
-                                : {_currentPolyline!}),
-                        padding: EdgeInsets.only(bottom: _bottomSheetHeight),
-                        onMapCreated: _onMapCreated,
-                        initialCameraPosition:
-                            CameraPosition(target: _location, zoom: _zoom),
-                        polygons: _oldPolylinesToggle
-                            ? {
-                                ..._projectArea,
-                                ..._polygons,
-                                ..._currentPolygon
-                              }
-                            : {..._projectArea, ..._currentPolygon},
-                        markers: {
-                          ..._markers,
-                          ..._polygonMarkers,
-                          ..._visiblePolylineMarkers
-                        },
-                        onTap: _togglePoint,
-                        mapType: _currentMapType, // Use current map type
+            : Stack(
+                children: [
+                  SizedBox(
+                    height: MediaQuery.sizeOf(context).height,
+                    child: GoogleMap(
+                      polylines: _currentPolyline == null
+                          ? (_oldPolylinesToggle ? _polylines : {})
+                          : (_oldPolylinesToggle
+                              ? {..._polylines, _currentPolyline!}
+                              : {_currentPolyline!}),
+                      padding: EdgeInsets.only(bottom: _bottomSheetHeight),
+                      onMapCreated: _onMapCreated,
+                      initialCameraPosition:
+                          CameraPosition(target: _location, zoom: _zoom),
+                      polygons: _oldPolylinesToggle
+                          ? {..._projectArea, ..._polygons, ..._currentPolygon}
+                          : {..._projectArea, ..._currentPolygon},
+                      markers: {
+                        ..._markers,
+                        ..._polygonMarkers,
+                        ..._visiblePolylineMarkers
+                      },
+                      onTap: _togglePoint,
+                      mapType: _currentMapType, // Use current map type
+                    ),
+                  ),
+                  Row(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: <Widget>[
+                      Expanded(
+                        child: _directionsVisible
+                            ? Padding(
+                                padding: const EdgeInsets.symmetric(
+                                    horizontal: 15.0, vertical: 15.0),
+                                child: DirectionsText(
+                                    onTap: () {
+                                      setState(() {
+                                        _directionsVisible =
+                                            !_directionsVisible;
+                                      });
+                                    },
+                                    text: _directions),
+                              )
+                            : SizedBox(),
                       ),
-                    ),
-                    Align(
-                      alignment: Alignment.topCenter,
-                      child: _directionsVisible
-                          ? Padding(
-                              padding:
-                                  const EdgeInsets.only(top: 15.0, right: 15.0),
-                              child: DirectionsText(
-                                  onTap: () {
-                                    setState(() {
-                                      _directionsVisible = !_directionsVisible;
-                                    });
-                                  },
-                                  text: _directions),
-                            )
-                          : SizedBox(),
-                    ),
-                    Align(
-                      alignment: Alignment.topRight,
-                      child: Padding(
+                      Padding(
                         padding: const EdgeInsets.only(top: 15.0, right: 15.0),
                         child: Column(
                           spacing: 10,
-                          mainAxisAlignment: MainAxisAlignment.start,
                           children: [
                             DirectionsButton(
-                                onTap: () {
-                                  setState(() {
-                                    _directionsVisible = !_directionsVisible;
-                                  });
-                                },
-                                visibility: _directionsVisible),
+                              onTap: () {
+                                setState(() {
+                                  _directionsVisible = !_directionsVisible;
+                                });
+                              },
+                            ),
                             CircularIconMapButton(
                               backgroundColor: Colors.green,
                               borderColor: Color(0xFF2D6040),
                               onPressed: _toggleMapType,
                               icon: const Icon(Icons.map),
                             ),
-                            (!_polygonMode && !_pointMode && !_polylineMode)
-                                ? CircularIconMapButton(
-                                    borderColor: Color(0xFF2D6040),
-                                    onPressed: () {
-                                      setState(() {
-                                        _deleteMode = !_deleteMode;
-                                      });
-                                    },
-                                    backgroundColor:
-                                        _deleteMode ? Colors.blue : Colors.red,
-                                    icon: Icon(
-                                      _deleteMode
-                                          ? Icons.location_on
-                                          : Icons.delete,
-                                      size: 30,
-                                    ),
-                                  )
-                                : SizedBox(),
+                            if (!_polygonMode && !_pointMode && !_polylineMode)
+                              CircularIconMapButton(
+                                borderColor: Color(0xFF2D6040),
+                                onPressed: () {
+                                  setState(() {
+                                    _deleteMode = !_deleteMode;
+                                  });
+                                },
+                                backgroundColor:
+                                    _deleteMode ? Colors.blue : Colors.red,
+                                icon: Icon(
+                                  _deleteMode
+                                      ? Icons.location_on
+                                      : Icons.delete,
+                                  size: 30,
+                                ),
+                              ),
                           ],
                         ),
                       ),
-                    ),
-                    Align(
-                      alignment: Alignment.bottomLeft,
-                      child: Padding(
-                        padding: EdgeInsets.only(
-                            bottom: _bottomSheetHeight + 35, left: 5),
-                        child: VisibilitySwitch(
-                          visibility: _oldPolylinesToggle,
-                          onChanged: (value) {
-                            // This is called when the user toggles the switch.
-                            setState(() {
-                              _oldPolylinesToggle = value;
-                            });
-                          },
-                        ),
+                    ],
+                  ),
+                  Align(
+                    alignment: Alignment.bottomLeft,
+                    child: Padding(
+                      padding: EdgeInsets.only(
+                          bottom: _bottomSheetHeight + 35, left: 5),
+                      child: VisibilitySwitch(
+                        visibility: _oldPolylinesToggle,
+                        onChanged: (value) {
+                          // This is called when the user toggles the switch.
+                          setState(() {
+                            _oldPolylinesToggle = value;
+                          });
+                        },
                       ),
                     ),
-                  ],
-                ),
+                  ),
+                  if (_deleteMode)
+                    TestErrorText(
+                      padding: EdgeInsets.fromLTRB(
+                          20, 0, 20, _bottomSheetHeight + 30),
+                      text: "You are in delete mode.",
+                    ),
+                ],
               ),
         bottomSheet: _isLoading
             ? SizedBox()
@@ -664,9 +664,6 @@ class _IdentifyingAccessState extends State<IdentifyingAccess> {
                         ],
                       ),
                     ),
-                    _deleteMode
-                        ? TestErrorText(text: "You are in delete mode.")
-                        : SizedBox(),
                   ],
                 ),
               ),

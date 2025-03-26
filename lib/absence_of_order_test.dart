@@ -51,19 +51,21 @@ class AbsenceOfOrderTestPage extends StatefulWidget {
 class _AbsenceOfOrderTestPageState extends State<AbsenceOfOrderTestPage> {
   bool _isLoading = true;
   bool _outsidePoint = false;
+  bool _isTestRunning = false;
+  bool _directionsVisible = false;
 
   late GoogleMapController mapController;
   LatLng _location = defaultLocation;
   double _zoom = 18;
   MapType _currentMapType = MapType.satellite; // Default map type
   List<mp.LatLng> _projectArea = [];
-
   final Set<Marker> _markers = {}; // Set of markers visible on map
   final Set<Polygon> _polygons = {}; // Set of polygons
   final AbsenceOfOrderData _newData = AbsenceOfOrderData();
   DataPoint? _tempDataPoint;
 
-  static const double _bottomSheetHeight = 220;
+  int _remainingSeconds = -1;
+  static const double _bottomSheetHeight = 165;
 
   @override
   void initState() {
@@ -106,6 +108,7 @@ class _AbsenceOfOrderTestPageState extends State<AbsenceOfOrderTestPage> {
           mp.LatLng(point.latitude, point.longitude), _projectArea, true)) {
         setState(() {
           _outsidePoint = true;
+          print('outside!');
         });
       }
       // Add point to data and then add to AbsenceOfOrderData list
@@ -171,6 +174,11 @@ class _AbsenceOfOrderTestPageState extends State<AbsenceOfOrderTestPage> {
     });
   }
 
+  void _endTest() {
+    widget.activeTest.submitData(_newData);
+    Navigator.pop(context);
+  }
+
   @override
   Widget build(BuildContext context) {
     // Updates flag for whether _tempDataPoint has a description for data point
@@ -181,189 +189,185 @@ class _AbsenceOfOrderTestPageState extends State<AbsenceOfOrderTestPage> {
         extendBody: true,
         body: _isLoading
             ? const Center(child: CircularProgressIndicator())
-            : Center(
-                child: Stack(
-                  children: <Widget>[
-                    SizedBox(
-                      height: MediaQuery.of(context).size.height,
-                      child: GoogleMap(
-                        padding: EdgeInsets.only(bottom: _bottomSheetHeight),
-                        onMapCreated: _onMapCreated,
-                        initialCameraPosition:
-                            CameraPosition(target: _location, zoom: _zoom),
-                        markers: _markers,
-                        polygons: _polygons,
-                        onTap: isDescriptionReady ? _togglePoint : null,
-                        mapType: _currentMapType,
-                      ),
+            : Stack(
+                children: <Widget>[
+                  SizedBox(
+                    height: MediaQuery.sizeOf(context).height,
+                    child: GoogleMap(
+                      padding: EdgeInsets.only(bottom: _bottomSheetHeight),
+                      onMapCreated: _onMapCreated,
+                      initialCameraPosition:
+                          CameraPosition(target: _location, zoom: _zoom),
+                      markers: _markers,
+                      polygons: _polygons,
+                      onTap: isDescriptionReady ? _togglePoint : null,
+                      mapType: _currentMapType,
                     ),
-                    Align(
-                      alignment: Alignment.bottomLeft,
-                      child: Padding(
-                        padding: const EdgeInsets.only(
-                          left: 10,
-                          right: 10,
-                          bottom: _bottomSheetHeight + 30,
-                        ),
-                        child: FloatingActionButton(
-                          heroTag: null,
-                          onPressed: _toggleMapType,
-                          backgroundColor: Colors.green,
-                          child: const Icon(Icons.map),
+                  ),
+                  Row(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: <Widget>[
+                      Padding(
+                        padding: const EdgeInsets.only(top: 15.0, left: 15.0),
+                        child: TimerButtonAndDisplay(
+                          onPressed: () {
+                            setState(() {
+                              _isTestRunning = !_isTestRunning;
+                            });
+                          },
+                          isTestRunning: _isTestRunning,
+                          remainingSeconds: _remainingSeconds,
                         ),
                       ),
+                      Expanded(
+                        child: _directionsVisible
+                            ? Padding(
+                                padding: const EdgeInsets.symmetric(
+                                    horizontal: 15.0, vertical: 15.0),
+                                child: DirectionsText(
+                                    onTap: () {
+                                      setState(() {
+                                        _directionsVisible =
+                                            !_directionsVisible;
+                                      });
+                                    },
+                                    text: !isDescriptionReady
+                                        ? 'Select a type of misconduct.'
+                                        : 'Drop a pin where the misconduct is.'),
+                              )
+                            : SizedBox(),
+                      ),
+                      Padding(
+                        padding: const EdgeInsets.only(top: 15, right: 15),
+                        child: Column(
+                          spacing: 10,
+                          children: <Widget>[
+                            DirectionsButton(
+                              onTap: () {
+                                setState(() {
+                                  _directionsVisible = !_directionsVisible;
+                                });
+                              },
+                            ),
+                            CircularIconMapButton(
+                              backgroundColor: Colors.green,
+                              borderColor: Color(0xFF2D6040),
+                              onPressed: _toggleMapType,
+                              icon: const Icon(Icons.map),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ],
+                  ),
+                  if (_outsidePoint)
+                    Padding(
+                      padding:
+                          const EdgeInsets.only(bottom: _bottomSheetHeight),
+                      child: TestErrorText(),
                     ),
-                  ],
-                ),
+                ],
               ),
         bottomSheet: _isLoading
             ? SizedBox()
             : SizedBox(
                 height: _bottomSheetHeight,
-                child: Stack(
-                  children: <Widget>[
-                    Container(
-                      padding: const EdgeInsets.symmetric(
-                          horizontal: 12.0, vertical: 10.0),
-                      decoration: BoxDecoration(
-                        gradient: defaultGrad,
-                        borderRadius: const BorderRadius.only(
-                          topLeft: Radius.circular(24.0),
-                          topRight: Radius.circular(24.0),
-                        ),
-                        boxShadow: [
-                          BoxShadow(
-                            color: Colors.black,
-                            offset: Offset(0.0, 1.0), //(x,y)
-                            blurRadius: 6.0,
-                          ),
-                        ],
-                      ),
-                      child: Column(
-                        children: <Widget>[
-                          Center(
-                            child: Text(
-                              'Absence of Order Locator',
-                              style: TextStyle(
-                                fontSize: 20,
-                                fontWeight: FontWeight.bold,
-                                color: placeYellow,
-                              ),
-                            ),
-                          ),
-                          SizedBox(height: 5),
-                          Center(
-                            child: Text(
-                              !isDescriptionReady
-                                  ? 'Select a type of misconduct.'
-                                  : 'Drop a pin where the misconduct is.',
-                              style: TextStyle(
-                                fontSize: 20,
-                                color: Colors.white,
-                              ),
-                            ),
-                          ),
-                          SizedBox(height: 5),
-                          Row(
-                            mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                            spacing: 10,
-                            children: <Widget>[
-                              Expanded(
-                                child: FilledButton(
-                                  style: testButtonStyle,
-                                  onPressed: isDescriptionReady
-                                      ? null
-                                      : () {
-                                          _doBehaviorModal(context);
-                                        },
-                                  child: Text('Behavior'),
-                                ),
-                              ),
-                              Expanded(
-                                child: FilledButton(
-                                  style: testButtonStyle,
-                                  onPressed: isDescriptionReady
-                                      ? null
-                                      : () {
-                                          _doMaintenanceModal(context);
-                                        },
-                                  child: Text('Maintenance'),
-                                ),
-                              ),
-                            ],
-                          ),
-                          SizedBox(height: 15),
-                          Row(
-                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                            spacing: 10,
-                            children: <Widget>[
-                              Flexible(
-                                child: FilledButton.icon(
-                                  style: testButtonStyle,
-                                  onPressed: () => Navigator.pop(context),
-                                  label: Text('Back'),
-                                  icon: Icon(Icons.chevron_left),
-                                  iconAlignment: IconAlignment.start,
-                                ),
-                              ),
-                              Flexible(
-                                child: FilledButton.icon(
-                                  style: testButtonStyle,
-                                  onPressed: (isDescriptionReady)
-                                      ? null
-                                      : () {
-                                          // TODO: check isComplete either before submitting or probably before starting test
-                                          widget.activeTest
-                                              .submitData(_newData);
-                                          Navigator.pop(context);
-                                        },
-                                  label: Text('Finish'),
-                                  icon: Icon(Icons.chevron_right),
-                                  iconAlignment: IconAlignment.end,
-                                ),
-                              ),
-                            ],
-                          ),
-                        ],
-                      ),
+                child: Container(
+                  padding: const EdgeInsets.symmetric(
+                      horizontal: 12.0, vertical: 10.0),
+                  decoration: BoxDecoration(
+                    gradient: defaultGrad,
+                    borderRadius: const BorderRadius.only(
+                      topLeft: Radius.circular(24.0),
+                      topRight: Radius.circular(24.0),
                     ),
-                    _outsidePoint
-                        ? Align(
-                            alignment: Alignment.bottomCenter,
-                            child: Padding(
-                              padding: const EdgeInsets.symmetric(
-                                  vertical: 30.0, horizontal: 100.0),
-                              child: Container(
-                                padding: EdgeInsets.symmetric(
-                                    horizontal: 15, vertical: 10),
-                                decoration: BoxDecoration(
-                                  color: Colors.red[900],
-                                  borderRadius: const BorderRadius.all(
-                                      Radius.circular(10)),
-                                  boxShadow: [
-                                    BoxShadow(
-                                      color:
-                                          Colors.black.withValues(alpha: 0.1),
-                                      blurRadius: 6,
-                                      offset: const Offset(0, 2),
-                                    ),
-                                  ],
-                                ),
-                                child: Text(
-                                  'You have placed a point outside of the project area!',
-                                  maxLines: 3,
-                                  overflow: TextOverflow.ellipsis,
-                                  style: TextStyle(
-                                    fontSize: 18,
-                                    fontWeight: FontWeight.w500,
-                                    color: Colors.red[50],
-                                  ),
-                                ),
-                              ),
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.black,
+                        offset: Offset(0.0, 1.0), //(x,y)
+                        blurRadius: 6.0,
+                      ),
+                    ],
+                  ),
+                  child: Column(
+                    children: <Widget>[
+                      Center(
+                        child: Text(
+                          'Absence of Order Locator',
+                          style: TextStyle(
+                            fontSize: 20,
+                            fontWeight: FontWeight.bold,
+                            color: placeYellow,
+                          ),
+                        ),
+                      ),
+                      SizedBox(height: 5),
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                        spacing: 10,
+                        children: <Widget>[
+                          Expanded(
+                            child: FilledButton(
+                              style: testButtonStyle,
+                              onPressed: isDescriptionReady
+                                  ? null
+                                  : () {
+                                      _doBehaviorModal(context);
+                                    },
+                              child: Text('Behavior'),
                             ),
-                          )
-                        : SizedBox(),
-                  ],
+                          ),
+                          Expanded(
+                            child: FilledButton(
+                              style: testButtonStyle,
+                              onPressed: isDescriptionReady
+                                  ? null
+                                  : () {
+                                      _doMaintenanceModal(context);
+                                    },
+                              child: Text('Maintenance'),
+                            ),
+                          ),
+                        ],
+                      ),
+                      SizedBox(height: 15),
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        spacing: 10,
+                        children: <Widget>[
+                          Flexible(
+                            child: FilledButton.icon(
+                              style: testButtonStyle,
+                              onPressed: () => Navigator.pop(context),
+                              label: Text('Back'),
+                              icon: Icon(Icons.chevron_left),
+                              iconAlignment: IconAlignment.start,
+                            ),
+                          ),
+                          Flexible(
+                            child: FilledButton.icon(
+                              style: testButtonStyle,
+                              onPressed: (isDescriptionReady)
+                                  ? null
+                                  : () {
+                                      showDialog(
+                                          context: context,
+                                          builder: (context) =>
+                                              TestFinishDialog(onNext: () {
+                                                Navigator.pop(context);
+                                                _endTest();
+                                              }));
+                                    },
+                              label: Text('Finish'),
+                              icon: Icon(Icons.chevron_right),
+                              iconAlignment: IconAlignment.end,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ],
+                  ),
                 ),
               ),
       ),
