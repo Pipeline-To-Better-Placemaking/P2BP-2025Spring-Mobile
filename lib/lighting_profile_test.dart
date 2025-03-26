@@ -1,13 +1,14 @@
-import 'dart:math';
+import 'dart:async';
 
-import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:maps_toolkit/maps_toolkit.dart' as mp;
 import 'package:p2bp_2025spring_mobile/firestore_functions.dart';
 import 'package:p2bp_2025spring_mobile/theme.dart';
-import 'google_maps_functions.dart';
+import 'package:p2bp_2025spring_mobile/widgets.dart';
+
 import 'db_schema_classes.dart';
+import 'google_maps_functions.dart';
 
 class LightingProfileTestPage extends StatefulWidget {
   final Project activeProject;
@@ -27,19 +28,23 @@ class _LightingProfileTestPageState extends State<LightingProfileTestPage> {
   bool _isLoading = true;
   bool _isTypeSelected = false;
   bool _outsidePoint = false;
-  LightType? _selectedType;
+  bool _isTestRunning = false;
+  bool _directionsVisible = false;
 
+  LightType? _selectedType;
   late GoogleMapController mapController;
   LatLng _location = defaultLocation;
   double _zoom = 18;
-  MapType _currentMapType = MapType.satellite; // Default map type
+  MapType _currentMapType = MapType.satellite;
   List<mp.LatLng> _projectArea = [];
+  final Set<Marker> _markers = {};
+  final Set<Polygon> _polygons = {};
 
-  final Set<Marker> _markers = {}; // Set of markers visible on map
-  final Set<Polygon> _polygons = {}; // Set of polygons
   final LightingProfileData _newData = LightingProfileData();
 
-  static const double _bottomSheetHeight = 300;
+  Timer? _timer;
+  int _remainingSeconds = -1;
+  static const double _bottomSheetHeight = 220;
 
   @override
   void initState() {
@@ -48,7 +53,14 @@ class _LightingProfileTestPageState extends State<LightingProfileTestPage> {
     _location = getPolygonCentroid(_polygons.first);
     _projectArea = _polygons.first.toMPLatLngList();
     _zoom = getIdealZoom(_projectArea, _location.toMPLatLng());
+    _remainingSeconds = widget.activeTest.testDuration;
     _isLoading = false;
+  }
+
+  @override
+  void dispose() {
+    _timer?.cancel();
+    super.dispose();
   }
 
   void _onMapCreated(GoogleMapController controller) {
@@ -124,6 +136,42 @@ class _LightingProfileTestPageState extends State<LightingProfileTestPage> {
     }
   }
 
+  void _startTest() {
+    setState(() {
+      _isTestRunning = true;
+    });
+    _timer = Timer.periodic(Duration(seconds: 1), (timer) {
+      setState(() {
+        _remainingSeconds--;
+        if (_remainingSeconds <= 0) {
+          _isTestRunning = false;
+          timer.cancel();
+          showDialog(
+            context: context,
+            builder: (context) {
+              return TimerEndDialog(onSubmit: () {
+                Navigator.pop(context);
+                _endTest();
+              }, onBack: () {
+                setState(() {
+                  _remainingSeconds = widget.activeTest.testDuration;
+                });
+                Navigator.pop(context);
+              });
+            },
+          );
+        }
+      });
+    });
+  }
+
+  /// Cancels timer, submits data, and pops test page.
+  void _endTest() {
+    _timer?.cancel();
+    widget.activeTest.submitData(_newData);
+    Navigator.pop(context);
+  }
+
   /// Sets [_selectedType] to parameter `type` and [_isTypeSelected] to
   /// true if [type] is non-null and false otherwise.
   void _setLightType(LightType? type) {
@@ -156,22 +204,76 @@ class _LightingProfileTestPageState extends State<LightingProfileTestPage> {
                       mapType: _currentMapType,
                     ),
                   ),
-                  Align(
-                    alignment: Alignment.bottomLeft,
-                    child: Padding(
-                      padding: const EdgeInsets.only(
-                        left: 10,
-                        right: 10,
-                        bottom: _bottomSheetHeight + 30,
+                  Row(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: <Widget>[
+                      Padding(
+                        padding: const EdgeInsets.only(top: 15.0, left: 15.0),
+                        child: TimerButtonAndDisplay(
+                          onPressed: () {
+                            setState(() {
+                              if (_isTestRunning) {
+                                setState(() {
+                                  _isTestRunning = false;
+                                  _timer?.cancel();
+                                  _setLightType(null);
+                                });
+                              } else {
+                                _startTest();
+                              }
+                            });
+                          },
+                          isTestRunning: _isTestRunning,
+                          remainingSeconds: _remainingSeconds,
+                        ),
                       ),
-                      child: FloatingActionButton(
-                        heroTag: null,
-                        onPressed: _toggleMapType,
-                        backgroundColor: Colors.green,
-                        child: const Icon(Icons.map),
+                      Expanded(
+                        child: _directionsVisible
+                            ? Padding(
+                                padding: const EdgeInsets.symmetric(
+                                    horizontal: 15.0, vertical: 15.0),
+                                child: DirectionsText(
+                                    onTap: () {
+                                      setState(() {
+                                        _directionsVisible =
+                                            !_directionsVisible;
+                                      });
+                                    },
+                                    text: !_isTypeSelected
+                                        ? 'Select a type of light.'
+                                        : 'Drop a pin where the light is.'),
+                              )
+                            : SizedBox(),
                       ),
-                    ),
+                      Padding(
+                        padding: const EdgeInsets.only(top: 15, right: 15),
+                        child: Column(
+                          spacing: 10,
+                          children: <Widget>[
+                            DirectionsButton(
+                              onTap: () {
+                                setState(() {
+                                  _directionsVisible = !_directionsVisible;
+                                });
+                              },
+                            ),
+                            CircularIconMapButton(
+                              backgroundColor: Colors.green,
+                              borderColor: Color(0xFF2D6040),
+                              onPressed: _toggleMapType,
+                              icon: const Icon(Icons.map),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ],
                   ),
+                  if (_outsidePoint)
+                    TestErrorText(
+                      padding: EdgeInsets.fromLTRB(
+                          50, 0, 50, _bottomSheetHeight + 20),
+                    ),
                 ],
               ),
         bottomSheet: _isLoading
@@ -211,18 +313,6 @@ class _LightingProfileTestPageState extends State<LightingProfileTestPage> {
                             ),
                           ),
                           SizedBox(height: 5),
-                          Center(
-                            child: Text(
-                              !_isTypeSelected
-                                  ? 'Select a type of light.'
-                                  : 'Drop a pin where the light is.',
-                              style: TextStyle(
-                                fontSize: 24,
-                                color: Colors.white,
-                              ),
-                            ),
-                          ),
-                          SizedBox(height: 5),
                           Row(
                             spacing: 10,
                             children: <Widget>[
@@ -230,9 +320,10 @@ class _LightingProfileTestPageState extends State<LightingProfileTestPage> {
                                 flex: 6,
                                 child: FilledButton(
                                   style: testButtonStyle,
-                                  onPressed: (_isTypeSelected)
-                                      ? null
-                                      : () => _setLightType(LightType.rhythmic),
+                                  onPressed: (!_isTypeSelected &&
+                                          _isTestRunning)
+                                      ? () => _setLightType(LightType.rhythmic)
+                                      : null,
                                   child: Text('Rhythmic'),
                                 ),
                               ),
@@ -240,9 +331,10 @@ class _LightingProfileTestPageState extends State<LightingProfileTestPage> {
                                 flex: 6,
                                 child: FilledButton(
                                   style: testButtonStyle,
-                                  onPressed: (_isTypeSelected)
-                                      ? null
-                                      : () => _setLightType(LightType.building),
+                                  onPressed: (!_isTypeSelected &&
+                                          _isTestRunning)
+                                      ? () => _setLightType(LightType.building)
+                                      : null,
                                   child: Text('Building'),
                                 ),
                               ),
@@ -250,9 +342,10 @@ class _LightingProfileTestPageState extends State<LightingProfileTestPage> {
                                 flex: 5,
                                 child: FilledButton(
                                   style: testButtonStyle,
-                                  onPressed: (_isTypeSelected)
-                                      ? null
-                                      : () => _setLightType(LightType.task),
+                                  onPressed:
+                                      (!_isTypeSelected && _isTestRunning)
+                                          ? () => _setLightType(LightType.task)
+                                          : null,
                                   child: Text('Task'),
                                 ),
                               ),
@@ -294,14 +387,19 @@ class _LightingProfileTestPageState extends State<LightingProfileTestPage> {
                               Flexible(
                                 child: FilledButton.icon(
                                   style: testButtonStyle,
-                                  onPressed: (_isTypeSelected)
-                                      ? null
-                                      : () {
-                                          // TODO: check isComplete either before submitting or probably before starting test
-                                          widget.activeTest
-                                              .submitData(_newData);
-                                          Navigator.pop(context);
-                                        },
+                                  onPressed: (!_isTypeSelected &&
+                                          !_isTestRunning)
+                                      ? () {
+                                          showDialog(
+                                            context: context,
+                                            builder: (context) =>
+                                                TestFinishDialog(onNext: () {
+                                              Navigator.pop(context);
+                                              _endTest();
+                                            }),
+                                          );
+                                        }
+                                      : null,
                                   label: Text('Finish'),
                                   icon: Icon(Icons.chevron_right),
                                   iconAlignment: IconAlignment.end,
@@ -312,42 +410,6 @@ class _LightingProfileTestPageState extends State<LightingProfileTestPage> {
                         ],
                       ),
                     ),
-                    _outsidePoint
-                        ? Align(
-                            alignment: Alignment.bottomCenter,
-                            child: Padding(
-                              padding: const EdgeInsets.symmetric(
-                                  vertical: 30.0, horizontal: 100.0),
-                              child: Container(
-                                padding: EdgeInsets.symmetric(
-                                    horizontal: 15, vertical: 10),
-                                decoration: BoxDecoration(
-                                  color: Colors.red[900],
-                                  borderRadius: const BorderRadius.all(
-                                      Radius.circular(10)),
-                                  boxShadow: [
-                                    BoxShadow(
-                                      color:
-                                          Colors.black.withValues(alpha: 0.1),
-                                      blurRadius: 6,
-                                      offset: const Offset(0, 2),
-                                    ),
-                                  ],
-                                ),
-                                child: Text(
-                                  'You have placed a point outside of the project area!',
-                                  maxLines: 3,
-                                  overflow: TextOverflow.ellipsis,
-                                  style: TextStyle(
-                                    fontSize: 18,
-                                    fontWeight: FontWeight.w500,
-                                    color: Colors.red[50],
-                                  ),
-                                ),
-                              ),
-                            ),
-                          )
-                        : SizedBox(),
                   ],
                 ),
               ),

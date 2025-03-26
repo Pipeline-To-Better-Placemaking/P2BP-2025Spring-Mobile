@@ -56,6 +56,7 @@ class _AbsenceOfOrderTestPageState extends State<AbsenceOfOrderTestPage> {
   bool _outsidePoint = false;
   bool _isTestRunning = false;
   bool _directionsVisible = false;
+  bool _isDescriptionReady = false;
 
   late GoogleMapController mapController;
   LatLng _location = defaultLocation;
@@ -143,7 +144,7 @@ class _AbsenceOfOrderTestPageState extends State<AbsenceOfOrderTestPage> {
           ),
         );
 
-        _tempDataPoint = null;
+        _setTempData(null);
       });
       if (_outsidePoint) {
         // TODO: fix delay. delay will overlap with consecutive taps. this means taps do not necessarily refresh the timer and will end prematurely
@@ -202,9 +203,7 @@ class _AbsenceOfOrderTestPageState extends State<AbsenceOfOrderTestPage> {
       context: context,
       builder: (context) => _BehaviorDescriptionForm(),
     );
-    setState(() {
-      _tempDataPoint = behaviorPoint;
-    });
+    _setTempData(behaviorPoint);
   }
 
   /// Uses [showModalBottomSheet] on [_MaintenanceDescriptionForm] and then
@@ -215,15 +214,18 @@ class _AbsenceOfOrderTestPageState extends State<AbsenceOfOrderTestPage> {
       context: context,
       builder: (context) => _MaintenanceDescriptionForm(),
     );
+    _setTempData(maintenancePoint);
+  }
+
+  void _setTempData(DataPoint? point) {
     setState(() {
-      _tempDataPoint = maintenancePoint;
+      _tempDataPoint = point;
+      _isDescriptionReady = _tempDataPoint != null;
     });
   }
 
   @override
   Widget build(BuildContext context) {
-    // Updates flag for whether _tempDataPoint has a description for data point
-    bool isDescriptionReady = (_tempDataPoint != null);
     return SafeArea(
       child: Scaffold(
         resizeToAvoidBottomInset: false,
@@ -241,7 +243,7 @@ class _AbsenceOfOrderTestPageState extends State<AbsenceOfOrderTestPage> {
                           CameraPosition(target: _location, zoom: _zoom),
                       markers: _markers,
                       polygons: _polygons,
-                      onTap: isDescriptionReady ? _togglePoint : null,
+                      onTap: _isDescriptionReady ? _togglePoint : null,
                       mapType: _currentMapType,
                     ),
                   ),
@@ -258,6 +260,7 @@ class _AbsenceOfOrderTestPageState extends State<AbsenceOfOrderTestPage> {
                                 setState(() {
                                   _isTestRunning = false;
                                   _timer?.cancel();
+                                  _setTempData(null);
                                 });
                               } else {
                                 _startTest();
@@ -280,7 +283,7 @@ class _AbsenceOfOrderTestPageState extends State<AbsenceOfOrderTestPage> {
                                             !_directionsVisible;
                                       });
                                     },
-                                    text: !isDescriptionReady
+                                    text: !_isDescriptionReady
                                         ? 'Select a type of misconduct.'
                                         : 'Drop a pin where the misconduct is.'),
                               )
@@ -357,22 +360,24 @@ class _AbsenceOfOrderTestPageState extends State<AbsenceOfOrderTestPage> {
                           Expanded(
                             child: FilledButton(
                               style: testButtonStyle,
-                              onPressed: (isDescriptionReady || !_isTestRunning)
-                                  ? null
-                                  : () {
-                                      _doBehaviorModal(context);
-                                    },
+                              onPressed:
+                                  (!_isDescriptionReady && _isTestRunning)
+                                      ? () {
+                                          _doBehaviorModal(context);
+                                        }
+                                      : null,
                               child: Text('Behavior'),
                             ),
                           ),
                           Expanded(
                             child: FilledButton(
                               style: testButtonStyle,
-                              onPressed: (isDescriptionReady || !_isTestRunning)
-                                  ? null
-                                  : () {
-                                      _doMaintenanceModal(context);
-                                    },
+                              onPressed:
+                                  (!_isDescriptionReady && _isTestRunning)
+                                      ? () {
+                                          _doMaintenanceModal(context);
+                                        }
+                                      : null,
                               child: Text('Maintenance'),
                             ),
                           ),
@@ -395,18 +400,19 @@ class _AbsenceOfOrderTestPageState extends State<AbsenceOfOrderTestPage> {
                           Flexible(
                             child: FilledButton.icon(
                               style: testButtonStyle,
-                              onPressed: (isDescriptionReady || _isTestRunning)
-                                  ? null
-                                  : () {
-                                      showDialog(
-                                        context: context,
-                                        builder: (context) =>
-                                            TestFinishDialog(onNext: () {
-                                          Navigator.pop(context);
-                                          _endTest();
-                                        }),
-                                      );
-                                    },
+                              onPressed:
+                                  (!_isDescriptionReady && !_isTestRunning)
+                                      ? () {
+                                          showDialog(
+                                            context: context,
+                                            builder: (context) =>
+                                                TestFinishDialog(onNext: () {
+                                              Navigator.pop(context);
+                                              _endTest();
+                                            }),
+                                          );
+                                        }
+                                      : null,
                               label: Text('Finish'),
                               icon: Icon(Icons.chevron_right),
                               iconAlignment: IconAlignment.end,
