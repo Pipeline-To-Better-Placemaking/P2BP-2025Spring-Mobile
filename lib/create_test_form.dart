@@ -1,6 +1,7 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:dropdown_button2/dropdown_button2.dart';
+import 'package:flutter/services.dart';
 import 'package:p2bp_2025spring_mobile/db_schema_classes.dart';
 import 'package:p2bp_2025spring_mobile/section_creation_page.dart';
 import 'package:p2bp_2025spring_mobile/standing_points_page.dart';
@@ -21,6 +22,7 @@ class _CreateTestFormState extends State<CreateTestForm> {
 
   DateTime? _selectedDateTime;
   String? _selectedTest;
+  int? _timerSeconds;
 
   List _standingPoints = [];
 
@@ -156,6 +158,41 @@ class _CreateTestFormState extends State<CreateTestForm> {
               },
             ),
             SizedBox(height: 16),
+            _timerTest
+                ? TextFormField(
+                    decoration: InputDecoration(
+                      labelText: 'Test Duration (mm:ss)',
+                      hintText: 'mm:ss',
+                      floatingLabelBehavior: FloatingLabelBehavior.always,
+                      labelStyle: TextStyle(color: Color(0xFF2F6DCF)),
+                      floatingLabelStyle: TextStyle(color: Color(0xFF1A3C70)),
+                      enabledBorder: OutlineInputBorder(
+                          borderSide: BorderSide(color: Color(0xFF2F6DCF))),
+                      focusedBorder: OutlineInputBorder(
+                          borderSide: BorderSide(color: Color(0xFF1A3C70))),
+                      border: OutlineInputBorder(),
+                    ),
+                    onChanged: (value) {
+                      if (value.length != 5) return;
+                      int? seconds;
+                      int? minutes;
+                      seconds = int.tryParse(value.substring(3)) ?? 0;
+                      minutes = int.tryParse(value.substring(0, 2)) ?? 0;
+                      seconds += minutes * 60;
+                      _timerSeconds = seconds;
+                    },
+                    inputFormatters: [MinSecondsFormatter()],
+                    keyboardType: TextInputType.number,
+                    autovalidateMode: AutovalidateMode.onUserInteraction,
+                    validator: (value) {
+                      if (value == null || value.isEmpty) {
+                        return 'Set a time for the timer. Format as mm:ss.';
+                      }
+                      return null;
+                    },
+                  )
+                : SizedBox(),
+            SizedBox(height: _timerTest ? 16 : 0),
             // Dropdown menu for selecting an activity
             DropdownButtonFormField2<String>(
               decoration: InputDecoration(
@@ -243,6 +280,7 @@ class _CreateTestFormState extends State<CreateTestForm> {
                 _standingPoints = [];
                 setState(() {
                   _standingPointsTest = Test.isStandingPointTest(_selectedTest);
+                  _timerTest = Test.isTimerTest(_selectedTest);
                   if (_selectedTest
                           ?.compareTo(SectionCutterTest.collectionIDStatic) ==
                       0) {
@@ -260,11 +298,11 @@ class _CreateTestFormState extends State<CreateTestForm> {
                 return null;
               },
             ),
-            SizedBox(height: 32),
+            SizedBox(height: 16),
             _standingPointsTest
                 ? Row(
                     children: [
-                      Spacer(flex: 1),
+                      Spacer(),
                       Expanded(
                         flex: 2,
                         child: ElevatedButton(
@@ -366,6 +404,11 @@ class _CreateTestFormState extends State<CreateTestForm> {
                           'standingPoints', (value) => _standingPoints,
                           ifAbsent: () => _standingPoints);
                     }
+                    if (_timerTest) {
+                      newTestInfo.update(
+                          'testDuration', (value) => _timerSeconds,
+                          ifAbsent: () => _timerSeconds);
+                    }
                     // Handle form submission
                     Navigator.of(context).pop(newTestInfo);
                   }
@@ -382,6 +425,66 @@ class _CreateTestFormState extends State<CreateTestForm> {
           ],
         ),
       ),
+    );
+  }
+}
+
+class MinSecondsFormatter extends TextInputFormatter {
+  RegExp pattern = RegExp(r'^[0-9:]+$');
+
+  String formatMMSS(String value) {
+    if (value.length != 4) return value;
+    return '${value.substring(0, 2)}:${value.substring(2, 4)}';
+  }
+
+  String getRawInput(String value) {
+    return value.replaceAll(':', '');
+  }
+
+  String fillWithZeros(String value) {
+    if (value.length >= 4) return value;
+    final int emptySpaces = 4 - value.length;
+    return ('0' * emptySpaces) + value;
+  }
+
+  String restrictInput(String value) {
+    if (value.length <= 4) return value;
+    if (value[0] != '0') return value.substring(0, 4);
+    return value.substring(value.length - 4, value.length);
+  }
+
+  @override
+  TextEditingValue formatEditUpdate(
+    TextEditingValue oldValue,
+    TextEditingValue newValue,
+  ) {
+    if (!pattern.hasMatch(newValue.text)) return oldValue;
+
+    TextSelection newSelection = newValue.selection;
+
+    String rawText;
+    String newText = newValue.text;
+
+    rawText = '';
+    if (newText.length < 5) {
+      if (newText == '00:0') {
+        rawText = '';
+      } else {
+        rawText = formatMMSS(fillWithZeros(getRawInput(newText)));
+      }
+    } else if (newText.length == 6) {
+      rawText = formatMMSS(restrictInput(getRawInput(newText)));
+    }
+
+    newSelection = newValue.selection.copyWith(
+      baseOffset: rawText.length,
+      extentOffset: rawText.length,
+    );
+
+    return TextEditingValue(
+      text: rawText,
+      selection: newSelection,
+      composing: TextRange.empty,
     );
   }
 }

@@ -130,6 +130,7 @@ class _ProjectMapCreationState extends State<ProjectMapCreation> {
                 _markers.removeWhere((marker) => marker.markerId == markerId);
                 _standingPoints.removeWhere(
                     (standingPoint) => standingPoint.location == point);
+                _deleteMode = false;
               });
             }
           },
