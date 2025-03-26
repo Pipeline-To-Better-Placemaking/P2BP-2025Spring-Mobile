@@ -1,9 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_core/firebase_core.dart';
-// import 'firebase_options.dart';
-import 'package:firebase_auth/firebase_auth.dart';
 import 'package:p2bp_2025spring_mobile/db_schema_classes.dart';
-import 'create_project_details.dart';
+import 'project_details_page.dart';
 import 'results_panel.dart';
 import 'edit_project_panel.dart';
 import 'forgot_password_page.dart';
@@ -16,8 +14,18 @@ import 'signup_screen.dart';
 import 'home_screen.dart';
 import 'new_home_page.dart';
 import 'project_comparison_page.dart';
-import 'teams_settings_screen.dart';
-import 'search_location_screen.dart';
+
+/// All [Test] subclass's register methods should be called here.
+void registerTestTypes() {
+  LightingProfileTest.register();
+  SectionCutterTest.register();
+  AbsenceOfOrderTest.register();
+  IdentifyingAccessTest.register();
+  PeopleInPlaceTest.register();
+  PeopleInMotionTest.register();
+  NaturePrevalenceTest.register();
+  SpatialBoundariesTest.register();
+}
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -30,6 +38,7 @@ void main() async {
     print("Firebase initialization failed: $e");
     // Handle the error here, maybe show an error screen or fallback UI
   }
+  registerTestTypes(); // Test class setup
   runApp(const MyApp());
 }
 
@@ -57,7 +66,7 @@ class MyApp extends StatelessWidget {
             const CreateProjectAndTeamsPage(),
         '/settings': (context) => const SettingsPage(),
         '/teams_and_invites': (context) => const TeamsAndInvitesPage(),
-        '/create_project_details': (context) => CreateProjectDetails(
+        '/create_project_details': (context) => ProjectDetailsPage(
               projectData: Project.partialProject(
                   title: 'No data sent',
                   description: 'Accessed without project data'),
@@ -69,7 +78,7 @@ class MyApp extends StatelessWidget {
         '/compare_projects': (context) => const ProjectComparisonPage(),
         // Commented out since you need project data to create page.
         // '/search': (context) => const SearchScreen(),
-        '/teams_settings': (context) => TeamSettingsScreen(),
+        // '/teams_settings': (context) => TeamSettingsScreen(),
       },
     );
   }

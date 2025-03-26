@@ -1,6 +1,11 @@
+import 'dart:math';
+
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:google_maps_flutter/google_maps_flutter.dart';
+import 'package:maps_toolkit/maps_toolkit.dart' as mp;
 import 'db_schema_classes.dart';
+import 'google_maps_functions.dart';
 
 final FirebaseFirestore _firestore = FirebaseFirestore.instance;
 final User? _loggedInUser = FirebaseAuth.instance.currentUser;
@@ -56,7 +61,7 @@ Future<String> saveTeam(
   });
   // Currently: invites team members only once team is created.
   for (Member members in membersList) {
-    await _firestore.collection('users').doc(members.getUserID()).update({
+    await _firestore.collection('users').doc(members.userID).update({
       'invites': FieldValue.arrayUnion([_firestore.doc('/teams/$teamID')])
     });
   }
@@ -68,55 +73,61 @@ Future<String> saveTeam(
 }
 
 /// Saves project after project creation in create_project_and_teams.dart. Takes
-/// fields for project: String projectTitle, String description,
-/// DocumentReference teamRef, and List`<GeoPoint>` polygonPoints. Saves it in
+/// fields for project: `String` projectTitle, `String` description,
+/// `DocumentReference` teamRef, and `List<GeoPoint>` polygonPoints. Saves it in
 /// teams collection too.
 Future<Project> saveProject({
   required String projectTitle,
   required String description,
   required DocumentReference? teamRef,
-  required List<GeoPoint> polygonPoints,
+  required List<LatLng> polygonPoints,
+  required List<StandingPoint> standingPoints,
   required num polygonArea,
 }) async {
-  Project tempProject;
-  String projectID = _firestore.collection('projects').doc().id;
+  late Project tempProject;
 
-  if (teamRef == null) {
-    throw Exception(
-        "teamRef not defined when passed to saveProject() in firestore_functions.dart");
+  try {
+    String projectID = _firestore.collection('projects').doc().id;
+    if (teamRef == null) {
+      throw Exception(
+          "teamRef not defined when passed to saveProject() in firestore_functions.dart");
+    }
+
+    await _firestore.collection('projects').doc(projectID).set({
+      'title': projectTitle,
+      'creationTime': FieldValue.serverTimestamp(),
+      'id': projectID,
+      'team': teamRef,
+      'description': description,
+      'polygonPoints': polygonPoints.toGeoPointList(),
+      'standingPoints': StandingPoint.toJsonList(standingPoints),
+      'polygonArea': polygonArea,
+      'tests': [],
+    });
+
+    await _firestore.doc('/${teamRef.path}').update({
+      'projects':
+          FieldValue.arrayUnion([_firestore.doc('/projects/$projectID')])
+    });
+
+    tempProject = Project(
+      teamRef: teamRef,
+      projectID: projectID,
+      title: projectTitle,
+      description: description,
+      polygonPoints: polygonPoints,
+      polygonArea: polygonArea,
+      standingPoints: standingPoints,
+      testRefs: [],
+    );
+  } catch (e, stacktrace) {
+    print('Exception retrieving : $e');
+    print('Stacktrace: $stacktrace');
   }
-
-  await _firestore.collection('projects').doc(projectID).set({
-    'title': projectTitle,
-    'creationTime': FieldValue.serverTimestamp(),
-    // Saves document id as field _id
-    'id': projectID,
-    'team': teamRef,
-    'description': description,
-    'polygonPoints': polygonPoints,
-    'polygonArea': polygonArea,
-  });
-
-  await _firestore.doc('/${teamRef.path}').update({
-    'projects': FieldValue.arrayUnion([_firestore.doc('/projects/$projectID')])
-  });
-
-  tempProject = Project(
-    teamRef: teamRef,
-    projectID: projectID,
-    title: projectTitle,
-    description: description,
-    polygonPoints: polygonPoints,
-    polygonArea: polygonArea,
-  );
-
-  // Debugging print statement.
-  // print("Done in project creation. Putting /projects/$projectID into $teamRef.");
-
   return tempProject;
 }
 
-/// Retrieves project info from Firestore. Returns a Future`<Project>`. Takes
+/// Retrieves project info from Firestore. Returns a `Future<Project>`. Takes
 /// projectID. Uses projectID to retrieve info, then saves it into a Project
 /// object for future use.
 Future<Project> getProjectInfo(String projectID) async {
@@ -126,29 +137,57 @@ Future<Project> getProjectInfo(String projectID) async {
   try {
     projectDoc = await _firestore.collection("projects").doc(projectID).get();
     if (projectDoc.exists && projectDoc.data()!.containsKey('polygonArea')) {
-      project = Project(
-        teamRef: projectDoc['team'],
-        projectID: projectDoc['id'],
-        title: projectDoc['title'],
-        description: projectDoc['description'],
-        polygonPoints: projectDoc['polygonPoints'],
-        polygonArea: projectDoc['polygonArea'],
-      );
+      // Create List of testRefs for Project
+      List<DocumentReference<Map<String, dynamic>>> testRefs = [];
+      if (projectDoc.data()!.containsKey('tests')) {
+        for (final ref in projectDoc['tests']) {
+          testRefs.add(ref);
+        }
+      }
+      // TODO: Remove logic once confirmed standing points for all projects
+      if (projectDoc.data()!.containsKey('standingPoints')) {
+        project = Project(
+          teamRef: projectDoc['team'],
+          projectID: projectDoc['id'],
+          title: projectDoc['title'],
+          description: projectDoc['description'],
+          polygonPoints: (projectDoc['polygonPoints'] as List).toLatLngList(),
+          polygonArea: projectDoc['polygonArea'],
+          standingPoints: [
+            for (final standingPoint in projectDoc['standingPoints'])
+              StandingPoint.fromJson(standingPoint)
+          ],
+          creationTime: projectDoc['creationTime'],
+          testRefs: testRefs,
+        );
+      } else {
+        project = Project(
+          teamRef: projectDoc['team'],
+          projectID: projectDoc['id'],
+          title: projectDoc['title'],
+          description: projectDoc['description'],
+          polygonPoints: (projectDoc['polygonPoints'] as List).toLatLngList(),
+          polygonArea: projectDoc['polygonArea'],
+          standingPoints: [],
+          creationTime: projectDoc['creationTime'],
+          testRefs: testRefs,
+        );
+      }
     } else {
       print(
           'Error in firestore_functions: Either project does not exist in Firestore or polygonArea is not initialized');
       print('Project exists? ${projectDoc.exists}.');
     }
   } catch (e, stacktrace) {
-    print('Exception retrieving teams: $e');
+    print('Exception retrieving project: $e');
     print('Stacktrace: $stacktrace');
   }
   return project;
 }
 
 /// Calling this function returns a future reference to the currently selected
-/// team. If retrieval throws an exception, then returns null. When implementing
-/// this function, check for null before using value.
+/// team. If retrieval throws an exception, then returns `null`. When
+/// implementing this function, check for `null` before using value.
 Future<DocumentReference?> getCurrentTeam() async {
   DocumentReference? teamRef;
   final DocumentSnapshot<Map<String, dynamic>> userDoc;
@@ -192,8 +231,8 @@ Future<List<Project>> getTeamProjects(DocumentReference teamRef) async {
 }
 
 /// Fetches the current user's list of invites (team references). Extracts the
-/// data from them and puts them into a Team object. Returns them as a future
-/// of a list of Team objects. Checks to make sure document exists
+/// data from them and puts them into a `Team` object. Returns them as a future
+/// of a list of `Team` objects. Checks to make sure document exists
 /// and invites field properly created (should *always* be created, failsafe).
 Future<List<Team>> getInvites() async {
   List<Team> teamInvites = [];
@@ -233,8 +272,8 @@ Future<List<Team>> getInvites() async {
 }
 
 /// Fetches the current user's list of teams (team references). Extracts the
-/// data from them and puts them into a Team object. Returns them as a future
-/// of a list of Team objects. Checks to make sure document exists
+/// data from them and puts them into a `Team` object. Returns them as a future
+/// of a list of `Team` objects. Checks to make sure document exists
 /// and teams field properly created (should *always* be created, failsafe).
 Future<List<Team>> getTeamsIDs() async {
   List<Team> teams = [];
@@ -353,7 +392,7 @@ Future<void> addUserToTeam(String teamID) async {
 
 /// Fetches the list of all users in database. Used for inviting members to
 /// to teams. Extracts the name and ID from them and puts them into a list of
-/// Member objects. Returns them as a future of a list of Member objects.
+/// `Member` objects. Returns them as a future of a list of Member objects.
 /// Excludes current, logged in user. List can then be queried accordingly.
 Future<List<Member>> getMembersList() async {
   List<Member> membersList = [];
@@ -377,4 +416,209 @@ Future<List<Member>> getMembersList() async {
     print('Stacktrace: $stacktrace');
   }
   return membersList;
+}
+
+/// Creates a new [Test] from scratch and inserts it into Firestore.
+///
+/// The [testID] is generated here to be used in the [Test] constructor.
+///
+/// Returns the [Test] object representing the instance just inserted
+/// to Firestore.
+Future<Test> saveTest({
+  required String title,
+  required Timestamp scheduledTime,
+  required DocumentReference? projectRef,
+  required String collectionID,
+  List? standingPoints,
+  int? testDuration,
+}) async {
+  late Test tempTest;
+
+  try {
+    if (projectRef == null) {
+      throw Exception('projectRef not defined when passed to createTest()');
+    }
+
+    // Generates test document ID
+    String testID = _firestore.collection(collectionID).doc().id;
+
+    // Creates Test object
+    tempTest = Test.createNew(
+      title: title,
+      testID: testID,
+      scheduledTime: scheduledTime,
+      projectRef: projectRef,
+      collectionID: collectionID,
+      standingPoints: standingPoints,
+      testDuration: testDuration,
+    );
+
+    await tempTest.saveToFirestore();
+
+    // Adds a reference to the Test to the relevant Project in Firestore
+    await _firestore.doc('/${projectRef.path}').update({
+      'tests': FieldValue.arrayUnion([_firestore.doc('/$collectionID/$testID')])
+    });
+  } catch (e, stacktrace) {
+    print('Exception retrieving : $e');
+    print('Stacktrace: $stacktrace');
+  }
+
+  return tempTest;
+}
+
+/// Retrieves test info from Firestore.
+///
+/// When successful, this returns a
+/// [Future] of a [Test] containing all info
+/// from the desired test.
+///
+/// Returns null if there is an error.
+Future<Test> getTestInfo(
+    DocumentReference<Map<String, dynamic>> testRef) async {
+  late Test test;
+  final DocumentSnapshot<Map<String, dynamic>> testDoc;
+
+  try {
+    testDoc = await testRef.get();
+    if (testDoc.exists && testDoc.data()!.containsKey('scheduledTime')) {
+      test = Test.recreateFromDoc(testDoc);
+    } else {
+      if (!testDoc.exists) {
+        throw Exception('test-does-not-exist (testRef: ${testRef.path})');
+      } else {
+        throw Exception('retrieved-test-is-invalid (testRef: ${testRef.path})');
+      }
+    }
+  } catch (e, stacktrace) {
+    print('Exception retrieving : $e');
+    print('Stacktrace: $stacktrace');
+  }
+
+  return test;
+}
+
+extension GeoPointConversion on GeoPoint {
+  /// Takes a [GeoPoint] representation of a point and converts it to a
+  /// [LatLng]. Returns that [LatLng].
+  LatLng toLatLng() {
+    return LatLng(latitude, longitude);
+  }
+}
+
+extension LatLngConversion on LatLng {
+  /// Takes a [LatLng] representation of a point and converts it to a
+  /// [GeoPoint]. Returns that [GeoPoint].
+  GeoPoint toGeoPoint() {
+    return GeoPoint(latitude, longitude);
+  }
+}
+
+extension LatLngListConversion on List<LatLng> {
+  /// Extension function on [List`<LatLng>`]. Converts the list to a list of
+  /// [GeoPoint]s for storing in Firestore. Returns the [List`<GeoPoint>`].
+  List<GeoPoint> toGeoPointList() {
+    List<GeoPoint> newGeoPointList = [];
+    forEach((coordinate) {
+      newGeoPointList.add(GeoPoint(coordinate.latitude, coordinate.longitude));
+    });
+    return newGeoPointList;
+  }
+}
+
+extension GeoPointListConversion on List<GeoPoint> {
+  /// Extension function on [List]`<`[GeoPoint]`>`. Converts the list to a list
+  /// of [LatLng]s for use locally in application. Returns the
+  /// [List]`<`[LatLng]`>`.
+  List<LatLng> toLatLngList() {
+    List<LatLng> newLatLngList = [];
+    forEach((coordinate) {
+      newLatLngList.add(LatLng(coordinate.latitude, coordinate.longitude));
+    });
+    return newLatLngList;
+  }
+}
+
+extension PolygonHelpers on Polygon {
+  /// Extension function on [Polygon]. Takes a [Polygon] and converts it to a
+  /// list of [GeoPoint]s for Firestore storing. Returns the
+  /// [List]`<`[GeoPoint]`>`.
+  List<GeoPoint> toGeoPointList() {
+    List<GeoPoint> geoPointRepresentation = [];
+    if (points.isEmpty) return geoPointRepresentation;
+    for (var point in points) {
+      geoPointRepresentation.add(GeoPoint(point.latitude, point.longitude));
+    }
+    return geoPointRepresentation;
+  }
+
+  /// Extension function on [Polygon]. Takes a [Polygon] and converts it to a
+  /// list of [mp.LatLng]s for maps toolkit functions. Returns the
+  /// [List]`<`[mp.LatLng]`>`.
+  List<mp.LatLng> toMPLatLngList() {
+    List<mp.LatLng> latLngRepresentation = [];
+    if (points.isEmpty) return latLngRepresentation;
+    for (var point in points) {
+      latLngRepresentation.add(mp.LatLng(point.latitude, point.longitude));
+    }
+    return latLngRepresentation;
+  }
+
+  /// Returns the area covered by this polygon in square feet.
+  double getAreaInSquareFeet() {
+    return (mp.SphericalUtil.computeArea(toMPLatLngList()) *
+            pow(feetPerMeter, 2))
+        .toDouble();
+  }
+}
+
+extension PolylineHelpers on Polyline {
+  /// Extension function on [Polyline]. Takes a [Polyline] and converts it to a
+  /// list of [GeoPoint]s for Firestore storing. Returns the
+  /// [List]`<`[GeoPoint]`>`.
+  List<GeoPoint> toGeoPointList() {
+    List<GeoPoint> geoPointRepresentation = [];
+    if (points.isEmpty) return geoPointRepresentation;
+    for (var point in points) {
+      geoPointRepresentation.add(GeoPoint(point.latitude, point.longitude));
+    }
+    return geoPointRepresentation;
+  }
+
+  /// Extension function on [Polyline]. Takes a [Polyline] and converts it to a
+  /// list of [mp.LatLng]s for maps toolkit functions. Returns the
+  /// [List]`<`[mp.LatLng]`>`.
+  List<mp.LatLng> toMPLatLngList() {
+    List<mp.LatLng> latLngRepresentation = [];
+    if (points.isEmpty) return latLngRepresentation;
+    for (var point in points) {
+      latLngRepresentation.add(mp.LatLng(point.latitude, point.longitude));
+    }
+    return latLngRepresentation;
+  }
+
+  /// Returns the length of this polyline in feet.
+  double getLengthInFeet() {
+    return (mp.SphericalUtil.computeLength(toMPLatLngList()) * feetPerMeter)
+        .toDouble();
+  }
+}
+
+extension DynamicLatLngExtraction on List<dynamic> {
+  /// Extension function on [List]`<`[dynamic]`>`. Takes any objects of type
+  /// [GeoPoint] out of the list, converts them to [LatLng], and returns a new
+  /// [List]`<`[LatLng]`>`. Primarily used when Firestore returns a
+  /// [List]`<`[dynamic]`>`, to extract the coordinates for further use.
+  List<LatLng> toLatLngList() {
+    List<LatLng> newLatLngList = [];
+    forEach((coordinate) {
+      if (coordinate.runtimeType == GeoPoint) {
+        newLatLngList.add(LatLng(coordinate.latitude, coordinate.longitude));
+      }
+      if (coordinate.runtimeType == LatLng) {
+        newLatLngList.add(coordinate);
+      }
+    });
+    return newLatLngList;
+  }
 }

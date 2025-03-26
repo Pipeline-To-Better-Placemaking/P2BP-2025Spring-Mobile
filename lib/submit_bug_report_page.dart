@@ -77,7 +77,7 @@ class _SubmitBugReportFormState extends State<SubmitBugReportForm> {
           'description': descText,
           'creationTime': FieldValue.serverTimestamp(),
         });
-
+        if (!mounted) return;
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text('Report submitted successfully! Thank you!'),
