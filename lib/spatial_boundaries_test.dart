@@ -645,7 +645,7 @@ class _SpatialBoundariesTestPageState extends State<SpatialBoundariesTestPage> {
                       child: DataEditMenu(
                         title: 'Boundary Color Guide',
                         colorLegendItems: [
-                          for (final type in SpatialBoundaryType.values)
+                          for (final type in BoundaryType.values)
                             ColorLegendItem(
                               label: type.displayName,
                               color: type.color,
