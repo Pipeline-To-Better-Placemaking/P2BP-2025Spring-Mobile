@@ -93,8 +93,7 @@ class _LightingProfileTestPageState extends State<LightingProfileTestPage> {
   /// selected after this point is placed.
   Future<void> _togglePoint(LatLng point) async {
     try {
-      if (!mp.PolygonUtil.containsLocation(
-          point.toMPLatLng(), _projectArea, true)) {
+      if (!isPointInsidePolygon(point, _polygons.first)) {
         setState(() {
           _outsidePoint = true;
         });
@@ -234,15 +233,15 @@ class _LightingProfileTestPageState extends State<LightingProfileTestPage> {
                                 padding: const EdgeInsets.symmetric(
                                     horizontal: 15.0, vertical: 15.0),
                                 child: DirectionsText(
-                                    onTap: () {
-                                      setState(() {
-                                        _directionsVisible =
-                                            !_directionsVisible;
-                                      });
-                                    },
-                                    text: !_isTypeSelected
-                                        ? 'Select a type of light.'
-                                        : 'Drop a pin where the light is.'),
+                                  onTap: () {
+                                    setState(() {
+                                      _directionsVisible = !_directionsVisible;
+                                    });
+                                  },
+                                  text: !_isTypeSelected
+                                      ? 'Select a type of light.'
+                                      : 'Drop a pin where the light is.',
+                                ),
                               )
                             : SizedBox(),
                       ),

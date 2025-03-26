@@ -215,7 +215,7 @@ bool isPointInsidePolygon(LatLng point, Polygon polygon) {
   return mp.PolygonUtil.containsLocation(
     mp.LatLng(point.latitude, point.longitude),
     mpPolygon,
-    false, // Edge considered outside; change as needed.
+    true, // Edge considered inside; change as needed.
   );
 }
 

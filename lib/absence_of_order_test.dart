@@ -116,8 +116,7 @@ class _AbsenceOfOrderTestPageState extends State<AbsenceOfOrderTestPage> {
   /// [_tempDataPoint] to the appropriate `List` in [_newData].
   void _togglePoint(LatLng point) async {
     try {
-      if (!mp.PolygonUtil.containsLocation(
-          mp.LatLng(point.latitude, point.longitude), _projectArea, true)) {
+      if (!isPointInsidePolygon(point, _polygons.first)) {
         setState(() {
           _outsidePoint = true;
         });
@@ -146,6 +145,7 @@ class _AbsenceOfOrderTestPageState extends State<AbsenceOfOrderTestPage> {
 
         _setTempData(null);
       });
+
       if (_outsidePoint) {
         // TODO: fix delay. delay will overlap with consecutive taps. this means taps do not necessarily refresh the timer and will end prematurely
         await Future.delayed(const Duration(seconds: 2));
@@ -277,15 +277,15 @@ class _AbsenceOfOrderTestPageState extends State<AbsenceOfOrderTestPage> {
                                 padding: const EdgeInsets.symmetric(
                                     horizontal: 15.0, vertical: 15.0),
                                 child: DirectionsText(
-                                    onTap: () {
-                                      setState(() {
-                                        _directionsVisible =
-                                            !_directionsVisible;
-                                      });
-                                    },
-                                    text: !_isDescriptionReady
-                                        ? 'Select a type of misconduct.'
-                                        : 'Drop a pin where the misconduct is.'),
+                                  onTap: () {
+                                    setState(() {
+                                      _directionsVisible = !_directionsVisible;
+                                    });
+                                  },
+                                  text: !_isDescriptionReady
+                                      ? 'Select a type of misconduct.'
+                                      : 'Drop a pin where the misconduct is.',
+                                ),
                               )
                             : SizedBox(),
                       ),
