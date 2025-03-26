@@ -346,12 +346,12 @@ class _IdentifyingAccessState extends State<IdentifyingAccess> {
                           mainAxisAlignment: MainAxisAlignment.start,
                           children: [
                             DirectionsButton(
-                                onTap: () {
-                                  setState(() {
-                                    _directionsVisible = !_directionsVisible;
-                                  });
-                                },
-                                visibility: _directionsVisible),
+                              onTap: () {
+                                setState(() {
+                                  _directionsVisible = !_directionsVisible;
+                                });
+                              },
+                            ),
                             CircularIconMapButton(
                               backgroundColor: Colors.green,
                               borderColor: Color(0xFF2D6040),

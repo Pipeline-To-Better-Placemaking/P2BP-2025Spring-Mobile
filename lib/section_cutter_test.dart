@@ -121,12 +121,12 @@ class _SectionCutterState extends State<SectionCutter> {
                 ),
               ),
               DirectionsButton(
-                  onTap: () {
-                    setState(() {
-                      _directionsVisible = !_directionsVisible;
-                    });
-                  },
-                  visibility: _directionsVisible),
+                onTap: () {
+                  setState(() {
+                    _directionsVisible = !_directionsVisible;
+                  });
+                },
+              ),
               Align(
                 alignment: Alignment.bottomLeft,
                 child: Padding(

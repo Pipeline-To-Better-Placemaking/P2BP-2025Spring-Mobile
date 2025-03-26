@@ -747,13 +747,11 @@ class DirectionsButton extends StatelessWidget {
   const DirectionsButton({
     super.key,
     required this.onTap,
-    required this.visibility,
     this.buttonPadding,
   });
 
   final VoidCallback? onTap;
   final EdgeInsets? buttonPadding;
-  final bool visibility;
 
   @override
   Widget build(BuildContext context) {

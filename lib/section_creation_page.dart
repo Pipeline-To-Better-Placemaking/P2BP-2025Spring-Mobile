@@ -159,7 +159,6 @@ class _SectionCreationPageState extends State<SectionCreationPage> {
                                   _directionsVisible = !_directionsVisible;
                                 });
                               },
-                              visibility: _directionsVisible,
                             ),
                           ],
                         ),

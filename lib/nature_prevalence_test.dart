@@ -51,7 +51,7 @@ class _NaturePrevalenceState extends State<NaturePrevalence> {
 
   Timer? _timer;
   int _remainingSeconds = -1;
-  bool _testIsRunning = false;
+  bool _isTestRunning = false;
 
   final NatureData _natureData = NatureData();
 
@@ -93,13 +93,13 @@ class _NaturePrevalenceState extends State<NaturePrevalence> {
 
   void _startTest() {
     setState(() {
-      _testIsRunning = true;
+      _isTestRunning = true;
     });
     _timer = Timer.periodic(Duration(seconds: 1), (timer) {
       setState(() {
         _remainingSeconds--;
         if (_remainingSeconds <= 0) {
-          _testIsRunning = false;
+          _isTestRunning = false;
           timer.cancel();
           showDialog(
             context: context,
@@ -874,9 +874,9 @@ class _NaturePrevalenceState extends State<NaturePrevalence> {
                           children: <Widget>[
                             TimerButtonAndDisplay(
                               onPressed: () {
-                                if (_testIsRunning) {
+                                if (_isTestRunning) {
                                   setState(() {
-                                    _testIsRunning = false;
+                                    _isTestRunning = false;
                                     _timer?.cancel();
                                     _clearTypes();
                                   });
@@ -884,7 +884,7 @@ class _NaturePrevalenceState extends State<NaturePrevalence> {
                                   _startTest();
                                 }
                               },
-                              testIsRunning: _testIsRunning,
+                              testIsRunning: _isTestRunning,
                               remainingSeconds: _remainingSeconds,
                             )
                           ],
@@ -915,12 +915,12 @@ class _NaturePrevalenceState extends State<NaturePrevalence> {
                             Align(
                               alignment: Alignment.topRight,
                               child: DirectionsButton(
-                                  onTap: () {
-                                    setState(() {
-                                      _directionsVisible = !_directionsVisible;
-                                    });
-                                  },
-                                  visibility: _directionsVisible),
+                                onTap: () {
+                                  setState(() {
+                                    _directionsVisible = !_directionsVisible;
+                                  });
+                                },
+                              ),
                             ),
                             Align(
                               alignment: Alignment.topRight,
@@ -1039,7 +1039,7 @@ class _NaturePrevalenceState extends State<NaturePrevalence> {
                                   onPressed: (_pointMode ||
                                           _polygonMode ||
                                           _deleteMode ||
-                                          !_testIsRunning)
+                                          !_isTestRunning)
                                       ? null
                                       : () {
                                           showModalAnimal(context);
@@ -1050,7 +1050,7 @@ class _NaturePrevalenceState extends State<NaturePrevalence> {
                                   onPressed: (_pointMode ||
                                           _polygonMode ||
                                           _deleteMode ||
-                                          !_testIsRunning)
+                                          !_isTestRunning)
                                       ? null
                                       : () {
                                           showModalVegetation(context);
@@ -1079,7 +1079,7 @@ class _NaturePrevalenceState extends State<NaturePrevalence> {
                                   onPressed: (_pointMode ||
                                           _polygonMode ||
                                           _deleteMode ||
-                                          !_testIsRunning)
+                                          !_isTestRunning)
                                       ? null
                                       : () {
                                           showModalWaterBody(context);
@@ -1155,7 +1155,7 @@ class _NaturePrevalenceState extends State<NaturePrevalence> {
                                       onPressed: (_pointMode ||
                                               _polygonMode ||
                                               _deleteMode ||
-                                              _testIsRunning)
+                                              _isTestRunning)
                                           ? null
                                           : () {
                                               showDialog(
