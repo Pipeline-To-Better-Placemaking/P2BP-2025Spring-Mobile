@@ -1,11 +1,14 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:maps_toolkit/maps_toolkit.dart' as mp;
 import 'package:p2bp_2025spring_mobile/firestore_functions.dart';
 import 'package:p2bp_2025spring_mobile/theme.dart';
 import 'package:p2bp_2025spring_mobile/widgets.dart';
-import 'google_maps_functions.dart';
+
 import 'db_schema_classes.dart';
+import 'google_maps_functions.dart';
 
 /// Returns a `List<TextButton>` using [options] as `Text` child.
 /// [selectedList] should be a reference to a list containing the values
@@ -183,7 +186,7 @@ class _AbsenceOfOrderTestPageState extends State<AbsenceOfOrderTestPage> {
   Widget build(BuildContext context) {
     // Updates flag for whether _tempDataPoint has a description for data point
     bool isDescriptionReady = (_tempDataPoint != null);
-    return SafeArea(
+    return AdaptiveSafeArea(
       child: Scaffold(
         resizeToAvoidBottomInset: false,
         extendBody: true,
