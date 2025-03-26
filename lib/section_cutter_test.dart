@@ -51,7 +51,7 @@ class _SectionCutterState extends State<SectionCutter> {
   final Set<Polygon> _polygons = {};
   Set<Polyline> _polyline = {};
   List<LatLng> _sectionPoints = [];
-  bool _directionsVisible = true;
+  bool _directionsVisible = false;
 
   Project? project;
 
@@ -120,13 +120,12 @@ class _SectionCutterState extends State<SectionCutter> {
                   mapType: _currentMapType, // Use current map type
                 ),
               ),
-              DirectionsWidget(
+              DirectionsButton(
                   onTap: () {
                     setState(() {
                       _directionsVisible = !_directionsVisible;
                     });
                   },
-                  text: _directions,
                   visibility: _directionsVisible),
               Align(
                 alignment: Alignment.bottomLeft,

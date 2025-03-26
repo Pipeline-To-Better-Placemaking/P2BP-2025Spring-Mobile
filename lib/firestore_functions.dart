@@ -430,6 +430,7 @@ Future<Test> saveTest({
   required DocumentReference? projectRef,
   required String collectionID,
   List? standingPoints,
+  int? testDuration,
 }) async {
   late Test tempTest;
 
@@ -449,6 +450,7 @@ Future<Test> saveTest({
       projectRef: projectRef,
       collectionID: collectionID,
       standingPoints: standingPoints,
+      testDuration: testDuration,
     );
 
     await tempTest.saveToFirestore();

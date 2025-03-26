@@ -292,6 +292,9 @@ class _ProjectDetailsPageState extends State<ProjectDetailsPage> {
       standingPoints: newTestInfo.containsKey('standingPoints')
           ? newTestInfo['standingPoints']
           : null,
+      testDuration: newTestInfo.containsKey('testDuration')
+          ? newTestInfo['testDuration']
+          : null,
     );
     setState(() {
       widget.projectData.tests?.add(test);
@@ -423,7 +426,7 @@ class TestCard extends StatelessWidget {
                       tooltip: 'Start test',
                       onPressed: () async {
                         if (test.isComplete) {
-                          final bool doOverwrite = await showDialog(
+                          final bool? doOverwrite = await showDialog(
                             context: context,
                             builder: (context) {
                               return RedoConfirmationWidget(
@@ -432,7 +435,9 @@ class TestCard extends StatelessWidget {
                               );
                             },
                           );
-                          if (doOverwrite && context.mounted) {
+                          if (doOverwrite != null &&
+                              doOverwrite &&
+                              context.mounted) {
                             Navigator.push(
                               context,
                               MaterialPageRoute(

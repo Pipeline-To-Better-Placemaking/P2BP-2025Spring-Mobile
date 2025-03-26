@@ -78,6 +78,10 @@ class _SectionCreationPageState extends State<SectionCreationPage> {
             setState(() {
               _linePoints.remove(point);
               _markers.removeWhere((marker) => marker.markerId == markerId);
+              final Polyline? polyline =
+                  createPolyline(_linePoints, Colors.green[600]!);
+              if (polyline == null) return;
+              _polyline = polyline;
             });
           },
         ),
@@ -142,14 +146,22 @@ class _SectionCreationPageState extends State<SectionCreationPage> {
                           mapType: _currentMapType, // Use current map type
                           onTap: _polylineTap,
                         ),
-                        DirectionsWidget(
-                          onTap: () {
-                            setState(() {
-                              _directionsVisible = !_directionsVisible;
-                            });
-                          },
-                          text: _directions,
-                          visibility: _directionsVisible,
+                        Row(
+                          children: [
+                            Center(
+                                child: DirectionsText(
+                              onTap: () {},
+                              text: _directions,
+                            )),
+                            DirectionsButton(
+                              onTap: () {
+                                setState(() {
+                                  _directionsVisible = !_directionsVisible;
+                                });
+                              },
+                              visibility: _directionsVisible,
+                            ),
+                          ],
                         ),
                         Align(
                           alignment: Alignment.bottomLeft,
