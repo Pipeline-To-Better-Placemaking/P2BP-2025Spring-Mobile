@@ -192,7 +192,7 @@ class _AbsenceOfOrderTestPageState extends State<AbsenceOfOrderTestPage> {
             : Stack(
                 children: <Widget>[
                   SizedBox(
-                    height: MediaQuery.of(context).size.height,
+                    height: MediaQuery.sizeOf(context).height,
                     child: GoogleMap(
                       padding: EdgeInsets.only(bottom: _bottomSheetHeight),
                       onMapCreated: _onMapCreated,
@@ -210,19 +210,17 @@ class _AbsenceOfOrderTestPageState extends State<AbsenceOfOrderTestPage> {
                     children: <Widget>[
                       Padding(
                         padding: const EdgeInsets.only(top: 15.0, left: 15.0),
-                        child: Column(
-                          mainAxisSize: MainAxisSize.min,
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: <Widget>[
-                            TimerButtonAndDisplay(
-                              onPressed: () {},
-                              testIsRunning: _isTestRunning,
-                              remainingSeconds: _remainingSeconds,
-                            )
-                          ],
+                        child: TimerButtonAndDisplay(
+                          onPressed: () {
+                            setState(() {
+                              _isTestRunning = !_isTestRunning;
+                            });
+                          },
+                          isTestRunning: _isTestRunning,
+                          remainingSeconds: _remainingSeconds,
                         ),
                       ),
-                      Flexible(
+                      Expanded(
                         child: _directionsVisible
                             ? Padding(
                                 padding: const EdgeInsets.symmetric(
@@ -243,49 +241,32 @@ class _AbsenceOfOrderTestPageState extends State<AbsenceOfOrderTestPage> {
                       Padding(
                         padding: const EdgeInsets.only(top: 15, right: 15),
                         child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.end,
                           spacing: 10,
                           children: <Widget>[
-                            Align(
-                              alignment: Alignment.topRight,
-                              child: DirectionsButton(
-                                onTap: () {
-                                  setState(() {
-                                    _directionsVisible = !_directionsVisible;
-                                  });
-                                },
-                              ),
+                            DirectionsButton(
+                              onTap: () {
+                                setState(() {
+                                  _directionsVisible = !_directionsVisible;
+                                });
+                              },
                             ),
-                            Align(
-                              alignment: Alignment.topRight,
-                              child: CircularIconMapButton(
-                                backgroundColor: Colors.green,
-                                borderColor: Color(0xFF2D6040),
-                                onPressed: _toggleMapType,
-                                icon: const Icon(Icons.map),
-                              ),
+                            CircularIconMapButton(
+                              backgroundColor: Colors.green,
+                              borderColor: Color(0xFF2D6040),
+                              onPressed: _toggleMapType,
+                              icon: const Icon(Icons.map),
                             ),
                           ],
                         ),
                       ),
                     ],
                   ),
-                  Align(
-                    alignment: Alignment.bottomLeft,
-                    child: Padding(
-                      padding: const EdgeInsets.only(
-                        left: 10,
-                        right: 10,
-                        bottom: _bottomSheetHeight + 30,
-                      ),
-                      child: FloatingActionButton(
-                        heroTag: null,
-                        onPressed: _toggleMapType,
-                        backgroundColor: Colors.green,
-                        child: const Icon(Icons.map),
-                      ),
+                  if (_outsidePoint)
+                    Padding(
+                      padding:
+                          const EdgeInsets.only(bottom: _bottomSheetHeight),
+                      child: TestErrorText(),
                     ),
-                  ),
                 ],
               ),
         bottomSheet: _isLoading
@@ -385,7 +366,6 @@ class _AbsenceOfOrderTestPageState extends State<AbsenceOfOrderTestPage> {
                           ),
                         ],
                       ),
-                      _outsidePoint ? TestErrorText() : SizedBox(),
                     ],
                   ),
                 ),

@@ -131,28 +131,45 @@ class _SectionCreationPageState extends State<SectionCreationPage> {
             : Stack(
                 children: [
                   SizedBox(
-                    height: MediaQuery.of(context).size.height,
-                    child: Stack(
-                      children: [
-                        GoogleMap(
-                          onMapCreated: _onMapCreated,
-                          initialCameraPosition:
-                              CameraPosition(target: _location, zoom: _zoom),
-                          polygons: _polygons,
-                          polylines: {if (_polyline != null) _polyline!},
-                          markers: (_markers.isNotEmpty)
-                              ? {_markers.first, _markers.last}
-                              : {},
-                          mapType: _currentMapType, // Use current map type
-                          onTap: _polylineTap,
-                        ),
-                        Row(
-                          children: [
-                            Center(
+                    height: MediaQuery.sizeOf(context).height,
+                    child: GoogleMap(
+                      onMapCreated: _onMapCreated,
+                      initialCameraPosition:
+                          CameraPosition(target: _location, zoom: _zoom),
+                      polygons: _polygons,
+                      polylines: {if (_polyline != null) _polyline!},
+                      markers: (_markers.isNotEmpty)
+                          ? {_markers.first, _markers.last}
+                          : {},
+                      mapType: _currentMapType, // Use current map type
+                      onTap: _polylineTap,
+                    ),
+                  ),
+                  Row(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Expanded(
+                        child: _directionsVisible
+                            ? Padding(
+                                padding: const EdgeInsets.symmetric(
+                                    horizontal: 15.0, vertical: 15.0),
                                 child: DirectionsText(
-                              onTap: () {},
-                              text: _directions,
-                            )),
+                                  onTap: () {
+                                    setState(() {
+                                      _directionsVisible = !_directionsVisible;
+                                    });
+                                  },
+                                  text: _directions,
+                                ),
+                              )
+                            : SizedBox(),
+                      ),
+                      Padding(
+                        padding: const EdgeInsets.only(top: 15, right: 15),
+                        child: Column(
+                          spacing: 10,
+                          children: <Widget>[
                             DirectionsButton(
                               onTap: () {
                                 setState(() {
@@ -160,16 +177,14 @@ class _SectionCreationPageState extends State<SectionCreationPage> {
                                 });
                               },
                             ),
-                          ],
-                        ),
-                        Align(
-                          alignment: Alignment.bottomLeft,
-                          child: Padding(
-                            padding: const EdgeInsets.only(
-                                left: 10.0, bottom: 130.0),
-                            child: FloatingActionButton(
-                              tooltip: 'Clear all.',
-                              heroTag: null,
+                            CircularIconMapButton(
+                              backgroundColor: Colors.green,
+                              borderColor: Color(0xFF2D6040),
+                              onPressed: _toggleMapType,
+                              icon: const Icon(Icons.map),
+                            ),
+                            CircularIconMapButton(
+                              borderColor: Color(0xFF2D6040),
                               onPressed: () {
                                 setState(() {
                                   _markers = {};
@@ -181,68 +196,54 @@ class _SectionCreationPageState extends State<SectionCreationPage> {
                                 });
                               },
                               backgroundColor: Colors.red,
-                              child: Icon(
+                              icon: Icon(
                                 Icons.delete_sweep,
                                 size: 30,
                               ),
-                            ),
-                          ),
+                            )
+                          ],
                         ),
-                        Align(
-                          alignment: Alignment.bottomLeft,
-                          child: Padding(
-                            padding: EdgeInsets.only(left: 10.0, bottom: 50),
-                            child: FloatingActionButton(
-                              tooltip: 'Change map type.',
-                              onPressed: _toggleMapType,
-                              backgroundColor: Colors.green,
-                              child: const Icon(Icons.map),
-                            ),
+                      ),
+                    ],
+                  ),
+                  Padding(
+                    padding: EdgeInsets.only(bottom: 5),
+                    child: Align(
+                      alignment: Alignment.bottomCenter,
+                      child: FilledButton.icon(
+                        style: FilledButton.styleFrom(
+                          padding: const EdgeInsets.only(left: 15, right: 15),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(15.0),
                           ),
+                          elevation: 3.0,
+                          shadowColor: Colors.black,
+                          foregroundColor: Colors.white,
+                          backgroundColor: Colors.black,
+                          iconColor: Colors.white,
+                          disabledBackgroundColor: disabledGrey,
                         ),
-                        Padding(
-                          padding: EdgeInsets.only(bottom: 5),
-                          child: Align(
-                            alignment: Alignment.bottomCenter,
-                            child: FilledButton.icon(
-                              style: FilledButton.styleFrom(
-                                padding:
-                                    const EdgeInsets.only(left: 15, right: 15),
-                                shape: RoundedRectangleBorder(
-                                  borderRadius: BorderRadius.circular(15.0),
-                                ),
-                                elevation: 3.0,
-                                shadowColor: Colors.black,
-                                foregroundColor: Colors.white,
-                                backgroundColor: Colors.black,
-                                iconColor: Colors.white,
-                                disabledBackgroundColor: disabledGrey,
-                              ),
-                              onPressed: _isLoading
-                                  ? null
-                                  : () {
-                                      try {
-                                        setState(() {
-                                          _isLoading = true;
-                                        });
-                                        Navigator.pop(
-                                            context, _polyline?.points);
-                                      } catch (e, stacktrace) {
-                                        print(
-                                            "Exception in confirming section (section_creation_point.dart): $e");
-                                        print("Stacktrace: $stacktrace");
-                                      }
-                                    },
-                              label: Text('Confirm'),
-                              icon: const Icon(Icons.check),
-                              iconAlignment: IconAlignment.end,
-                            ),
-                          ),
-                        ),
-                        _outsidePoint ? TestErrorText() : SizedBox(),
-                      ],
+                        onPressed: _isLoading
+                            ? null
+                            : () {
+                                try {
+                                  setState(() {
+                                    _isLoading = true;
+                                  });
+                                  Navigator.pop(context, _polyline?.points);
+                                } catch (e, stacktrace) {
+                                  print(
+                                      "Exception in confirming section (section_creation_point.dart): $e");
+                                  print("Stacktrace: $stacktrace");
+                                }
+                              },
+                        label: Text('Confirm'),
+                        icon: const Icon(Icons.check),
+                        iconAlignment: IconAlignment.end,
+                      ),
                     ),
                   ),
+                  _outsidePoint ? TestErrorText() : SizedBox(),
                 ],
               ),
       ),

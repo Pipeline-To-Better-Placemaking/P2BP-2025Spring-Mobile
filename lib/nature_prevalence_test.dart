@@ -868,29 +868,23 @@ class _NaturePrevalenceState extends State<NaturePrevalence> {
                     children: <Widget>[
                       Padding(
                         padding: const EdgeInsets.only(top: 15.0, left: 15.0),
-                        child: Column(
-                          mainAxisSize: MainAxisSize.min,
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: <Widget>[
-                            TimerButtonAndDisplay(
-                              onPressed: () {
-                                if (_isTestRunning) {
-                                  setState(() {
-                                    _isTestRunning = false;
-                                    _timer?.cancel();
-                                    _clearTypes();
-                                  });
-                                } else {
-                                  _startTest();
-                                }
-                              },
-                              testIsRunning: _isTestRunning,
-                              remainingSeconds: _remainingSeconds,
-                            )
-                          ],
+                        child: TimerButtonAndDisplay(
+                          onPressed: () {
+                            if (_isTestRunning) {
+                              setState(() {
+                                _isTestRunning = false;
+                                _timer?.cancel();
+                                _clearTypes();
+                              });
+                            } else {
+                              _startTest();
+                            }
+                          },
+                          isTestRunning: _isTestRunning,
+                          remainingSeconds: _remainingSeconds,
                         ),
                       ),
-                      Flexible(
+                      Expanded(
                         child: _directionsVisible
                             ? Padding(
                                 padding: const EdgeInsets.symmetric(
@@ -909,56 +903,45 @@ class _NaturePrevalenceState extends State<NaturePrevalence> {
                       Padding(
                         padding: const EdgeInsets.only(top: 15.0, right: 15.0),
                         child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.end,
                           spacing: 10,
                           children: [
-                            Align(
-                              alignment: Alignment.topRight,
-                              child: DirectionsButton(
-                                onTap: () {
-                                  setState(() {
-                                    _directionsVisible = !_directionsVisible;
-                                  });
-                                },
-                              ),
+                            DirectionsButton(
+                              onTap: () {
+                                setState(() {
+                                  _directionsVisible = !_directionsVisible;
+                                });
+                              },
                             ),
-                            Align(
-                              alignment: Alignment.topRight,
-                              child: CircularIconMapButton(
-                                backgroundColor: Colors.green,
-                                borderColor: Color(0xFF2D6040),
-                                onPressed: _toggleMapType,
-                                icon: const Icon(Icons.map),
-                              ),
+                            CircularIconMapButton(
+                              backgroundColor: Colors.green,
+                              borderColor: Color(0xFF2D6040),
+                              onPressed: _toggleMapType,
+                              icon: const Icon(Icons.map),
                             ),
                             (!_polygonMode && !_pointMode)
-                                ? Align(
-                                    alignment: Alignment.topRight,
-                                    child: CircularIconMapButton(
-                                      borderColor: Color(0xFF2D6040),
-                                      onPressed: () {
-                                        setState(() {
-                                          _deleteMode = !_deleteMode;
-                                          if (_deleteMode == true) {
-                                            _outsidePoint = false;
-                                            _errorText =
-                                                'You are in delete mode.';
-                                          } else {
-                                            _outsidePoint = false;
-                                            _errorText =
-                                                'You tried to place a point outside of the project area!';
-                                          }
-                                        });
-                                      },
-                                      backgroundColor: _deleteMode
-                                          ? Colors.blue
-                                          : Colors.red,
-                                      icon: Icon(
-                                        _deleteMode
-                                            ? Icons.location_on
-                                            : Icons.delete,
-                                        size: 30,
-                                      ),
+                                ? CircularIconMapButton(
+                                    borderColor: Color(0xFF2D6040),
+                                    onPressed: () {
+                                      setState(() {
+                                        _deleteMode = !_deleteMode;
+                                        if (_deleteMode == true) {
+                                          _outsidePoint = false;
+                                          _errorText =
+                                              'You are in delete mode.';
+                                        } else {
+                                          _outsidePoint = false;
+                                          _errorText =
+                                              'You tried to place a point outside of the project area!';
+                                        }
+                                      });
+                                    },
+                                    backgroundColor:
+                                        _deleteMode ? Colors.blue : Colors.red,
+                                    icon: Icon(
+                                      _deleteMode
+                                          ? Icons.location_on
+                                          : Icons.delete,
+                                      size: 30,
                                     ),
                                   )
                                 : SizedBox(),
@@ -983,6 +966,12 @@ class _NaturePrevalenceState extends State<NaturePrevalence> {
                       ),
                     ),
                   ),
+                  if (_outsidePoint || _deleteMode)
+                    TestErrorText(
+                      text: _errorText,
+                      padding: EdgeInsets.fromLTRB(
+                          20, 0, 20, _bottomSheetHeight + 30),
+                    ),
                 ],
               ),
         bottomSheet: _isLoading
@@ -1177,9 +1166,6 @@ class _NaturePrevalenceState extends State<NaturePrevalence> {
                         ],
                       ),
                     ),
-                    (_outsidePoint || _deleteMode)
-                        ? TestErrorText(text: _errorText)
-                        : SizedBox(),
                   ],
                 ),
               ),
