@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:p2bp_2025spring_mobile/custom_material_colors.dart';
 
 // Color constants:
 /// Default color used when test buttons are disabled.
@@ -30,12 +31,30 @@ class WaterBodyColors {
   static const Color nullBlue = Color(0x934800FF);
 }
 
-const LinearGradient defaultGrad = LinearGradient(
+/// Primary blue color used across the app
+final MaterialColor p2bpBlue = generateMaterialColor(const Color(0xFF2F6DCF));
+
+/// Primary accent color, used for buttons on screens with default gradient background
+final MaterialColor p2bpBlueAccent =
+    generateMaterialColor(const Color(0xFF62B6FF));
+
+/// Dark blue color used for default gradient
+final MaterialColor p2bpDarkBlue =
+    generateMaterialColor(const Color(0xFF0A2A88));
+
+/// Primary yellow color used across the app
+final MaterialColor p2bpYellow = generateMaterialColor(const Color(0xFFFFCC00));
+
+/// Primary bottom sheet background color when a gradient is not used
+final MaterialColor bottomSheetBlue =
+    generateMaterialColor(const Color(0xFFDDE6F2));
+
+LinearGradient defaultGrad = LinearGradient(
   begin: Alignment.topLeft,
   end: Alignment.bottomRight,
   colors: <Color>[
-    Color(0xFF0A2A88),
-    Color(0xFF62B6FF),
+    p2bpDarkBlue,
+    p2bpBlueAccent,
   ],
 );
 
@@ -43,8 +62,8 @@ final LinearGradient verticalBlueGrad = LinearGradient(
   begin: Alignment.topCenter,
   end: Alignment.bottomCenter,
   colors: <Color>[
-    Colors.blue[900]!,
-    Colors.blueAccent,
+    p2bpDarkBlue,
+    p2bpBlueAccent,
   ],
 );
 

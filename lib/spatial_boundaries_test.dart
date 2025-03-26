@@ -41,18 +41,19 @@ class _SpatialBoundariesTestPageState extends State<SpatialBoundariesTestPage> {
   Timer? _timer;
   Timer? _hintTimer;
 
+  double _zoom = 18;
   late GoogleMapController mapController;
   LatLng _location = defaultLocation;
   MapType _currentMapType = MapType.satellite; // Default map type
   List<mp.LatLng> _projectArea = [];
 
-  Set<Polygon> _projectPolygon = {}; // Set for project polygon
-  Set<Polygon> _userPolygons = {}; // Set of user-created polygons
-  List<LatLng> _polygonPoints = []; // Points for the polygon
-  Set<Marker> _polygonMarkers = {}; // Set of markers for polygon creation
-  Set<Polyline> _polylines = {};
-  Set<Marker> _polylineMarkers = {};
-  List<LatLng> _polylinePoints = [];
+  late final Polygon _projectPolygon; // Set for project polygon
+  final Set<Polygon> _polygons = {}; // Set of user-created polygons
+  final List<LatLng> _polygonPoints = []; // Points for the polygon
+  final Set<Marker> _polygonMarkers = {}; // Set of markers for polygon creation
+  final Set<Polyline> _polylines = {};
+  final Set<Marker> _polylineMarkers = {};
+  final List<LatLng> _polylinePoints = [];
 
   final SpatialBoundariesData _newData = SpatialBoundariesData();
   BoundaryType? _boundaryType;
@@ -73,13 +74,17 @@ class _SpatialBoundariesTestPageState extends State<SpatialBoundariesTestPage> {
   @override
   void initState() {
     super.initState();
-    _initProjectArea();
+    _projectPolygon = getProjectPolygon(widget.activeProject.polygonPoints);
+    _location = getPolygonCentroid(_projectPolygon);
+    _projectArea = _projectPolygon.toMPLatLngList();
+    _zoom = getIdealZoom(_projectArea, _location.toMPLatLng());
+    _isLoading = false;
+    _directionsActive = _directionsList[0];
     WidgetsBinding.instance.addPostFrameCallback((_) {
       print("PostFrameCallback fired");
       _loadCustomMarker();
       _showInstructionOverlay();
     });
-    _directionsActive = _directionsList[0];
   }
 
   /// Function to load custom marker icons using AssetMapBitmap.
@@ -100,30 +105,16 @@ class _SpatialBoundariesTestPageState extends State<SpatialBoundariesTestPage> {
     }
   }
 
-  /// Gets the project polygon, adds it to the current polygon list, and
-  /// centers the map over it.
-  void _initProjectArea() {
-    setState(() {
-      _projectPolygon = getProjectPolygon(widget.activeProject.polygonPoints);
-      _location = getPolygonCentroid(_projectPolygon.first);
-      // Take some latitude away to center considering bottom sheet.
-      _location = LatLng(_location.latitude * .999999, _location.longitude);
-      _projectArea = _projectPolygon.first.toMPLatLngList();
-      // TODO: dynamic zooming
-      _isLoading = false;
-    });
-  }
-
   void _onMapCreated(GoogleMapController controller) {
     mapController = controller;
-    _moveToLocation(); // Ensure the map is centered on the current location
+    _moveToLocation();
   }
 
   /// Moves camera to project location.
   void _moveToLocation() {
     mapController.animateCamera(
       CameraUpdate.newCameraPosition(
-        CameraPosition(target: _location, zoom: 17.0),
+        CameraPosition(target: _location, zoom: _zoom),
       ),
     );
   }
@@ -200,7 +191,7 @@ class _SpatialBoundariesTestPageState extends State<SpatialBoundariesTestPage> {
         fillColor: colors['fill']!,
         strokeWidth: tempPolygon.first.strokeWidth,
       );
-      _userPolygons.add(coloredPolygon);
+      _polygons.add(coloredPolygon);
 
       if (_boundaryType == BoundaryType.material && _materialType != null) {
         _newData.material.add(MaterialBoundary(
@@ -562,9 +553,10 @@ class _SpatialBoundariesTestPageState extends State<SpatialBoundariesTestPage> {
                       initialCameraPosition:
                           CameraPosition(target: _location, zoom: 15),
                       markers: {..._polygonMarkers, ..._polylineMarkers},
-                      polygons: _boundariesVisible
-                          ? _projectPolygon.union(_userPolygons)
-                          : _projectPolygon,
+                      polygons: {
+                        _projectPolygon,
+                        if (_boundariesVisible) ..._polygons,
+                      },
                       polylines: _boundariesVisible ? _polylines : <Polyline>{},
                       onTap: _togglePoint,
                       mapType: _currentMapType,

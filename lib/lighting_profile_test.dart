@@ -1,3 +1,6 @@
+import 'dart:math';
+
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'dart:async';
 import 'dart:io';
 
@@ -33,52 +36,36 @@ class _LightingProfileTestPageState extends State<LightingProfileTestPage> {
 
   late GoogleMapController mapController;
   LatLng _location = defaultLocation;
+  double _zoom = 18;
   MapType _currentMapType = MapType.satellite; // Default map type
   List<mp.LatLng> _projectArea = [];
 
   final Set<Marker> _markers = {}; // Set of markers visible on map
-  Set<Polygon> _polygons = {}; // Set of polygons
+  final Set<Polygon> _polygons = {}; // Set of polygons
   final LightingProfileData _newData = LightingProfileData();
 
   static const double _bottomSheetHeight = 300;
 
-  int _remainingSeconds = 300;
-
-  bool _isTestRunning = false;
-
-  Timer? _timer;
-
-  Timer? _hintTimer;
-
   @override
   void initState() {
     super.initState();
-    _initProjectArea();
-  }
-
-  /// Gets the project polygon, adds it to the current polygon list, and
-  /// centers the map over it.
-  void _initProjectArea() {
-    setState(() {
-      _polygons = getProjectPolygon(widget.activeProject.polygonPoints);
-      _location = getPolygonCentroid(_polygons.first);
-      // Take some latitude away to center considering bottom sheet.
-      _location = LatLng(_location.latitude * .999999, _location.longitude);
-      _projectArea = _polygons.first.toMPLatLngList();
-      // TODO: dynamic zooming
-      _isLoading = false;
-    });
+    _polygons.add(getProjectPolygon(widget.activeProject.polygonPoints));
+    _location = getPolygonCentroid(_polygons.first);
+    _projectArea = _polygons.first.toMPLatLngList();
+    _zoom = getIdealZoom(_projectArea, _location.toMPLatLng());
+    _isLoading = false;
   }
 
   void _onMapCreated(GoogleMapController controller) {
     mapController = controller;
-    _moveToLocation(); // Ensure the map is centered on the current location
+    _moveToLocation();
   }
 
+  /// Moves camera to project location.
   void _moveToLocation() {
     mapController.animateCamera(
       CameraUpdate.newCameraPosition(
-        CameraPosition(target: _location, zoom: 14.0),
+        CameraPosition(target: _location, zoom: _zoom),
       ),
     );
   }
@@ -100,7 +87,7 @@ class _LightingProfileTestPageState extends State<LightingProfileTestPage> {
   Future<void> _togglePoint(LatLng point) async {
     try {
       if (!mp.PolygonUtil.containsLocation(
-          mp.LatLng(point.latitude, point.longitude), _projectArea, true)) {
+          point.toMPLatLng(), _projectArea, true)) {
         setState(() {
           _outsidePoint = true;
         });
@@ -151,156 +138,46 @@ class _LightingProfileTestPageState extends State<LightingProfileTestPage> {
     });
   }
 
-  // Method to start the test and timer
-  void _startTest() {
-    setState(() {
-      _isTestRunning = true;
-      _remainingSeconds = 300;
-    });
-    _timer = Timer.periodic(Duration(seconds: 1), (timer) {
-      setState(() {
-        if (_remainingSeconds <= 0) {
-          timer.cancel();
-        } else {
-          _remainingSeconds--;
-        }
-      });
-    });
-  }
-
-  void _endTest() {
-    _isTestRunning = false;
-    _timer?.cancel();
-    _hintTimer?.cancel();
-    widget.activeTest.submitData(_newData);
-    Navigator.pop(context);
-  }
-
-  AppBar _buildAppBar() {
-    return AppBar(
-      // Only apply systemOverlayStyle on iOS.
-      // Define the systemOverlayStyle based on map type.
-      systemOverlayStyle: Platform.isIOS
-          ? (_currentMapType == MapType.normal
-              // Sets a darker status bar in map view for better visibility.
-              ? SystemUiOverlayStyle.dark.copyWith(
-                  statusBarColor: Colors.transparent,
-                )
-              // Sets a lighter status bar in satellite view for better visibility.
-              : SystemUiOverlayStyle.light.copyWith(
-                  statusBarColor: Colors.transparent,
-                ))
-          : null,
-      toolbarHeight: kToolbarHeight + 10,
-      backgroundColor: Colors.transparent,
-      elevation: 0,
-      leadingWidth: 100,
-      // Start/End button on the left
-      leading: Padding(
-        padding: const EdgeInsets.only(top: 5, bottom: 5, left: 20),
-        child: ElevatedButton(
-          style: ElevatedButton.styleFrom(
-            shape: RoundedRectangleBorder(
-              borderRadius:
-                  BorderRadius.circular(20), // Rounded rectangle shape.
-            ),
-            backgroundColor: _isTestRunning ? Colors.red : Colors.green,
-            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-          ),
-          onPressed: () {
-            if (_isTestRunning) {
-              _endTest();
-            } else {
-              _startTest();
-            }
-          },
-          child: Text(
-            _isTestRunning ? 'End' : 'Start',
-            style: const TextStyle(color: Colors.white, fontSize: 16),
-          ),
-        ),
-      ),
-      // Persistent prompt in the middle with a translucent background.
-      title: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-        decoration: BoxDecoration(
-          color: Colors.black.withValues(alpha: 0.6),
-          borderRadius: BorderRadius.circular(8),
-        ),
-        child: Text(
-          'Tap to log data point',
-          maxLines: 2,
-          overflow: TextOverflow.visible,
-          style: const TextStyle(color: Colors.white, fontSize: 16),
-        ),
-      ),
-      centerTitle: true,
-      // Timer on the right
-      actions: [
-        Padding(
-          padding: const EdgeInsets.only(right: 20),
-          child: Center(
-            child: Container(
-              padding: EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-              decoration: BoxDecoration(
-                color: Colors.black.withValues(alpha: 0.6),
-                borderRadius: BorderRadius.circular(8),
-              ),
-              child: Text(
-                formatTime(_remainingSeconds),
-                style: TextStyle(color: Colors.white, fontSize: 16),
-              ),
-            ),
-          ),
-        ),
-      ],
-    );
-  }
-
   @override
   Widget build(BuildContext context) {
     return AdaptiveSafeArea(
       child: Scaffold(
-        appBar: _buildAppBar(),
-        extendBodyBehindAppBar: true,
         resizeToAvoidBottomInset: false,
         extendBody: true,
         body: _isLoading
             ? const Center(child: CircularProgressIndicator())
-            : Center(
-                child: Stack(
-                  children: <Widget>[
-                    SizedBox(
-                      height: MediaQuery.of(context).size.height,
-                      child: GoogleMap(
-                        padding: EdgeInsets.only(bottom: _bottomSheetHeight),
-                        onMapCreated: _onMapCreated,
-                        initialCameraPosition:
-                            CameraPosition(target: _location, zoom: 14),
-                        markers: _markers,
-                        polygons: _polygons,
-                        onTap: _isTypeSelected ? _togglePoint : null,
-                        mapType: _currentMapType,
+            : Stack(
+                children: <Widget>[
+                  SizedBox(
+                    height: MediaQuery.sizeOf(context).height,
+                    child: GoogleMap(
+                      padding: EdgeInsets.only(bottom: _bottomSheetHeight),
+                      onMapCreated: _onMapCreated,
+                      initialCameraPosition:
+                          CameraPosition(target: _location, zoom: _zoom),
+                      markers: _markers,
+                      polygons: _polygons,
+                      onTap: _isTypeSelected ? _togglePoint : null,
+                      mapType: _currentMapType,
+                    ),
+                  ),
+                  Align(
+                    alignment: Alignment.bottomLeft,
+                    child: Padding(
+                      padding: const EdgeInsets.only(
+                        left: 10,
+                        right: 10,
+                        bottom: _bottomSheetHeight + 30,
+                      ),
+                      child: FloatingActionButton(
+                        heroTag: null,
+                        onPressed: _toggleMapType,
+                        backgroundColor: Colors.green,
+                        child: const Icon(Icons.map),
                       ),
                     ),
-                    Align(
-                      alignment: Alignment.bottomLeft,
-                      child: Padding(
-                        padding: const EdgeInsets.only(
-                          left: 10,
-                          right: 10,
-                          bottom: _bottomSheetHeight + 30,
-                        ),
-                        child: FloatingActionButton(
-                          heroTag: null,
-                          onPressed: _toggleMapType,
-                          backgroundColor: Colors.green,
-                          child: const Icon(Icons.map),
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
+                  ),
+                ],
               ),
         bottomSheet: _isLoading
             ? SizedBox()

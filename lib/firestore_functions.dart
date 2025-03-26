@@ -100,7 +100,7 @@ Future<Project> saveProject({
       'team': teamRef,
       'description': description,
       'polygonPoints': polygonPoints.toGeoPointList(),
-      'standingPoints': StandingPoint.toJsonList(standingPoints),
+      'standingPoints': standingPoints.toJsonList(),
       'polygonArea': polygonArea,
       'tests': [],
     });
@@ -430,6 +430,7 @@ Future<Test> saveTest({
   required DocumentReference? projectRef,
   required String collectionID,
   List? standingPoints,
+  int? testDuration,
 }) async {
   late Test tempTest;
 
@@ -449,6 +450,7 @@ Future<Test> saveTest({
       projectRef: projectRef,
       collectionID: collectionID,
       standingPoints: standingPoints,
+      testDuration: testDuration,
     );
 
     await tempTest.saveToFirestore();
@@ -510,6 +512,10 @@ extension LatLngConversion on LatLng {
   GeoPoint toGeoPoint() {
     return GeoPoint(latitude, longitude);
   }
+
+  mp.LatLng toMPLatLng() {
+    return mp.LatLng(latitude, longitude);
+  }
 }
 
 extension LatLngListConversion on List<LatLng> {
@@ -521,6 +527,13 @@ extension LatLngListConversion on List<LatLng> {
       newGeoPointList.add(GeoPoint(coordinate.latitude, coordinate.longitude));
     });
     return newGeoPointList;
+  }
+
+  List<mp.LatLng> toMPLatLng() {
+    List<mp.LatLng> newMPLatLngList = [];
+    forEach((point) =>
+        newMPLatLngList.add(mp.LatLng(point.latitude, point.longitude)));
+    return newMPLatLngList;
   }
 }
 

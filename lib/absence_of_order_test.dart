@@ -55,58 +55,42 @@ class AbsenceOfOrderTestPage extends StatefulWidget {
 class _AbsenceOfOrderTestPageState extends State<AbsenceOfOrderTestPage> {
   bool _isLoading = true;
   bool _outsidePoint = false;
+  bool _isTestRunning = false;
+  bool _directionsVisible = false;
 
   late GoogleMapController mapController;
   LatLng _location = defaultLocation;
+  double _zoom = 18;
   MapType _currentMapType = MapType.satellite; // Default map type
   List<mp.LatLng> _projectArea = [];
-
   final Set<Marker> _markers = {}; // Set of markers visible on map
-  Set<Polygon> _polygons = {}; // Set of polygons
+  final Set<Polygon> _polygons = {}; // Set of polygons
   final AbsenceOfOrderData _newData = AbsenceOfOrderData();
   DataPoint? _tempDataPoint;
 
-  static const double _bottomSheetHeight = 220;
-
-  bool _isTestRunning = false;
-
-  int _remainingSeconds = 300;
-
-  Timer? _timer;
-
-  Timer? _hintTimer;
+  int _remainingSeconds = -1;
+  static const double _bottomSheetHeight = 165;
 
   @override
   void initState() {
     super.initState();
-    _initProjectArea();
-  }
-
-  /// Gets the project polygon, adds it to the current polygon list, and
-  /// centers the map over it.
-  void _initProjectArea() {
-    setState(() {
-      _polygons = getProjectPolygon(widget.activeProject.polygonPoints);
-      print(_polygons);
-      _location = getPolygonCentroid(_polygons.first);
-      // Take some latitude away to center considering bottom sheet.
-      _location = LatLng(_location.latitude * .999999, _location.longitude);
-      _projectArea = _polygons.first.toMPLatLngList();
-      // TODO: dynamic zooming
-      _isLoading = false;
-    });
+    _polygons.add(getProjectPolygon(widget.activeProject.polygonPoints));
+    _location = getPolygonCentroid(_polygons.first);
+    _projectArea = _polygons.first.toMPLatLngList();
+    _zoom = getIdealZoom(_projectArea, _location.toMPLatLng());
+    _isLoading = false;
   }
 
   void _onMapCreated(GoogleMapController controller) {
     mapController = controller;
-    _moveToLocation(); // Ensure the map is centered on the current location
+    _moveToLocation();
   }
 
   /// Moves camera to project location.
   void _moveToLocation() {
     mapController.animateCamera(
       CameraUpdate.newCameraPosition(
-        CameraPosition(target: _location, zoom: 17.0),
+        CameraPosition(target: _location, zoom: _zoom),
       ),
     );
   }
@@ -128,6 +112,7 @@ class _AbsenceOfOrderTestPageState extends State<AbsenceOfOrderTestPage> {
           mp.LatLng(point.latitude, point.longitude), _projectArea, true)) {
         setState(() {
           _outsidePoint = true;
+          print('outside!');
         });
       }
       // Add point to data and then add to AbsenceOfOrderData list
@@ -193,110 +178,9 @@ class _AbsenceOfOrderTestPageState extends State<AbsenceOfOrderTestPage> {
     });
   }
 
-  // Method to start the test and timer
-  void _startTest() {
-    setState(() {
-      _isTestRunning = true;
-      _remainingSeconds = 300;
-    });
-    _timer = Timer.periodic(Duration(seconds: 1), (timer) {
-      setState(() {
-        if (_remainingSeconds <= 0) {
-          timer.cancel();
-        } else {
-          _remainingSeconds--;
-        }
-      });
-    });
-  }
-
   void _endTest() {
-    _isTestRunning = false;
-    _timer?.cancel();
-    _hintTimer?.cancel();
     widget.activeTest.submitData(_newData);
     Navigator.pop(context);
-  }
-
-  AppBar _buildAppBar() {
-    return AppBar(
-      // Only apply systemOverlayStyle on iOS.
-      // Define the systemOverlayStyle based on map type.
-      systemOverlayStyle: Platform.isIOS
-          ? (_currentMapType == MapType.normal
-              // Sets a darker status bar in map view for better visibility.
-              ? SystemUiOverlayStyle.dark.copyWith(
-                  statusBarColor: Colors.transparent,
-                )
-              // Sets a lighter status bar in satellite view for better visibility.
-              : SystemUiOverlayStyle.light.copyWith(
-                  statusBarColor: Colors.transparent,
-                ))
-          : null,
-      toolbarHeight: kToolbarHeight + 10,
-      backgroundColor: Colors.transparent,
-      elevation: 0,
-      leadingWidth: 100,
-      // Start/End button on the left
-      leading: Padding(
-        padding: const EdgeInsets.only(top: 5, bottom: 5, left: 20),
-        child: ElevatedButton(
-          style: ElevatedButton.styleFrom(
-            shape: RoundedRectangleBorder(
-              borderRadius:
-                  BorderRadius.circular(20), // Rounded rectangle shape.
-            ),
-            backgroundColor: _isTestRunning ? Colors.red : Colors.green,
-            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-          ),
-          onPressed: () {
-            if (_isTestRunning) {
-              _endTest();
-            } else {
-              _startTest();
-            }
-          },
-          child: Text(
-            _isTestRunning ? 'End' : 'Start',
-            style: const TextStyle(color: Colors.white, fontSize: 16),
-          ),
-        ),
-      ),
-      // Persistent prompt in the middle with a translucent background.
-      title: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-        decoration: BoxDecoration(
-          color: Colors.black.withValues(alpha: 0.6),
-          borderRadius: BorderRadius.circular(8),
-        ),
-        child: Text(
-          'Tap to log data point',
-          maxLines: 2,
-          overflow: TextOverflow.visible,
-          style: const TextStyle(color: Colors.white, fontSize: 16),
-        ),
-      ),
-      centerTitle: true,
-      // Timer on the right
-      actions: [
-        Padding(
-          padding: const EdgeInsets.only(right: 20),
-          child: Center(
-            child: Container(
-              padding: EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-              decoration: BoxDecoration(
-                color: Colors.black.withValues(alpha: 0.6),
-                borderRadius: BorderRadius.circular(8),
-              ),
-              child: Text(
-                formatTime(_remainingSeconds),
-                style: TextStyle(color: Colors.white, fontSize: 16),
-              ),
-            ),
-          ),
-        ),
-      ],
-    );
   }
 
   @override
@@ -305,195 +189,189 @@ class _AbsenceOfOrderTestPageState extends State<AbsenceOfOrderTestPage> {
     bool isDescriptionReady = (_tempDataPoint != null);
     return AdaptiveSafeArea(
       child: Scaffold(
-        appBar: _buildAppBar(),
-        extendBodyBehindAppBar: true,
         resizeToAvoidBottomInset: false,
         extendBody: true,
         body: _isLoading
             ? const Center(child: CircularProgressIndicator())
-            : Center(
-                child: Stack(
-                  children: <Widget>[
-                    SizedBox(
-                      height: MediaQuery.of(context).size.height,
-                      child: GoogleMap(
-                        padding: EdgeInsets.only(bottom: _bottomSheetHeight),
-                        onMapCreated: _onMapCreated,
-                        initialCameraPosition:
-                            CameraPosition(target: _location, zoom: 15),
-                        markers: _markers,
-                        polygons: _polygons,
-                        onTap: isDescriptionReady ? _togglePoint : null,
-                        mapType: _currentMapType,
-                      ),
+            : Stack(
+                children: <Widget>[
+                  SizedBox(
+                    height: MediaQuery.sizeOf(context).height,
+                    child: GoogleMap(
+                      padding: EdgeInsets.only(bottom: _bottomSheetHeight),
+                      onMapCreated: _onMapCreated,
+                      initialCameraPosition:
+                          CameraPosition(target: _location, zoom: _zoom),
+                      markers: _markers,
+                      polygons: _polygons,
+                      onTap: isDescriptionReady ? _togglePoint : null,
+                      mapType: _currentMapType,
                     ),
-                    Align(
-                      alignment: Alignment.bottomLeft,
-                      child: Padding(
-                        padding: const EdgeInsets.only(
-                          left: 10,
-                          right: 10,
-                          bottom: _bottomSheetHeight + 30,
-                        ),
-                        child: FloatingActionButton(
-                          heroTag: null,
-                          onPressed: _toggleMapType,
-                          backgroundColor: Colors.green,
-                          child: const Icon(Icons.map),
+                  ),
+                  Row(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: <Widget>[
+                      Padding(
+                        padding: const EdgeInsets.only(top: 15.0, left: 15.0),
+                        child: TimerButtonAndDisplay(
+                          onPressed: () {
+                            setState(() {
+                              _isTestRunning = !_isTestRunning;
+                            });
+                          },
+                          isTestRunning: _isTestRunning,
+                          remainingSeconds: _remainingSeconds,
                         ),
                       ),
+                      Expanded(
+                        child: _directionsVisible
+                            ? Padding(
+                                padding: const EdgeInsets.symmetric(
+                                    horizontal: 15.0, vertical: 15.0),
+                                child: DirectionsText(
+                                    onTap: () {
+                                      setState(() {
+                                        _directionsVisible =
+                                            !_directionsVisible;
+                                      });
+                                    },
+                                    text: !isDescriptionReady
+                                        ? 'Select a type of misconduct.'
+                                        : 'Drop a pin where the misconduct is.'),
+                              )
+                            : SizedBox(),
+                      ),
+                      Padding(
+                        padding: const EdgeInsets.only(top: 15, right: 15),
+                        child: Column(
+                          spacing: 10,
+                          children: <Widget>[
+                            DirectionsButton(
+                              onTap: () {
+                                setState(() {
+                                  _directionsVisible = !_directionsVisible;
+                                });
+                              },
+                            ),
+                            CircularIconMapButton(
+                              backgroundColor: Colors.green,
+                              borderColor: Color(0xFF2D6040),
+                              onPressed: _toggleMapType,
+                              icon: const Icon(Icons.map),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ],
+                  ),
+                  if (_outsidePoint)
+                    Padding(
+                      padding:
+                          const EdgeInsets.only(bottom: _bottomSheetHeight),
+                      child: TestErrorText(),
                     ),
-                  ],
-                ),
+                ],
               ),
         bottomSheet: _isLoading
             ? SizedBox()
             : SizedBox(
                 height: _bottomSheetHeight,
-                child: Stack(
-                  children: <Widget>[
-                    Container(
-                      padding: const EdgeInsets.symmetric(
-                          horizontal: 12.0, vertical: 10.0),
-                      decoration: BoxDecoration(
-                        gradient: defaultGrad,
-                        borderRadius: const BorderRadius.only(
-                          topLeft: Radius.circular(24.0),
-                          topRight: Radius.circular(24.0),
-                        ),
-                        boxShadow: [
-                          BoxShadow(
-                            color: Colors.black,
-                            offset: Offset(0.0, 1.0), //(x,y)
-                            blurRadius: 6.0,
-                          ),
-                        ],
-                      ),
-                      child: Column(
-                        children: <Widget>[
-                          Center(
-                            child: Text(
-                              'Absence of Order Locator',
-                              style: TextStyle(
-                                fontSize: 20,
-                                fontWeight: FontWeight.bold,
-                                color: placeYellow,
-                              ),
-                            ),
-                          ),
-                          SizedBox(height: 5),
-                          Center(
-                            child: Text(
-                              !isDescriptionReady
-                                  ? 'Select a type of misconduct.'
-                                  : 'Drop a pin where the misconduct is.',
-                              style: TextStyle(
-                                fontSize: 20,
-                                color: Colors.white,
-                              ),
-                            ),
-                          ),
-                          SizedBox(height: 5),
-                          Row(
-                            mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                            spacing: 10,
-                            children: <Widget>[
-                              Expanded(
-                                child: FilledButton(
-                                  style: testButtonStyle,
-                                  onPressed: isDescriptionReady
-                                      ? null
-                                      : () {
-                                          _doBehaviorModal(context);
-                                        },
-                                  child: Text('Behavior'),
-                                ),
-                              ),
-                              Expanded(
-                                child: FilledButton(
-                                  style: testButtonStyle,
-                                  onPressed: isDescriptionReady
-                                      ? null
-                                      : () {
-                                          _doMaintenanceModal(context);
-                                        },
-                                  child: Text('Maintenance'),
-                                ),
-                              ),
-                            ],
-                          ),
-                          SizedBox(height: 15),
-                          Row(
-                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                            spacing: 10,
-                            children: <Widget>[
-                              Flexible(
-                                child: FilledButton.icon(
-                                  style: testButtonStyle,
-                                  onPressed: () => Navigator.pop(context),
-                                  label: Text('Back'),
-                                  icon: Icon(Icons.chevron_left),
-                                  iconAlignment: IconAlignment.start,
-                                ),
-                              ),
-                              Flexible(
-                                child: FilledButton.icon(
-                                  style: testButtonStyle,
-                                  onPressed: (isDescriptionReady)
-                                      ? null
-                                      : () {
-                                          // TODO: check isComplete either before submitting or probably before starting test
-                                          widget.activeTest
-                                              .submitData(_newData);
-                                          Navigator.pop(context);
-                                        },
-                                  label: Text('Finish'),
-                                  icon: Icon(Icons.chevron_right),
-                                  iconAlignment: IconAlignment.end,
-                                ),
-                              ),
-                            ],
-                          ),
-                        ],
-                      ),
+                child: Container(
+                  padding: const EdgeInsets.symmetric(
+                      horizontal: 12.0, vertical: 10.0),
+                  decoration: BoxDecoration(
+                    gradient: defaultGrad,
+                    borderRadius: const BorderRadius.only(
+                      topLeft: Radius.circular(24.0),
+                      topRight: Radius.circular(24.0),
                     ),
-                    _outsidePoint
-                        ? Align(
-                            alignment: Alignment.bottomCenter,
-                            child: Padding(
-                              padding: const EdgeInsets.symmetric(
-                                  vertical: 30.0, horizontal: 100.0),
-                              child: Container(
-                                padding: EdgeInsets.symmetric(
-                                    horizontal: 15, vertical: 10),
-                                decoration: BoxDecoration(
-                                  color: Colors.red[900],
-                                  borderRadius: const BorderRadius.all(
-                                      Radius.circular(10)),
-                                  boxShadow: [
-                                    BoxShadow(
-                                      color:
-                                          Colors.black.withValues(alpha: 0.1),
-                                      blurRadius: 6,
-                                      offset: const Offset(0, 2),
-                                    ),
-                                  ],
-                                ),
-                                child: Text(
-                                  'You have placed a point outside of the project area!',
-                                  maxLines: 3,
-                                  overflow: TextOverflow.ellipsis,
-                                  style: TextStyle(
-                                    fontSize: 18,
-                                    fontWeight: FontWeight.w500,
-                                    color: Colors.red[50],
-                                  ),
-                                ),
-                              ),
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.black,
+                        offset: Offset(0.0, 1.0), //(x,y)
+                        blurRadius: 6.0,
+                      ),
+                    ],
+                  ),
+                  child: Column(
+                    children: <Widget>[
+                      Center(
+                        child: Text(
+                          'Absence of Order Locator',
+                          style: TextStyle(
+                            fontSize: 20,
+                            fontWeight: FontWeight.bold,
+                            color: placeYellow,
+                          ),
+                        ),
+                      ),
+                      SizedBox(height: 5),
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                        spacing: 10,
+                        children: <Widget>[
+                          Expanded(
+                            child: FilledButton(
+                              style: testButtonStyle,
+                              onPressed: isDescriptionReady
+                                  ? null
+                                  : () {
+                                      _doBehaviorModal(context);
+                                    },
+                              child: Text('Behavior'),
                             ),
-                          )
-                        : SizedBox(),
-                  ],
+                          ),
+                          Expanded(
+                            child: FilledButton(
+                              style: testButtonStyle,
+                              onPressed: isDescriptionReady
+                                  ? null
+                                  : () {
+                                      _doMaintenanceModal(context);
+                                    },
+                              child: Text('Maintenance'),
+                            ),
+                          ),
+                        ],
+                      ),
+                      SizedBox(height: 15),
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        spacing: 10,
+                        children: <Widget>[
+                          Flexible(
+                            child: FilledButton.icon(
+                              style: testButtonStyle,
+                              onPressed: () => Navigator.pop(context),
+                              label: Text('Back'),
+                              icon: Icon(Icons.chevron_left),
+                              iconAlignment: IconAlignment.start,
+                            ),
+                          ),
+                          Flexible(
+                            child: FilledButton.icon(
+                              style: testButtonStyle,
+                              onPressed: (isDescriptionReady)
+                                  ? null
+                                  : () {
+                                      showDialog(
+                                          context: context,
+                                          builder: (context) =>
+                                              TestFinishDialog(onNext: () {
+                                                Navigator.pop(context);
+                                                _endTest();
+                                              }));
+                                    },
+                              label: Text('Finish'),
+                              icon: Icon(Icons.chevron_right),
+                              iconAlignment: IconAlignment.end,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ],
+                  ),
                 ),
               ),
       ),
@@ -767,7 +645,7 @@ class _MaintenanceDescriptionFormState
     'Unkept Landscape',
   ];
   final List<String> _selectedTypes = [];
-  bool _otherSelected = false;
+  bool _isOtherSelected = false;
   final TextEditingController _otherTextController = TextEditingController();
 
   /// Validates the form and if successful pops this Modal Sheet and
@@ -907,7 +785,7 @@ class _MaintenanceDescriptionFormState
                       flex: 2,
                       child: TextFormField(
                         key: _formFieldKey,
-                        enabled: _otherSelected,
+                        enabled: _isOtherSelected,
                         controller: _otherTextController,
                         decoration: InputDecoration(
                           filled: true,
@@ -917,7 +795,7 @@ class _MaintenanceDescriptionFormState
                         ),
                         validator: (value) {
                           // If other button was selected verify text box is not empty
-                          if (_otherSelected &&
+                          if (_isOtherSelected &&
                               (value == null || value.isEmpty)) {
                             return 'Please describe the misconduct.';
                           }
@@ -929,16 +807,16 @@ class _MaintenanceDescriptionFormState
                       child: TextButton(
                         style: TextButton.styleFrom(
                           backgroundColor:
-                              _otherSelected ? Colors.blue : Colors.white,
+                              _isOtherSelected ? Colors.blue : Colors.white,
                           foregroundColor:
-                              _otherSelected ? Colors.white : Colors.black,
+                              _isOtherSelected ? Colors.white : Colors.black,
                           shape: RoundedRectangleBorder(
                             borderRadius: BorderRadius.circular(8),
                           ),
                         ),
                         onPressed: () {
                           setState(() {
-                            _otherSelected = !_otherSelected;
+                            _isOtherSelected = !_isOtherSelected;
                           });
                         },
                         child: Text('Select Other'),
@@ -966,9 +844,10 @@ class _MaintenanceDescriptionFormState
                       child: FilledButton(
                         style: testButtonStyle,
                         // Confirm button disabled when no option selected
-                        onPressed: (_selectedTypes.isNotEmpty || _otherSelected)
-                            ? _submitDescription
-                            : null,
+                        onPressed:
+                            (_selectedTypes.isNotEmpty || _isOtherSelected)
+                                ? _submitDescription
+                                : null,
                         child: Text('Confirm'),
                       ),
                     ),

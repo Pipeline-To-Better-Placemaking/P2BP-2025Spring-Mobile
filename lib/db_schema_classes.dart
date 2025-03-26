@@ -7,9 +7,10 @@ import 'package:p2bp_2025spring_mobile/absence_of_order_test.dart';
 import 'package:p2bp_2025spring_mobile/google_maps_functions.dart';
 import 'package:p2bp_2025spring_mobile/lighting_profile_test.dart';
 import 'package:p2bp_2025spring_mobile/section_cutter_test.dart';
-import 'package:p2bp_2025spring_mobile/spatial_boundaries_test.dart';
 import 'package:p2bp_2025spring_mobile/people_in_place_test.dart';
 import 'package:p2bp_2025spring_mobile/people_in_motion_test.dart';
+import 'package:p2bp_2025spring_mobile/acoustic_profile_test.dart';
+import 'package:p2bp_2025spring_mobile/spatial_boundaries_test.dart';
 import 'package:p2bp_2025spring_mobile/theme.dart';
 import 'firestore_functions.dart';
 import 'package:flutter/material.dart';
@@ -40,12 +41,13 @@ class Team {
   List projects = [];
   int numProjects = 0;
 
-  Team(
-      {required this.teamID,
-      required this.title,
-      required this.adminName,
-      required this.projects,
-      required this.numProjects});
+  Team({
+    required this.teamID,
+    required this.title,
+    required this.adminName,
+    required this.projects,
+    required this.numProjects,
+  });
 
   // Specifically for a team invite. Invite does not need numProjects, projects,
   // etc.
@@ -240,6 +242,7 @@ abstract class Test<T> {
         required DocumentReference projectRef,
         required String collectionID,
         List? standingPoints,
+        int? testDuration,
       })> _newTestConstructors = {};
 
   /// Maps from collection ID to a function which should use a constructor
@@ -257,6 +260,8 @@ abstract class Test<T> {
   /// save that [Test] instance to Firestore.
   static final Map<Type, Future<void> Function(Test)>
       _saveToFirestoreFunctions = {};
+
+  static final Map<Type, String> _testInitialsMap = {};
 
   /// Set used internally to determine whether a [Test] subclass uses
   /// standing points. Subclasses that do are expected to register themselves
@@ -281,7 +286,8 @@ abstract class Test<T> {
       required Timestamp scheduledTime,
       required DocumentReference projectRef,
       required String collectionID,
-      List? standingPoints}) {
+      List? standingPoints,
+      int? testDuration}) {
     final constructor = _newTestConstructors[collectionID];
 
     if (constructor != null) {
@@ -292,6 +298,7 @@ abstract class Test<T> {
         projectRef: projectRef,
         collectionID: collectionID,
         standingPoints: standingPoints,
+        testDuration: testDuration,
       );
     }
     throw Exception('Unregistered Test type for collection: $collectionID');
@@ -341,6 +348,17 @@ abstract class Test<T> {
     return _standingPointTestCollectionIDs.contains(collectionID);
   }
 
+  /// Returns whether [Test] subclass with given [collectionID] is
+  /// registered as a timer test.
+  static bool isTimerTest(String? collectionID) {
+    return _timerTestCollectionIDs.contains(collectionID);
+  }
+
+  /// Returns 2-letter initials for given test type if they are registered.
+  String getInitials() {
+    return _testInitialsMap[runtimeType] ?? '';
+  }
+
   @override
   String toString() {
     return 'This is an instance of $runtimeType\n'
@@ -372,13 +390,15 @@ class StandingPoint with JsonToString {
 
   StandingPoint({required this.location, required this.title});
 
-  StandingPoint.fromJson(Map<String, dynamic> data) {
-    if (data.containsKey('point') && data['point'] is GeoPoint) {
-      location = (data['point'] as GeoPoint).toLatLng();
+  factory StandingPoint.fromJson(Map<String, dynamic> data) {
+    if (data
+        case {
+          'point': GeoPoint location,
+          'title': String title,
+        }) {
+      return StandingPoint(location: location.toLatLng(), title: title);
     }
-    if (data.containsKey('title') && data['title'] is String) {
-      title = data['title'] as String;
-    }
+    throw FormatException('Invalid JSON: $data', data);
   }
 
   @override
@@ -398,14 +418,21 @@ class StandingPoint with JsonToString {
     }
     return output;
   }
+}
 
-  static List<Map<String, Object>> toJsonList(List<StandingPoint> points) {
-    List<Map<String, Object>> json = [];
-    for (final point in points) {
-      json.add(point.toJson());
-    }
-    return json;
+extension StandingPointListHelpers on List<StandingPoint> {
+  List<Map<String, Object>> toJsonList() {
+    return [for (final point in this) point.toJson()];
   }
+}
+
+/// Class to be implemented by all Test subclasses which use standing points.
+///
+/// Using this also requires that the class run
+/// [Test._standingPointTestCollectionIDs.add(collectionIDStatic)]
+/// in its register method so that it can be recognized as such.
+abstract interface class StandingPointTest {
+  final List<StandingPoint> standingPoints = [];
 }
 
 /// Mixin to add toString functionality to any class with a toJson() method.
@@ -474,6 +501,8 @@ class LightingProfileTest extends Test<LightingProfileData> with JsonToString {
   /// Static constant definition of collection ID for this test type.
   static const String collectionIDStatic = 'lighting_profile_tests';
 
+  final int testDuration;
+
   /// Creates a new [LightingProfileTest] instance from the given arguments.
   ///
   /// This is private because the intended usage of this is through the
@@ -489,19 +518,20 @@ class LightingProfileTest extends Test<LightingProfileData> with JsonToString {
     super.creationTime,
     super.maxResearchers,
     super.isComplete,
+    required this.testDuration,
   }) : super._();
 
   /// Registers this class within the Maps required by class [Test].
   static void register() {
     // Register for creating new Lighting Profile Tests
-    Test._newTestConstructors[collectionIDStatic] = ({
-      required String title,
-      required String testID,
-      required Timestamp scheduledTime,
-      required DocumentReference projectRef,
-      required String collectionID,
-      List? standingPoints,
-    }) =>
+    Test._newTestConstructors[collectionIDStatic] = (
+            {required String title,
+            required String testID,
+            required Timestamp scheduledTime,
+            required DocumentReference projectRef,
+            required String collectionID,
+            List? standingPoints,
+            int? testDuration}) =>
         LightingProfileTest._(
           title: title,
           testID: testID,
@@ -509,6 +539,7 @@ class LightingProfileTest extends Test<LightingProfileData> with JsonToString {
           projectRef: projectRef,
           collectionID: collectionID,
           data: LightingProfileData(),
+          testDuration: testDuration ?? -1,
         );
     // Register for recreating a Lighting Profile Test from Firestore
     Test._recreateTestConstructors[collectionIDStatic] = (testDoc) {
@@ -532,12 +563,13 @@ class LightingProfileTest extends Test<LightingProfileData> with JsonToString {
           );
       await testRef.set(test as LightingProfileTest, SetOptions(merge: true));
     };
+    Test._testInitialsMap[LightingProfileTest] = 'LP';
+    Test._timerTestCollectionIDs.add(collectionIDStatic);
   }
 
   @override
   void submitData(LightingProfileData data) async {
     try {
-      // Updates data in Firestore
       await _firestore.collection(collectionID).doc(testID).update({
         'data': data.toJson(),
         'isComplete': true,
@@ -564,6 +596,8 @@ class LightingProfileTest extends Test<LightingProfileData> with JsonToString {
       creationTime: doc['creationTime'],
       maxResearchers: doc['maxResearchers'],
       isComplete: doc['isComplete'],
+      testDuration:
+          doc.containsKey('testDuration') ? doc['testDuration'] ?? -1 : -1,
     );
   }
 
@@ -578,6 +612,7 @@ class LightingProfileTest extends Test<LightingProfileData> with JsonToString {
       'creationTime': creationTime,
       'maxResearchers': maxResearchers,
       'isComplete': isComplete,
+      'testDuration': testDuration,
     };
   }
 }
@@ -817,6 +852,8 @@ class AbsenceOfOrderData with JsonToString {
 class AbsenceOfOrderTest extends Test<AbsenceOfOrderData> with JsonToString {
   static const String collectionIDStatic = 'absence_of_order_tests';
 
+  final int testDuration;
+
   /// Creates a new [AbsenceOfOrderTest] instance from the given arguments.
   ///
   /// This is private because the intended usage of this is through the
@@ -829,6 +866,7 @@ class AbsenceOfOrderTest extends Test<AbsenceOfOrderData> with JsonToString {
     required super.projectRef,
     required super.collectionID,
     required super.data,
+    required this.testDuration,
     super.creationTime,
     super.maxResearchers,
     super.isComplete,
@@ -844,6 +882,7 @@ class AbsenceOfOrderTest extends Test<AbsenceOfOrderData> with JsonToString {
       required DocumentReference projectRef,
       required String collectionID,
       List? standingPoints,
+      int? testDuration,
     }) =>
         AbsenceOfOrderTest._(
           title: title,
@@ -852,6 +891,7 @@ class AbsenceOfOrderTest extends Test<AbsenceOfOrderData> with JsonToString {
           projectRef: projectRef,
           collectionID: collectionID,
           data: AbsenceOfOrderData(),
+          testDuration: testDuration ?? -1,
         );
     // Register for recreating an Absence of Order Test from Firestore
     Test._recreateTestConstructors[collectionIDStatic] = (testDoc) {
@@ -875,6 +915,8 @@ class AbsenceOfOrderTest extends Test<AbsenceOfOrderData> with JsonToString {
           );
       await testRef.set(test as AbsenceOfOrderTest, SetOptions(merge: true));
     };
+    Test._testInitialsMap[AbsenceOfOrderTest] = 'AO';
+    Test._timerTestCollectionIDs.add(collectionIDStatic);
   }
 
   @override
@@ -912,6 +954,8 @@ class AbsenceOfOrderTest extends Test<AbsenceOfOrderData> with JsonToString {
       creationTime: doc['creationTime'],
       maxResearchers: doc['maxResearchers'],
       isComplete: doc['isComplete'],
+      testDuration:
+          doc.containsKey('testDuration') ? doc['testDuration'] ?? -1 : -1,
     );
   }
 
@@ -931,6 +975,7 @@ class AbsenceOfOrderTest extends Test<AbsenceOfOrderData> with JsonToString {
       'creationTime': creationTime,
       'maxResearchers': maxResearchers,
       'isComplete': isComplete,
+      'testDuration': testDuration,
     };
   }
 }
@@ -1161,6 +1206,8 @@ class SpatialBoundariesTest extends Test<SpatialBoundariesData>
     with JsonToString {
   static const String collectionIDStatic = 'spatial_boundaries_tests';
 
+  final int testDuration;
+
   SpatialBoundariesTest._({
     required super.title,
     required super.testID,
@@ -1168,6 +1215,7 @@ class SpatialBoundariesTest extends Test<SpatialBoundariesData>
     required super.projectRef,
     required super.collectionID,
     required super.data,
+    required this.testDuration,
     super.creationTime,
     super.maxResearchers,
     super.isComplete,
@@ -1183,6 +1231,7 @@ class SpatialBoundariesTest extends Test<SpatialBoundariesData>
       required DocumentReference projectRef,
       required String collectionID,
       List? standingPoints,
+      int? testDuration,
     }) =>
         SpatialBoundariesTest._(
           title: title,
@@ -1191,6 +1240,7 @@ class SpatialBoundariesTest extends Test<SpatialBoundariesData>
           projectRef: projectRef,
           collectionID: collectionID,
           data: SpatialBoundariesData(),
+          testDuration: testDuration ?? -1,
         );
     // Register for recreating a Spatial Boundaries Test from Firestore
     Test._recreateTestConstructors[collectionIDStatic] = (testDoc) {
@@ -1214,6 +1264,7 @@ class SpatialBoundariesTest extends Test<SpatialBoundariesData>
           );
       await testRef.set(test as SpatialBoundariesTest, SetOptions(merge: true));
     };
+    Test._testInitialsMap[SpatialBoundariesTest] = 'SB';
   }
 
   @override
@@ -1245,6 +1296,8 @@ class SpatialBoundariesTest extends Test<SpatialBoundariesData>
       creationTime: doc['creationTime'],
       maxResearchers: doc['maxResearchers'],
       isComplete: doc['isComplete'],
+      testDuration:
+          doc.containsKey('testDuration') ? doc['testDuration'] ?? -1 : -1,
     );
   }
 
@@ -1259,6 +1312,7 @@ class SpatialBoundariesTest extends Test<SpatialBoundariesData>
       'creationTime': creationTime,
       'maxResearchers': maxResearchers,
       'isComplete': isComplete,
+      'testDuration': testDuration,
     };
   }
 }
@@ -1326,6 +1380,7 @@ class SectionCutterTest extends Test<Section> with JsonToString {
       required DocumentReference projectRef,
       required String collectionID,
       List? standingPoints,
+      int? testDuration,
     }) =>
         SectionCutterTest._(
           title: title,
@@ -1342,7 +1397,7 @@ class SectionCutterTest extends Test<Section> with JsonToString {
     };
     // Register for Map for Test.getPage
     Test._pageBuilders[SectionCutterTest] = (project, test) => SectionCutter(
-          projectData: project,
+          activeProject: project,
           activeTest: test as SectionCutterTest,
         );
     // Register for Map for Test.saveToFirestore
@@ -1360,6 +1415,7 @@ class SectionCutterTest extends Test<Section> with JsonToString {
       await testRef.set(test as SectionCutterTest, SetOptions(merge: true));
     };
     Test._standingPointTestCollectionIDs.add(collectionIDStatic);
+    Test._testInitialsMap[SectionCutterTest] = 'SC';
   }
 
   @override
@@ -1638,6 +1694,7 @@ class IdentifyingAccessTest extends Test<AccessData> {
       required DocumentReference projectRef,
       required String collectionID,
       List? standingPoints,
+      int? testDuration,
     }) =>
         IdentifyingAccessTest._(
           title: title,
@@ -1681,6 +1738,7 @@ class IdentifyingAccessTest extends Test<AccessData> {
         'isComplete': false,
       }, SetOptions(merge: true));
     };
+    Test._testInitialsMap[IdentifyingAccessTest] = 'IA';
   }
 
   @override
@@ -2126,6 +2184,9 @@ class NaturePrevalenceTest extends Test<NatureData> {
   /// Static constant definition of collection ID for this test type.
   static const String collectionIDStatic = 'nature_prevalence_tests';
 
+  /// User defined test timer duration in seconds.
+  final int testDuration;
+
   /// Creates a new [NaturePrevalenceTest] instance from the given arguments.
   NaturePrevalenceTest._({
     required super.title,
@@ -2137,6 +2198,7 @@ class NaturePrevalenceTest extends Test<NatureData> {
     super.creationTime,
     super.maxResearchers,
     super.isComplete,
+    required this.testDuration,
   }) : super._();
 
   /// Registers this class within the Maps required by class [Test].
@@ -2149,6 +2211,7 @@ class NaturePrevalenceTest extends Test<NatureData> {
       required DocumentReference projectRef,
       required String collectionID,
       List? standingPoints,
+      int? testDuration,
     }) =>
         NaturePrevalenceTest._(
           title: title,
@@ -2157,6 +2220,7 @@ class NaturePrevalenceTest extends Test<NatureData> {
           projectRef: projectRef,
           collectionID: collectionID,
           data: newInitialDataDeepCopy(),
+          testDuration: testDuration ?? -1,
         );
     // Register for recreating a Nature Prevalence Test from Firestore
     Test._recreateTestConstructors[collectionIDStatic] = (testDoc) {
@@ -2170,6 +2234,10 @@ class NaturePrevalenceTest extends Test<NatureData> {
         creationTime: testDoc['creationTime'],
         maxResearchers: testDoc['maxResearchers'],
         isComplete: testDoc['isComplete'],
+        // TODO: delete after database purged. Temporary for existing tests.
+        testDuration: testDoc.data()!.containsKey('testDuration')
+            ? (testDoc['testDuration'] ?? -1)
+            : -1,
       );
     };
     // Register for building a Nature Prevalence Test page
@@ -2189,9 +2257,11 @@ class NaturePrevalenceTest extends Test<NatureData> {
         'creationTime': test.creationTime,
         'maxResearchers': test.maxResearchers,
         'isComplete': false,
+        'testDuration': (test as NaturePrevalenceTest).testDuration,
       }, SetOptions(merge: true));
     };
     Test._timerTestCollectionIDs.add(collectionIDStatic);
+    Test._testInitialsMap[NaturePrevalenceTest] = 'NP';
   }
 
   @override
@@ -2350,9 +2420,11 @@ class NaturePrevalenceTest extends Test<NatureData> {
       output.animals = animalList;
       output.vegetation = vegetationList;
       output.waterBodies = waterBodyList;
-      if (weatherData == null) {
+      if (data.containsKey('data') &&
+          data['data'].containsKey('weather') &&
+          weatherData == null) {
         throw Exception(
-            "Weather is not defined in Firestore in Nature Prevalence test .");
+            "Weather is not defined in Firestore in Nature Prevalence test.");
       } else {
         output.weather = weatherData;
       }
@@ -2545,7 +2617,7 @@ class PeopleInPlaceData with JsonToString {
     if (data.containsKey('persons') &&
         (data['persons'] as List).isNotEmpty &&
         data['persons'].first is Map) {
-      List personsJsonList = data['persons'];
+      final List personsJsonList = data['persons'];
       for (final personJson in personsJsonList) {
         persons.add(PersonInPlace.fromJson(personJson));
       }
@@ -2559,10 +2631,14 @@ class PeopleInPlaceData with JsonToString {
   }
 }
 
-class PeopleInPlaceTest extends Test<PeopleInPlaceData> with JsonToString {
+class PeopleInPlaceTest extends Test<PeopleInPlaceData>
+    with JsonToString
+    implements StandingPointTest {
   static const String collectionIDStatic = 'people_in_place_tests';
 
+  @override
   final List<StandingPoint> standingPoints;
+  final int testDuration;
 
   PeopleInPlaceTest._({
     required super.title,
@@ -2575,6 +2651,7 @@ class PeopleInPlaceTest extends Test<PeopleInPlaceData> with JsonToString {
     super.creationTime,
     super.maxResearchers,
     super.isComplete,
+    required this.testDuration,
   }) : super._();
 
   static void register() {
@@ -2585,6 +2662,7 @@ class PeopleInPlaceTest extends Test<PeopleInPlaceData> with JsonToString {
       required DocumentReference projectRef,
       required String collectionID,
       List? standingPoints,
+      int? testDuration,
     }) =>
         PeopleInPlaceTest._(
           title: title,
@@ -2594,6 +2672,7 @@ class PeopleInPlaceTest extends Test<PeopleInPlaceData> with JsonToString {
           collectionID: collectionID,
           data: PeopleInPlaceData(),
           standingPoints: (standingPoints as List<StandingPoint>?) ?? [],
+          testDuration: testDuration ?? -1,
         );
     Test._recreateTestConstructors[collectionIDStatic] = (testDoc) {
       return PeopleInPlaceTest.fromJson(testDoc.data()!);
@@ -2607,7 +2686,7 @@ class PeopleInPlaceTest extends Test<PeopleInPlaceData> with JsonToString {
       final testRef = _firestore
           .collection(test.collectionID)
           .doc(test.testID)
-          .withConverter(
+          .withConverter<PeopleInPlaceTest>(
             fromFirestore: (snapshot, _) =>
                 PeopleInPlaceTest.fromJson(snapshot.data()!),
             toFirestore: (test, _) => test.toJson(),
@@ -2615,6 +2694,8 @@ class PeopleInPlaceTest extends Test<PeopleInPlaceData> with JsonToString {
       await testRef.set(test as PeopleInPlaceTest, SetOptions(merge: true));
     };
     Test._standingPointTestCollectionIDs.add(collectionIDStatic);
+    Test._testInitialsMap[PeopleInPlaceTest] = 'PP';
+    Test._timerTestCollectionIDs.add(collectionIDStatic);
   }
 
   @override
@@ -2647,6 +2728,8 @@ class PeopleInPlaceTest extends Test<PeopleInPlaceData> with JsonToString {
       maxResearchers: doc['maxResearchers'],
       isComplete: doc['isComplete'],
       standingPoints: StandingPoint.fromJsonList(doc['standingPoints']),
+      testDuration:
+          doc.containsKey('testDuration') ? doc['testDuration'] ?? -1 : -1,
     );
   }
 
@@ -2661,7 +2744,8 @@ class PeopleInPlaceTest extends Test<PeopleInPlaceData> with JsonToString {
       'creationTime': creationTime,
       'maxResearchers': maxResearchers,
       'isComplete': isComplete,
-      'standingPoints': StandingPoint.toJsonList(standingPoints),
+      'standingPoints': standingPoints.toJsonList(),
+      'testDuration': testDuration,
     };
   }
 }
@@ -2754,11 +2838,17 @@ class PeopleInMotionData with JsonToString {
   }
 }
 
-class PeopleInMotionTest extends Test<PeopleInMotionData> with JsonToString {
+class PeopleInMotionTest extends Test<PeopleInMotionData>
+    with JsonToString
+    implements StandingPointTest {
   /// Static constant definition of collection ID for this test type.
   static const String collectionIDStatic = 'people_in_motion_tests';
 
+  @override
   final List<StandingPoint> standingPoints;
+
+  /// User defined test timer duration in seconds.
+  final int testDuration;
 
   /// Private constructor for PeopleInMotionTest.
   PeopleInMotionTest._({
@@ -2769,6 +2859,7 @@ class PeopleInMotionTest extends Test<PeopleInMotionData> with JsonToString {
     required super.collectionID,
     required super.data,
     required this.standingPoints,
+    required this.testDuration,
     super.creationTime,
     super.maxResearchers,
     super.isComplete,
@@ -2784,6 +2875,7 @@ class PeopleInMotionTest extends Test<PeopleInMotionData> with JsonToString {
       required DocumentReference projectRef,
       required String collectionID,
       List? standingPoints,
+      int? testDuration,
     }) =>
         PeopleInMotionTest._(
           title: title,
@@ -2793,6 +2885,7 @@ class PeopleInMotionTest extends Test<PeopleInMotionData> with JsonToString {
           collectionID: collectionID,
           data: PeopleInMotionData(),
           standingPoints: (standingPoints as List<StandingPoint>?) ?? [],
+          testDuration: testDuration ?? -1,
         );
     // Register for recreating from Firestore
     Test._recreateTestConstructors[collectionIDStatic] = (testDoc) {
@@ -2817,6 +2910,8 @@ class PeopleInMotionTest extends Test<PeopleInMotionData> with JsonToString {
       await testRef.set(test as PeopleInMotionTest, SetOptions(merge: true));
     };
     Test._standingPointTestCollectionIDs.add(collectionIDStatic);
+    Test._testInitialsMap[PeopleInMotionTest] = 'PM';
+    Test._timerTestCollectionIDs.add(collectionIDStatic);
   }
 
   /// Handles data submission to Firestore when the test is completed.
@@ -2851,6 +2946,8 @@ class PeopleInMotionTest extends Test<PeopleInMotionData> with JsonToString {
       maxResearchers: doc['maxResearchers'],
       isComplete: doc['isComplete'],
       standingPoints: StandingPoint.fromJsonList(doc['standingPoints']),
+      testDuration:
+          doc.containsKey('testDuration') ? doc['testDuration'] ?? -1 : -1,
     );
   }
 
@@ -2865,7 +2962,261 @@ class PeopleInMotionTest extends Test<PeopleInMotionData> with JsonToString {
       'creationTime': creationTime,
       'maxResearchers': maxResearchers,
       'isComplete': isComplete,
-      'standingPoints': StandingPoint.toJsonList(standingPoints),
+      'standingPoints': standingPoints.toJsonList(),
+      'testDuration': testDuration,
+    };
+  }
+}
+
+enum SoundType implements DisplayNameEnum {
+  water(displayName: 'Water', color: Colors.blue),
+  traffic(displayName: 'Traffic', color: Colors.orange),
+  people(displayName: 'People', color: Colors.purple),
+  animals(displayName: 'Animals', color: Colors.brown),
+  wind(displayName: 'Wind', color: Colors.grey),
+  music(displayName: 'Music', color: Colors.red),
+  other(displayName: 'Other', color: Colors.black87);
+
+  const SoundType({required this.displayName, required this.color});
+
+  @override
+  final String displayName;
+  final Color color;
+}
+
+/// Data model to store one acoustic measurement
+class AcousticMeasurement with JsonToString {
+  final double decibels;
+  final Set<SoundType> soundTypes;
+  final String other;
+  final SoundType mainSoundType;
+
+  AcousticMeasurement({
+    required this.decibels,
+    required this.soundTypes,
+    required this.other,
+    required this.mainSoundType,
+  }) {
+    // Validation
+    final hasOther = soundTypes.contains(SoundType.other);
+    if ((hasOther && other.isEmpty) || (!hasOther && other.isNotEmpty)) {
+      throw Exception('Other mismatch when constructing AcousticMeasurement');
+    }
+  }
+
+  factory AcousticMeasurement.fromJson(Map<String, dynamic> data) {
+    if (data
+        case {
+          'decibels': num decibels,
+          'soundTypes': List soundTypes,
+          'other': String other,
+          'mainSoundType': String mainSoundType,
+        }) {
+      if (soundTypes.isNotEmpty) {
+        return AcousticMeasurement(
+            decibels: decibels.toDouble(),
+            soundTypes: soundTypes
+                .map((string) => SoundType.values.byName(string))
+                .toSet(),
+            other: other,
+            mainSoundType: SoundType.values.byName(mainSoundType));
+      }
+    }
+    throw FormatException('Invalid JSON: $data', data);
+  }
+
+  @override
+  Map<String, Object> toJson() {
+    return {
+      'decibels': decibels,
+      'soundTypes': soundTypes.map((type) => type.name).toList(),
+      'mainSoundType': mainSoundType.name,
+      'other': other,
+    };
+  }
+}
+
+class AcousticDataPoint with JsonToString {
+  final StandingPoint standingPoint;
+  final List<AcousticMeasurement> measurements;
+
+  AcousticDataPoint({required this.standingPoint, required this.measurements});
+
+  factory AcousticDataPoint.fromJson(Map<String, dynamic> data) {
+    if (data
+        case {
+          'standingPoint': Map<String, dynamic> point,
+          'measurements': List measurements,
+        }) {
+      return AcousticDataPoint(
+        standingPoint: StandingPoint.fromJson(point),
+        measurements: measurements
+            .map((json) => AcousticMeasurement.fromJson(json))
+            .toList(),
+      );
+    }
+    throw FormatException('Invalid JSON: $data', data);
+  }
+
+  @override
+  Map<String, Object> toJson() {
+    return {
+      'standingPoint': standingPoint.toJson(),
+      'measurements':
+          measurements.map((measurement) => measurement.toJson()).toList(),
+    };
+  }
+}
+
+class AcousticProfileData with JsonToString {
+  final List<AcousticDataPoint> dataPoints;
+
+  AcousticProfileData({required this.dataPoints});
+  AcousticProfileData.empty() : dataPoints = [];
+
+  factory AcousticProfileData.fromJson(Map<String, dynamic> data) {
+    if (data case {'dataPoints': List dataPoints}) {
+      return AcousticProfileData(
+          dataPoints: dataPoints
+              .map((dataPoint) => AcousticDataPoint.fromJson(dataPoint))
+              .toList());
+    }
+    throw FormatException('Invalid JSON: $data', data);
+  }
+
+  @override
+  Map<String, Object> toJson() {
+    return {'dataPoints': dataPoints.map((point) => point.toJson()).toList()};
+  }
+}
+
+/// Class for Acoustic Profile Test info and methods.
+class AcousticProfileTest extends Test<AcousticProfileData>
+    with JsonToString
+    implements StandingPointTest {
+  /// Static constant definition of collection ID for this test type.
+  static const String collectionIDStatic = 'acoustic_profile_tests';
+
+  @override
+  final List<StandingPoint> standingPoints;
+  // final int duration;
+  // final int intervalCount;
+
+  /// Private constructor for AcousticProfileTest.
+  AcousticProfileTest._({
+    required super.title,
+    required super.testID,
+    required super.scheduledTime,
+    required super.projectRef,
+    required super.collectionID,
+    required super.data,
+    required this.standingPoints,
+    super.creationTime,
+    super.maxResearchers,
+    super.isComplete,
+  }) : super._();
+
+  /// Registers this test type in the Test class system.
+  static void register() {
+    Test._newTestConstructors[collectionIDStatic] = (
+            {required String title,
+            required String testID,
+            required Timestamp scheduledTime,
+            required DocumentReference projectRef,
+            required String collectionID,
+            List? standingPoints,
+            int? testDuration}) =>
+        AcousticProfileTest._(
+          title: title,
+          testID: testID,
+          scheduledTime: scheduledTime,
+          projectRef: projectRef,
+          collectionID: collectionID,
+          data: AcousticProfileData.empty(),
+          standingPoints: (standingPoints as List<StandingPoint>?) ?? [],
+        );
+    Test._recreateTestConstructors[collectionIDStatic] = (testDoc) {
+      return AcousticProfileTest.fromJson(testDoc.data()!);
+    };
+    Test._pageBuilders[AcousticProfileTest] =
+        (project, test) => AcousticProfileTestPage(
+              activeProject: project,
+              activeTest: test as AcousticProfileTest,
+            );
+    Test._saveToFirestoreFunctions[AcousticProfileTest] = (test) async {
+      final testRef = _firestore
+          .collection(test.collectionID)
+          .doc(test.testID)
+          .withConverter<AcousticProfileTest>(
+            fromFirestore: (snapshot, _) =>
+                AcousticProfileTest.fromJson(snapshot.data()!),
+            toFirestore: (test, _) => test.toJson(),
+          );
+      await testRef.set(test as AcousticProfileTest, SetOptions(merge: true));
+    };
+    Test._standingPointTestCollectionIDs.add(collectionIDStatic);
+    Test._testInitialsMap[AcousticProfileTest] = 'AP';
+  }
+
+  @override
+  Future<void> submitData(AcousticProfileData data) async {
+    try {
+      await _firestore.collection(collectionID).doc(testID).update({
+        'data': data.toJson(),
+        'isComplete': true,
+      });
+
+      this.data = data;
+      isComplete = true;
+
+      print('Success! In AcousticProfileTest.submitData. data = $data');
+    } catch (e, stacktrace) {
+      print("Exception in AcousticProfileTest.submitData(): $e");
+      print("Stacktrace: $stacktrace");
+    }
+  }
+
+  factory AcousticProfileTest.fromJson(Map<String, dynamic> data) {
+    if (data
+        case {
+          'title': String title,
+          'id': String id,
+          'scheduledTime': Timestamp scheduledTime,
+          'project': DocumentReference project,
+          'data': Map<String, dynamic> testData,
+          'creationTime': Timestamp creationTime,
+          'maxResearchers': int maxResearchers,
+          'isComplete': bool isComplete,
+          'standingPoints': List standingPoints,
+        }) {
+      return AcousticProfileTest._(
+        title: title,
+        testID: id,
+        scheduledTime: scheduledTime,
+        projectRef: project,
+        collectionID: collectionIDStatic,
+        data: AcousticProfileData.fromJson(testData),
+        creationTime: creationTime,
+        maxResearchers: maxResearchers.toInt(),
+        isComplete: isComplete,
+        standingPoints: StandingPoint.fromJsonList(standingPoints),
+      );
+    }
+    throw FormatException('Invalid JSON: $data', data);
+  }
+
+  @override
+  Map<String, Object> toJson() {
+    return {
+      'title': title,
+      'id': testID,
+      'scheduledTime': scheduledTime,
+      'project': projectRef,
+      'data': data.toJson(),
+      'creationTime': creationTime,
+      'maxResearchers': maxResearchers,
+      'isComplete': isComplete,
+      'standingPoints': standingPoints.toJsonList(),
     };
   }
 }

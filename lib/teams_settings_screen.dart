@@ -478,7 +478,7 @@ class _TeamSettingsScreenState extends State<TeamSettingsScreen> {
                     padding: EdgeInsets.fromLTRB(24.0, 20.0, 24.0, 14.0),
                     decoration: BoxDecoration(
                       // frosted glass effect
-                      color: Color(0xFF2F6DCF).withValues(alpha: 0.55),
+                      color: p2bpBlue.withValues(alpha: 0.55),
                       borderRadius: BorderRadius.circular(18.0),
                     ),
                     child: Column(

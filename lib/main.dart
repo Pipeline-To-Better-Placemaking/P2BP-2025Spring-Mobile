@@ -25,6 +25,7 @@ void registerTestTypes() {
   PeopleInPlaceTest.register();
   PeopleInMotionTest.register();
   NaturePrevalenceTest.register();
+  AcousticProfileTest.register();
   SpatialBoundariesTest.register();
 }
 
