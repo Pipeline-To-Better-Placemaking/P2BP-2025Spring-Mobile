@@ -1,17 +1,18 @@
 import 'dart:async';
+import 'dart:io';
 
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:maps_toolkit/maps_toolkit.dart' as mp;
-import 'firestore_functions.dart';
-import 'theme.dart';
+
 import 'db_schema_classes.dart';
+import 'firestore_functions.dart';
 import 'google_maps_functions.dart';
-import 'widgets.dart';
 import 'spatial_boundaries_instructions.dart';
-import 'dart:io';
+import 'theme.dart';
+import 'widgets.dart';
 
 class SpatialBoundariesTestPage extends StatefulWidget {
   final Project activeProject;
