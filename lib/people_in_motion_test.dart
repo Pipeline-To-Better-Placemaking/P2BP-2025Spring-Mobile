@@ -287,6 +287,7 @@ class _PeopleInMotionTestPageState extends State<PeopleInMotionTestPage> {
 
   void _endTest() {
     _timer?.cancel();
+    _outsidePointTimer?.cancel();
     widget.activeTest.submitData(_newData);
     Navigator.pop(context);
   }

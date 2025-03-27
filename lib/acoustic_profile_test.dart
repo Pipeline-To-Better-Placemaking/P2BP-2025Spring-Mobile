@@ -48,8 +48,8 @@ class _AcousticProfileTestPageState extends State<AcousticProfileTestPage> {
   late final List<StandingPoint> _standingPoints;
 
   Timer? _timer;
-  final int _intervalDuration = 4; // TODO replace with member of test later
-  final int _intervalCount = 3; // TODO replace with member of test later
+  int _intervalDuration = -1;
+  int _intervalCount = -1;
   int _remainingSeconds = 0;
   int _intervalsRemaining = 0;
 
@@ -62,13 +62,15 @@ class _AcousticProfileTestPageState extends State<AcousticProfileTestPage> {
   @override
   void initState() {
     super.initState();
-    _intervalsRemaining = _intervalCount;
     _polygons.add(getProjectPolygon(widget.activeProject.polygonPoints));
     _location = getPolygonCentroid(_polygons.first);
     _zoom = getIdealZoom(
       _polygons.first.toMPLatLngList(),
       _location.toMPLatLng(),
     );
+    _intervalDuration = widget.activeTest.intervalDuration;
+    _intervalCount = widget.activeTest.intervalCount;
+    _intervalsRemaining = _intervalCount;
     _standingPoints = widget.activeTest.standingPoints.toList();
     // Create an AcousticDataPoint in _newData for each standing point.
     for (final point in _standingPoints) {
@@ -265,7 +267,7 @@ class _AcousticProfileTestPageState extends State<AcousticProfileTestPage> {
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
       builder: (context) {
         return Padding(
-          padding: MediaQuery.of(context).viewInsets + const EdgeInsets.all(16),
+          padding: MediaQuery.viewInsetsOf(context) + const EdgeInsets.all(16),
           child: _DecibelLevelForm(),
         );
       },
@@ -284,7 +286,7 @@ class _AcousticProfileTestPageState extends State<AcousticProfileTestPage> {
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
       builder: (context) {
         return Padding(
-          padding: MediaQuery.of(context).viewInsets + const EdgeInsets.all(16),
+          padding: MediaQuery.viewInsetsOf(context) + const EdgeInsets.all(16),
           child: _SoundTypeForm(),
         );
       },
@@ -303,7 +305,7 @@ class _AcousticProfileTestPageState extends State<AcousticProfileTestPage> {
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
       builder: (context) {
         return Padding(
-          padding: MediaQuery.of(context).viewInsets + const EdgeInsets.all(16),
+          padding: MediaQuery.viewInsetsOf(context) + const EdgeInsets.all(16),
           child: _MainSoundTypeForm(selectedSoundTypes),
         );
       },
@@ -451,24 +453,42 @@ class _AcousticProfileTestPageState extends State<AcousticProfileTestPage> {
               children: <Widget>[
                 Padding(
                   padding: const EdgeInsets.only(top: 15.0, left: 15.0),
-                  child: TimerButtonAndDisplay(
-                    onPressed:
-                        (!_isIntervalCycleRunning && _activeMarker != null)
-                            ? () {
-                                setState(() {
-                                  if (_isIntervalCycleRunning) {
+                  child: Column(
+                    spacing: 10,
+                    children: <Widget>[
+                      TimerButtonAndDisplay(
+                        onPressed:
+                            (!_isIntervalCycleRunning && _activeMarker != null)
+                                ? () {
                                     setState(() {
-                                      _isIntervalCycleRunning = false;
-                                      _timer?.cancel();
+                                      if (_isIntervalCycleRunning) {
+                                        setState(() {
+                                          _isIntervalCycleRunning = false;
+                                          _timer?.cancel();
+                                        });
+                                      } else {
+                                        _startIntervalCycles();
+                                      }
                                     });
-                                  } else {
-                                    _startIntervalCycles();
                                   }
-                                });
-                              }
-                            : null,
-                    isTestRunning: _isIntervalCycleRunning,
-                    remainingSeconds: _remainingSeconds,
+                                : null,
+                        isTestRunning: _isIntervalCycleRunning,
+                        remainingSeconds: _remainingSeconds,
+                      ),
+                      Container(
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 12, vertical: 8),
+                        decoration: BoxDecoration(
+                          color: Colors.black.withValues(alpha: 0.6),
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                        child: Text(
+                          '${_intervalCount - _intervalsRemaining} / $_intervalCount',
+                          style: const TextStyle(
+                              color: Colors.white, fontSize: 14),
+                        ),
+                      ),
+                    ],
                   ),
                 ),
                 Expanded(

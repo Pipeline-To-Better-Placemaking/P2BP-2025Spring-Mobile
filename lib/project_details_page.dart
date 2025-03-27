@@ -1,15 +1,15 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
-import 'package:p2bp_2025spring_mobile/show_project_options_dialog.dart';
-import 'db_schema_classes.dart';
 import 'package:flutter/services.dart';
-import 'package:p2bp_2025spring_mobile/create_test_form.dart';
-import 'package:p2bp_2025spring_mobile/theme.dart';
-import 'firestore_functions.dart';
-import 'package:intl/intl.dart';
-import 'package:p2bp_2025spring_mobile/acoustic_profile_test.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
+import 'package:intl/intl.dart';
+import 'package:p2bp_2025spring_mobile/create_test_form.dart';
+import 'package:p2bp_2025spring_mobile/show_project_options_dialog.dart';
+import 'package:p2bp_2025spring_mobile/theme.dart';
+
+import 'db_schema_classes.dart';
+import 'firestore_functions.dart';
 import 'mini_map.dart';
 
 class ProjectDetailsPage extends StatefulWidget {
@@ -255,9 +255,8 @@ class _ProjectDetailsPageState extends State<ProjectDetailsPage> {
   void _showCreateTestModal() async {
     final Map<String, dynamic>? newTestInfo = await showModalBottomSheet(
       context: context,
-      isScrollControlled: true, // allows the sheet to be fully draggable
-      backgroundColor:
-          Colors.transparent, // makes the sheet's corners rounded if desired
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
       builder: (BuildContext context) {
         return DraggableScrollableSheet(
           initialChildSize: 0.7,
@@ -275,15 +274,13 @@ class _ProjectDetailsPageState extends State<ProjectDetailsPage> {
               child: CreateTestForm(
                 activeProject: widget.projectData,
               ),
-              // Replace this ListView with your desired content
             );
           },
         );
       },
     );
     if (newTestInfo == null) return;
-    final Test test;
-    test = await saveTest(
+    final Test test = await saveTest(
       title: newTestInfo['title'],
       scheduledTime: newTestInfo['scheduledTime'],
       projectRef:
@@ -294,6 +291,12 @@ class _ProjectDetailsPageState extends State<ProjectDetailsPage> {
           : null,
       testDuration: newTestInfo.containsKey('testDuration')
           ? newTestInfo['testDuration']
+          : null,
+      intervalDuration: newTestInfo.containsKey('intervalDuration')
+          ? newTestInfo['intervalDuration']
+          : null,
+      intervalCount: newTestInfo.containsKey('intervalCount')
+          ? newTestInfo['intervalCount']
           : null,
     );
     setState(() {
@@ -367,14 +370,10 @@ class TestCard extends StatelessWidget {
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Row(
-                          children: [
-                            Text(
-                              test.title,
-                              overflow: TextOverflow.ellipsis,
-                              style: TextStyle(fontWeight: FontWeight.bold),
-                            ),
-                          ],
+                        Text(
+                          test.title,
+                          overflow: TextOverflow.ellipsis,
+                          style: TextStyle(fontWeight: FontWeight.bold),
                         ),
                         Row(
                           children: [

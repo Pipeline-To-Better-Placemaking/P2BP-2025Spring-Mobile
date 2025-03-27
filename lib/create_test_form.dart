@@ -24,7 +24,9 @@ class _CreateTestFormState extends State<CreateTestForm> {
 
   DateTime? _selectedDateTime;
   String? _selectedTest;
-  int? _timerSeconds;
+  int? _testDuration;
+  int? _intervalDuration;
+  int? _intervalCount;
 
   List _standingPoints = [];
 
@@ -32,6 +34,7 @@ class _CreateTestFormState extends State<CreateTestForm> {
   String _standingPointType = '';
   bool _standingPointsError = false;
   bool _timerTest = false;
+  bool _intervalTimerTest = false;
 
   final List<({String value, String text})> _testStringPairs = [
     (
@@ -122,322 +125,387 @@ class _CreateTestFormState extends State<CreateTestForm> {
           );
   }
 
-  List<DropdownMenuItem<String>> _buildDropdownMenuList() {
-    return [
-      for (final strings in _testStringPairs)
-        DropdownMenuItem(
-          value: strings.value,
-          child: Text(
-            strings.text,
-            style: TextStyle(color: p2bpBlue),
-          ),
-        ),
-    ];
-  }
-
   @override
   Widget build(BuildContext context) {
     return Form(
       key: _formKey,
-      child: Center(
-        child: ListView(
-          padding: EdgeInsets.fromLTRB(16, 0, 16, 16),
-          children: <Widget>[
-            // Pill notch
-            Align(
-              alignment: Alignment.center,
-              child: Padding(
-                padding: const EdgeInsets.symmetric(vertical: 6.0),
-                child: Container(
-                  width: 40,
-                  height: 4,
-                  decoration: BoxDecoration(
-                    color: Color.fromRGBO(47, 109, 207, 0.2), // light grey?
-                    borderRadius: BorderRadius.circular(2.0),
-                  ),
-                ),
-              ),
-            ),
-            // Vertical padding from the pill notch
-            SizedBox(height: 16),
-            TextFormField(
-              controller: _activityNameController,
-              decoration: InputDecoration(
-                labelText: "Activity Name",
-                floatingLabelBehavior: FloatingLabelBehavior.always,
-                labelStyle: TextStyle(color: p2bpBlue),
-                floatingLabelStyle: TextStyle(color: Color(0xFF1A3C70)),
-                enabledBorder:
-                    OutlineInputBorder(borderSide: BorderSide(color: p2bpBlue)),
-                focusedBorder: OutlineInputBorder(
-                    borderSide: BorderSide(color: Color(0xFF1A3C70))),
-                border: OutlineInputBorder(),
-              ),
-              autovalidateMode: AutovalidateMode.onUserInteraction,
-              validator: (value) {
-                if (value == null || value.isEmpty) {
-                  return 'Please enter a name for this activity.';
-                }
-                return null;
-              },
-            ),
-            SizedBox(height: 16),
-            // Activity Time via a dial spinner (using CupertinoTimerPicker)
-            // Activity Time field (replacing the dial spinner)
-            TextFormField(
-              readOnly: true,
-              decoration: InputDecoration(
-                labelText: 'Scheduled Time',
-                floatingLabelBehavior: FloatingLabelBehavior.always,
-                labelStyle: TextStyle(color: p2bpBlue),
-                floatingLabelStyle: TextStyle(color: Color(0xFF1A3C70)),
-                enabledBorder:
-                    OutlineInputBorder(borderSide: BorderSide(color: p2bpBlue)),
-                focusedBorder: OutlineInputBorder(
-                    borderSide: BorderSide(color: Color(0xFF1A3C70))),
-                border: OutlineInputBorder(),
-              ),
-              controller: _dateTimeController,
-              onTap: () async {
-                DateTime? pickedDateTime =
-                    await showDateTimePicker(context: context);
-                if (pickedDateTime != null) {
-                  setState(() {
-                    _selectedDateTime = pickedDateTime;
-                    _dateTimeController.text =
-                        pickedDateTime.toLocal().toString();
-                  });
-                }
-              },
-              autovalidateMode: AutovalidateMode.onUserInteraction,
-              validator: (value) {
-                if (value == null || value.isEmpty) {
-                  return 'Please schedule a time for this activity.';
-                }
-                return null;
-              },
-            ),
-            SizedBox(height: 16),
-            _timerTest
-                ? TextFormField(
-                    decoration: InputDecoration(
-                      labelText: 'Test Duration (mm:ss)',
-                      hintText: 'mm:ss',
-                      floatingLabelBehavior: FloatingLabelBehavior.always,
-                      labelStyle: TextStyle(color: Color(0xFF2F6DCF)),
-                      floatingLabelStyle: TextStyle(color: Color(0xFF1A3C70)),
-                      enabledBorder: OutlineInputBorder(
-                          borderSide: BorderSide(color: Color(0xFF2F6DCF))),
-                      focusedBorder: OutlineInputBorder(
-                          borderSide: BorderSide(color: Color(0xFF1A3C70))),
-                      border: OutlineInputBorder(),
-                    ),
-                    onChanged: (value) {
-                      if (value.length != 5) return;
-                      int? seconds;
-                      int? minutes;
-                      seconds = int.tryParse(value.substring(3)) ?? 0;
-                      minutes = int.tryParse(value.substring(0, 2)) ?? 0;
-                      seconds += minutes * 60;
-                      _timerSeconds = seconds;
-                    },
-                    inputFormatters: [MinSecondsFormatter()],
-                    keyboardType: TextInputType.number,
-                    autovalidateMode: AutovalidateMode.onUserInteraction,
-                    validator: (value) {
-                      if (value == null || value.isEmpty) {
-                        return 'Set a time for the timer. Format as mm:ss.';
-                      }
-                      return null;
-                    },
-                  )
-                : SizedBox(),
-            SizedBox(height: _timerTest ? 16 : 0),
-            // Dropdown menu for selecting an activity
-            DropdownButtonFormField2<String>(
-              decoration: InputDecoration(
-                labelText: "Select Activity",
-                floatingLabelBehavior: FloatingLabelBehavior.never,
-                // filled: true,
-                // fillColor: Color.fromRGBO(47, 109, 207, 0.1),
-                labelStyle: TextStyle(color: p2bpBlue),
-                floatingLabelStyle: TextStyle(color: Color(0xFF1A3C70)),
-                enabledBorder:
-                    OutlineInputBorder(borderSide: BorderSide(color: p2bpBlue)),
-                focusedBorder: OutlineInputBorder(
-                    borderSide: BorderSide(color: Color(0xFF1A3C70))),
-                border: OutlineInputBorder(),
-              ),
-              dropdownStyleData: DropdownStyleData(
-                width: 370,
-                maxHeight: 200, // Sets the popup menu's width to 200 pixels.
+      child: ListView(
+        padding: MediaQuery.viewInsetsOf(context) +
+            EdgeInsets.fromLTRB(16, 0, 16, 16),
+        children: <Widget>[
+          // Pill notch
+          Align(
+            alignment: Alignment.center,
+            child: Padding(
+              padding: const EdgeInsets.symmetric(vertical: 6.0),
+              child: Container(
+                width: 40,
+                height: 4,
                 decoration: BoxDecoration(
-                  color: Color.fromARGB(255, 234, 245, 255),
-                  borderRadius: BorderRadius.circular(12.0),
+                  color: Color.fromRGBO(47, 109, 207, 0.2),
+                  borderRadius: BorderRadius.circular(2.0),
                 ),
               ),
-              isExpanded: true,
-              items: _buildDropdownMenuList(),
-              onChanged: (value) {
-                _selectedTest = value;
-                _standingPoints = [];
+            ),
+          ),
+          // Vertical padding from the pill notch
+          SizedBox(height: 16),
+          TextFormField(
+            controller: _activityNameController,
+            decoration: InputDecoration(
+              labelText: "Activity Name",
+              floatingLabelBehavior: FloatingLabelBehavior.always,
+              labelStyle: TextStyle(color: p2bpBlue),
+              floatingLabelStyle: TextStyle(color: Color(0xFF1A3C70)),
+              enabledBorder:
+                  OutlineInputBorder(borderSide: BorderSide(color: p2bpBlue)),
+              focusedBorder: OutlineInputBorder(
+                  borderSide: BorderSide(color: Color(0xFF1A3C70))),
+              border: OutlineInputBorder(),
+            ),
+            autovalidateMode: AutovalidateMode.onUserInteraction,
+            validator: (value) {
+              if (value == null || value.isEmpty) {
+                return 'Please enter a name for this activity.';
+              }
+              return null;
+            },
+          ),
+          SizedBox(height: 16),
+          // Activity Time via a dial spinner (using CupertinoTimerPicker)
+          // Activity Time field (replacing the dial spinner)
+          TextFormField(
+            readOnly: true,
+            decoration: InputDecoration(
+              labelText: 'Scheduled Time',
+              floatingLabelBehavior: FloatingLabelBehavior.always,
+              labelStyle: TextStyle(color: p2bpBlue),
+              floatingLabelStyle: TextStyle(color: Color(0xFF1A3C70)),
+              enabledBorder:
+                  OutlineInputBorder(borderSide: BorderSide(color: p2bpBlue)),
+              focusedBorder: OutlineInputBorder(
+                  borderSide: BorderSide(color: Color(0xFF1A3C70))),
+              border: OutlineInputBorder(),
+            ),
+            controller: _dateTimeController,
+            onTap: () async {
+              DateTime? pickedDateTime =
+                  await showDateTimePicker(context: context);
+              if (pickedDateTime != null) {
                 setState(() {
-                  _standingPointsTest = Test.isStandingPointTest(_selectedTest);
-                  _timerTest = Test.isTimerTest(_selectedTest);
-                  if (_selectedTest
-                          ?.compareTo(SectionCutterTest.collectionIDStatic) ==
-                      0) {
-                    _standingPointType = 'A Section Line';
-                  } else if (_standingPointsTest) {
-                    _standingPointType = 'Standing Points';
-                  }
+                  _selectedDateTime = pickedDateTime;
+                  _dateTimeController.text =
+                      pickedDateTime.toLocal().toString();
                 });
+              }
+            },
+            autovalidateMode: AutovalidateMode.onUserInteraction,
+            validator: (value) {
+              if (value == null || value.isEmpty) {
+                return 'Please schedule a time for this activity.';
+              }
+              return null;
+            },
+          ),
+          SizedBox(height: 16),
+          if (_timerTest)
+            TextFormField(
+              decoration: InputDecoration(
+                labelText: 'Test Duration (mm:ss)',
+                hintText: 'mm:ss',
+                floatingLabelBehavior: FloatingLabelBehavior.always,
+                labelStyle: TextStyle(color: Color(0xFF2F6DCF)),
+                floatingLabelStyle: TextStyle(color: Color(0xFF1A3C70)),
+                enabledBorder: OutlineInputBorder(
+                    borderSide: BorderSide(color: Color(0xFF2F6DCF))),
+                focusedBorder: OutlineInputBorder(
+                    borderSide: BorderSide(color: Color(0xFF1A3C70))),
+                border: OutlineInputBorder(),
+              ),
+              onChanged: (value) {
+                if (value.length != 5) return;
+                int? seconds;
+                int? minutes;
+                seconds = int.tryParse(value.substring(3)) ?? 0;
+                minutes = int.tryParse(value.substring(0, 2)) ?? 0;
+                seconds += minutes * 60;
+                _testDuration = seconds;
               },
+              inputFormatters: [MinSecondsFormatter()],
+              keyboardType: TextInputType.number,
               autovalidateMode: AutovalidateMode.onUserInteraction,
               validator: (value) {
-                if (value == null) {
-                  return 'Please select an activity type.';
+                if (value == null || value.isEmpty) {
+                  return 'Set a duration for the test. Format as mm:ss.';
                 }
                 return null;
               },
+            )
+          else
+            SizedBox(),
+          SizedBox(height: _timerTest ? 16 : 0),
+          if (_intervalTimerTest)
+            TextFormField(
+              decoration: InputDecoration(
+                labelText: 'Interval Duration (mm:ss)',
+                hintText: 'mm:ss',
+                floatingLabelBehavior: FloatingLabelBehavior.always,
+                labelStyle: TextStyle(color: Color(0xFF2F6DCF)),
+                floatingLabelStyle: TextStyle(color: Color(0xFF1A3C70)),
+                enabledBorder: OutlineInputBorder(
+                    borderSide: BorderSide(color: Color(0xFF2F6DCF))),
+                focusedBorder: OutlineInputBorder(
+                    borderSide: BorderSide(color: Color(0xFF1A3C70))),
+                border: OutlineInputBorder(),
+              ),
+              onChanged: (value) {
+                if (value.length != 5) return;
+                int? seconds;
+                int? minutes;
+                seconds = int.tryParse(value.substring(3)) ?? 0;
+                minutes = int.tryParse(value.substring(0, 2)) ?? 0;
+                seconds += minutes * 60;
+                _intervalDuration = seconds;
+              },
+              inputFormatters: [MinSecondsFormatter()],
+              keyboardType: TextInputType.number,
+              autovalidateMode: AutovalidateMode.onUserInteraction,
+              validator: (value) {
+                if (value == null || value.isEmpty) {
+                  return 'Set a duration for each interval. Format as mm:ss.';
+                }
+                return null;
+              },
+            )
+          else
+            SizedBox(),
+          SizedBox(height: _intervalTimerTest ? 16 : 0),
+          if (_intervalTimerTest)
+            TextFormField(
+              decoration: InputDecoration(
+                labelText: 'Interval Count',
+                floatingLabelBehavior: FloatingLabelBehavior.always,
+                labelStyle: TextStyle(color: Color(0xFF2F6DCF)),
+                floatingLabelStyle: TextStyle(color: Color(0xFF1A3C70)),
+                enabledBorder: OutlineInputBorder(
+                    borderSide: BorderSide(color: Color(0xFF2F6DCF))),
+                focusedBorder: OutlineInputBorder(
+                    borderSide: BorderSide(color: Color(0xFF1A3C70))),
+                border: OutlineInputBorder(),
+              ),
+              onChanged: (value) {
+                final count = int.parse(value);
+                _intervalCount = count;
+              },
+              keyboardType: TextInputType.number,
+              autovalidateMode: AutovalidateMode.onUserInteraction,
+              validator: (value) {
+                if (value == null || value.isEmpty) {
+                  return 'Enter the amount of intervals for this test.';
+                }
+                return null;
+              },
+            )
+          else
+            SizedBox(),
+          SizedBox(height: _intervalTimerTest ? 16 : 0),
+          // Dropdown menu for selecting an activity
+          DropdownButtonFormField2<String>(
+            decoration: InputDecoration(
+              labelText: "Select Activity",
+              floatingLabelBehavior: FloatingLabelBehavior.never,
+              // filled: true,
+              // fillColor: Color.fromRGBO(47, 109, 207, 0.1),
+              labelStyle: TextStyle(color: p2bpBlue),
+              floatingLabelStyle: TextStyle(color: Color(0xFF1A3C70)),
+              enabledBorder:
+                  OutlineInputBorder(borderSide: BorderSide(color: p2bpBlue)),
+              focusedBorder: OutlineInputBorder(
+                  borderSide: BorderSide(color: Color(0xFF1A3C70))),
+              border: OutlineInputBorder(),
             ),
-            SizedBox(height: 16),
-            _standingPointsTest
-                ? Row(
-                    children: [
-                      Spacer(),
-                      Expanded(
-                        flex: 2,
-                        child: ElevatedButton(
-                          onPressed: () async {
-                            final List tempPoints;
-                            tempPoints = await Navigator.push(
-                              context,
-                              MaterialPageRoute(
-                                builder: (context) => (_selectedTest?.compareTo(
-                                            SectionCutterTest
-                                                .collectionIDStatic) ==
-                                        0)
-                                    ? SectionCreationPage(
-                                        activeProject: widget.activeProject,
-                                        currentSection:
-                                            _standingPoints.isNotEmpty
-                                                ? _standingPoints
-                                                : null,
-                                      )
-                                    : StandingPointsPage(
-                                        activeProject: widget.activeProject,
-                                        currentStandingPoints:
-                                            _standingPoints.isNotEmpty
-                                                ? _standingPoints
-                                                    as List<StandingPoint>
-                                                : null,
-                                      ),
-                              ),
-                            );
-                            setState(() {
-                              _standingPoints = tempPoints;
-                            });
-                          },
-                          style: ElevatedButton.styleFrom(
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(10.0),
-                              side: (_standingPointsError)
-                                  ? BorderSide(color: Color(0xFFB3261E))
-                                  : BorderSide(color: Colors.transparent),
-                            ),
-                            backgroundColor: Color(0xFF2F6DCF),
-                          ),
-                          child: Text(
-                            _standingPoints.isEmpty
-                                ? 'Add $_standingPointType'
-                                : 'Edit $_standingPointType',
-                            style: TextStyle(color: Colors.white),
-                          ),
-                        ),
-                      ),
-                      Expanded(
-                        flex: 1,
-                        child: SizedBox(
-                          child: Align(
-                            alignment: Alignment.centerLeft,
-                            child: Padding(
-                              padding: const EdgeInsets.only(left: 8.0),
-                              child: _standingPoints.isNotEmpty
-                                  ? Icon(Icons.check_circle,
-                                      color: Colors.green)
-                                  : SizedBox(),
-                            ),
-                          ),
-                        ),
-                      ),
-                    ],
-                  )
-                : SizedBox(),
-            (_standingPointsError)
-                ? Center(
-                    child: Text(
-                        'Please add ${_standingPointType.toLowerCase()} first.',
-                        style: TextStyle(color: Color(0xFFB3261E))),
-                  )
-                : SizedBox(),
-            SizedBox(height: 32),
-            // Optional: A button to submit the form
-            Align(
-              alignment: Alignment.center,
-              child: ElevatedButton(
-                onPressed: () {
-                  final bool validated = _formKey.currentState!.validate();
-                  if (_standingPointsTest) {
-                    if (_standingPoints.isEmpty) {
-                      setState(() {
-                        _standingPointsError = true;
-                      });
-                      return;
-                    }
-                  }
-                  if (validated) {
-                    final Map<String, dynamic> newTestInfo = {
-                      'title': _activityNameController.text,
-                      'scheduledTime': Timestamp.fromDate(_selectedDateTime!),
-                      'collectionID': _selectedTest,
-                    };
-                    if (_standingPointsTest) {
-                      newTestInfo.update(
-                          'standingPoints', (value) => _standingPoints,
-                          ifAbsent: () => _standingPoints);
-                    }
-                    if (_timerTest) {
-                      newTestInfo.update(
-                          'testDuration', (value) => _timerSeconds,
-                          ifAbsent: () => _timerSeconds);
-                    }
-                    // Handle form submission
-                    Navigator.of(context).pop(newTestInfo);
-                  }
-                },
-                style: ElevatedButton.styleFrom(
-                  backgroundColor:
-                      p2bpBlue, // Using the Save Activity button color
-                  padding: EdgeInsets.symmetric(horizontal: 20, vertical: 14),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(30),
+            dropdownStyleData: DropdownStyleData(
+              width: 370,
+              maxHeight: 200,
+              decoration: BoxDecoration(
+                color: Color.fromARGB(255, 234, 245, 255),
+                borderRadius: BorderRadius.circular(12.0),
+              ),
+            ),
+            isExpanded: true,
+            items: [
+              for (final strings in _testStringPairs)
+                DropdownMenuItem(
+                  value: strings.value,
+                  child: Text(
+                    strings.text,
+                    style: TextStyle(color: p2bpBlue),
                   ),
-                  elevation: 3,
                 ),
-                child: Text(
-                  "Save Activity",
-                  textAlign: TextAlign.center,
-                  style: TextStyle(
-                    color: Colors.white,
-                    fontSize: 16,
-                    fontWeight: FontWeight.bold,
-                  ),
+            ],
+            onChanged: (value) {
+              _standingPoints = [];
+              setState(() {
+                _selectedTest = value;
+                _standingPointsTest = Test.isStandingPointTest(_selectedTest);
+                _timerTest = Test.isTimerTest(_selectedTest);
+                _intervalTimerTest = Test.isIntervalTimerTest(_selectedTest);
+                if (_selectedTest
+                        ?.compareTo(SectionCutterTest.collectionIDStatic) ==
+                    0) {
+                  _standingPointType = 'A Section Line';
+                } else if (_standingPointsTest) {
+                  _standingPointType = 'Standing Points';
+                }
+              });
+            },
+            autovalidateMode: AutovalidateMode.onUserInteraction,
+            validator: (value) {
+              if (value == null) {
+                return 'Please select an activity type.';
+              }
+              return null;
+            },
+          ),
+          SizedBox(height: 16),
+          _standingPointsTest
+              ? Row(
+                  children: [
+                    Spacer(),
+                    Expanded(
+                      flex: 2,
+                      child: ElevatedButton(
+                        onPressed: () async {
+                          final List tempPoints;
+                          tempPoints = await Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (context) => (_selectedTest?.compareTo(
+                                          SectionCutterTest
+                                              .collectionIDStatic) ==
+                                      0)
+                                  ? SectionCreationPage(
+                                      activeProject: widget.activeProject,
+                                      currentSection: _standingPoints.isNotEmpty
+                                          ? _standingPoints
+                                          : null,
+                                    )
+                                  : StandingPointsPage(
+                                      activeProject: widget.activeProject,
+                                      currentStandingPoints:
+                                          _standingPoints.isNotEmpty
+                                              ? _standingPoints
+                                                  as List<StandingPoint>
+                                              : null,
+                                    ),
+                            ),
+                          );
+                          setState(() {
+                            _standingPoints = tempPoints;
+                          });
+                        },
+                        style: ElevatedButton.styleFrom(
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(10.0),
+                            side: (_standingPointsError)
+                                ? BorderSide(color: Color(0xFFB3261E))
+                                : BorderSide(color: Colors.transparent),
+                          ),
+                          backgroundColor: Color(0xFF2F6DCF),
+                        ),
+                        child: Text(
+                          _standingPoints.isEmpty
+                              ? 'Add $_standingPointType'
+                              : 'Edit $_standingPointType',
+                          style: TextStyle(color: Colors.white),
+                        ),
+                      ),
+                    ),
+                    Expanded(
+                      flex: 1,
+                      child: SizedBox(
+                        child: Align(
+                          alignment: Alignment.centerLeft,
+                          child: Padding(
+                            padding: const EdgeInsets.only(left: 8.0),
+                            child: _standingPoints.isNotEmpty
+                                ? Icon(Icons.check_circle, color: Colors.green)
+                                : SizedBox(),
+                          ),
+                        ),
+                      ),
+                    ),
+                  ],
+                )
+              : SizedBox(),
+          if (_standingPointsError)
+            Center(
+              child: Text(
+                  'Please add ${_standingPointType.toLowerCase()} first.',
+                  style: TextStyle(color: Color(0xFFB3261E))),
+            ),
+          SizedBox(height: 32),
+          Align(
+            alignment: Alignment.center,
+            child: ElevatedButton(
+              onPressed: () {
+                final bool validated = _formKey.currentState!.validate();
+                if (_standingPointsTest) {
+                  if (_standingPoints.isEmpty) {
+                    setState(() {
+                      _standingPointsError = true;
+                    });
+                    return;
+                  }
+                }
+                if (validated) {
+                  final Map<String, dynamic> newTestInfo = {
+                    'title': _activityNameController.text,
+                    'scheduledTime': Timestamp.fromDate(_selectedDateTime!),
+                    'collectionID': _selectedTest,
+                  };
+                  if (_standingPointsTest) {
+                    newTestInfo.update(
+                        'standingPoints', (value) => _standingPoints,
+                        ifAbsent: () => _standingPoints);
+                  }
+                  if (_timerTest) {
+                    newTestInfo.update('testDuration', (value) => _testDuration,
+                        ifAbsent: () => _testDuration);
+                  }
+                  if (_intervalTimerTest) {
+                    newTestInfo.update(
+                        'intervalDuration', (value) => _intervalDuration,
+                        ifAbsent: () => _intervalDuration);
+                    newTestInfo.update(
+                        'intervalCount', (value) => _intervalCount,
+                        ifAbsent: () => _intervalCount);
+                  }
+                  // Handle form submission
+                  Navigator.pop(context, newTestInfo);
+                }
+              },
+              style: ElevatedButton.styleFrom(
+                backgroundColor:
+                    p2bpBlue, // Using the Save Activity button color
+                padding: EdgeInsets.symmetric(horizontal: 20, vertical: 14),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(30),
+                ),
+                elevation: 3,
+              ),
+              child: Text(
+                "Save Activity",
+                textAlign: TextAlign.center,
+                style: TextStyle(
+                  color: Colors.white,
+                  fontSize: 16,
+                  fontWeight: FontWeight.bold,
                 ),
               ),
             ),
-          ],
-        ),
+          ),
+        ],
       ),
     );
   }

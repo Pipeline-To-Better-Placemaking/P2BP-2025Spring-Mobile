@@ -244,6 +244,8 @@ abstract class Test<T> {
         required String collectionID,
         List? standingPoints,
         int? testDuration,
+        int? intervalDuration,
+        int? intervalCount,
       })> _newTestConstructors = {};
 
   /// Maps from collection ID to a function which should use a constructor
@@ -274,6 +276,11 @@ abstract class Test<T> {
   /// Used to check for test creation and saving.
   static final Set<String> _timerTestCollectionIDs = {};
 
+  /// Set containing all tests that use a timer with intervals.
+  ///
+  /// Used to check for test creation and saving.
+  static final Set<String> _intervalTimerTestCollectionIDs = {};
+
   /// Returns a new instance of the [Test] subclass associated with
   /// [collectionID].
   ///
@@ -288,7 +295,9 @@ abstract class Test<T> {
       required DocumentReference projectRef,
       required String collectionID,
       List? standingPoints,
-      int? testDuration}) {
+      int? testDuration,
+      int? intervalDuration,
+      int? intervalCount}) {
     final constructor = _newTestConstructors[collectionID];
 
     if (constructor != null) {
@@ -300,6 +309,8 @@ abstract class Test<T> {
         collectionID: collectionID,
         standingPoints: standingPoints,
         testDuration: testDuration,
+        intervalDuration: intervalDuration,
+        intervalCount: intervalCount,
       );
     }
     throw Exception('Unregistered Test type for collection: $collectionID');
@@ -353,6 +364,12 @@ abstract class Test<T> {
   /// registered as a timer test.
   static bool isTimerTest(String? collectionID) {
     return _timerTestCollectionIDs.contains(collectionID);
+  }
+
+  /// Returns whether [Test] subclass with given collection ID is
+  /// registered as an interval timer test.
+  static bool isIntervalTimerTest(String? collectionID) {
+    return _intervalTimerTestCollectionIDs.contains(collectionID);
   }
 
   /// Returns 2-letter initials for given test type if they are registered.
@@ -447,6 +464,13 @@ abstract interface class TimerTest {
   TimerTest(this.testDuration);
 }
 
+abstract interface class IntervalTimerTest {
+  final int intervalDuration;
+  final int intervalCount;
+
+  IntervalTimerTest(this.intervalDuration, this.intervalCount);
+}
+
 /// Mixin to add toString functionality to any class with a toJson() method.
 mixin JsonToString {
   @override
@@ -539,14 +563,17 @@ class LightingProfileTest extends Test<LightingProfileData>
   /// Registers this class within the Maps required by class [Test].
   static void register() {
     // Register for creating new Lighting Profile Tests
-    Test._newTestConstructors[collectionIDStatic] = (
-            {required String title,
-            required String testID,
-            required Timestamp scheduledTime,
-            required DocumentReference projectRef,
-            required String collectionID,
-            List? standingPoints,
-            int? testDuration}) =>
+    Test._newTestConstructors[collectionIDStatic] = ({
+      required String title,
+      required String testID,
+      required Timestamp scheduledTime,
+      required DocumentReference projectRef,
+      required String collectionID,
+      List? standingPoints,
+      int? testDuration,
+      int? intervalDuration,
+      int? intervalCount,
+    }) =>
         LightingProfileTest._(
           title: title,
           testID: testID,
@@ -901,6 +928,8 @@ class AbsenceOfOrderTest extends Test<AbsenceOfOrderData>
       required String collectionID,
       List? standingPoints,
       int? testDuration,
+      int? intervalDuration,
+      int? intervalCount,
     }) =>
         AbsenceOfOrderTest._(
           title: title,
@@ -1252,6 +1281,8 @@ class SpatialBoundariesTest extends Test<SpatialBoundariesData>
       required String collectionID,
       List? standingPoints,
       int? testDuration,
+      int? intervalDuration,
+      int? intervalCount,
     }) =>
         SpatialBoundariesTest._(
           title: title,
@@ -1402,6 +1433,8 @@ class SectionCutterTest extends Test<Section> with JsonToString {
       required String collectionID,
       List? standingPoints,
       int? testDuration,
+      int? intervalDuration,
+      int? intervalCount,
     }) =>
         SectionCutterTest._(
           title: title,
@@ -1716,6 +1749,8 @@ class IdentifyingAccessTest extends Test<AccessData> {
       required String collectionID,
       List? standingPoints,
       int? testDuration,
+      int? intervalDuration,
+      int? intervalCount,
     }) =>
         IdentifyingAccessTest._(
           title: title,
@@ -2234,6 +2269,8 @@ class NaturePrevalenceTest extends Test<NatureData> implements TimerTest {
       required String collectionID,
       List? standingPoints,
       int? testDuration,
+      int? intervalDuration,
+      int? intervalCount,
     }) =>
         NaturePrevalenceTest._(
           title: title,
@@ -2710,6 +2747,8 @@ class PeopleInPlaceTest extends Test<PeopleInPlaceData>
       required String collectionID,
       List? standingPoints,
       int? testDuration,
+      int? intervalDuration,
+      int? intervalCount,
     }) =>
         PeopleInPlaceTest._(
           title: title,
@@ -2945,6 +2984,8 @@ class PeopleInMotionTest extends Test<PeopleInMotionData>
       required String collectionID,
       List? standingPoints,
       int? testDuration,
+      int? intervalDuration,
+      int? intervalCount,
     }) =>
         PeopleInMotionTest._(
           title: title,
@@ -3162,14 +3203,16 @@ class AcousticProfileData with JsonToString {
 /// Class for Acoustic Profile Test info and methods.
 class AcousticProfileTest extends Test<AcousticProfileData>
     with JsonToString
-    implements StandingPointTest {
+    implements StandingPointTest, IntervalTimerTest {
   /// Static constant definition of collection ID for this test type.
   static const String collectionIDStatic = 'acoustic_profile_tests';
 
   @override
   final List<StandingPoint> standingPoints;
-  // final int duration;
-  // final int intervalCount;
+  @override
+  final int intervalDuration;
+  @override
+  final int intervalCount;
 
   /// Private constructor for AcousticProfileTest.
   AcousticProfileTest._({
@@ -3180,6 +3223,8 @@ class AcousticProfileTest extends Test<AcousticProfileData>
     required super.collectionID,
     required super.data,
     required this.standingPoints,
+    required this.intervalDuration,
+    required this.intervalCount,
     super.creationTime,
     super.maxResearchers,
     super.isComplete,
@@ -3187,14 +3232,17 @@ class AcousticProfileTest extends Test<AcousticProfileData>
 
   /// Registers this test type in the Test class system.
   static void register() {
-    Test._newTestConstructors[collectionIDStatic] = (
-            {required String title,
-            required String testID,
-            required Timestamp scheduledTime,
-            required DocumentReference projectRef,
-            required String collectionID,
-            List? standingPoints,
-            int? testDuration}) =>
+    Test._newTestConstructors[collectionIDStatic] = ({
+      required String title,
+      required String testID,
+      required Timestamp scheduledTime,
+      required DocumentReference projectRef,
+      required String collectionID,
+      List? standingPoints,
+      int? testDuration,
+      int? intervalDuration,
+      int? intervalCount,
+    }) =>
         AcousticProfileTest._(
           title: title,
           testID: testID,
@@ -3203,6 +3251,8 @@ class AcousticProfileTest extends Test<AcousticProfileData>
           collectionID: collectionID,
           data: AcousticProfileData.empty(),
           standingPoints: (standingPoints as List<StandingPoint>?) ?? [],
+          intervalDuration: intervalDuration ?? -1,
+          intervalCount: intervalCount ?? -1,
         );
     Test._recreateTestConstructors[collectionIDStatic] = (testDoc) {
       return AcousticProfileTest.fromJson(testDoc.data()!);
@@ -3223,8 +3273,9 @@ class AcousticProfileTest extends Test<AcousticProfileData>
           );
       await testRef.set(test as AcousticProfileTest, SetOptions(merge: true));
     };
-    Test._standingPointTestCollectionIDs.add(collectionIDStatic);
     Test._testInitialsMap[AcousticProfileTest] = 'AP';
+    Test._standingPointTestCollectionIDs.add(collectionIDStatic);
+    Test._intervalTimerTestCollectionIDs.add(collectionIDStatic);
   }
 
   @override
@@ -3257,6 +3308,8 @@ class AcousticProfileTest extends Test<AcousticProfileData>
           'maxResearchers': int maxResearchers,
           'isComplete': bool isComplete,
           'standingPoints': List standingPoints,
+          'intervalDuration': int intervalDuration,
+          'intervalCount': int intervalCount,
         }) {
       return AcousticProfileTest._(
         title: title,
@@ -3269,6 +3322,8 @@ class AcousticProfileTest extends Test<AcousticProfileData>
         maxResearchers: maxResearchers.toInt(),
         isComplete: isComplete,
         standingPoints: StandingPoint.fromJsonList(standingPoints),
+        intervalDuration: intervalDuration,
+        intervalCount: intervalCount,
       );
     }
     throw FormatException('Invalid JSON: $data', data);
@@ -3286,6 +3341,8 @@ class AcousticProfileTest extends Test<AcousticProfileData>
       'maxResearchers': maxResearchers,
       'isComplete': isComplete,
       'standingPoints': standingPoints.toJsonList(),
+      'intervalDuration': intervalDuration,
+      'intervalCount': intervalCount,
     };
   }
 }

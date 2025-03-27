@@ -431,8 +431,10 @@ Future<Test> saveTest({
   required String collectionID,
   List? standingPoints,
   int? testDuration,
+  int? intervalDuration,
+  int? intervalCount,
 }) async {
-  late Test tempTest;
+  late final Test tempTest;
 
   try {
     if (projectRef == null) {
@@ -451,6 +453,8 @@ Future<Test> saveTest({
       collectionID: collectionID,
       standingPoints: standingPoints,
       testDuration: testDuration,
+      intervalDuration: intervalDuration,
+      intervalCount: intervalCount,
     );
 
     await tempTest.saveToFirestore();
