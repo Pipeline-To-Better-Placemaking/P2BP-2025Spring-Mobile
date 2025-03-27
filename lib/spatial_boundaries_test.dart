@@ -415,13 +415,6 @@ class _SpatialBoundariesTestPageState extends State<SpatialBoundariesTestPage> {
     );
   }
 
-  /// Toggles the user's ability to see boundaries already defined on the map.
-  void _toggleBoundariesVisibility() {
-    setState(() {
-      _boundariesVisible = !_boundariesVisible;
-    });
-  }
-
   void _startTest() {
     setState(() {
       _isTestRunning = true;
@@ -455,6 +448,7 @@ class _SpatialBoundariesTestPageState extends State<SpatialBoundariesTestPage> {
   /// Method to end the test and timer.
   void _endTest() {
     _timer?.cancel();
+    _outsidePointTimer?.cancel();
     widget.activeTest.submitData(_newData);
     Navigator.pop(context);
   }
@@ -568,15 +562,17 @@ class _SpatialBoundariesTestPageState extends State<SpatialBoundariesTestPage> {
                         backgroundColor:
                             Color(0xFFE4E9EF).withValues(alpha: 0.9),
                         borderColor: Color(0xFF4A5D75),
-                        onPressed: _toggleBoundariesVisibility,
-                        icon: Transform.translate(
-                          offset: Offset(-2.0, 0),
-                          child: Icon(
-                            _boundariesVisible
-                                ? FontAwesomeIcons.solidEyeSlash
-                                : FontAwesomeIcons.solidEye,
-                            color: Color(0xFF4A5D75),
-                          ),
+                        onPressed: () {
+                          setState(() {
+                            _boundariesVisible = !_boundariesVisible;
+                          });
+                        },
+                        icon: Icon(
+                          _boundariesVisible
+                              ? Icons.visibility_off
+                              : Icons.visibility,
+                          size: 30,
+                          color: Color(0xFF4A5D75),
                         ),
                       ),
                     ],

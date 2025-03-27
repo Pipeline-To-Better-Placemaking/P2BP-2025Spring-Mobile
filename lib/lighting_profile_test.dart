@@ -43,6 +43,7 @@ class _LightingProfileTestPageState extends State<LightingProfileTestPage> {
   final LightingProfileData _newData = LightingProfileData();
 
   Timer? _timer;
+  Timer? _outsidePointTimer;
   int _remainingSeconds = -1;
   static const double _bottomSheetHeight = 220;
 
@@ -60,6 +61,7 @@ class _LightingProfileTestPageState extends State<LightingProfileTestPage> {
   @override
   void dispose() {
     _timer?.cancel();
+    _outsidePointTimer?.cancel();
     super.dispose();
   }
 
@@ -97,6 +99,12 @@ class _LightingProfileTestPageState extends State<LightingProfileTestPage> {
         setState(() {
           _outsidePoint = true;
         });
+        _outsidePointTimer?.cancel();
+        _outsidePointTimer = Timer(Duration(seconds: 3), () {
+          setState(() {
+            _outsidePoint = false;
+          });
+        });
       }
 
       _newData.lights.add(Light(
@@ -121,14 +129,6 @@ class _LightingProfileTestPageState extends State<LightingProfileTestPage> {
           ),
         );
       });
-
-      if (_outsidePoint) {
-        // TODO: fix delay. delay will overlap with consecutive taps. this means taps do not necessarily refresh the timer and will end prematurely
-        await Future.delayed(const Duration(seconds: 2));
-        setState(() {
-          _outsidePoint = false;
-        });
-      }
     } catch (e, stacktrace) {
       print('Error in lighting_profile_test.dart, _togglePoint(): $e');
       print('Stacktrace: $stacktrace');
@@ -168,6 +168,7 @@ class _LightingProfileTestPageState extends State<LightingProfileTestPage> {
   /// Cancels timer, submits data, and pops test page.
   void _endTest() {
     _timer?.cancel();
+    _outsidePointTimer?.cancel();
     widget.activeTest.submitData(_newData);
     Navigator.pop(context);
   }

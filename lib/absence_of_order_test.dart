@@ -69,6 +69,7 @@ class _AbsenceOfOrderTestPageState extends State<AbsenceOfOrderTestPage> {
   DataPoint? _tempDataPoint;
 
   Timer? _timer;
+  Timer? _outsidePointTimer;
   int _remainingSeconds = -1;
   static const double _bottomSheetHeight = 165;
 
@@ -86,6 +87,7 @@ class _AbsenceOfOrderTestPageState extends State<AbsenceOfOrderTestPage> {
   @override
   void dispose() {
     _timer?.cancel();
+    _outsidePointTimer?.cancel();
     super.dispose();
   }
 
@@ -114,27 +116,33 @@ class _AbsenceOfOrderTestPageState extends State<AbsenceOfOrderTestPage> {
 
   /// Places point on the map and adds that location and the description from
   /// [_tempDataPoint] to the appropriate `List` in [_newData].
-  void _togglePoint(LatLng point) async {
+  void _togglePoint(LatLng point) {
     try {
       if (!isPointInsidePolygon(point, _polygons.first)) {
         setState(() {
           _outsidePoint = true;
         });
+        _outsidePointTimer?.cancel();
+        _outsidePointTimer = Timer(Duration(seconds: 3), () {
+          setState(() {
+            _outsidePoint = false;
+          });
+        });
       }
-      // Add point to data and then add to AbsenceOfOrderData list
+
+      // Add point to data and then add to AbsenceOfOrderData list.
       _tempDataPoint!.location = LatLng(point.latitude, point.longitude);
       _newData.addDataPoint(_tempDataPoint!);
 
       final markerId = MarkerId(point.toString());
       setState(() {
-        // Create marker
         _markers.add(
           Marker(
             markerId: markerId,
             position: point,
             consumeTapEvents: true,
             onTap: () {
-              // If the marker is tapped again, it will be removed
+              // If the marker is tapped again, it will be removed.
               _newData.removeDataPoint(point);
               setState(() {
                 _markers.removeWhere((marker) => marker.markerId == markerId);
@@ -145,14 +153,6 @@ class _AbsenceOfOrderTestPageState extends State<AbsenceOfOrderTestPage> {
 
         _setTempData(null);
       });
-
-      if (_outsidePoint) {
-        // TODO: fix delay. delay will overlap with consecutive taps. this means taps do not necessarily refresh the timer and will end prematurely
-        await Future.delayed(const Duration(seconds: 2));
-        setState(() {
-          _outsidePoint = false;
-        });
-      }
     } catch (e, stacktrace) {
       print('Error in absence_of_order_test.dart, _togglePoint(): $e');
       print('Stacktrace: $stacktrace');
@@ -192,6 +192,7 @@ class _AbsenceOfOrderTestPageState extends State<AbsenceOfOrderTestPage> {
   /// Cancels timer, submits data, and pops test page.
   void _endTest() {
     _timer?.cancel();
+    _outsidePointTimer?.cancel();
     widget.activeTest.submitData(_newData);
     Navigator.pop(context);
   }

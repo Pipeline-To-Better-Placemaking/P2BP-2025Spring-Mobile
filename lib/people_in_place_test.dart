@@ -47,6 +47,7 @@ class _PeopleInPlaceTestPageState extends State<PeopleInPlaceTestPage> {
 
   int _remainingSeconds = -1;
   Timer? _timer;
+  Timer? _outsidePointTimer;
 
   MarkerId? _openMarkerId;
 
@@ -77,6 +78,7 @@ class _PeopleInPlaceTestPageState extends State<PeopleInPlaceTestPage> {
   @override
   void dispose() {
     _timer?.cancel();
+    _outsidePointTimer?.cancel();
     super.dispose();
   }
 
@@ -173,12 +175,12 @@ class _PeopleInPlaceTestPageState extends State<PeopleInPlaceTestPage> {
       builder: (context) => _DescriptionForm(location: point),
     );
     if (person == null) {
-      if (_outsidePoint) {
-        await Future.delayed(const Duration(seconds: 2));
+      _outsidePointTimer?.cancel();
+      _outsidePointTimer = Timer(Duration(seconds: 3), () {
         setState(() {
           _outsidePoint = false;
         });
-      }
+      });
       return;
     }
 
@@ -225,10 +227,11 @@ class _PeopleInPlaceTestPageState extends State<PeopleInPlaceTestPage> {
     });
 
     if (_outsidePoint) {
-      // TODO: fix delay. delay will overlap with consecutive taps.
-      await Future.delayed(const Duration(seconds: 2));
-      setState(() {
-        _outsidePoint = false;
+      _outsidePointTimer?.cancel();
+      _outsidePointTimer = Timer(Duration(seconds: 3), () {
+        setState(() {
+          _outsidePoint = false;
+        });
       });
     }
   }
@@ -265,6 +268,7 @@ class _PeopleInPlaceTestPageState extends State<PeopleInPlaceTestPage> {
 
   void _endTest() {
     _timer?.cancel();
+    _outsidePointTimer?.cancel();
     widget.activeTest.submitData(_newData);
     Navigator.pop(context);
   }

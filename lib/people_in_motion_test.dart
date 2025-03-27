@@ -172,7 +172,7 @@ class _PeopleInMotionTestPageState extends State<PeopleInMotionTestPage> {
   }
 
   // When in tracing mode, each tap creates a dot marker and updates the temporary polyline
-  Future<void> _handleMapTap(LatLng point) async {
+  void _handleMapTap(LatLng point) {
     // If point is outside the project boundary, display error message
     if (!isPointInsidePolygon(point, _polygons.first)) {
       setState(() {
