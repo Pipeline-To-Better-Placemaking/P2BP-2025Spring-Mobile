@@ -431,9 +431,20 @@ extension StandingPointListHelpers on List<StandingPoint> {
 ///
 /// Using this also requires that the class run
 /// [Test._standingPointTestCollectionIDs.add(collectionIDStatic)]
-/// in its register method so that it can be recognized as such.
+/// in its register method to be recognized as using standing points.
 abstract interface class StandingPointTest {
   final List<StandingPoint> standingPoints = [];
+}
+
+/// Class to be implemented by all Test subclasses which use a timer.
+///
+/// Using this also requires that the class run
+/// [Test._timerTestCollectionIDs.add(collectionIDStatic)]
+/// in its register method to be recognized as using a timer.
+abstract interface class TimerTest {
+  final int testDuration;
+
+  TimerTest(this.testDuration);
 }
 
 /// Mixin to add toString functionality to any class with a toJson() method.
@@ -498,10 +509,13 @@ class LightingProfileData with JsonToString {
 }
 
 /// Class for Lighting Profile Test info and methods.
-class LightingProfileTest extends Test<LightingProfileData> with JsonToString {
+class LightingProfileTest extends Test<LightingProfileData>
+    with JsonToString
+    implements TimerTest {
   /// Static constant definition of collection ID for this test type.
   static const String collectionIDStatic = 'lighting_profile_tests';
 
+  @override
   final int testDuration;
 
   /// Creates a new [LightingProfileTest] instance from the given arguments.
@@ -850,9 +864,12 @@ class AbsenceOfOrderData with JsonToString {
 }
 
 /// Class for Absence of Order Test info and methods.
-class AbsenceOfOrderTest extends Test<AbsenceOfOrderData> with JsonToString {
+class AbsenceOfOrderTest extends Test<AbsenceOfOrderData>
+    with JsonToString
+    implements TimerTest {
   static const String collectionIDStatic = 'absence_of_order_tests';
 
+  @override
   final int testDuration;
 
   /// Creates a new [AbsenceOfOrderTest] instance from the given arguments.
@@ -1204,9 +1221,11 @@ class SpatialBoundariesData with JsonToString {
 }
 
 class SpatialBoundariesTest extends Test<SpatialBoundariesData>
-    with JsonToString {
+    with JsonToString
+    implements TimerTest {
   static const String collectionIDStatic = 'spatial_boundaries_tests';
 
+  @override
   final int testDuration;
 
   SpatialBoundariesTest._({
@@ -1266,6 +1285,7 @@ class SpatialBoundariesTest extends Test<SpatialBoundariesData>
       await testRef.set(test as SpatialBoundariesTest, SetOptions(merge: true));
     };
     Test._testInitialsMap[SpatialBoundariesTest] = 'SB';
+    Test._timerTestCollectionIDs.add(collectionIDStatic);
   }
 
   @override
@@ -2175,7 +2195,7 @@ class Animal implements NatureTypes {
 }
 
 /// Class for Nature Prevalence test info and methods.
-class NaturePrevalenceTest extends Test<NatureData> {
+class NaturePrevalenceTest extends Test<NatureData> implements TimerTest {
   /// Returns a new instance of the initial data structure used for
   /// Nature Prevalence Test.
   static NatureData newInitialDataDeepCopy() {
@@ -2186,6 +2206,7 @@ class NaturePrevalenceTest extends Test<NatureData> {
   static const String collectionIDStatic = 'nature_prevalence_tests';
 
   /// User defined test timer duration in seconds.
+  @override
   final int testDuration;
 
   /// Creates a new [NaturePrevalenceTest] instance from the given arguments.
@@ -2261,8 +2282,8 @@ class NaturePrevalenceTest extends Test<NatureData> {
         'testDuration': (test as NaturePrevalenceTest).testDuration,
       }, SetOptions(merge: true));
     };
-    Test._timerTestCollectionIDs.add(collectionIDStatic);
     Test._testInitialsMap[NaturePrevalenceTest] = 'NP';
+    Test._timerTestCollectionIDs.add(collectionIDStatic);
   }
 
   @override
@@ -2658,11 +2679,12 @@ class PeopleInPlaceData with JsonToString {
 
 class PeopleInPlaceTest extends Test<PeopleInPlaceData>
     with JsonToString
-    implements StandingPointTest {
+    implements StandingPointTest, TimerTest {
   static const String collectionIDStatic = 'people_in_place_tests';
 
   @override
   final List<StandingPoint> standingPoints;
+  @override
   final int testDuration;
 
   PeopleInPlaceTest._({
@@ -2886,7 +2908,7 @@ class PeopleInMotionData with JsonToString {
 
 class PeopleInMotionTest extends Test<PeopleInMotionData>
     with JsonToString
-    implements StandingPointTest {
+    implements StandingPointTest, TimerTest {
   /// Static constant definition of collection ID for this test type.
   static const String collectionIDStatic = 'people_in_motion_tests';
 
@@ -2894,6 +2916,7 @@ class PeopleInMotionTest extends Test<PeopleInMotionData>
   final List<StandingPoint> standingPoints;
 
   /// User defined test timer duration in seconds.
+  @override
   final int testDuration;
 
   /// Private constructor for PeopleInMotionTest.

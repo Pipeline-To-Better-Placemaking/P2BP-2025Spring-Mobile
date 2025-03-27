@@ -791,7 +791,7 @@ class _NaturePrevalenceState extends State<NaturePrevalence> {
       if (_natureType == NatureType.vegetation) {
         tempPolygon = finalizePolygon(
           _polygonPoints,
-          polygonColor: Vegetation.vegetationTypeToColor[_vegetationType],
+          strokeColor: Vegetation.vegetationTypeToColor[_vegetationType],
         );
         // Create polygon.
         _polygons.addAll(tempPolygon);
@@ -801,7 +801,7 @@ class _NaturePrevalenceState extends State<NaturePrevalence> {
             otherType: _otherType));
       } else if (_natureType == NatureType.waterBody) {
         tempPolygon = finalizePolygon(_polygonPoints,
-            polygonColor: WaterBody.waterBodyTypeToColor[_waterBodyType]);
+            strokeColor: WaterBody.waterBodyTypeToColor[_waterBodyType]);
         // Create polygon.
         _polygons.addAll(tempPolygon);
         _waterBodyData.add(WaterBody(

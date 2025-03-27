@@ -2,6 +2,11 @@ import 'package:google_maps_flutter/google_maps_flutter.dart';
 
 import 'db_schema_classes.dart';
 
+final AssetMapBitmap tempMarkerIcon = AssetMapBitmap(
+  'assets/temp_point_marker.png',
+  width: 40,
+  height: 40,
+);
 final AssetMapBitmap standingPointDisabledIcon = AssetMapBitmap(
   'assets/standing_point_disabled.png',
   width: 48,

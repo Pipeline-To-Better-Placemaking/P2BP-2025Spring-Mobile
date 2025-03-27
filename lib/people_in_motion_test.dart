@@ -12,12 +12,6 @@ import 'package:p2bp_2025spring_mobile/db_schema_classes.dart';
 import 'package:p2bp_2025spring_mobile/people_in_motion_instructions.dart';
 import 'package:maps_toolkit/maps_toolkit.dart' as mp;
 
-final AssetMapBitmap tempMarkerIcon = AssetMapBitmap(
-  'assets/test_specific/people_in_motion/polyline_marker4.png',
-  width: 48,
-  height: 48,
-);
-
 class PeopleInMotionTestPage extends StatefulWidget {
   final Project activeProject;
   final PeopleInMotionTest activeTest;
@@ -71,6 +65,7 @@ class _PeopleInMotionTestPageState extends State<PeopleInMotionTestPage> {
   // Define an initial time
   int _remainingSeconds = -1;
   Timer? _timer;
+  Timer? _outsidePointTimer;
 
   @override
   void initState() {
@@ -97,6 +92,7 @@ class _PeopleInMotionTestPageState extends State<PeopleInMotionTestPage> {
   @override
   void dispose() {
     _timer?.cancel();
+    _outsidePointTimer?.cancel();
     super.dispose();
   }
 
@@ -106,7 +102,7 @@ class _PeopleInMotionTestPageState extends State<PeopleInMotionTestPage> {
       barrierDismissible: false,
       builder: (context) {
         return AlertDialog(
-          insetPadding: EdgeInsets.symmetric(horizontal: 10, vertical: 10),
+          insetPadding: const EdgeInsets.all(10),
           actionsPadding: EdgeInsets.zero,
           title: Text(
             'How It Works:',
@@ -182,7 +178,8 @@ class _PeopleInMotionTestPageState extends State<PeopleInMotionTestPage> {
       setState(() {
         _outsidePoint = true;
       });
-      Timer(Duration(seconds: 3), () {
+      _outsidePointTimer?.cancel();
+      _outsidePointTimer = Timer(Duration(seconds: 3), () {
         setState(() {
           _outsidePoint = false;
         });

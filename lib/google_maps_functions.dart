@@ -58,7 +58,10 @@ Future<LocationPermission> _checkLocationPermissions() async {
 /// widget.
 /// Takes an optional onTap parameter.
 Set<Polygon> finalizePolygon(List<LatLng> polygonPoints,
-    {Color? polygonColor, VoidCallback? onTap, bool? consumeTapEvents}) {
+    {Color? strokeColor,
+    Color? fillColor,
+    VoidCallback? onTap,
+    bool? consumeTapEvents}) {
   Set<Polygon> polygon = {};
   List<LatLng> polygonPointsCopy = polygonPoints.toList();
   try {
@@ -74,9 +77,10 @@ Set<Polygon> finalizePolygon(List<LatLng> polygonPoints,
         onTap: onTap,
         polygonId: PolygonId(polygonId),
         points: sortedPoints,
-        strokeColor: polygonColor ?? Colors.blue,
+        strokeColor: strokeColor ?? Colors.blue,
         strokeWidth: 2,
-        fillColor: polygonColor ?? Colors.blue.withValues(alpha: 0.2),
+        fillColor:
+            fillColor ?? strokeColor ?? Colors.blue.withValues(alpha: 0.2),
       ),
     };
   } catch (e, stacktrace) {

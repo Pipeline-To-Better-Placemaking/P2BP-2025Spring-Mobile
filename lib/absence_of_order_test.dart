@@ -246,6 +246,7 @@ class _AbsenceOfOrderTestPageState extends State<AbsenceOfOrderTestPage> {
                       polygons: _polygons,
                       onTap: _isDescriptionReady ? _togglePoint : null,
                       mapType: _currentMapType,
+                      myLocationButtonEnabled: false,
                     ),
                   ),
                   Row(

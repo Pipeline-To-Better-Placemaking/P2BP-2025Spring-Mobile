@@ -86,10 +86,7 @@ class _PeopleInPlaceTestPageState extends State<PeopleInPlaceTestPage> {
       barrierDismissible: false,
       builder: (context) {
         return AlertDialog(
-          insetPadding: EdgeInsets.symmetric(
-            horizontal: 10,
-            vertical: 10,
-          ),
+          insetPadding: const EdgeInsets.all(10),
           actionsPadding: EdgeInsets.zero,
           title: Text(
             'How It Works:',
