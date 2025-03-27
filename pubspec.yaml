@@ -76,9 +76,8 @@ flutter:
   assets:
     - assets/
     - assets/test_markers/
-    - assets/custom_icons/
-    - assets/custom_icons/test_specific/people_in_place/
-    - assets/custom_icons/test_specific/people_in_motion/
+    - assets/test_specific/people_in_place/
+    - assets/test_specific/people_in_motion/
 
   # An image asset can refer to one or more resolution-specific "variants", see
   # https://flutter.dev/to/resolution-aware-images

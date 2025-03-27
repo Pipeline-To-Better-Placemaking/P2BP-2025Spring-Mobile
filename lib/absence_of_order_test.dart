@@ -56,6 +56,7 @@ class _AbsenceOfOrderTestPageState extends State<AbsenceOfOrderTestPage> {
   bool _outsidePoint = false;
   bool _isTestRunning = false;
   bool _directionsVisible = false;
+  bool _isDescriptionReady = false;
 
   late GoogleMapController mapController;
   LatLng _location = defaultLocation;
@@ -67,6 +68,7 @@ class _AbsenceOfOrderTestPageState extends State<AbsenceOfOrderTestPage> {
   final AbsenceOfOrderData _newData = AbsenceOfOrderData();
   DataPoint? _tempDataPoint;
 
+  Timer? _timer;
   int _remainingSeconds = -1;
   static const double _bottomSheetHeight = 165;
 
@@ -77,7 +79,14 @@ class _AbsenceOfOrderTestPageState extends State<AbsenceOfOrderTestPage> {
     _location = getPolygonCentroid(_polygons.first);
     _projectArea = _polygons.first.toMPLatLngList();
     _zoom = getIdealZoom(_projectArea, _location.toMPLatLng());
+    _remainingSeconds = widget.activeTest.testDuration;
     _isLoading = false;
+  }
+
+  @override
+  void dispose() {
+    _timer?.cancel();
+    super.dispose();
   }
 
   void _onMapCreated(GoogleMapController controller) {
@@ -107,11 +116,9 @@ class _AbsenceOfOrderTestPageState extends State<AbsenceOfOrderTestPage> {
   /// [_tempDataPoint] to the appropriate `List` in [_newData].
   void _togglePoint(LatLng point) async {
     try {
-      if (!mp.PolygonUtil.containsLocation(
-          mp.LatLng(point.latitude, point.longitude), _projectArea, true)) {
+      if (!isPointInsidePolygon(point, _polygons.first)) {
         setState(() {
           _outsidePoint = true;
-          print('outside!');
         });
       }
       // Add point to data and then add to AbsenceOfOrderData list
@@ -136,8 +143,9 @@ class _AbsenceOfOrderTestPageState extends State<AbsenceOfOrderTestPage> {
           ),
         );
 
-        _tempDataPoint = null;
+        _setTempData(null);
       });
+
       if (_outsidePoint) {
         // TODO: fix delay. delay will overlap with consecutive taps. this means taps do not necessarily refresh the timer and will end prematurely
         await Future.delayed(const Duration(seconds: 2));
@@ -151,6 +159,42 @@ class _AbsenceOfOrderTestPageState extends State<AbsenceOfOrderTestPage> {
     }
   }
 
+  void _startTest() {
+    setState(() {
+      _isTestRunning = true;
+    });
+    _timer = Timer.periodic(Duration(seconds: 1), (timer) {
+      setState(() {
+        _remainingSeconds--;
+        if (_remainingSeconds <= 0) {
+          _isTestRunning = false;
+          timer.cancel();
+          showDialog(
+            context: context,
+            builder: (context) {
+              return TimerEndDialog(onSubmit: () {
+                Navigator.pop(context);
+                _endTest();
+              }, onBack: () {
+                setState(() {
+                  _remainingSeconds = widget.activeTest.testDuration;
+                });
+                Navigator.pop(context);
+              });
+            },
+          );
+        }
+      });
+    });
+  }
+
+  /// Cancels timer, submits data, and pops test page.
+  void _endTest() {
+    _timer?.cancel();
+    widget.activeTest.submitData(_newData);
+    Navigator.pop(context);
+  }
+
   /// Uses [showModalBottomSheet] on [_BehaviorDescriptionForm] and then
   /// stores the results in [_tempDataPoint].
   void _doBehaviorModal(BuildContext context) async {
@@ -159,9 +203,7 @@ class _AbsenceOfOrderTestPageState extends State<AbsenceOfOrderTestPage> {
       context: context,
       builder: (context) => _BehaviorDescriptionForm(),
     );
-    setState(() {
-      _tempDataPoint = behaviorPoint;
-    });
+    _setTempData(behaviorPoint);
   }
 
   /// Uses [showModalBottomSheet] on [_MaintenanceDescriptionForm] and then
@@ -172,20 +214,18 @@ class _AbsenceOfOrderTestPageState extends State<AbsenceOfOrderTestPage> {
       context: context,
       builder: (context) => _MaintenanceDescriptionForm(),
     );
-    setState(() {
-      _tempDataPoint = maintenancePoint;
-    });
+    _setTempData(maintenancePoint);
   }
 
-  void _endTest() {
-    widget.activeTest.submitData(_newData);
-    Navigator.pop(context);
+  void _setTempData(DataPoint? point) {
+    setState(() {
+      _tempDataPoint = point;
+      _isDescriptionReady = _tempDataPoint != null;
+    });
   }
 
   @override
   Widget build(BuildContext context) {
-    // Updates flag for whether _tempDataPoint has a description for data point
-    bool isDescriptionReady = (_tempDataPoint != null);
     return AdaptiveSafeArea(
       child: Scaffold(
         resizeToAvoidBottomInset: false,
@@ -203,7 +243,7 @@ class _AbsenceOfOrderTestPageState extends State<AbsenceOfOrderTestPage> {
                           CameraPosition(target: _location, zoom: _zoom),
                       markers: _markers,
                       polygons: _polygons,
-                      onTap: isDescriptionReady ? _togglePoint : null,
+                      onTap: _isDescriptionReady ? _togglePoint : null,
                       mapType: _currentMapType,
                     ),
                   ),
@@ -216,7 +256,15 @@ class _AbsenceOfOrderTestPageState extends State<AbsenceOfOrderTestPage> {
                         child: TimerButtonAndDisplay(
                           onPressed: () {
                             setState(() {
-                              _isTestRunning = !_isTestRunning;
+                              if (_isTestRunning) {
+                                setState(() {
+                                  _isTestRunning = false;
+                                  _timer?.cancel();
+                                  _setTempData(null);
+                                });
+                              } else {
+                                _startTest();
+                              }
                             });
                           },
                           isTestRunning: _isTestRunning,
@@ -229,15 +277,15 @@ class _AbsenceOfOrderTestPageState extends State<AbsenceOfOrderTestPage> {
                                 padding: const EdgeInsets.symmetric(
                                     horizontal: 15.0, vertical: 15.0),
                                 child: DirectionsText(
-                                    onTap: () {
-                                      setState(() {
-                                        _directionsVisible =
-                                            !_directionsVisible;
-                                      });
-                                    },
-                                    text: !isDescriptionReady
-                                        ? 'Select a type of misconduct.'
-                                        : 'Drop a pin where the misconduct is.'),
+                                  onTap: () {
+                                    setState(() {
+                                      _directionsVisible = !_directionsVisible;
+                                    });
+                                  },
+                                  text: !_isDescriptionReady
+                                      ? 'Select a type of misconduct.'
+                                      : 'Drop a pin where the misconduct is.',
+                                ),
                               )
                             : SizedBox(),
                       ),
@@ -265,10 +313,9 @@ class _AbsenceOfOrderTestPageState extends State<AbsenceOfOrderTestPage> {
                     ],
                   ),
                   if (_outsidePoint)
-                    Padding(
-                      padding:
-                          const EdgeInsets.only(bottom: _bottomSheetHeight),
-                      child: TestErrorText(),
+                    TestErrorText(
+                      padding: EdgeInsets.fromLTRB(
+                          50, 0, 50, _bottomSheetHeight + 20),
                     ),
                 ],
               ),
@@ -313,22 +360,24 @@ class _AbsenceOfOrderTestPageState extends State<AbsenceOfOrderTestPage> {
                           Expanded(
                             child: FilledButton(
                               style: testButtonStyle,
-                              onPressed: isDescriptionReady
-                                  ? null
-                                  : () {
-                                      _doBehaviorModal(context);
-                                    },
+                              onPressed:
+                                  (!_isDescriptionReady && _isTestRunning)
+                                      ? () {
+                                          _doBehaviorModal(context);
+                                        }
+                                      : null,
                               child: Text('Behavior'),
                             ),
                           ),
                           Expanded(
                             child: FilledButton(
                               style: testButtonStyle,
-                              onPressed: isDescriptionReady
-                                  ? null
-                                  : () {
-                                      _doMaintenanceModal(context);
-                                    },
+                              onPressed:
+                                  (!_isDescriptionReady && _isTestRunning)
+                                      ? () {
+                                          _doMaintenanceModal(context);
+                                        }
+                                      : null,
                               child: Text('Maintenance'),
                             ),
                           ),
@@ -351,17 +400,19 @@ class _AbsenceOfOrderTestPageState extends State<AbsenceOfOrderTestPage> {
                           Flexible(
                             child: FilledButton.icon(
                               style: testButtonStyle,
-                              onPressed: (isDescriptionReady)
-                                  ? null
-                                  : () {
-                                      showDialog(
-                                          context: context,
-                                          builder: (context) =>
-                                              TestFinishDialog(onNext: () {
-                                                Navigator.pop(context);
-                                                _endTest();
-                                              }));
-                                    },
+                              onPressed:
+                                  (!_isDescriptionReady && !_isTestRunning)
+                                      ? () {
+                                          showDialog(
+                                            context: context,
+                                            builder: (context) =>
+                                                TestFinishDialog(onNext: () {
+                                              Navigator.pop(context);
+                                              _endTest();
+                                            }),
+                                          );
+                                        }
+                                      : null,
                               label: Text('Finish'),
                               icon: Icon(Icons.chevron_right),
                               iconAlignment: IconAlignment.end,
@@ -450,7 +501,7 @@ class _BehaviorDescriptionFormState extends State<_BehaviorDescriptionForm> {
     }
     return SingleChildScrollView(
       child: Padding(
-        padding: MediaQuery.of(context).viewInsets,
+        padding: MediaQuery.viewInsetsOf(context),
         child: Container(
           decoration: BoxDecoration(
             gradient: defaultGrad,
@@ -692,7 +743,7 @@ class _MaintenanceDescriptionFormState
     }
     return SingleChildScrollView(
       child: Padding(
-        padding: MediaQuery.of(context).viewInsets,
+        padding: MediaQuery.viewInsetsOf(context),
         child: Container(
           decoration: BoxDecoration(
             gradient: defaultGrad,

@@ -11,24 +11,6 @@ import 'package:p2bp_2025spring_mobile/google_maps_functions.dart';
 import 'package:p2bp_2025spring_mobile/theme.dart';
 import 'package:p2bp_2025spring_mobile/widgets.dart'; // for _showInstructionOverlay
 
-/// AcousticProfileTestPage displays a Google Map (with the project polygon)
-/// in the background and uses a timer to prompt the researcher for sound
-/// measurements at fixed intervals.
-class AcousticProfileTestPage extends StatefulWidget {
-  final Project activeProject;
-  final AcousticProfileTest activeTest;
-
-  const AcousticProfileTestPage({
-    super.key,
-    required this.activeProject,
-    required this.activeTest,
-  });
-
-  @override
-  State<AcousticProfileTestPage> createState() =>
-      _AcousticProfileTestPageState();
-}
-
 /// Icon for a standing point that hasn't been measured yet
 final AssetMapBitmap _incompleteIcon = AssetMapBitmap(
   'assets/standing_point_disabled.png',
@@ -49,6 +31,24 @@ final AssetMapBitmap _activeIcon = AssetMapBitmap(
   width: 48,
   height: 48,
 );
+
+/// AcousticProfileTestPage displays a Google Map (with the project polygon)
+/// in the background and uses a timer to prompt the researcher for sound
+/// measurements at fixed intervals.
+class AcousticProfileTestPage extends StatefulWidget {
+  final Project activeProject;
+  final AcousticProfileTest activeTest;
+
+  const AcousticProfileTestPage({
+    super.key,
+    required this.activeProject,
+    required this.activeTest,
+  });
+
+  @override
+  State<AcousticProfileTestPage> createState() =>
+      _AcousticProfileTestPageState();
+}
 
 class _AcousticProfileTestPageState extends State<AcousticProfileTestPage> {
   bool _isLoading = true;

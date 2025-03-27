@@ -1,15 +1,17 @@
 import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
+import 'package:p2bp_2025spring_mobile/db_schema_classes.dart';
+import 'package:p2bp_2025spring_mobile/firestore_functions.dart';
+import 'package:p2bp_2025spring_mobile/people_in_place_instructions.dart';
 import 'package:p2bp_2025spring_mobile/theme.dart';
 import 'package:p2bp_2025spring_mobile/widgets.dart';
+
+import 'assets.dart';
 import 'google_maps_functions.dart';
-import 'package:p2bp_2025spring_mobile/firestore_functions.dart';
-import 'package:p2bp_2025spring_mobile/db_schema_classes.dart';
-import 'package:p2bp_2025spring_mobile/people_in_place_instructions.dart';
-import 'package:maps_toolkit/maps_toolkit.dart' as mp;
 
 class PeopleInPlaceTestPage extends StatefulWidget {
   final Project activeProject;
@@ -26,48 +28,25 @@ class PeopleInPlaceTestPage extends StatefulWidget {
 }
 
 class _PeopleInPlaceTestPageState extends State<PeopleInPlaceTestPage> {
-  bool _isLoading = true;
   bool _isTestRunning = false;
+  bool _outsidePoint = false;
+  bool _isPointsMenuVisible = false;
+  bool _directionsVisible = false;
 
   double _zoom = 18;
   late GoogleMapController mapController;
-  LatLng _location = defaultLocation; // Default location
+  LatLng _location = defaultLocation;
+  MapType _currentMapType = MapType.satellite;
 
-  final Set<Polygon> _polygons = {}; // Set of polygons
-  MapType _currentMapType = MapType.normal; // Default map type
-  bool _showErrorMessage = false;
-  bool _isPointsMenuVisible = false;
-  List<mp.LatLng> _projectArea = [];
-  final Set<Marker> _markers = {}; // Set of markers for points
+  final Set<Polygon> _polygons = {};
+  final Set<Marker> _markers = {};
   final List<LatLng> _loggedPoints = [];
   final Set<Marker> _standingPointMarkers = {};
 
   final PeopleInPlaceData _newData = PeopleInPlaceData();
 
-  int _remainingSeconds = 300;
+  int _remainingSeconds = -1;
   Timer? _timer;
-
-  // Custom marker icons
-  BitmapDescriptor? standingPointMarker;
-
-  // Male Markers
-  BitmapDescriptor? standingMaleMarker;
-  BitmapDescriptor? sittingMaleMarker;
-  BitmapDescriptor? layingMaleMarker;
-  BitmapDescriptor? squattingMaleMarker;
-
-  // Female Markers
-  BitmapDescriptor? standingFemaleMarker;
-  BitmapDescriptor? sittingFemaleMarker;
-  BitmapDescriptor? layingFemaleMarker;
-  BitmapDescriptor? squattingFemaleMarker;
-
-  // N/A Markers
-  BitmapDescriptor? standingNAMarker;
-  BitmapDescriptor? sittingNAMarker;
-  BitmapDescriptor? layingNAMarker;
-  BitmapDescriptor? squattingNAMarker;
-  bool _customMarkersLoaded = false;
 
   MarkerId? _openMarkerId;
 
@@ -76,12 +55,20 @@ class _PeopleInPlaceTestPageState extends State<PeopleInPlaceTestPage> {
     super.initState();
     _polygons.add(getProjectPolygon(widget.activeProject.polygonPoints));
     _location = getPolygonCentroid(_polygons.first);
-    _projectArea = _polygons.first.toMPLatLngList();
-    _zoom = getIdealZoom(_projectArea, _location.toMPLatLng());
-    _isLoading = false;
+    _zoom = getIdealZoom(
+      _polygons.first.toMPLatLngList(),
+      _location.toMPLatLng(),
+    );
+    _remainingSeconds = widget.activeTest.testDuration;
+    for (final point in widget.activeTest.standingPoints) {
+      _standingPointMarkers.add(Marker(
+        markerId: MarkerId(point.toString()),
+        position: point.location,
+        icon: standingPointDisabledIcon,
+      ));
+    }
     WidgetsBinding.instance.addPostFrameCallback((_) {
       print("PostFrameCallback fired");
-      _loadCustomMarkers();
       _showInstructionOverlay();
     });
   }
@@ -92,119 +79,16 @@ class _PeopleInPlaceTestPageState extends State<PeopleInPlaceTestPage> {
     super.dispose();
   }
 
-  // Function to load custom marker icons using AssetMapBitmap.
-  Future<void> _loadCustomMarkers() async {
-    final ImageConfiguration configuration =
-        createLocalImageConfiguration(context);
-    try {
-      standingPointMarker = await AssetMapBitmap.create(
-        configuration,
-        'assets/standing_point_disabled.png',
-        width: 36,
-        height: 36,
-      );
-      standingMaleMarker = await AssetMapBitmap.create(
-        configuration,
-        'assets/custom_icons/test_specific/people_in_place/standing_male_marker.png',
-        width: 36,
-        height: 36,
-      );
-      sittingMaleMarker = await AssetMapBitmap.create(
-        configuration,
-        'assets/custom_icons/test_specific/people_in_place/sitting_male_marker.png',
-        width: 36,
-        height: 36,
-      );
-      layingMaleMarker = await AssetMapBitmap.create(
-        configuration,
-        'assets/custom_icons/test_specific/people_in_place/laying_male_marker.png',
-        width: 36,
-        height: 36,
-      );
-      squattingMaleMarker = await AssetMapBitmap.create(
-        configuration,
-        'assets/custom_icons/test_specific/people_in_place/squatting_male_marker.png',
-        width: 36,
-        height: 36,
-      );
-      standingFemaleMarker = await AssetMapBitmap.create(
-        configuration,
-        'assets/custom_icons/test_specific/people_in_place/standing_female_marker.png',
-        width: 36,
-        height: 36,
-      );
-      sittingFemaleMarker = await AssetMapBitmap.create(
-        configuration,
-        'assets/custom_icons/test_specific/people_in_place/sitting_female_marker.png',
-        width: 36,
-        height: 36,
-      );
-      layingFemaleMarker = await AssetMapBitmap.create(
-        configuration,
-        'assets/custom_icons/test_specific/people_in_place/laying_female_marker.png',
-        width: 36,
-        height: 36,
-      );
-      squattingFemaleMarker = await AssetMapBitmap.create(
-        configuration,
-        'assets/custom_icons/test_specific/people_in_place/squatting_female_marker.png',
-        width: 36,
-        height: 36,
-      );
-      standingNAMarker = await AssetMapBitmap.create(
-        configuration,
-        'assets/custom_icons/test_specific/people_in_place/standing_na_marker.png',
-        width: 36,
-        height: 36,
-      );
-      sittingNAMarker = await AssetMapBitmap.create(
-        configuration,
-        'assets/custom_icons/test_specific/people_in_place/sitting_na_marker.png',
-        width: 36,
-        height: 36,
-      );
-      layingNAMarker = await AssetMapBitmap.create(
-        configuration,
-        'assets/custom_icons/test_specific/people_in_place/laying_na_marker.png',
-        width: 36,
-        height: 36,
-      );
-      squattingNAMarker = await AssetMapBitmap.create(
-        configuration,
-        'assets/custom_icons/test_specific/people_in_place/squatting_na_marker.png',
-        width: 36,
-        height: 36,
-      );
-      setState(() {
-        _customMarkersLoaded = true;
-        _buildStandingPointMarkers();
-      });
-    } catch (e, s) {
-      print("Error loading custom markers: $e");
-      print("Stacktrace: $s");
-    }
-  }
-
-  void _buildStandingPointMarkers() {
-    for (final point in widget.activeTest.standingPoints) {
-      _standingPointMarkers.add(Marker(
-        markerId: MarkerId(point.toString()),
-        position: point.location,
-        icon: standingPointMarker!,
-      ));
-    }
-  }
-
   void _showInstructionOverlay() {
     showDialog(
       context: context,
       barrierDismissible: false,
       builder: (context) {
-        final screenSize = MediaQuery.of(context).size;
         return AlertDialog(
           insetPadding: EdgeInsets.symmetric(
-              horizontal: MediaQuery.of(context).size.width * 0.05,
-              vertical: MediaQuery.of(context).size.height * 0.005),
+            horizontal: 10,
+            vertical: 10,
+          ),
           actionsPadding: EdgeInsets.zero,
           title: Text(
             'How It Works:',
@@ -213,9 +97,9 @@ class _PeopleInPlaceTestPageState extends State<PeopleInPlaceTestPage> {
             ),
             textAlign: TextAlign.center,
           ),
-          content: SingleChildScrollView(
-            child: SizedBox(
-              width: screenSize.width * 0.95,
+          content: SizedBox(
+            width: MediaQuery.sizeOf(context).width,
+            child: SingleChildScrollView(
               child: Column(
                 mainAxisSize: MainAxisSize.min,
                 children: [
@@ -241,7 +125,7 @@ class _PeopleInPlaceTestPageState extends State<PeopleInPlaceTestPage> {
                 ),
                 TextButton(
                   onPressed: () {
-                    Navigator.of(context).pop();
+                    Navigator.pop(context);
                   },
                   child: Text('OK'),
                 ),
@@ -275,53 +159,14 @@ class _PeopleInPlaceTestPageState extends State<PeopleInPlaceTestPage> {
     });
   }
 
-  BitmapDescriptor _getMarkerIcon(String key) {
-    switch (key) {
-      case 'standing_male':
-        return standingMaleMarker ?? BitmapDescriptor.defaultMarker;
-      case 'sitting_male':
-        return sittingMaleMarker ?? BitmapDescriptor.defaultMarker;
-      case 'layingDown_male':
-        return layingMaleMarker ?? BitmapDescriptor.defaultMarker;
-      case 'squatting_male':
-        return squattingMaleMarker ?? BitmapDescriptor.defaultMarker;
-      case 'standing_female':
-        return standingFemaleMarker ?? BitmapDescriptor.defaultMarker;
-      case 'sitting_female':
-        return sittingFemaleMarker ?? BitmapDescriptor.defaultMarker;
-      case 'layingDown_female':
-        return layingFemaleMarker ?? BitmapDescriptor.defaultMarker;
-      case 'squatting_female':
-        return squattingFemaleMarker ?? BitmapDescriptor.defaultMarker;
-      case 'standing_nonbinary' || 'standing_unspecified':
-        return standingNAMarker ?? BitmapDescriptor.defaultMarker;
-      case 'sitting_nonbinary' || 'sitting_unspecified':
-        return sittingNAMarker ?? BitmapDescriptor.defaultMarker;
-      case 'layingDown_nonbinary' || 'layingDown_unspecified':
-        return layingNAMarker ?? BitmapDescriptor.defaultMarker;
-      default:
-        return squattingNAMarker ?? BitmapDescriptor.defaultMarker;
-    }
-  }
-
-  // Tap handler for People In Place
   Future<void> _handleMapTap(LatLng point) async {
     // If point is outside the project boundary, display error message
     if (!isPointInsidePolygon(point, _polygons.first)) {
       setState(() {
-        _showErrorMessage = true;
-      });
-      Timer(Duration(seconds: 3), () {
-        setState(() {
-          _showErrorMessage = false;
-        });
+        _outsidePoint = true;
       });
     }
-    // Check if custom markers are loaded
-    if (!_customMarkersLoaded) {
-      print("Custom markers not loaded yet. Please wait.");
-      return; // Prevent creating markers if not loaded
-    }
+
     // Show bottom sheet for classification
     final PersonInPlace? person = await showModalBottomSheet(
       context: context,
@@ -329,12 +174,19 @@ class _PeopleInPlaceTestPageState extends State<PeopleInPlaceTestPage> {
       backgroundColor: Color(0xFFDDE6F2),
       builder: (context) => _DescriptionForm(location: point),
     );
-    if (person == null) return;
+    if (person == null) {
+      if (_outsidePoint) {
+        await Future.delayed(const Duration(seconds: 2));
+        setState(() {
+          _outsidePoint = false;
+        });
+      }
+      return;
+    }
 
     final MarkerId markerId = MarkerId(point.toString());
-
     final key = '${person.posture.name}_${person.gender.name}';
-    BitmapDescriptor markerIcon = _getMarkerIcon(key);
+    AssetMapBitmap markerIcon = _getMarkerIcon(key);
 
     // Add this data point to set of visible markers and other data lists.
     setState(() {
@@ -373,27 +225,75 @@ class _PeopleInPlaceTestPageState extends State<PeopleInPlaceTestPage> {
       _loggedPoints.add(person.location);
       _newData.persons.add(person);
     });
+
+    if (_outsidePoint) {
+      // TODO: fix delay. delay will overlap with consecutive taps.
+      await Future.delayed(const Duration(seconds: 2));
+      setState(() {
+        _outsidePoint = false;
+      });
+    }
   }
 
-  // Method to start the test and timer
+  AssetMapBitmap _getMarkerIcon(String key) {
+    switch (key) {
+      case 'standing_male':
+        return standingMaleMarker;
+      case 'sitting_male':
+        return sittingMaleMarker;
+      case 'layingDown_male':
+        return layingMaleMarker;
+      case 'squatting_male':
+        return squattingMaleMarker;
+      case 'standing_female':
+        return standingFemaleMarker;
+      case 'sitting_female':
+        return sittingFemaleMarker;
+      case 'layingDown_female':
+        return layingFemaleMarker;
+      case 'squatting_female':
+        return squattingFemaleMarker;
+      case 'standing_nonbinary' || 'standing_unspecified':
+        return standingNAMarker;
+      case 'sitting_nonbinary' || 'sitting_unspecified':
+        return sittingNAMarker;
+      case 'layingDown_nonbinary' || 'layingDown_unspecified':
+        return layingNAMarker;
+      default:
+        return squattingNAMarker;
+    }
+  }
+
   void _startTest() {
     setState(() {
       _isTestRunning = true;
-      _remainingSeconds = 300;
     });
     _timer = Timer.periodic(Duration(seconds: 1), (timer) {
       setState(() {
+        _remainingSeconds--;
         if (_remainingSeconds <= 0) {
+          _isTestRunning = false;
           timer.cancel();
-        } else {
-          _remainingSeconds--;
+          showDialog(
+            context: context,
+            builder: (context) {
+              return TimerEndDialog(onSubmit: () {
+                Navigator.pop(context);
+                _endTest();
+              }, onBack: () {
+                setState(() {
+                  _remainingSeconds = widget.activeTest.testDuration;
+                });
+                Navigator.pop(context);
+              });
+            },
+          );
         }
       });
     });
   }
 
   void _endTest() {
-    _isTestRunning = false;
     _timer?.cancel();
     widget.activeTest.submitData(_newData);
     Navigator.pop(context);
@@ -408,73 +308,13 @@ class _PeopleInPlaceTestPageState extends State<PeopleInPlaceTestPage> {
           systemOverlayStyle:
               SystemUiOverlayStyle(statusBarBrightness: Brightness.light),
           backgroundColor: Colors.transparent,
-          elevation: 0,
-          leadingWidth: 100,
-          // Start/End button on the left
-          leading: Padding(
-            padding: const EdgeInsets.only(left: 20, top: 4, bottom: 4),
-            child: ElevatedButton(
-              style: ElevatedButton.styleFrom(
-                shape: RoundedRectangleBorder(
-                  borderRadius:
-                      BorderRadius.circular(20), // Rounded rectangle shape.
-                ),
-                backgroundColor: _isTestRunning ? Colors.red : Colors.green,
-                padding:
-                    const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-              ),
-              onPressed: () {
-                if (_isTestRunning) {
-                  _endTest();
-                } else {
-                  _startTest();
-                }
-              },
-              child: Text(
-                _isTestRunning ? 'End' : 'Start',
-                style: const TextStyle(color: Colors.white, fontSize: 16),
-              ),
-            ),
-          ),
-          // Persistent prompt in the middle with a translucent background.
-          title: Container(
-            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
-            decoration: BoxDecoration(
-              color: Colors.black.withValues(alpha: 0.6),
-              borderRadius: BorderRadius.circular(8),
-            ),
-            child: Text(
-              'Tap to log data point',
-              textAlign: TextAlign.center,
-              maxLines: 2,
-              style: const TextStyle(color: Colors.white, fontSize: 16),
-            ),
-          ),
-          centerTitle: true,
-          // Timer on the right
-          actions: [
-            Padding(
-              padding: const EdgeInsets.only(right: 20),
-              child: Center(
-                child: Container(
-                  padding: EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-                  decoration: BoxDecoration(
-                    color: Colors.black.withValues(alpha: 0.6),
-                    borderRadius: BorderRadius.circular(8),
-                  ),
-                  child: Text(
-                    formatTime(_remainingSeconds),
-                    style: TextStyle(color: Colors.white, fontSize: 16),
-                  ),
-                ),
-              ),
-            ),
-          ],
+          automaticallyImplyLeading: false,
+          forceMaterialTransparency: true,
         ),
         body: Stack(
           children: [
             SizedBox(
-              height: MediaQuery.of(context).size.height,
+              height: MediaQuery.sizeOf(context).height,
               child: GoogleMap(
                 onMapCreated: _onMapCreated,
                 initialCameraPosition: CameraPosition(
@@ -483,61 +323,106 @@ class _PeopleInPlaceTestPageState extends State<PeopleInPlaceTestPage> {
                 ),
                 markers: {..._standingPointMarkers, ..._markers},
                 polygons: _polygons,
-                onTap: _handleMapTap,
+                onTap: (_isTestRunning) ? _handleMapTap : null,
                 mapType: _currentMapType,
                 myLocationButtonEnabled: false,
               ),
             ),
-            if (_showErrorMessage) OutsideBoundsWarning(),
-            // Buttons in top right corner of map below timer.
-            // Button for toggling map type.
-            Positioned(
-              top: MediaQuery.of(context).padding.top + kToolbarHeight + 8.0,
-              right: 20.0,
-              child: CircularIconMapButton(
-                backgroundColor: const Color(0xFF7EAD80).withValues(alpha: 0.9),
-                borderColor: Color(0xFF2D6040),
-                onPressed: _toggleMapType,
-                icon: Center(
-                  child: Icon(Icons.layers, color: Color(0xFF2D6040)),
-                ),
-              ),
-            ),
-            // Button for toggling instructions.
-            if (!_isLoading)
-              Positioned(
-                top: MediaQuery.of(context).padding.top + kToolbarHeight + 70.0,
-                right: 20,
-                child: CircularIconMapButton(
-                  backgroundColor: Color(0xFFBACFEB).withValues(alpha: 0.9),
-                  borderColor: Color(0xFF37597D),
-                  onPressed: _showInstructionOverlay,
-                  icon: Center(
-                    child: Icon(
-                      FontAwesomeIcons.info,
-                      color: Color(0xFF37597D),
-                    ),
+            Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: <Widget>[
+                Padding(
+                  padding: const EdgeInsets.only(top: 15.0, left: 15.0),
+                  child: TimerButtonAndDisplay(
+                    onPressed: () {
+                      setState(() {
+                        if (_isTestRunning) {
+                          setState(() {
+                            _isTestRunning = false;
+                            _timer?.cancel();
+                          });
+                        } else {
+                          _startTest();
+                        }
+                      });
+                    },
+                    isTestRunning: _isTestRunning,
+                    remainingSeconds: _remainingSeconds,
                   ),
                 ),
-              ),
-            // Button for toggling points menu.
-            Positioned(
-              top: MediaQuery.of(context).padding.top + kToolbarHeight + 132.0,
-              right: 20.0,
-              child: CircularIconMapButton(
-                backgroundColor: Color(0xFFBD9FE4).withValues(alpha: 0.9),
-                borderColor: Color(0xFF5A3E85),
-                onPressed: () {
-                  setState(() {
-                    _isPointsMenuVisible = !_isPointsMenuVisible;
-                  });
-                },
-                icon: Icon(
-                  FontAwesomeIcons.locationDot,
-                  color: Color(0xFF5A3E85),
+                Expanded(
+                  child: _directionsVisible
+                      ? Padding(
+                          padding: const EdgeInsets.symmetric(
+                              horizontal: 15.0, vertical: 15.0),
+                          child: DirectionsText(
+                            onTap: () {
+                              setState(() {
+                                _directionsVisible = !_directionsVisible;
+                              });
+                            },
+                            text: 'Tap to log data point.',
+                          ),
+                        )
+                      : SizedBox(),
                 ),
-              ),
+                Padding(
+                  padding: const EdgeInsets.only(top: 15, right: 15),
+                  child: Column(
+                    spacing: 10,
+                    children: <Widget>[
+                      DirectionsButton(
+                        onTap: () {
+                          setState(() {
+                            _directionsVisible = !_directionsVisible;
+                          });
+                        },
+                      ),
+                      CircularIconMapButton(
+                        backgroundColor:
+                            const Color(0xFF7EAD80).withValues(alpha: 0.9),
+                        borderColor: Color(0xFF2D6040),
+                        onPressed: _toggleMapType,
+                        icon: Center(
+                          child: Icon(Icons.layers, color: Color(0xFF2D6040)),
+                        ),
+                      ),
+                      CircularIconMapButton(
+                        backgroundColor:
+                            Color(0xFFBACFEB).withValues(alpha: 0.9),
+                        borderColor: Color(0xFF37597D),
+                        onPressed: _showInstructionOverlay,
+                        icon: Center(
+                          child: Icon(
+                            FontAwesomeIcons.info,
+                            color: Color(0xFF37597D),
+                          ),
+                        ),
+                      ),
+                      CircularIconMapButton(
+                        backgroundColor:
+                            Color(0xFFBD9FE4).withValues(alpha: 0.9),
+                        borderColor: Color(0xFF5A3E85),
+                        onPressed: () {
+                          setState(() {
+                            _isPointsMenuVisible = !_isPointsMenuVisible;
+                          });
+                        },
+                        icon: Icon(
+                          FontAwesomeIcons.locationDot,
+                          color: Color(0xFF5A3E85),
+                        ),
+                      ),
+                    ],
+                  ),
+                )
+              ],
             ),
+            if (_outsidePoint)
+              TestErrorText(
+                padding: EdgeInsets.symmetric(horizontal: 50, vertical: 150),
+              ),
             if (_isPointsMenuVisible)
               Center(
                 child: Padding(

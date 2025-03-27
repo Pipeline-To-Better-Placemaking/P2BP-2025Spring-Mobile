@@ -1,15 +1,12 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:flutter/material.dart';
 import 'package:dropdown_button2/dropdown_button2.dart';
+import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:p2bp_2025spring_mobile/db_schema_classes.dart';
 import 'package:p2bp_2025spring_mobile/section_creation_page.dart';
 import 'package:p2bp_2025spring_mobile/standing_points_page.dart';
-import 'package:google_maps_flutter/google_maps_flutter.dart';
-import 'google_maps_functions.dart';
-import 'firestore_functions.dart';
+
 import 'theme.dart';
-import 'section_creation_page.dart';
 
 class CreateTestForm extends StatefulWidget {
   final Project activeProject;

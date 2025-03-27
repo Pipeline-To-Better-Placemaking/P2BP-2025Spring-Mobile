@@ -234,7 +234,6 @@ class _NaturePrevalenceState extends State<NaturePrevalence> {
                           )
                         : SizedBox(),
                     SizedBox(height: 30),
-                    SizedBox(width: MediaQuery.of(context).size.width),
                     Center(
                       child: Text(
                         "Type",
@@ -845,7 +844,7 @@ class _NaturePrevalenceState extends State<NaturePrevalence> {
             : Stack(
                 children: [
                   SizedBox(
-                    height: MediaQuery.of(context).size.height,
+                    height: MediaQuery.sizeOf(context).height,
                     child: GoogleMap(
                       // TODO: size based off of bottomsheet container
                       padding: EdgeInsets.only(bottom: _bottomSheetHeight),
@@ -970,7 +969,7 @@ class _NaturePrevalenceState extends State<NaturePrevalence> {
                     TestErrorText(
                       text: _errorText,
                       padding: EdgeInsets.fromLTRB(
-                          20, 0, 20, _bottomSheetHeight + 30),
+                          50, 0, 50, _bottomSheetHeight + 20),
                     ),
                 ],
               ),
