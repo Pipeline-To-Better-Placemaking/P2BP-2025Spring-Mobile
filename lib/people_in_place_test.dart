@@ -65,6 +65,7 @@ class _PeopleInPlaceTestPageState extends State<PeopleInPlaceTestPage> {
         markerId: MarkerId(point.toString()),
         position: point.location,
         icon: standingPointDisabledIcon,
+        consumeTapEvents: true,
       ));
     }
     WidgetsBinding.instance.addPostFrameCallback((_) {
@@ -97,9 +98,9 @@ class _PeopleInPlaceTestPageState extends State<PeopleInPlaceTestPage> {
             ),
             textAlign: TextAlign.center,
           ),
-          content: SizedBox(
-            width: MediaQuery.sizeOf(context).width,
-            child: SingleChildScrollView(
+          content: SingleChildScrollView(
+            child: SizedBox(
+              width: double.maxFinite,
               child: Column(
                 mainAxisSize: MainAxisSize.min,
                 children: [
@@ -253,11 +254,11 @@ class _PeopleInPlaceTestPageState extends State<PeopleInPlaceTestPage> {
         return layingFemaleMarker;
       case 'squatting_female':
         return squattingFemaleMarker;
-      case 'standing_nonbinary' || 'standing_unspecified':
+      case 'standing_unspecified':
         return standingNAMarker;
-      case 'sitting_nonbinary' || 'sitting_unspecified':
+      case 'sitting_unspecified':
         return sittingNAMarker;
-      case 'layingDown_nonbinary' || 'layingDown_unspecified':
+      case 'layingDown_unspecified':
         return layingNAMarker;
       default:
         return squattingNAMarker;
@@ -301,7 +302,7 @@ class _PeopleInPlaceTestPageState extends State<PeopleInPlaceTestPage> {
 
   @override
   Widget build(BuildContext context) {
-    return SafeArea(
+    return AdaptiveSafeArea(
       child: Scaffold(
         extendBodyBehindAppBar: true,
         appBar: AppBar(

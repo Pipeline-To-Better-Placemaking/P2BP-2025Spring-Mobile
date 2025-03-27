@@ -5,32 +5,12 @@ import 'package:flutter/services.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:p2bp_2025spring_mobile/acoustic_instructions.dart';
+import 'package:p2bp_2025spring_mobile/assets.dart';
 import 'package:p2bp_2025spring_mobile/db_schema_classes.dart';
 import 'package:p2bp_2025spring_mobile/firestore_functions.dart';
 import 'package:p2bp_2025spring_mobile/google_maps_functions.dart';
 import 'package:p2bp_2025spring_mobile/theme.dart';
 import 'package:p2bp_2025spring_mobile/widgets.dart'; // for _showInstructionOverlay
-
-/// Icon for a standing point that hasn't been measured yet
-final AssetMapBitmap _incompleteIcon = AssetMapBitmap(
-  'assets/standing_point_disabled.png',
-  width: 48,
-  height: 48,
-);
-
-/// Icon for a standing point that has completed its measurement
-final AssetMapBitmap _completeIcon = AssetMapBitmap(
-  'assets/standing_point_enabled.png',
-  width: 48,
-  height: 48,
-);
-
-/// Icon for a standing point that is actively being measured
-final AssetMapBitmap _activeIcon = AssetMapBitmap(
-  'assets/standing_point_active.png',
-  width: 48,
-  height: 48,
-);
 
 /// AcousticProfileTestPage displays a Google Map (with the project polygon)
 /// in the background and uses a timer to prompt the researcher for sound
@@ -112,7 +92,7 @@ class _AcousticProfileTestPageState extends State<AcousticProfileTestPage> {
         Marker(
           markerId: markerId,
           position: point.location,
-          icon: _incompleteIcon,
+          icon: standingPointDisabledIcon,
           infoWindow: InfoWindow(
             title: point.title,
             snippet: '${point.location.latitude.toStringAsFixed(5)},'
@@ -165,26 +145,28 @@ class _AcousticProfileTestPageState extends State<AcousticProfileTestPage> {
   ///
   /// This includes exchanging the marker's icon for the [_activeIcon].
   void _setActiveMarker(Marker marker) {
-    if (marker.icon == _incompleteIcon) {
+    if (marker.icon == standingPointDisabledIcon) {
       // If activeMarker already set then change icon back to incomplete.
       if (_activeMarker != null) {
-        final newMarker = _activeMarker!.copyWith(iconParam: _incompleteIcon);
+        final newMarker =
+            _activeMarker!.copyWith(iconParam: standingPointDisabledIcon);
         setState(() {
           _markers.add(newMarker);
           _markers.remove(_activeMarker);
         });
       }
       // Change selected marker icon to active icon and assign to _activeMarker.
-      final newActiveMarker = marker.copyWith(iconParam: _activeIcon);
+      final newActiveMarker =
+          marker.copyWith(iconParam: standingPointActiveIcon);
       setState(() {
         _markers.add(newActiveMarker);
         _activeMarker = newActiveMarker;
         _markers.remove(marker);
       });
-    } else if (marker.icon == _completeIcon) {
+    } else if (marker.icon == standingPointEnabledIcon) {
       print('_setActiveMarker called on complete marker');
       return;
-    } else if (marker.icon == _activeIcon) {
+    } else if (marker.icon == standingPointActiveIcon) {
       print('_setActiveMarker called on active marker');
       return;
     }
@@ -251,7 +233,8 @@ class _AcousticProfileTestPageState extends State<AcousticProfileTestPage> {
       _intervalsRemaining = _intervalCount;
       _remainingSeconds = 0;
     });
-    final newMarker = _activeMarker!.copyWith(iconParam: _completeIcon);
+    final newMarker =
+        _activeMarker!.copyWith(iconParam: standingPointEnabledIcon);
     _standingPointCompletionStatus[_activeMarker!.markerId] = true;
     setState(() {
       _markers.add(newMarker);

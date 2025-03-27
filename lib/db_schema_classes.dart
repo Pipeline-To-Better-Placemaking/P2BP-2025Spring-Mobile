@@ -1,22 +1,23 @@
 import 'dart:io';
 import 'dart:math';
+
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:file_selector/file_selector.dart';
+import 'package:firebase_storage/firebase_storage.dart';
+import 'package:flutter/material.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
+import 'package:maps_toolkit/maps_toolkit.dart' as mp;
 import 'package:p2bp_2025spring_mobile/absence_of_order_test.dart';
+import 'package:p2bp_2025spring_mobile/acoustic_profile_test.dart';
 import 'package:p2bp_2025spring_mobile/google_maps_functions.dart';
 import 'package:p2bp_2025spring_mobile/lighting_profile_test.dart';
-import 'package:p2bp_2025spring_mobile/section_cutter_test.dart';
-import 'package:p2bp_2025spring_mobile/people_in_place_test.dart';
 import 'package:p2bp_2025spring_mobile/people_in_motion_test.dart';
-import 'package:p2bp_2025spring_mobile/acoustic_profile_test.dart';
+import 'package:p2bp_2025spring_mobile/people_in_place_test.dart';
+import 'package:p2bp_2025spring_mobile/section_cutter_test.dart';
 import 'package:p2bp_2025spring_mobile/spatial_boundaries_test.dart';
 import 'package:p2bp_2025spring_mobile/theme.dart';
-import 'firestore_functions.dart';
-import 'package:flutter/material.dart';
-import 'package:firebase_storage/firebase_storage.dart';
-import 'package:maps_toolkit/maps_toolkit.dart' as mp;
 
+import 'firestore_functions.dart';
 import 'identifying_access_test.dart';
 import 'nature_prevalence_test.dart';
 
@@ -2483,7 +2484,6 @@ enum AgeRangeType implements DisplayNameEnum {
 enum GenderType implements DisplayNameEnum {
   male(displayName: 'Male'),
   female(displayName: 'Female'),
-  nonbinary(displayName: 'Nonbinary'),
   unspecified(displayName: 'Unspecified');
 
   const GenderType({required this.displayName});
@@ -2751,21 +2751,42 @@ class PeopleInPlaceTest extends Test<PeopleInPlaceData>
 }
 
 enum ActivityTypeInMotion implements DisplayNameEnum {
-  walking(displayName: 'Walking', color: Colors.teal),
-  running(displayName: 'Running', color: Colors.red),
-  swimming(displayName: 'Swimming', color: Colors.cyan),
-  activityOnWheels(displayName: 'Activity on Wheels', color: Colors.orange),
+  walking(
+    displayName: 'Walking',
+    color: Colors.teal,
+    iconName: 'assets/test_specific/people_in_motion/square_marker_teal.png',
+  ),
+  running(
+    displayName: 'Running',
+    color: Colors.red,
+    iconName: 'assets/test_specific/people_in_motion/square_marker_red.png',
+  ),
+  swimming(
+    displayName: 'Swimming',
+    color: Colors.cyan,
+    iconName: 'assets/test_specific/people_in_motion/square_marker_cyan.png',
+  ),
+  activityOnWheels(
+    displayName: 'Activity on Wheels',
+    color: Colors.orange,
+    iconName: 'assets/test_specific/people_in_motion/square_marker_orange.png',
+  ),
   handicapAssistedWheels(
-      displayName: 'Handicap Assisted Wheels', color: Colors.purple);
+    displayName: 'Handicap Assisted Wheels',
+    color: Colors.purple,
+    iconName: 'assets/test_specific/people_in_motion/square_marker_purple.png',
+  );
 
   const ActivityTypeInMotion({
     required this.displayName,
     required this.color,
+    required this.iconName,
   });
 
   @override
   final String displayName;
   final Color color;
+  final String iconName;
 
   factory ActivityTypeInMotion.byDisplayName(String displayName) {
     try {

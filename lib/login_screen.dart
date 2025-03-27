@@ -144,6 +144,13 @@ class _LoginFormState extends State<LoginForm> {
   String _fullName = '';
 
   @override
+  void initState() {
+    super.initState();
+    _emailController.text = 'ryanjgiunta@gmail.com';
+    _passwordController.text = 'Password!!11';
+  }
+
+  @override
   void dispose() {
     _emailController.dispose();
     _passwordController.dispose();

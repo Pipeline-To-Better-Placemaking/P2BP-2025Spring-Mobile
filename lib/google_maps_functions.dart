@@ -245,5 +245,5 @@ String formatTime(int time) {
 /// found here: https://stackoverflow.com/a/46764320.
 double getIdealZoom(List<mp.LatLng> points, mp.LatLng centroid) {
   final maxDistanceInMeters = getMaxDistanceFromCentroid(points, centroid);
-  return (log(20000000.0 / maxDistanceInMeters) / log(2));
+  return (log(40000000.0 / maxDistanceInMeters) / log(2)) - 0.3;
 }

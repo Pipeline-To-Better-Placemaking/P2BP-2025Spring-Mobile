@@ -1,5 +1,7 @@
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 
+import 'db_schema_classes.dart';
+
 final AssetMapBitmap standingPointDisabledIcon = AssetMapBitmap(
   'assets/standing_point_disabled.png',
   width: 48,
@@ -75,28 +77,7 @@ final AssetMapBitmap squattingNAMarker = AssetMapBitmap(
   width: 36,
   height: 36,
 );
-final AssetMapBitmap walkingConnector = AssetMapBitmap(
-  'assets/test_specific/people_in_motion/square_marker_teal.png',
-  width: 24,
-  height: 24,
-);
-final AssetMapBitmap runningConnector = AssetMapBitmap(
-  'assets/test_specific/people_in_motion/square_marker_red.png',
-  width: 24,
-  height: 24,
-);
-final AssetMapBitmap swimmingConnector = AssetMapBitmap(
-  'assets/test_specific/people_in_motion/square_marker_cyan.png',
-  width: 24,
-  height: 24,
-);
-final AssetMapBitmap wheelsConnector = AssetMapBitmap(
-  'assets/test_specific/people_in_motion/square_marker_orange.png',
-  width: 24,
-  height: 24,
-);
-final AssetMapBitmap handicapConnector = AssetMapBitmap(
-  'assets/test_specific/people_in_motion/square_marker_purple.png',
-  width: 24,
-  height: 24,
-);
+final Map<ActivityTypeInMotion, AssetMapBitmap> activityInMotionIconMap = {
+  for (final value in ActivityTypeInMotion.values)
+    value: AssetMapBitmap(value.iconName, width: 24, height: 24)
+};
