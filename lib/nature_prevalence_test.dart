@@ -103,6 +103,7 @@ class _NaturePrevalenceState extends State<NaturePrevalence> {
           timer.cancel();
           showDialog(
             context: context,
+            barrierDismissible: false,
             builder: (context) {
               return TimerEndDialog(onSubmit: () {
                 Navigator.pop(context);

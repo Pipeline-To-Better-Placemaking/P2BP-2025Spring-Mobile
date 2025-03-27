@@ -223,7 +223,7 @@ class _PeopleInMotionTestPageState extends State<PeopleInMotionTestPage> {
     if (activity == null) return;
 
     // Map the selected activity to its corresponding marker icon.
-    final AssetMapBitmap connectorIcon = activityInMotionIconMap[activity]!;
+    final AssetMapBitmap connectorIcon = peopleInMotionIconMap[activity]!;
     final newPolyline = _tracingPolyline!.copyWith(colorParam: activity.color);
 
     // Create a data point from the polyline and activity
@@ -270,6 +270,7 @@ class _PeopleInMotionTestPageState extends State<PeopleInMotionTestPage> {
           timer.cancel();
           showDialog(
             context: context,
+            barrierDismissible: false,
             builder: (context) {
               return TimerEndDialog(onSubmit: () {
                 Navigator.pop(context);

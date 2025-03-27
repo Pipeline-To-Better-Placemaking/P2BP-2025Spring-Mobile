@@ -147,6 +147,7 @@ class _LightingProfileTestPageState extends State<LightingProfileTestPage> {
           timer.cancel();
           showDialog(
             context: context,
+            barrierDismissible: false,
             builder: (context) {
               return TimerEndDialog(onSubmit: () {
                 Navigator.pop(context);

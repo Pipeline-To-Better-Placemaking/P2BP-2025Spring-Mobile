@@ -186,8 +186,8 @@ class _PeopleInPlaceTestPageState extends State<PeopleInPlaceTestPage> {
     }
 
     final MarkerId markerId = MarkerId(point.toString());
-    final key = '${person.posture.name}_${person.gender.name}';
-    AssetMapBitmap markerIcon = _getMarkerIcon(key);
+    AssetMapBitmap markerIcon =
+        peopleInPlaceIconMap[(person.posture, person.gender)]!;
 
     // Add this data point to set of visible markers and other data lists.
     setState(() {
@@ -236,35 +236,6 @@ class _PeopleInPlaceTestPageState extends State<PeopleInPlaceTestPage> {
     }
   }
 
-  AssetMapBitmap _getMarkerIcon(String key) {
-    switch (key) {
-      case 'standing_male':
-        return standingMaleMarker;
-      case 'sitting_male':
-        return sittingMaleMarker;
-      case 'layingDown_male':
-        return layingMaleMarker;
-      case 'squatting_male':
-        return squattingMaleMarker;
-      case 'standing_female':
-        return standingFemaleMarker;
-      case 'sitting_female':
-        return sittingFemaleMarker;
-      case 'layingDown_female':
-        return layingFemaleMarker;
-      case 'squatting_female':
-        return squattingFemaleMarker;
-      case 'standing_unspecified':
-        return standingNAMarker;
-      case 'sitting_unspecified':
-        return sittingNAMarker;
-      case 'layingDown_unspecified':
-        return layingNAMarker;
-      default:
-        return squattingNAMarker;
-    }
-  }
-
   void _startTest() {
     setState(() {
       _isTestRunning = true;
@@ -277,6 +248,7 @@ class _PeopleInPlaceTestPageState extends State<PeopleInPlaceTestPage> {
           timer.cancel();
           showDialog(
             context: context,
+            barrierDismissible: false,
             builder: (context) {
               return TimerEndDialog(onSubmit: () {
                 Navigator.pop(context);

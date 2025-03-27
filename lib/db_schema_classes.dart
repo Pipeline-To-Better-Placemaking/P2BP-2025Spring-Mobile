@@ -2482,14 +2482,18 @@ enum AgeRangeType implements DisplayNameEnum {
 }
 
 enum GenderType implements DisplayNameEnum {
-  male(displayName: 'Male'),
-  female(displayName: 'Female'),
-  unspecified(displayName: 'Unspecified');
+  male(displayName: 'Male', iconNameSegment: 'male'),
+  female(displayName: 'Female', iconNameSegment: 'female'),
+  unspecified(displayName: 'Unspecified', iconNameSegment: 'na');
 
-  const GenderType({required this.displayName});
+  const GenderType({
+    required this.displayName,
+    required this.iconNameSegment,
+  });
 
   @override
   final String displayName;
+  final String iconNameSegment;
 
   /// Returns the enumerated type with the matching displayName.
   factory GenderType.byDisplayName(String displayName) {
@@ -2530,16 +2534,37 @@ enum ActivityTypeInPlace implements DisplayNameEnum {
 }
 
 enum PostureType implements DisplayNameEnum {
-  standing(displayName: 'Standing', color: Color(0xFF4285f4)),
-  sitting(displayName: 'Sitting', color: Color(0xFF28a745)),
-  layingDown(displayName: 'Laying Down', color: Color(0xFFc41484)),
-  squatting(displayName: 'Squatting', color: Color(0xFF6f42c1));
+  standing(
+    displayName: 'Standing',
+    color: Color(0xFF4285f4),
+    iconNameSegment: 'standing',
+  ),
+  sitting(
+    displayName: 'Sitting',
+    color: Color(0xFF28a745),
+    iconNameSegment: 'sitting',
+  ),
+  layingDown(
+    displayName: 'Laying Down',
+    color: Color(0xFFc41484),
+    iconNameSegment: 'laying',
+  ),
+  squatting(
+    displayName: 'Squatting',
+    color: Color(0xFF6f42c1),
+    iconNameSegment: 'squatting',
+  );
 
-  const PostureType({required this.displayName, required this.color});
+  const PostureType({
+    required this.displayName,
+    required this.color,
+    required this.iconNameSegment,
+  });
 
   @override
   final String displayName;
   final Color color;
+  final String iconNameSegment;
 
   /// Returns the enumerated type with the matching displayName.
   factory PostureType.byDisplayName(String displayName) {
