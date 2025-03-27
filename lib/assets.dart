@@ -75,3 +75,28 @@ final AssetMapBitmap squattingNAMarker = AssetMapBitmap(
   width: 36,
   height: 36,
 );
+final AssetMapBitmap walkingConnector = AssetMapBitmap(
+  'assets/test_specific/people_in_motion/square_marker_teal.png',
+  width: 24,
+  height: 24,
+);
+final AssetMapBitmap runningConnector = AssetMapBitmap(
+  'assets/test_specific/people_in_motion/square_marker_red.png',
+  width: 24,
+  height: 24,
+);
+final AssetMapBitmap swimmingConnector = AssetMapBitmap(
+  'assets/test_specific/people_in_motion/square_marker_cyan.png',
+  width: 24,
+  height: 24,
+);
+final AssetMapBitmap wheelsConnector = AssetMapBitmap(
+  'assets/test_specific/people_in_motion/square_marker_orange.png',
+  width: 24,
+  height: 24,
+);
+final AssetMapBitmap handicapConnector = AssetMapBitmap(
+  'assets/test_specific/people_in_motion/square_marker_purple.png',
+  width: 24,
+  height: 24,
+);

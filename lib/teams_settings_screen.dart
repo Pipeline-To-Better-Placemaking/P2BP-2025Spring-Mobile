@@ -580,8 +580,7 @@ class _TeamSettingsScreenState extends State<TeamSettingsScreen> {
                         // Settings button with quick action menu
                         Builder(builder: (context) {
                           return IconButton(
-                            icon: Image.asset(
-                                'assets/custom_icons/Filter_Icon.png'),
+                            icon: Image.asset('assets/Filter_Icon.png'),
                             onPressed: () => _settingsButtonPressed(context),
                           );
                         }),

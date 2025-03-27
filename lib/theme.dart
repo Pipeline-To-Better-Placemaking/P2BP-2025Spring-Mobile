@@ -49,7 +49,7 @@ final MaterialColor p2bpYellow = generateMaterialColor(const Color(0xFFFFCC00));
 final MaterialColor bottomSheetBlue =
     generateMaterialColor(const Color(0xFFDDE6F2));
 
-LinearGradient defaultGrad = LinearGradient(
+final LinearGradient defaultGrad = LinearGradient(
   begin: Alignment.topLeft,
   end: Alignment.bottomRight,
   colors: <Color>[

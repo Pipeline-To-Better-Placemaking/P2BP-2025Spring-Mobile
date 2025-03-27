@@ -6,10 +6,17 @@ import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:p2bp_2025spring_mobile/firestore_functions.dart';
 import 'package:p2bp_2025spring_mobile/theme.dart';
 import 'package:p2bp_2025spring_mobile/widgets.dart';
+import 'assets.dart';
 import 'google_maps_functions.dart';
 import 'package:p2bp_2025spring_mobile/db_schema_classes.dart';
 import 'package:p2bp_2025spring_mobile/people_in_motion_instructions.dart';
 import 'package:maps_toolkit/maps_toolkit.dart' as mp;
+
+final AssetMapBitmap tempMarkerIcon = AssetMapBitmap(
+  'assets/test_specific/people_in_motion/polyline_marker4.png',
+  width: 48,
+  height: 48,
+);
 
 class PeopleInMotionTestPage extends StatefulWidget {
   final Project activeProject;
@@ -40,7 +47,7 @@ class _PeopleInMotionTestPageState extends State<PeopleInMotionTestPage> {
 
   Timer? _timer;
 
-  MapType _currentMapType = MapType.normal;
+  MapType _currentMapType = MapType.satellite;
 
   /// Markers placed while in TracingMode.
   /// Should always be empty when [_isTracingMode] is false.
@@ -65,16 +72,6 @@ class _PeopleInMotionTestPageState extends State<PeopleInMotionTestPage> {
 
   final PeopleInMotionData _newData = PeopleInMotionData();
 
-  // Custom marker icons
-  BitmapDescriptor? standingPointMarker;
-  BitmapDescriptor? walkingConnector;
-  BitmapDescriptor? runningConnector;
-  BitmapDescriptor? swimmingConnector;
-  BitmapDescriptor? wheelsConnector;
-  BitmapDescriptor? handicapConnector;
-  BitmapDescriptor? tempMarkerIcon;
-  bool _customMarkersLoaded = false;
-
   // Define an initial time
   int _remainingSeconds = 300;
 
@@ -86,9 +83,16 @@ class _PeopleInMotionTestPageState extends State<PeopleInMotionTestPage> {
     _projectArea = _polygons.first.toMPLatLngList();
     _zoom = getIdealZoom(_projectArea, _location.toMPLatLng());
     _isLoading = false;
+    for (final point in widget.activeTest.standingPoints) {
+      _standingPointMarkers.add(Marker(
+        markerId: MarkerId(point.toString()),
+        position: point.location,
+        icon: standingPointDisabledIcon,
+        consumeTapEvents: true,
+      ));
+    }
     WidgetsBinding.instance.addPostFrameCallback((_) {
       print("PostFrameCallback fired");
-      _loadCustomMarkers();
       _showInstructionOverlay();
     });
   }
@@ -99,87 +103,19 @@ class _PeopleInMotionTestPageState extends State<PeopleInMotionTestPage> {
     super.dispose();
   }
 
-  // Function to load custom marker icons using AssetMapBitmap.
-  Future<void> _loadCustomMarkers() async {
-    final ImageConfiguration configuration =
-        createLocalImageConfiguration(context);
-    try {
-      standingPointMarker = await AssetMapBitmap.create(
-        configuration,
-        'assets/standing_point_disabled.png',
-        width: 36,
-        height: 36,
-      );
-      walkingConnector = await AssetMapBitmap.create(
-        configuration,
-        'assets/custom_icons/test_specific/people_in_motion/square_marker_teal.png',
-        width: 24,
-        height: 24,
-      );
-      runningConnector = await AssetMapBitmap.create(
-        configuration,
-        'assets/custom_icons/test_specific/people_in_motion/square_marker_red.png',
-        width: 24,
-        height: 24,
-      );
-      swimmingConnector = await AssetMapBitmap.create(
-        configuration,
-        'assets/custom_icons/test_specific/people_in_motion/square_marker_cyan.png',
-        width: 24,
-        height: 24,
-      );
-      wheelsConnector = await AssetMapBitmap.create(
-        configuration,
-        'assets/custom_icons/test_specific/people_in_motion/square_marker_orange.png',
-        width: 24,
-        height: 24,
-      );
-      handicapConnector = await AssetMapBitmap.create(
-        configuration,
-        'assets/custom_icons/test_specific/people_in_motion/square_marker_purple.png',
-        width: 24,
-        height: 24,
-      );
-      tempMarkerIcon = await AssetMapBitmap.create(
-        configuration,
-        'assets/custom_icons/test_specific/people_in_motion/polyline_marker4.png',
-        width: 48,
-        height: 48,
-      );
-      setState(() {
-        _customMarkersLoaded = true;
-        _buildStandingPointMarkers();
-      });
-      print("Custom markers loaded successfully.");
-    } catch (e) {
-      print("Error loading custom markers: $e");
-    }
-  }
-
-  void _buildStandingPointMarkers() {
-    for (final point in widget.activeTest.standingPoints) {
-      _standingPointMarkers.add(Marker(
-        markerId: MarkerId(point.toString()),
-        position: point.location,
-        icon: standingPointMarker!,
-        consumeTapEvents: true,
-      ));
-    }
-  }
-
   // Returns Marker icon for the given [ActivityTypeInMotion].
   BitmapDescriptor _getMarkerIcon(ActivityTypeInMotion? key) {
     switch (key) {
       case ActivityTypeInMotion.walking:
-        return walkingConnector ?? BitmapDescriptor.defaultMarker;
+        return walkingConnector;
       case ActivityTypeInMotion.running:
-        return runningConnector ?? BitmapDescriptor.defaultMarker;
+        return runningConnector;
       case ActivityTypeInMotion.swimming:
-        return swimmingConnector ?? BitmapDescriptor.defaultMarker;
+        return swimmingConnector;
       case ActivityTypeInMotion.activityOnWheels:
-        return wheelsConnector ?? BitmapDescriptor.defaultMarker;
+        return wheelsConnector;
       case ActivityTypeInMotion.handicapAssistedWheels:
-        return handicapConnector ?? BitmapDescriptor.defaultMarker;
+        return handicapConnector;
       default:
         return BitmapDescriptor.defaultMarker;
     }
@@ -283,9 +219,7 @@ class _PeopleInMotionTestPageState extends State<PeopleInMotionTestPage> {
       final Marker marker = Marker(
         markerId: markerId,
         position: point,
-        icon: _customMarkersLoaded && tempMarkerIcon != null
-            ? tempMarkerIcon!
-            : BitmapDescriptor.defaultMarkerWithHue(BitmapDescriptor.hueBlue),
+        icon: tempMarkerIcon,
         anchor: const Offset(0.5, 0.9),
       );
 
