@@ -392,7 +392,7 @@ class TimerButtonAndDisplay extends StatelessWidget {
     required this.remainingSeconds,
   });
 
-  final VoidCallback onPressed;
+  final void Function()? onPressed;
   final bool isTestRunning;
   final int remainingSeconds;
 
@@ -830,7 +830,7 @@ class DirectionsText extends StatelessWidget {
           child: Text(
             text,
             textAlign: TextAlign.center,
-            maxLines: 3,
+            maxLines: 5,
             overflow: TextOverflow.ellipsis,
             style: TextStyle(
               fontSize: 18,

@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:io';
 
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -31,11 +32,10 @@ class AcousticProfileTestPage extends StatefulWidget {
 }
 
 class _AcousticProfileTestPageState extends State<AcousticProfileTestPage> {
-  bool _isLoading = true;
   bool _isIntervalCycleRunning = false;
-  bool _isBottomSheetOpen = false;
   bool _isErrorTextShown = false;
   bool _isTestComplete = false;
+  bool _directionsVisible = true;
 
   late GoogleMapController mapController;
   LatLng _location = defaultLocation;
@@ -47,7 +47,7 @@ class _AcousticProfileTestPageState extends State<AcousticProfileTestPage> {
   Set<Marker> _markers = {};
   late final List<StandingPoint> _standingPoints;
 
-  Timer? _intervalTimer;
+  Timer? _timer;
   final int _intervalDuration = 4; // TODO replace with member of test later
   final int _intervalCount = 3; // TODO replace with member of test later
   int _remainingSeconds = 0;
@@ -78,7 +78,6 @@ class _AcousticProfileTestPageState extends State<AcousticProfileTestPage> {
       ));
     }
     _markers = _buildStandingPointMarkers();
-    _isLoading = false;
   }
 
   /// Creates a marker for each standing point and returns that set of markers.
@@ -114,7 +113,7 @@ class _AcousticProfileTestPageState extends State<AcousticProfileTestPage> {
 
   @override
   void dispose() {
-    _intervalTimer?.cancel();
+    _timer?.cancel();
     super.dispose();
   }
 
@@ -190,19 +189,13 @@ class _AcousticProfileTestPageState extends State<AcousticProfileTestPage> {
       });
 
       // Start timer and wait for it to end before proceeding.
-      _intervalTimer = _startIntervalTimer();
-      while (_intervalTimer!.isActive) {
+      _timer = _startIntervalTimer();
+      while (_timer!.isActive) {
         await Future.delayed(Duration(seconds: 1));
       }
       if (!mounted) return;
 
-      setState(() {
-        _isBottomSheetOpen = true;
-      });
       final measurement = await _doBottomSheetSequence();
-      setState(() {
-        _isBottomSheetOpen = false;
-      });
 
       // If user closed a sheet without entering data then show error
       // and restart interval.
@@ -333,7 +326,7 @@ class _AcousticProfileTestPageState extends State<AcousticProfileTestPage> {
   /// Update the completed status of each standing point
   /// If all points are completed, navigate to the Project Details Page
   Future<void> _endTest() async {
-    _intervalTimer?.cancel();
+    _timer?.cancel();
     widget.activeTest.submitData(_newData);
     _isTestComplete = true;
     await Future.delayed(Duration(seconds: 3));
@@ -394,194 +387,145 @@ class _AcousticProfileTestPageState extends State<AcousticProfileTestPage> {
     );
   }
 
+  String _getDirections() {
+    if (!_isTestComplete) {
+      if (_isErrorTextShown) {
+        return 'No information given. Please do '
+            'not close bottom pane without submitting.';
+      } else {
+        if (_activeMarker == null) {
+          return 'Tap one of the marked standing points to begin '
+              'measurements at that location.';
+        } else {
+          if (!_isIntervalCycleRunning) {
+            return 'Press Start once you have arrived at the selected location.';
+          } else {
+            return 'Listen carefully to your surroundings.';
+          }
+        }
+      }
+    } else {
+      return 'Test completed! Now returning to previous screen.';
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
-    return SafeArea(
+    return AdaptiveSafeArea(
       child: Scaffold(
         extendBodyBehindAppBar: true,
         appBar: AppBar(
-          systemOverlayStyle:
-              const SystemUiOverlayStyle(statusBarBrightness: Brightness.light),
+          systemOverlayStyle: Platform.isIOS
+              ? (_currentMapType == MapType.normal
+                  ? SystemUiOverlayStyle.dark.copyWith(
+                      statusBarColor: Colors.transparent,
+                    )
+                  : SystemUiOverlayStyle.light.copyWith(
+                      statusBarColor: Colors.transparent,
+                    ))
+              : null,
           backgroundColor: Colors.transparent,
-          elevation: 0,
-          leadingWidth: 100,
-          // Start/End button (for this test, we rely solely on the interval timer)
-          leading: Padding(
-            padding: const EdgeInsets.only(left: 20, top: 4, bottom: 4),
-            child: ElevatedButton(
-              style: ElevatedButton.styleFrom(
-                shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(20)),
-                backgroundColor: Colors.green,
-                padding: EdgeInsets.zero,
+          automaticallyImplyLeading: false,
+          forceMaterialTransparency: true,
+        ),
+        body: Stack(
+          children: [
+            SizedBox(
+              height: MediaQuery.sizeOf(context).height,
+              child: GoogleMap(
+                onMapCreated: _onMapCreated,
+                initialCameraPosition: CameraPosition(
+                  target: _location,
+                  zoom: _zoom,
+                ),
+                markers: _markers,
+                polygons: _polygons,
+                circles: _circles,
+                mapType: _currentMapType,
+                myLocationButtonEnabled: false,
               ),
-              onPressed: (!_isIntervalCycleRunning && _activeMarker != null)
-                  ? _startIntervalCycles
-                  : null,
-              child: const Text(
-                'Start',
-                style: TextStyle(color: Colors.white, fontSize: 16),
-              ),
             ),
-          ),
-          // Interval counter (e.g. "Interval 3/15")
-          title: Container(
-            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-            decoration: BoxDecoration(
-              color: Colors.black.withValues(alpha: 0.6),
-              borderRadius: BorderRadius.circular(8),
-            ),
-            child: Text(
-              '${_intervalCount - _intervalsRemaining} / $_intervalCount',
-              style: const TextStyle(color: Colors.white, fontSize: 14),
-            ),
-          ),
-          centerTitle: true,
-          // Timer display on the right
-          actions: [
-            Padding(
-              padding: const EdgeInsets.only(right: 20),
-              child: Center(
-                child: Container(
-                  padding:
-                      const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-                  decoration: BoxDecoration(
-                    color: Colors.black.withValues(alpha: 0.6),
-                    borderRadius: BorderRadius.circular(8),
-                  ),
-                  child: Text(
-                    formatTime(_remainingSeconds),
-                    style: const TextStyle(color: Colors.white, fontSize: 16),
+            Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: <Widget>[
+                Padding(
+                  padding: const EdgeInsets.only(top: 15.0, left: 15.0),
+                  child: TimerButtonAndDisplay(
+                    onPressed:
+                        (!_isIntervalCycleRunning && _activeMarker != null)
+                            ? () {
+                                setState(() {
+                                  if (_isIntervalCycleRunning) {
+                                    setState(() {
+                                      _isIntervalCycleRunning = false;
+                                      _timer?.cancel();
+                                    });
+                                  } else {
+                                    _startIntervalCycles();
+                                  }
+                                });
+                              }
+                            : null,
+                    isTestRunning: _isIntervalCycleRunning,
+                    remainingSeconds: _remainingSeconds,
                   ),
                 ),
-              ),
-            ),
-          ],
-        ),
-        body: _isLoading
-            ? const Center(child: CircularProgressIndicator())
-            : _buildBody(context),
-      ),
-    );
-  }
-
-  /// Builds the main body of this page including the map and overlaid buttons.
-  Widget _buildBody(BuildContext context) {
-    return Stack(
-      children: [
-        SizedBox(
-          height: MediaQuery.sizeOf(context).height,
-          child: GoogleMap(
-            onMapCreated: _onMapCreated,
-            initialCameraPosition: CameraPosition(
-              target: _location,
-              zoom: _zoom,
-            ),
-            markers: _markers,
-            polygons: _polygons,
-            circles: _circles,
-            mapType: _currentMapType,
-            myLocationButtonEnabled: false,
-          ),
-        ),
-        Align(
-          alignment: Alignment.topRight,
-          child: Padding(
-            padding: const EdgeInsets.only(top: kToolbarHeight, right: 20),
-            child: Column(
-              spacing: 10,
-              children: [
-                CircularIconMapButton(
-                  backgroundColor:
-                      const Color(0xFF7EAD80).withValues(alpha: 0.9),
-                  borderColor: Color(0xFF2D6040),
-                  onPressed: _toggleMapType,
-                  icon: Icon(
-                    Icons.layers,
-                    color: Color(0xFF2D6040),
-                  ),
+                Expanded(
+                  child: _directionsVisible
+                      ? Padding(
+                          padding: const EdgeInsets.symmetric(
+                              horizontal: 15.0, vertical: 15.0),
+                          child: DirectionsText(
+                            onTap: () {
+                              setState(() {
+                                _directionsVisible = !_directionsVisible;
+                              });
+                            },
+                            text: _getDirections(),
+                          ),
+                        )
+                      : SizedBox(),
                 ),
-                CircularIconMapButton(
-                  backgroundColor: Color(0xFFBACFEB).withValues(alpha: 0.9),
-                  borderColor: Color(0xFF37597D),
-                  onPressed: _showInstructionOverlay,
-                  icon: Icon(
-                    FontAwesomeIcons.info,
-                    color: Color(0xFF37597D),
+                Padding(
+                  padding: const EdgeInsets.only(top: 15.0, right: 15.0),
+                  child: Column(
+                    spacing: 10,
+                    children: <Widget>[
+                      DirectionsButton(
+                        onTap: () {
+                          setState(() {
+                            _directionsVisible = !_directionsVisible;
+                          });
+                        },
+                      ),
+                      CircularIconMapButton(
+                        backgroundColor:
+                            const Color(0xFF7EAD80).withValues(alpha: 0.9),
+                        borderColor: Color(0xFF2D6040),
+                        onPressed: _toggleMapType,
+                        icon: Icon(
+                          Icons.layers,
+                          color: Color(0xFF2D6040),
+                        ),
+                      ),
+                      CircularIconMapButton(
+                        backgroundColor:
+                            Color(0xFFBACFEB).withValues(alpha: 0.9),
+                        borderColor: Color(0xFF37597D),
+                        onPressed: _showInstructionOverlay,
+                        icon: Icon(
+                          FontAwesomeIcons.info,
+                          color: Color(0xFF37597D),
+                        ),
+                      ),
+                    ],
                   ),
                 ),
               ],
             ),
-          ),
+          ],
         ),
-        if (!_isBottomSheetOpen)
-          (!_isTestComplete)
-              ? Align(
-                  alignment: Alignment.topLeft,
-                  child: Padding(
-                    padding: const EdgeInsets.fromLTRB(
-                        16, kToolbarHeight + 8, 80, 16),
-                    child: _buildDirections(),
-                  ),
-                )
-              : Center(
-                  child: Padding(
-                    padding: const EdgeInsets.all(16),
-                    child: _DirectionsTextBox(
-                      text: 'Test completed! Now returning to previous screen.',
-                      backgroundColor: Colors.black.withValues(alpha: 0.75),
-                    ),
-                  ),
-                ),
-      ],
-    );
-  }
-
-  Widget _buildDirections() {
-    if (_isErrorTextShown) {
-      return _DirectionsTextBox(
-        text: 'No information received for that measurement. Please do '
-            'not close bottom panels without providing the requested info.',
-        backgroundColor: Colors.red.withValues(alpha: 0.9),
-      );
-    } else {
-      return _DirectionsTextBox(
-        text: (_activeMarker == null)
-            ? 'Tap one of the marked standing points to begin '
-                'measurements at that location'
-            : (!_isIntervalCycleRunning)
-                ? 'Press Start once you have arrived at the selected location'
-                : 'Listen carefully to your surroundings',
-        backgroundColor: Colors.black.withValues(alpha: 0.75),
-      );
-    }
-  }
-}
-
-class _DirectionsTextBox extends StatelessWidget {
-  final String text;
-  final Color backgroundColor;
-
-  const _DirectionsTextBox({
-    required this.text,
-    required this.backgroundColor,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.symmetric(
-        horizontal: 10,
-        vertical: 5,
-      ),
-      decoration: BoxDecoration(
-        color: backgroundColor,
-        borderRadius: BorderRadius.circular(12),
-      ),
-      child: Text(
-        text,
-        style: const TextStyle(color: Colors.white, fontSize: 18),
-        textAlign: TextAlign.center,
       ),
     );
   }
