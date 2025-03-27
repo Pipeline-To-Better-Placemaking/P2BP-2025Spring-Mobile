@@ -10,73 +10,8 @@ import 'package:p2bp_2025spring_mobile/people_in_place_instructions.dart';
 import 'package:p2bp_2025spring_mobile/theme.dart';
 import 'package:p2bp_2025spring_mobile/widgets.dart';
 
+import 'assets.dart';
 import 'google_maps_functions.dart';
-
-final AssetMapBitmap _standingPointMarker = AssetMapBitmap(
-  'assets/standing_point_disabled.png',
-  width: 48,
-  height: 48,
-);
-final AssetMapBitmap _standingMaleMarker = AssetMapBitmap(
-  'assets/custom_icons/test_specific/people_in_place/standing_male_marker.png',
-  width: 36,
-  height: 36,
-);
-final AssetMapBitmap _sittingMaleMarker = AssetMapBitmap(
-  'assets/custom_icons/test_specific/people_in_place/sitting_male_marker.png',
-  width: 36,
-  height: 36,
-);
-final AssetMapBitmap _layingMaleMarker = AssetMapBitmap(
-  'assets/custom_icons/test_specific/people_in_place/laying_male_marker.png',
-  width: 36,
-  height: 36,
-);
-final AssetMapBitmap _squattingMaleMarker = AssetMapBitmap(
-  'assets/custom_icons/test_specific/people_in_place/squatting_male_marker.png',
-  width: 36,
-  height: 36,
-);
-final AssetMapBitmap _standingFemaleMarker = AssetMapBitmap(
-  'assets/custom_icons/test_specific/people_in_place/standing_female_marker.png',
-  width: 36,
-  height: 36,
-);
-final AssetMapBitmap _sittingFemaleMarker = AssetMapBitmap(
-  'assets/custom_icons/test_specific/people_in_place/sitting_female_marker.png',
-  width: 36,
-  height: 36,
-);
-final AssetMapBitmap _layingFemaleMarker = AssetMapBitmap(
-  'assets/custom_icons/test_specific/people_in_place/laying_female_marker.png',
-  width: 36,
-  height: 36,
-);
-final AssetMapBitmap _squattingFemaleMarker = AssetMapBitmap(
-  'assets/custom_icons/test_specific/people_in_place/squatting_female_marker.png',
-  width: 36,
-  height: 36,
-);
-final AssetMapBitmap _standingNAMarker = AssetMapBitmap(
-  'assets/custom_icons/test_specific/people_in_place/standing_na_marker.png',
-  width: 36,
-  height: 36,
-);
-final AssetMapBitmap _sittingNAMarker = AssetMapBitmap(
-  'assets/custom_icons/test_specific/people_in_place/sitting_na_marker.png',
-  width: 36,
-  height: 36,
-);
-final AssetMapBitmap _layingNAMarker = AssetMapBitmap(
-  'assets/custom_icons/test_specific/people_in_place/laying_na_marker.png',
-  width: 36,
-  height: 36,
-);
-final AssetMapBitmap _squattingNAMarker = AssetMapBitmap(
-  'assets/custom_icons/test_specific/people_in_place/squatting_na_marker.png',
-  width: 36,
-  height: 36,
-);
 
 class PeopleInPlaceTestPage extends StatefulWidget {
   final Project activeProject;
@@ -129,7 +64,7 @@ class _PeopleInPlaceTestPageState extends State<PeopleInPlaceTestPage> {
       _standingPointMarkers.add(Marker(
         markerId: MarkerId(point.toString()),
         position: point.location,
-        icon: _standingPointMarker,
+        icon: standingPointDisabledIcon,
       ));
     }
     WidgetsBinding.instance.addPostFrameCallback((_) {
@@ -303,29 +238,29 @@ class _PeopleInPlaceTestPageState extends State<PeopleInPlaceTestPage> {
   AssetMapBitmap _getMarkerIcon(String key) {
     switch (key) {
       case 'standing_male':
-        return _standingMaleMarker;
+        return standingMaleMarker;
       case 'sitting_male':
-        return _sittingMaleMarker;
+        return sittingMaleMarker;
       case 'layingDown_male':
-        return _layingMaleMarker;
+        return layingMaleMarker;
       case 'squatting_male':
-        return _squattingMaleMarker;
+        return squattingMaleMarker;
       case 'standing_female':
-        return _standingFemaleMarker;
+        return standingFemaleMarker;
       case 'sitting_female':
-        return _sittingFemaleMarker;
+        return sittingFemaleMarker;
       case 'layingDown_female':
-        return _layingFemaleMarker;
+        return layingFemaleMarker;
       case 'squatting_female':
-        return _squattingFemaleMarker;
+        return squattingFemaleMarker;
       case 'standing_nonbinary' || 'standing_unspecified':
-        return _standingNAMarker;
+        return standingNAMarker;
       case 'sitting_nonbinary' || 'sitting_unspecified':
-        return _sittingNAMarker;
+        return sittingNAMarker;
       case 'layingDown_nonbinary' || 'layingDown_unspecified':
-        return _layingNAMarker;
+        return layingNAMarker;
       default:
-        return _squattingNAMarker;
+        return squattingNAMarker;
     }
   }
 

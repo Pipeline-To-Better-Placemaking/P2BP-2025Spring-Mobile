@@ -85,8 +85,10 @@ final ButtonStyle testButtonStyle = FilledButton.styleFrom(
   disabledBackgroundColor: Color(0xCD6C6C6C),
   iconColor: Colors.black,
   shape: RoundedRectangleBorder(
-      borderRadius: BorderRadius.circular(15),
-      side: BorderSide(color: Color(0xFFB0C4DE), width: 2)),
+    borderRadius: BorderRadius.circular(15),
+    side: BorderSide.none,
+    // BorderSide(color: Color(0xFFB0C4DE), width: 2)
+  ),
   textStyle: TextStyle(fontSize: 14),
 );
 
