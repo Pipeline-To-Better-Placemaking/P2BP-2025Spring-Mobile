@@ -2054,12 +2054,12 @@ class NatureData implements NatureTypes {
 
 /// Types of weather for Nature Prevalence. Types include [sunny], [cloudy],
 /// [rainy], [windy], and [stormy].
-enum Weather { sunny, cloudy, rainy, windy, stormy }
+enum WeatherType { sunny, cloudy, rainy, windy, stormy }
 
 /// Class for weather in Nature Prevalence Test. Implements enum type
 /// [weather].
 class WeatherData implements NatureTypes {
-  final List<Weather> weatherTypes;
+  final List<WeatherType> weatherTypes; // TODO make this a set?
   final double temp;
 
   WeatherData({required this.weatherTypes, required this.temp});
@@ -2070,7 +2070,7 @@ class WeatherData implements NatureTypes {
     Map<String, bool> weatherMap = {};
     try {
       // Initialize a map for Firestore with true or false depending on weather.
-      for (Weather weatherType in Weather.values) {
+      for (WeatherType weatherType in WeatherType.values) {
         weatherTypes.contains(weatherType)
             ? weatherMap[weatherType.name] = true
             : weatherMap[weatherType.name] = false;
@@ -2355,11 +2355,11 @@ class NaturePrevalenceTest extends Test<NatureData> implements TimerTest {
     List<WaterBody> waterBodyList = [];
     List<Vegetation> vegetationList = [];
     WeatherData? weatherData;
-    List<Weather> weatherTypes = [];
+    List<WeatherType> weatherTypes = [];
 
     try {
       if (data.containsKey('weather')) {
-        for (Weather weatherType in Weather.values) {
+        for (WeatherType weatherType in WeatherType.values) {
           if (data['weather'].containsKey(weatherType) &&
               data['weather'][weatherType] == true) {
             weatherTypes.add(weatherType);

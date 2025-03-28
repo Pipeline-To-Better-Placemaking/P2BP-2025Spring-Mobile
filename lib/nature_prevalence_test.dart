@@ -164,219 +164,13 @@ class _NaturePrevalenceState extends State<NaturePrevalence> {
 
   void _setWeatherData() async {
     WeatherData? weatherData;
-    double? temperature;
-    bool erroredTemp = false;
-    bool erroredSelect = false;
-    Map<Weather, bool> selectedMap = {
-      Weather.stormy: false,
-      Weather.sunny: false,
-      Weather.rainy: false,
-      Weather.windy: false,
-      Weather.cloudy: false,
-    };
+
     try {
       weatherData = await showDialog(
           barrierDismissible: false,
           context: context,
           builder: (context) {
-            return StatefulBuilder(builder: (context, StateSetter setState) {
-              return AlertDialog(
-                scrollable: true,
-                title: Column(
-                  children: [
-                    Text(
-                      'Weather',
-                      style: TextStyle(
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                  ],
-                ),
-                content: Column(
-                  spacing: 5,
-                  children: [
-                    Text(
-                      'Temperature',
-                      style:
-                          TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
-                    ),
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      spacing: 10,
-                      children: [
-                        Flexible(
-                          child: DialogTextBox(
-                            textAlign: TextAlign.center,
-                            inputFormatter: [
-                              FilteringTextInputFormatter.allow(
-                                  RegExp('[1234567890.-]'))
-                            ],
-                            keyboardType: TextInputType.numberWithOptions(
-                                signed: true, decimal: true),
-                            maxLength: 6,
-                            labelText: 'Temp.',
-                            onChanged: (inputText) {
-                              setState(() {
-                                erroredTemp = false;
-                              });
-                              temperature = double.tryParse(inputText);
-                            },
-                          ),
-                        ),
-                        Flexible(
-                            child: Text(
-                          '°F',
-                          style: TextStyle(fontSize: 14),
-                        ))
-                      ],
-                    ),
-                    erroredTemp
-                        ? Text(
-                            "Please input a value!",
-                            style: TextStyle(color: Colors.red[900]),
-                          )
-                        : SizedBox(),
-                    SizedBox(height: 30),
-                    Center(
-                      child: Text(
-                        "Type",
-                        style: TextStyle(
-                            fontWeight: FontWeight.bold, fontSize: 16),
-                      ),
-                    ),
-                    Row(
-                      spacing: 5,
-                      children: <Widget>[
-                        TestButton(
-                          buttonText: "Sunny",
-                          backgroundColor: selectedMap[Weather.sunny] == true
-                              ? Colors.blue
-                              : null,
-                          onPressed: () {
-                            setState(() {
-                              erroredSelect = false;
-                              selectedMap[Weather.sunny] =
-                                  !selectedMap[Weather.sunny]!;
-                            });
-                          },
-                        ),
-                        TestButton(
-                          buttonText: "Rainy",
-                          backgroundColor: selectedMap[Weather.rainy] == true
-                              ? Colors.blue
-                              : null,
-                          onPressed: () {
-                            setState(() {
-                              erroredSelect = false;
-                              selectedMap[Weather.rainy] =
-                                  !selectedMap[Weather.rainy]!;
-                            });
-                          },
-                        )
-                      ],
-                    ),
-                    Row(
-                      spacing: 5,
-                      children: <Widget>[
-                        TestButton(
-                          buttonText: "Windy",
-                          backgroundColor: selectedMap[Weather.windy] == true
-                              ? Colors.blue
-                              : null,
-                          onPressed: () {
-                            setState(() {
-                              erroredSelect = false;
-                              selectedMap[Weather.windy] =
-                                  !selectedMap[Weather.windy]!;
-                            });
-                          },
-                        ),
-                        TestButton(
-                          buttonText: "Stormy",
-                          backgroundColor: selectedMap[Weather.stormy] == true
-                              ? Colors.blue
-                              : null,
-                          onPressed: () {
-                            setState(() {
-                              erroredSelect = false;
-                              selectedMap[Weather.stormy] =
-                                  !selectedMap[Weather.stormy]!;
-                            });
-                          },
-                        )
-                      ],
-                    ),
-                    Row(
-                      spacing: 5,
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        Spacer(),
-                        TestButton(
-                          flex: 2,
-                          buttonText: "Cloudy",
-                          backgroundColor: selectedMap[Weather.cloudy] == true
-                              ? Colors.blue
-                              : null,
-                          onPressed: () {
-                            setState(() {
-                              erroredSelect = false;
-                              selectedMap[Weather.cloudy] =
-                                  !selectedMap[Weather.cloudy]!;
-                            });
-                          },
-                        ),
-                        Spacer(),
-                      ],
-                    ),
-                    erroredSelect
-                        ? Text(
-                            "Please select a type!",
-                            style: TextStyle(color: Colors.red[900]),
-                          )
-                        : SizedBox(),
-                  ],
-                ),
-                actions: <Widget>[
-                  TextButton(
-                    onPressed: () {
-                      Navigator.pop(context, null);
-                    },
-                    child: const Text('Cancel'),
-                  ),
-                  TextButton(
-                    onPressed: () {
-                      List<Weather> selectedWeather = [];
-                      for (Weather weatherType in selectedMap.keys) {
-                        if (selectedMap[weatherType] != null &&
-                            selectedMap[weatherType] == true) {
-                          selectedWeather.add(weatherType);
-                        }
-                      }
-                      if (temperature == null) {
-                        setState(() {
-                          erroredTemp = true;
-                        });
-                      }
-                      print(erroredSelect);
-                      if (selectedWeather.isEmpty) {
-                        print("\n");
-                        setState(() {
-                          erroredSelect = true;
-                        });
-                      }
-                      if (erroredSelect || erroredTemp) {
-                        return;
-                      }
-                      weatherData = WeatherData(
-                          weatherTypes: selectedWeather, temp: temperature!);
-                      Navigator.pop(context, weatherData);
-                      print('${weatherData!.weatherTypes} temp: $temperature');
-                    },
-                    child: const Text('Next'),
-                  ),
-                ],
-              );
-            });
+            return WeatherDialog();
           });
       if (weatherData == null && mounted) {
         Navigator.pop(context);
@@ -1195,6 +989,217 @@ class DisplayModalButton extends StatelessWidget {
         icon: icon,
         iconAlignment: IconAlignment.end,
       ),
+    );
+  }
+}
+
+class WeatherDialog extends StatefulWidget {
+  const WeatherDialog({super.key});
+
+  @override
+  State<WeatherDialog> createState() => _WeatherDialogState();
+}
+
+class _WeatherDialogState extends State<WeatherDialog> {
+  WeatherData? weatherData;
+  double? temperature;
+  bool erroredTemp = false;
+  bool erroredSelect = false;
+  Map<WeatherType, bool> selectedMap = {
+    for (final weather in WeatherType.values) weather: false
+  };
+
+  @override
+  Widget build(BuildContext context) {
+    return AlertDialog(
+      scrollable: true,
+      title: Column(
+        children: [
+          Text(
+            'Weather',
+            style: TextStyle(
+              fontWeight: FontWeight.bold,
+            ),
+          ),
+        ],
+      ),
+      content: Column(
+        spacing: 5,
+        children: [
+          Text(
+            'Temperature',
+            style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+          ),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            spacing: 10,
+            children: [
+              Flexible(
+                child: DialogTextBox(
+                  textAlign: TextAlign.center,
+                  inputFormatter: [
+                    FilteringTextInputFormatter.allow(RegExp('[1234567890.-]'))
+                  ],
+                  keyboardType: TextInputType.numberWithOptions(
+                      signed: true, decimal: true),
+                  maxLength: 6,
+                  labelText: 'Temp.',
+                  onChanged: (inputText) {
+                    setState(() {
+                      erroredTemp = false;
+                    });
+                    temperature = double.tryParse(inputText);
+                  },
+                ),
+              ),
+              Flexible(
+                  child: Text(
+                '°F',
+                style: TextStyle(fontSize: 14),
+              ))
+            ],
+          ),
+          erroredTemp
+              ? Text(
+                  "Please input a value!",
+                  style: TextStyle(color: Colors.red[900]),
+                )
+              : SizedBox(),
+          SizedBox(height: 30),
+          Center(
+            child: Text(
+              "Type",
+              style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+            ),
+          ),
+          Row(
+            spacing: 5,
+            children: <Widget>[
+              TestButton(
+                buttonText: "Sunny",
+                backgroundColor:
+                    selectedMap[WeatherType.sunny] == true ? Colors.blue : null,
+                onPressed: () {
+                  setState(() {
+                    erroredSelect = false;
+                    selectedMap[WeatherType.sunny] =
+                        !selectedMap[WeatherType.sunny]!;
+                  });
+                },
+              ),
+              TestButton(
+                buttonText: "Rainy",
+                backgroundColor:
+                    selectedMap[WeatherType.rainy] == true ? Colors.blue : null,
+                onPressed: () {
+                  setState(() {
+                    erroredSelect = false;
+                    selectedMap[WeatherType.rainy] =
+                        !selectedMap[WeatherType.rainy]!;
+                  });
+                },
+              )
+            ],
+          ),
+          Row(
+            spacing: 5,
+            children: <Widget>[
+              TestButton(
+                buttonText: "Windy",
+                backgroundColor:
+                    selectedMap[WeatherType.windy] == true ? Colors.blue : null,
+                onPressed: () {
+                  setState(() {
+                    erroredSelect = false;
+                    selectedMap[WeatherType.windy] =
+                        !selectedMap[WeatherType.windy]!;
+                  });
+                },
+              ),
+              TestButton(
+                buttonText: "Stormy",
+                backgroundColor: selectedMap[WeatherType.stormy] == true
+                    ? Colors.blue
+                    : null,
+                onPressed: () {
+                  setState(() {
+                    erroredSelect = false;
+                    selectedMap[WeatherType.stormy] =
+                        !selectedMap[WeatherType.stormy]!;
+                  });
+                },
+              )
+            ],
+          ),
+          Row(
+            spacing: 5,
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Spacer(),
+              TestButton(
+                flex: 2,
+                buttonText: "Cloudy",
+                backgroundColor: selectedMap[WeatherType.cloudy] == true
+                    ? Colors.blue
+                    : null,
+                onPressed: () {
+                  setState(() {
+                    erroredSelect = false;
+                    selectedMap[WeatherType.cloudy] =
+                        !selectedMap[WeatherType.cloudy]!;
+                  });
+                },
+              ),
+              Spacer(),
+            ],
+          ),
+          erroredSelect
+              ? Text(
+                  "Please select a type!",
+                  style: TextStyle(color: Colors.red[900]),
+                )
+              : SizedBox(),
+        ],
+      ),
+      actions: <Widget>[
+        TextButton(
+          onPressed: () {
+            Navigator.pop(context, null);
+          },
+          child: const Text('Cancel'),
+        ),
+        TextButton(
+          onPressed: () {
+            List<WeatherType> selectedWeather = [];
+            for (WeatherType weatherType in selectedMap.keys) {
+              if (selectedMap[weatherType] != null &&
+                  selectedMap[weatherType] == true) {
+                selectedWeather.add(weatherType);
+              }
+            }
+            if (temperature == null) {
+              setState(() {
+                erroredTemp = true;
+              });
+            }
+            print(erroredSelect);
+            if (selectedWeather.isEmpty) {
+              print("\n");
+              setState(() {
+                erroredSelect = true;
+              });
+            }
+            if (erroredSelect || erroredTemp) {
+              return;
+            }
+            weatherData =
+                WeatherData(weatherTypes: selectedWeather, temp: temperature!);
+            Navigator.pop(context, weatherData);
+            print('${weatherData!.weatherTypes} temp: $temperature');
+          },
+          child: const Text('Next'),
+        ),
+      ],
     );
   }
 }
