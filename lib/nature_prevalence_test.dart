@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:io';
 
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
@@ -39,7 +40,7 @@ class _NaturePrevalenceState extends State<NaturePrevalence> {
   List<mp.LatLng> _projectArea = [];
   String _directions = "Choose a category.";
   bool _directionsVisible = false;
-  static const double _bottomSheetHeight = 300;
+  static const double _bottomSheetHeight = 320;
   late DocumentReference teamRef;
   late GoogleMapController mapController;
   LatLng _location = defaultLocation; // Default location
@@ -629,6 +630,7 @@ class _NaturePrevalenceState extends State<NaturePrevalence> {
 
   @override
   Widget build(BuildContext context) {
+    final double topOverlayPadding = Platform.isIOS ? 60 : 15.0;
     return AdaptiveSafeArea(
       child: Scaffold(
         resizeToAvoidBottomInset: false,
@@ -658,28 +660,31 @@ class _NaturePrevalenceState extends State<NaturePrevalence> {
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: <Widget>[
                 Padding(
-                  padding: const EdgeInsets.only(top: 15.0, left: 15.0),
-                  child: TimerButtonAndDisplay(
-                    onPressed: () {
-                      if (_isTestRunning) {
-                        setState(() {
-                          _isTestRunning = false;
-                          _timer?.cancel();
-                          _clearTypes();
-                        });
-                      } else {
-                        _startTest();
-                      }
-                    },
-                    isTestRunning: _isTestRunning,
-                    remainingSeconds: _remainingSeconds,
+                  padding: EdgeInsets.only(top: topOverlayPadding, left: 15.0),
+                  child: SizedBox(
+                    width: 75,
+                    child: TimerButtonAndDisplay(
+                      onPressed: () {
+                        if (_isTestRunning) {
+                          setState(() {
+                            _isTestRunning = false;
+                            _timer?.cancel();
+                            _clearTypes();
+                          });
+                        } else {
+                          _startTest();
+                        }
+                      },
+                      isTestRunning: _isTestRunning,
+                      remainingSeconds: _remainingSeconds,
+                    ),
                   ),
                 ),
                 Expanded(
                   child: _directionsVisible
                       ? Padding(
-                          padding: const EdgeInsets.symmetric(
-                              horizontal: 15.0, vertical: 15.0),
+                          padding: EdgeInsets.symmetric(
+                              horizontal: 15.0, vertical: topOverlayPadding),
                           child: DirectionsText(
                               onTap: () {
                                 setState(() {
@@ -691,7 +696,7 @@ class _NaturePrevalenceState extends State<NaturePrevalence> {
                       : SizedBox(),
                 ),
                 Padding(
-                  padding: const EdgeInsets.only(top: 15.0, right: 15.0),
+                  padding: EdgeInsets.only(top: topOverlayPadding, right: 15.0),
                   child: Column(
                     spacing: 10,
                     children: [

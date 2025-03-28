@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:io';
 
 import 'package:flutter/material.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
@@ -45,7 +46,7 @@ class _LightingProfileTestPageState extends State<LightingProfileTestPage> {
   Timer? _timer;
   Timer? _outsidePointTimer;
   int _remainingSeconds = -1;
-  static const double _bottomSheetHeight = 220;
+  static final double _bottomSheetHeight = Platform.isIOS ? 260 : 220;
 
   @override
   void initState() {
@@ -184,6 +185,7 @@ class _LightingProfileTestPageState extends State<LightingProfileTestPage> {
 
   @override
   Widget build(BuildContext context) {
+    final double topOverlayPadding = Platform.isIOS ? 60 : 15.0;
     return AdaptiveSafeArea(
       child: Scaffold(
         resizeToAvoidBottomInset: false,
@@ -210,7 +212,8 @@ class _LightingProfileTestPageState extends State<LightingProfileTestPage> {
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: <Widget>[
                       Padding(
-                        padding: const EdgeInsets.only(top: 15.0, left: 15.0),
+                        padding:
+                            EdgeInsets.only(top: topOverlayPadding, left: 15.0),
                         child: TimerButtonAndDisplay(
                           onPressed: () {
                             setState(() {
@@ -232,8 +235,9 @@ class _LightingProfileTestPageState extends State<LightingProfileTestPage> {
                       Expanded(
                         child: _directionsVisible
                             ? Padding(
-                                padding: const EdgeInsets.symmetric(
-                                    horizontal: 15.0, vertical: 15.0),
+                                padding: EdgeInsets.symmetric(
+                                    horizontal: 15.0,
+                                    vertical: topOverlayPadding),
                                 child: DirectionsText(
                                   onTap: () {
                                     setState(() {
@@ -248,7 +252,8 @@ class _LightingProfileTestPageState extends State<LightingProfileTestPage> {
                             : SizedBox(),
                       ),
                       Padding(
-                        padding: const EdgeInsets.only(top: 15, right: 15),
+                        padding:
+                            EdgeInsets.only(top: topOverlayPadding, right: 15),
                         child: Column(
                           spacing: 10,
                           children: <Widget>[

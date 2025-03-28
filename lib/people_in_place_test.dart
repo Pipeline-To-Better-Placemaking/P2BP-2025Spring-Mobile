@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:io';
 
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -275,6 +276,7 @@ class _PeopleInPlaceTestPageState extends State<PeopleInPlaceTestPage> {
 
   @override
   Widget build(BuildContext context) {
+    final double topOverlayPadding = Platform.isIOS ? 60 : 15.0;
     return AdaptiveSafeArea(
       child: Scaffold(
         extendBodyBehindAppBar: true,
@@ -307,29 +309,32 @@ class _PeopleInPlaceTestPageState extends State<PeopleInPlaceTestPage> {
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: <Widget>[
                 Padding(
-                  padding: const EdgeInsets.only(top: 15.0, left: 15.0),
-                  child: TimerButtonAndDisplay(
-                    onPressed: () {
-                      setState(() {
-                        if (_isTestRunning) {
-                          setState(() {
-                            _isTestRunning = false;
-                            _timer?.cancel();
-                          });
-                        } else {
-                          _startTest();
-                        }
-                      });
-                    },
-                    isTestRunning: _isTestRunning,
-                    remainingSeconds: _remainingSeconds,
+                  padding: EdgeInsets.only(top: topOverlayPadding, left: 15.0),
+                  child: SizedBox(
+                    width: 75,
+                    child: TimerButtonAndDisplay(
+                      onPressed: () {
+                        setState(() {
+                          if (_isTestRunning) {
+                            setState(() {
+                              _isTestRunning = false;
+                              _timer?.cancel();
+                            });
+                          } else {
+                            _startTest();
+                          }
+                        });
+                      },
+                      isTestRunning: _isTestRunning,
+                      remainingSeconds: _remainingSeconds,
+                    ),
                   ),
                 ),
                 Expanded(
                   child: _directionsVisible
                       ? Padding(
-                          padding: const EdgeInsets.symmetric(
-                              horizontal: 15.0, vertical: 15.0),
+                          padding: EdgeInsets.symmetric(
+                              horizontal: 15.0, vertical: topOverlayPadding),
                           child: DirectionsText(
                             onTap: () {
                               setState(() {
@@ -342,7 +347,7 @@ class _PeopleInPlaceTestPageState extends State<PeopleInPlaceTestPage> {
                       : SizedBox(),
                 ),
                 Padding(
-                  padding: const EdgeInsets.only(top: 15, right: 15),
+                  padding: EdgeInsets.only(top: topOverlayPadding, right: 15),
                   child: Column(
                     spacing: 10,
                     children: <Widget>[

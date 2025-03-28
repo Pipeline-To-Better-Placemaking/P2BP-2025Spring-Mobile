@@ -413,6 +413,7 @@ class _AcousticProfileTestPageState extends State<AcousticProfileTestPage> {
 
   @override
   Widget build(BuildContext context) {
+    final double topOverlayPadding = Platform.isIOS ? 60 : 15.0;
     return AdaptiveSafeArea(
       child: Scaffold(
         extendBodyBehindAppBar: true,
@@ -452,28 +453,31 @@ class _AcousticProfileTestPageState extends State<AcousticProfileTestPage> {
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: <Widget>[
                 Padding(
-                  padding: const EdgeInsets.only(top: 15.0, left: 15.0),
+                  padding: EdgeInsets.only(top: topOverlayPadding, left: 15.0),
                   child: Column(
                     spacing: 10,
                     children: <Widget>[
-                      TimerButtonAndDisplay(
-                        onPressed:
-                            (!_isIntervalCycleRunning && _activeMarker != null)
-                                ? () {
-                                    setState(() {
-                                      if (_isIntervalCycleRunning) {
-                                        setState(() {
-                                          _isIntervalCycleRunning = false;
-                                          _timer?.cancel();
-                                        });
-                                      } else {
-                                        _startIntervalCycles();
-                                      }
-                                    });
-                                  }
-                                : null,
-                        isTestRunning: _isIntervalCycleRunning,
-                        remainingSeconds: _remainingSeconds,
+                      SizedBox(
+                        width: 75,
+                        child: TimerButtonAndDisplay(
+                          onPressed: (!_isIntervalCycleRunning &&
+                                  _activeMarker != null)
+                              ? () {
+                                  setState(() {
+                                    if (_isIntervalCycleRunning) {
+                                      setState(() {
+                                        _isIntervalCycleRunning = false;
+                                        _timer?.cancel();
+                                      });
+                                    } else {
+                                      _startIntervalCycles();
+                                    }
+                                  });
+                                }
+                              : null,
+                          isTestRunning: _isIntervalCycleRunning,
+                          remainingSeconds: _remainingSeconds,
+                        ),
                       ),
                       Container(
                         padding: const EdgeInsets.symmetric(
@@ -494,8 +498,8 @@ class _AcousticProfileTestPageState extends State<AcousticProfileTestPage> {
                 Expanded(
                   child: _directionsVisible
                       ? Padding(
-                          padding: const EdgeInsets.symmetric(
-                              horizontal: 15.0, vertical: 15.0),
+                          padding: EdgeInsets.symmetric(
+                              horizontal: 15.0, vertical: topOverlayPadding),
                           child: DirectionsText(
                             onTap: () {
                               setState(() {
@@ -508,7 +512,7 @@ class _AcousticProfileTestPageState extends State<AcousticProfileTestPage> {
                       : SizedBox(),
                 ),
                 Padding(
-                  padding: const EdgeInsets.only(top: 15.0, right: 15.0),
+                  padding: EdgeInsets.only(top: topOverlayPadding, right: 15.0),
                   child: Column(
                     spacing: 10,
                     children: <Widget>[

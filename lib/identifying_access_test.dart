@@ -1,3 +1,5 @@
+import 'dart:io';
+
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -283,7 +285,8 @@ class _IdentifyingAccessState extends State<IdentifyingAccess> {
 
   @override
   Widget build(BuildContext context) {
-    return SafeArea(
+    final double topOverlayPadding = Platform.isIOS ? 60 : 15.0;
+    return AdaptiveSafeArea(
       child: Scaffold(
         extendBody: true,
         resizeToAvoidBottomInset: false,
@@ -322,8 +325,9 @@ class _IdentifyingAccessState extends State<IdentifyingAccess> {
                       Expanded(
                         child: _directionsVisible
                             ? Padding(
-                                padding: const EdgeInsets.symmetric(
-                                    horizontal: 15.0, vertical: 15.0),
+                                padding: EdgeInsets.symmetric(
+                                    horizontal: 15.0,
+                                    vertical: topOverlayPadding),
                                 child: DirectionsText(
                                     onTap: () {
                                       setState(() {
@@ -336,7 +340,8 @@ class _IdentifyingAccessState extends State<IdentifyingAccess> {
                             : SizedBox(),
                       ),
                       Padding(
-                        padding: const EdgeInsets.only(top: 15.0, right: 15.0),
+                        padding: EdgeInsets.only(
+                            top: topOverlayPadding, right: 15.0),
                         child: Column(
                           spacing: 10,
                           children: [

@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:io';
 
 import 'package:flutter/material.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
@@ -71,7 +72,7 @@ class _AbsenceOfOrderTestPageState extends State<AbsenceOfOrderTestPage> {
   Timer? _timer;
   Timer? _outsidePointTimer;
   int _remainingSeconds = -1;
-  static const double _bottomSheetHeight = 165;
+  static const double _bottomSheetHeight = 185;
 
   @override
   void initState() {
@@ -228,6 +229,7 @@ class _AbsenceOfOrderTestPageState extends State<AbsenceOfOrderTestPage> {
 
   @override
   Widget build(BuildContext context) {
+    final double topOverlayPadding = Platform.isIOS ? 60 : 15.0;
     return AdaptiveSafeArea(
       child: Scaffold(
         resizeToAvoidBottomInset: false,
@@ -255,30 +257,35 @@ class _AbsenceOfOrderTestPageState extends State<AbsenceOfOrderTestPage> {
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: <Widget>[
                       Padding(
-                        padding: const EdgeInsets.only(top: 15.0, left: 15.0),
-                        child: TimerButtonAndDisplay(
-                          onPressed: () {
-                            setState(() {
-                              if (_isTestRunning) {
-                                setState(() {
-                                  _isTestRunning = false;
-                                  _timer?.cancel();
-                                  _setTempData(null);
-                                });
-                              } else {
-                                _startTest();
-                              }
-                            });
-                          },
-                          isTestRunning: _isTestRunning,
-                          remainingSeconds: _remainingSeconds,
+                        padding:
+                            EdgeInsets.only(top: topOverlayPadding, left: 15.0),
+                        child: SizedBox(
+                          width: 75,
+                          child: TimerButtonAndDisplay(
+                            onPressed: () {
+                              setState(() {
+                                if (_isTestRunning) {
+                                  setState(() {
+                                    _isTestRunning = false;
+                                    _timer?.cancel();
+                                    _setTempData(null);
+                                  });
+                                } else {
+                                  _startTest();
+                                }
+                              });
+                            },
+                            isTestRunning: _isTestRunning,
+                            remainingSeconds: _remainingSeconds,
+                          ),
                         ),
                       ),
                       Expanded(
                         child: _directionsVisible
                             ? Padding(
-                                padding: const EdgeInsets.symmetric(
-                                    horizontal: 15.0, vertical: 15.0),
+                                padding: EdgeInsets.symmetric(
+                                    horizontal: 15.0,
+                                    vertical: topOverlayPadding),
                                 child: DirectionsText(
                                   onTap: () {
                                     setState(() {
@@ -293,7 +300,8 @@ class _AbsenceOfOrderTestPageState extends State<AbsenceOfOrderTestPage> {
                             : SizedBox(),
                       ),
                       Padding(
-                        padding: const EdgeInsets.only(top: 15, right: 15),
+                        padding:
+                            EdgeInsets.only(top: topOverlayPadding, right: 15),
                         child: Column(
                           spacing: 10,
                           children: <Widget>[

@@ -1,3 +1,5 @@
+import 'dart:io';
+
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
@@ -39,7 +41,7 @@ class _SectionCutterState extends State<SectionCutter> {
   String _directions =
       "Go to designated section. Then upload the section drawing here.";
   XFile? sectionCutterFile;
-  final double _bottomSheetHeight = 300;
+  final double _bottomSheetHeight = Platform.isIOS ? 325 : 300;
   late DocumentReference teamRef;
 
   double _zoom = 18;
@@ -100,7 +102,8 @@ class _SectionCutterState extends State<SectionCutter> {
 
   @override
   Widget build(BuildContext context) {
-    return SafeArea(
+    final double topOverlayPadding = Platform.isIOS ? 60 : 15.0;
+    return AdaptiveSafeArea(
       child: Scaffold(
         resizeToAvoidBottomInset: false,
         extendBody: true,
@@ -120,12 +123,16 @@ class _SectionCutterState extends State<SectionCutter> {
                   mapType: _currentMapType, // Use current map type
                 ),
               ),
-              DirectionsButton(
-                onTap: () {
-                  setState(() {
-                    _directionsVisible = !_directionsVisible;
-                  });
-                },
+              Positioned(
+                top: topOverlayPadding,
+                left: 15.0,
+                child: DirectionsButton(
+                  onTap: () {
+                    setState(() {
+                      _directionsVisible = !_directionsVisible;
+                    });
+                  },
+                ),
               ),
               Align(
                 alignment: Alignment.bottomLeft,
@@ -296,6 +303,7 @@ class _SectionCutterState extends State<SectionCutter> {
               SizedBox(height: 20),
               Expanded(
                 child: Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   spacing: 10,
                   children: <Widget>[
                     EditButton(
@@ -310,59 +318,55 @@ class _SectionCutterState extends State<SectionCutter> {
                     ),
                     Flexible(
                       flex: 1,
-                      child: Align(
-                        alignment: Alignment.bottomRight,
-                        child: EditButton(
-                          text: 'Finish',
-                          foregroundColor: Colors.black,
-                          backgroundColor: Colors.white,
-                          icon: const Icon(Icons.chevron_right,
-                              color: Colors.black),
-                          onPressed: _isLoadingUpload
-                              ? null
-                              : () async {
-                                  final bool finishSuccess = await showDialog(
-                                      context: context,
-                                      builder: (context) {
-                                        return TestFinishDialog(
-                                            onNext: () async {
-                                          if (sectionCutterFile == null) {
-                                            Navigator.pop(context, false);
-                                            setState(() {
-                                              _failedToUpload = true;
-                                              _errorText =
-                                                  'No file uploaded. Please upload an image first.';
-                                            });
-                                            print("No file uploaded.");
-                                            return;
-                                          }
-                                          Navigator.pop(context, true);
-                                        });
+                      child: EditButton(
+                        text: 'Finish',
+                        foregroundColor: Colors.black,
+                        backgroundColor: Colors.white,
+                        icon: const Icon(Icons.chevron_right,
+                            color: Colors.black),
+                        onPressed: _isLoadingUpload
+                            ? null
+                            : () async {
+                                final bool finishSuccess = await showDialog(
+                                    context: context,
+                                    builder: (context) {
+                                      return TestFinishDialog(onNext: () async {
+                                        if (sectionCutterFile == null) {
+                                          Navigator.pop(context, false);
+                                          setState(() {
+                                            _failedToUpload = true;
+                                            _errorText =
+                                                'No file uploaded. Please upload an image first.';
+                                          });
+                                          print("No file uploaded.");
+                                          return;
+                                        }
+                                        Navigator.pop(context, true);
                                       });
-                                  if (finishSuccess) {
-                                    setState(() {
-                                      _isLoadingUpload = true;
                                     });
-                                    Section data = await widget.activeTest!
-                                        .saveXFile(sectionCutterFile!);
-                                    widget.activeTest!.submitData(data);
-                                    if (!context.mounted) return;
-                                    Navigator.pushReplacement(
-                                        context,
-                                        MaterialPageRoute(
-                                          builder: (context) => HomeScreen(),
-                                        ));
-                                    Navigator.push(
-                                        context,
-                                        MaterialPageRoute(
-                                          builder: (context) =>
-                                              ProjectDetailsPage(
-                                                  projectData:
-                                                      widget.activeProject),
-                                        ));
-                                  }
-                                },
-                        ),
+                                if (finishSuccess) {
+                                  setState(() {
+                                    _isLoadingUpload = true;
+                                  });
+                                  Section data = await widget.activeTest!
+                                      .saveXFile(sectionCutterFile!);
+                                  widget.activeTest!.submitData(data);
+                                  if (!context.mounted) return;
+                                  Navigator.pushReplacement(
+                                      context,
+                                      MaterialPageRoute(
+                                        builder: (context) => HomeScreen(),
+                                      ));
+                                  Navigator.push(
+                                      context,
+                                      MaterialPageRoute(
+                                        builder: (context) =>
+                                            ProjectDetailsPage(
+                                                projectData:
+                                                    widget.activeProject),
+                                      ));
+                                }
+                              },
                       ),
                     ),
                   ],
