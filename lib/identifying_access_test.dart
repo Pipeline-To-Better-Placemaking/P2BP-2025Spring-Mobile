@@ -46,7 +46,7 @@ class _IdentifyingAccessState extends State<IdentifyingAccess> {
 
   final AccessData _accessData = AccessData();
 
-  Set<Polygon> _projectArea = {};
+  late final Polygon _projectPolygon;
   Polyline? _currentPolyline;
   List<LatLng> _currentPolylinePoints = [];
   final Set<Polyline> _polylines = {};
@@ -65,10 +65,10 @@ class _IdentifyingAccessState extends State<IdentifyingAccess> {
   @override
   void initState() {
     super.initState();
-    _polygons.add(getProjectPolygon(widget.activeProject.polygonPoints));
-    _location = getPolygonCentroid(_polygons.first);
+    _projectPolygon = getProjectPolygon(widget.activeProject.polygonPoints);
+    _location = getPolygonCentroid(_projectPolygon);
     _zoom = getIdealZoom(
-      _polygons.first.toMPLatLngList(),
+      _projectPolygon.toMPLatLngList(),
       _location.toMPLatLng(),
     );
     _isLoading = false;
@@ -304,8 +304,8 @@ class _IdentifyingAccessState extends State<IdentifyingAccess> {
                       initialCameraPosition:
                           CameraPosition(target: _location, zoom: _zoom),
                       polygons: _oldPolylinesToggle
-                          ? {..._projectArea, ..._polygons, ..._currentPolygon}
-                          : {..._projectArea, ..._currentPolygon},
+                          ? {_projectPolygon, ..._polygons, ..._currentPolygon}
+                          : {_projectPolygon, ..._currentPolygon},
                       markers: {
                         ..._markers,
                         ..._polygonMarkers,
