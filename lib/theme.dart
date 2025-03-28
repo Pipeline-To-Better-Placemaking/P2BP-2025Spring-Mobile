@@ -5,6 +5,9 @@ import 'package:p2bp_2025spring_mobile/custom_material_colors.dart';
 /// Default color used when test buttons are disabled.
 const Color disabledGrey = Color(0xCD6C6C6C);
 
+/// Disabled button color with no transparency.
+const Color disabledGreyAlt = Color(0xFF5A5A5A);
+
 /// Transparency for test hint text (or, the directions at the top of the
 /// test map screen).
 const Color directionsTransparency = Color(0xDFDDE6F2);

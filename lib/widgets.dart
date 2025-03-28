@@ -403,6 +403,9 @@ class TimerButtonAndDisplay extends StatelessWidget {
       child: Column(children: <Widget>[
         ElevatedButton(
           style: ElevatedButton.styleFrom(
+            disabledBackgroundColor: disabledGreyAlt,
+            disabledForegroundColor: Colors.grey,
+            foregroundColor: Colors.white,
             shape: RoundedRectangleBorder(
               borderRadius: BorderRadius.circular(8),
             ),
@@ -412,7 +415,7 @@ class TimerButtonAndDisplay extends StatelessWidget {
           onPressed: onPressed,
           child: Text(
             isTestRunning ? 'Stop' : 'Start',
-            style: const TextStyle(color: Colors.white, fontSize: 16),
+            style: const TextStyle(fontSize: 16),
           ),
         ),
         Container(
