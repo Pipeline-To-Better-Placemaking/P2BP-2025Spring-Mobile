@@ -39,7 +39,7 @@ class _NaturePrevalenceState extends State<NaturePrevalence> {
   late final Polygon _projectPolygon;
   List<mp.LatLng> _projectArea = [];
   String _directions = "Choose a category.";
-  bool _directionsVisible = false;
+  bool _directionsVisible = true;
   static const double _bottomSheetHeight = 320;
   late DocumentReference teamRef;
   late GoogleMapController mapController;
@@ -661,23 +661,20 @@ class _NaturePrevalenceState extends State<NaturePrevalence> {
               children: <Widget>[
                 Padding(
                   padding: EdgeInsets.only(top: topOverlayPadding, left: 15.0),
-                  child: SizedBox(
-                    width: 75,
-                    child: TimerButtonAndDisplay(
-                      onPressed: () {
-                        if (_isTestRunning) {
-                          setState(() {
-                            _isTestRunning = false;
-                            _timer?.cancel();
-                            _clearTypes();
-                          });
-                        } else {
-                          _startTest();
-                        }
-                      },
-                      isTestRunning: _isTestRunning,
-                      remainingSeconds: _remainingSeconds,
-                    ),
+                  child: TimerButtonAndDisplay(
+                    onPressed: () {
+                      if (_isTestRunning) {
+                        setState(() {
+                          _isTestRunning = false;
+                          _timer?.cancel();
+                          _clearTypes();
+                        });
+                      } else {
+                        _startTest();
+                      }
+                    },
+                    isTestRunning: _isTestRunning,
+                    remainingSeconds: _remainingSeconds,
                   ),
                 ),
                 Expanded(

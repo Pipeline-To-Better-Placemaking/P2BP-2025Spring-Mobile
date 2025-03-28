@@ -53,7 +53,7 @@ class _SectionCutterState extends State<SectionCutter> {
   final Set<Polygon> _polygons = {};
   Set<Polyline> _polyline = {};
   List<LatLng> _sectionPoints = [];
-  bool _directionsVisible = false;
+  bool _directionsVisible = true;
 
   Project? project;
 

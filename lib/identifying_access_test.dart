@@ -59,7 +59,7 @@ class _IdentifyingAccessState extends State<IdentifyingAccess> {
   final Set<Polygon> _polygons = {}; // Set of polygons
   final Set<Marker> _markers = {}; // Set of markers for points
   Set<Marker> _polygonMarkers = {}; // Set of markers for polygon creation
-  bool _directionsVisible = false;
+  bool _directionsVisible = true;
   MapType _currentMapType = MapType.satellite; // Default map type
 
   Project? project;

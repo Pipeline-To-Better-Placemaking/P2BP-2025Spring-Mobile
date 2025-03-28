@@ -32,7 +32,7 @@ class _PeopleInMotionTestPageState extends State<PeopleInMotionTestPage> {
   bool _isTracingMode = false;
   bool _outsidePoint = false;
   bool _isPointsMenuVisible = false;
-  bool _directionsVisible = false;
+  bool _directionsVisible = true;
 
   double _zoom = 18;
   late GoogleMapController mapController;
@@ -341,25 +341,22 @@ class _PeopleInMotionTestPageState extends State<PeopleInMotionTestPage> {
               children: <Widget>[
                 Padding(
                   padding: EdgeInsets.only(top: topOverlayPadding, left: 15.0),
-                  child: SizedBox(
-                    width: 75,
-                    child: TimerButtonAndDisplay(
-                      onPressed: () {
-                        setState(() {
-                          if (_isTestRunning) {
-                            setState(() {
-                              _isTestRunning = false;
-                              _timer?.cancel();
-                              _clearTracing();
-                            });
-                          } else {
-                            _startTest();
-                          }
-                        });
-                      },
-                      isTestRunning: _isTestRunning,
-                      remainingSeconds: _remainingSeconds,
-                    ),
+                  child: TimerButtonAndDisplay(
+                    onPressed: () {
+                      setState(() {
+                        if (_isTestRunning) {
+                          setState(() {
+                            _isTestRunning = false;
+                            _timer?.cancel();
+                            _clearTracing();
+                          });
+                        } else {
+                          _startTest();
+                        }
+                      });
+                    },
+                    isTestRunning: _isTestRunning,
+                    remainingSeconds: _remainingSeconds,
                   ),
                 ),
                 Expanded(

@@ -56,7 +56,7 @@ class _AbsenceOfOrderTestPageState extends State<AbsenceOfOrderTestPage> {
   bool _isLoading = true;
   bool _outsidePoint = false;
   bool _isTestRunning = false;
-  bool _directionsVisible = false;
+  bool _directionsVisible = true;
   bool _isDescriptionReady = false;
 
   late GoogleMapController mapController;
@@ -259,25 +259,22 @@ class _AbsenceOfOrderTestPageState extends State<AbsenceOfOrderTestPage> {
                       Padding(
                         padding:
                             EdgeInsets.only(top: topOverlayPadding, left: 15.0),
-                        child: SizedBox(
-                          width: 75,
-                          child: TimerButtonAndDisplay(
-                            onPressed: () {
-                              setState(() {
-                                if (_isTestRunning) {
-                                  setState(() {
-                                    _isTestRunning = false;
-                                    _timer?.cancel();
-                                    _setTempData(null);
-                                  });
-                                } else {
-                                  _startTest();
-                                }
-                              });
-                            },
-                            isTestRunning: _isTestRunning,
-                            remainingSeconds: _remainingSeconds,
-                          ),
+                        child: TimerButtonAndDisplay(
+                          onPressed: () {
+                            setState(() {
+                              if (_isTestRunning) {
+                                setState(() {
+                                  _isTestRunning = false;
+                                  _timer?.cancel();
+                                  _setTempData(null);
+                                });
+                              } else {
+                                _startTest();
+                              }
+                            });
+                          },
+                          isTestRunning: _isTestRunning,
+                          remainingSeconds: _remainingSeconds,
                         ),
                       ),
                       Expanded(

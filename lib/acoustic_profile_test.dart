@@ -457,27 +457,24 @@ class _AcousticProfileTestPageState extends State<AcousticProfileTestPage> {
                   child: Column(
                     spacing: 10,
                     children: <Widget>[
-                      SizedBox(
-                        width: 75,
-                        child: TimerButtonAndDisplay(
-                          onPressed: (!_isIntervalCycleRunning &&
-                                  _activeMarker != null)
-                              ? () {
-                                  setState(() {
-                                    if (_isIntervalCycleRunning) {
-                                      setState(() {
-                                        _isIntervalCycleRunning = false;
-                                        _timer?.cancel();
-                                      });
-                                    } else {
-                                      _startIntervalCycles();
-                                    }
-                                  });
-                                }
-                              : null,
-                          isTestRunning: _isIntervalCycleRunning,
-                          remainingSeconds: _remainingSeconds,
-                        ),
+                      TimerButtonAndDisplay(
+                        onPressed:
+                            (!_isIntervalCycleRunning && _activeMarker != null)
+                                ? () {
+                                    setState(() {
+                                      if (_isIntervalCycleRunning) {
+                                        setState(() {
+                                          _isIntervalCycleRunning = false;
+                                          _timer?.cancel();
+                                        });
+                                      } else {
+                                        _startIntervalCycles();
+                                      }
+                                    });
+                                  }
+                                : null,
+                        isTestRunning: _isIntervalCycleRunning,
+                        remainingSeconds: _remainingSeconds,
                       ),
                       Container(
                         padding: const EdgeInsets.symmetric(

@@ -36,7 +36,7 @@ class _SpatialBoundariesTestPageState extends State<SpatialBoundariesTestPage> {
   bool _outsidePoint = false;
   bool _boundariesVisible = true;
   bool _isTestRunning = false;
-  bool _directionsVisible = false;
+  bool _directionsVisible = true;
 
   int _remainingSeconds = -1;
   Timer? _timer;
@@ -499,25 +499,22 @@ class _SpatialBoundariesTestPageState extends State<SpatialBoundariesTestPage> {
               children: <Widget>[
                 Padding(
                   padding: EdgeInsets.only(top: topOverlayPadding, left: 15.0),
-                  child: SizedBox(
-                    width: 75,
-                    child: TimerButtonAndDisplay(
-                      onPressed: () {
-                        setState(() {
-                          if (_isTestRunning) {
-                            setState(() {
-                              _isTestRunning = false;
-                              _timer?.cancel();
-                              _resetPlacementVariables();
-                            });
-                          } else {
-                            _startTest();
-                          }
-                        });
-                      },
-                      isTestRunning: _isTestRunning,
-                      remainingSeconds: _remainingSeconds,
-                    ),
+                  child: TimerButtonAndDisplay(
+                    onPressed: () {
+                      setState(() {
+                        if (_isTestRunning) {
+                          setState(() {
+                            _isTestRunning = false;
+                            _timer?.cancel();
+                            _resetPlacementVariables();
+                          });
+                        } else {
+                          _startTest();
+                        }
+                      });
+                    },
+                    isTestRunning: _isTestRunning,
+                    remainingSeconds: _remainingSeconds,
                   ),
                 ),
                 Expanded(

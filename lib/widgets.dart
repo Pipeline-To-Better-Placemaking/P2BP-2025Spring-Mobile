@@ -399,7 +399,7 @@ class TimerButtonAndDisplay extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return SizedBox(
-      width: 66,
+      width: 75,
       child: Column(children: <Widget>[
         ElevatedButton(
           style: ElevatedButton.styleFrom(
