@@ -62,7 +62,7 @@ class _PeopleInMotionTestPageState extends State<PeopleInMotionTestPage> {
   final Set<Marker> _confirmedPolylineEndMarkers = {};
 
   final Set<Marker> _standingPointMarkers = {};
-  final PeopleInMotionData _newData = PeopleInMotionData();
+  final PeopleInMotionData _newData = PeopleInMotionData.empty();
 
   // Define an initial time
   int _remainingSeconds = -1;

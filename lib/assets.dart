@@ -22,6 +22,14 @@ final AssetMapBitmap standingPointActiveIcon = AssetMapBitmap(
   width: 48,
   height: 48,
 );
+final Map<LightType, AssetMapBitmap> lightingProfileIconMap = {
+  for (final light in LightType.values)
+    light: AssetMapBitmap(
+      'assets/temp_point_marker.png', // TODO put real light icons in enum and change this
+      width: 36,
+      height: 36,
+    )
+};
 final Map<(PostureType, GenderType), AssetMapBitmap> peopleInPlaceIconMap = {
   for (final posture in PostureType.values)
     for (final gender in GenderType.values)

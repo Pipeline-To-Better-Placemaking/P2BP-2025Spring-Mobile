@@ -9,6 +9,7 @@ import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:maps_toolkit/maps_toolkit.dart' as mp;
 import 'package:p2bp_2025spring_mobile/absence_of_order_test.dart';
 import 'package:p2bp_2025spring_mobile/acoustic_profile_test.dart';
+import 'package:p2bp_2025spring_mobile/assets.dart';
 import 'package:p2bp_2025spring_mobile/google_maps_functions.dart';
 import 'package:p2bp_2025spring_mobile/lighting_profile_test.dart';
 import 'package:p2bp_2025spring_mobile/people_in_motion_test.dart';
@@ -482,50 +483,79 @@ mixin JsonToString {
 }
 
 /// Types of light for lighting profile test.
-enum LightType { rhythmic, building, task }
+enum LightType implements DisplayNameEnum {
+  rhythmic(displayName: 'Rhythmic', iconName: ''),
+  building(displayName: 'Building', iconName: ''),
+  task(displayName: 'Task', iconName: '');
+
+  const LightType({
+    required this.displayName,
+    required this.iconName,
+  });
+
+  @override
+  final String displayName;
+  final String iconName;
+}
 
 class Light {
   final LightType lightType;
-  final LatLng point;
+  final Marker marker;
 
   Light({
     required this.lightType,
-    required this.point,
+    required this.marker,
   });
+
+  factory Light.fromLatLng(LatLng location, LightType type) {
+    return Light(
+      lightType: type,
+      marker: Marker(
+        markerId: MarkerId(location.toString()),
+        position: location,
+        consumeTapEvents: true,
+        icon: lightingProfileIconMap[type]!,
+      ),
+    );
+  }
 }
 
 class LightingProfileData with JsonToString {
-  List<Light> lights = [];
+  final List<Light> lights;
 
-  LightingProfileData();
+  LightingProfileData(this.lights);
+  LightingProfileData.empty() : lights = <Light>[];
 
-  LightingProfileData.fromJson(Map<String, dynamic> data) {
-    List<LightType> types = LightType.values;
-    for (final type in types) {
-      if (data.containsKey(type.name) && (data[type.name] as List).isNotEmpty) {
-        for (final light in data[type.name]) {
-          if (light is GeoPoint) {
-            lights.add(Light(
-              point: light.toLatLng(),
-              lightType: type,
-            ));
-          }
-        }
-      }
+  factory LightingProfileData.fromJson(Map<String, dynamic> json) {
+    if (json
+        case {
+          'rhythmic': List rhythmic,
+          'building': List building,
+          'task': List task,
+        }) {
+      return LightingProfileData([
+        if (rhythmic.isNotEmpty)
+          for (final GeoPoint light in rhythmic)
+            Light.fromLatLng(light.toLatLng(), LightType.rhythmic),
+        if (building.isNotEmpty)
+          for (final GeoPoint light in building)
+            Light.fromLatLng(light.toLatLng(), LightType.building),
+        if (task.isNotEmpty)
+          for (final GeoPoint light in task)
+            Light.fromLatLng(light.toLatLng(), LightType.task),
+      ]);
     }
+    throw FormatException('Invalid JSON: $json', json);
   }
 
   @override
   Map<String, Object> toJson() {
-    // Create base map with each light type mapping to empty list
-    List<LightType> types = LightType.values;
     Map<String, List> json = {
-      for (final type in types) type.name: [],
+      for (final type in LightType.values) type.name: [],
     };
 
-    // Loop through all lights and add to map based on type
     for (final light in lights) {
-      json[light.lightType.name]!.add(light.point.toGeoPoint());
+      json[light.lightType.name]!.add(light.marker.position.toGeoPoint());
     }
 
     return json;
@@ -580,7 +610,7 @@ class LightingProfileTest extends Test<LightingProfileData>
           scheduledTime: scheduledTime,
           projectRef: projectRef,
           collectionID: collectionID,
-          data: LightingProfileData(),
+          data: LightingProfileData.empty(),
           testDuration: testDuration ?? -1,
         );
     // Register for recreating a Lighting Profile Test from Firestore
@@ -627,20 +657,33 @@ class LightingProfileTest extends Test<LightingProfileData>
     }
   }
 
-  static LightingProfileTest fromJson(Map<String, dynamic> doc) {
-    return LightingProfileTest._(
-      title: doc['title'],
-      testID: doc['id'],
-      scheduledTime: doc['scheduledTime'],
-      projectRef: doc['project'],
-      collectionID: collectionIDStatic,
-      data: LightingProfileData.fromJson(doc['data']),
-      creationTime: doc['creationTime'],
-      maxResearchers: doc['maxResearchers'],
-      isComplete: doc['isComplete'],
-      testDuration:
-          doc.containsKey('testDuration') ? doc['testDuration'] ?? -1 : -1,
-    );
+  factory LightingProfileTest.fromJson(Map<String, dynamic> json) {
+    if (json
+        case {
+          'title': String title,
+          'id': String id,
+          'scheduledTime': Timestamp scheduledTime,
+          'project': DocumentReference project,
+          'data': Map<String, dynamic> data,
+          'creationTime': Timestamp creationTime,
+          'maxResearchers': int maxResearchers,
+          'isComplete': bool isComplete,
+          'testDuration': int testDuration,
+        }) {
+      return LightingProfileTest._(
+        title: title,
+        testID: id,
+        scheduledTime: scheduledTime,
+        projectRef: project,
+        collectionID: collectionIDStatic,
+        data: LightingProfileData.fromJson(data),
+        creationTime: creationTime,
+        maxResearchers: maxResearchers,
+        isComplete: isComplete,
+        testDuration: testDuration,
+      );
+    }
+    throw FormatException('Invalid JSON: $json', json);
   }
 
   @override
@@ -2323,12 +2366,11 @@ class NaturePrevalenceTest extends Test<NatureData> implements TimerTest {
     Test._timerTestCollectionIDs.add(collectionIDStatic);
   }
 
-  @override
-
   /// Submits data to Firestore for Nature Prevalence Test.
   ///
   /// Unlike other tests, this [submitData()] function (for
   /// [NaturePrevalenceTest]) takes in a [NatureData] type.
+  @override
   void submitData(NatureData data) async {
     // Adds all points of each type from submitted data to overall data
     Map firestoreData = data.convertToFirestoreData();
@@ -2899,46 +2941,96 @@ class PersonInMotion {
     required this.polylineLength,
     required this.activity,
   });
+
+  factory PersonInMotion.fromJsonAndActivity(
+      Map<String, dynamic> json, ActivityTypeInMotion activity) {
+    if (json
+        case {
+          'polyline': List polylinePoints,
+          'polylineLength': double polylineLength,
+        }) {
+      if (polylinePoints.isNotEmpty && polylinePoints.length >= 2) {
+        final List<LatLng> points =
+            List<GeoPoint>.from(polylinePoints).toLatLngList();
+        return PersonInMotion.recreate(
+          polyline: Polyline(
+            polylineId: PolylineId(points.toString()),
+            points: points,
+            color: activity.color,
+            width: 4,
+          ),
+          polylineLength: polylineLength,
+          activity: activity,
+        );
+      }
+    }
+    throw FormatException('Invalid JSON: $json', json);
+  }
+
+  ({Map<String, Object> json, ActivityTypeInMotion activity})
+      toJsonAndActivity() {
+    return (
+      json: {
+        'polyline': polyline.toGeoPointList(),
+        'polylineLength': polylineLength,
+      },
+      activity: activity,
+    );
+  }
 }
 
 class PeopleInMotionData with JsonToString {
-  final List<PersonInMotion> persons = [];
+  final List<PersonInMotion> persons;
 
-  PeopleInMotionData();
+  PeopleInMotionData(this.persons);
+  PeopleInMotionData.empty() : persons = [];
 
-  PeopleInMotionData.fromJson(Map<String, dynamic> data) {
-    for (final type in ActivityTypeInMotion.values) {
-      if (data.containsKey(type.name) && (data[type.name] as List).isNotEmpty) {
-        for (final person in data[type.name] as List) {
-          List points = person['polyline'];
-          Polyline? polyline =
-              createPolyline(points.toLatLngList(), type.color);
-          if (polyline != null) {
-            persons.add(PersonInMotion.recreate(
-              polyline: polyline,
-              polylineLength: person['polylineLength'],
-              activity: type,
-            ));
-          }
-        }
-      }
+  factory PeopleInMotionData.fromJson(Map<String, dynamic> json) {
+    if (json
+        case {
+          'walking': List walking,
+          'running': List running,
+          'swimming': List swimming,
+          'activityOnWheels': List activityOnWheels,
+          'handicapAssistedWheels': List handicapAssistedWheels,
+        }) {
+      final data = PeopleInMotionData([
+        if (walking.isNotEmpty)
+          for (final person in walking)
+            PersonInMotion.fromJsonAndActivity(
+                person, ActivityTypeInMotion.walking),
+        if (running.isNotEmpty)
+          for (final person in running)
+            PersonInMotion.fromJsonAndActivity(
+                person, ActivityTypeInMotion.running),
+        if (swimming.isNotEmpty)
+          for (final person in swimming)
+            PersonInMotion.fromJsonAndActivity(
+                person, ActivityTypeInMotion.swimming),
+        if (activityOnWheels.isNotEmpty)
+          for (final person in activityOnWheels)
+            PersonInMotion.fromJsonAndActivity(
+                person, ActivityTypeInMotion.activityOnWheels),
+        if (handicapAssistedWheels.isNotEmpty)
+          for (final person in handicapAssistedWheels)
+            PersonInMotion.fromJsonAndActivity(
+                person, ActivityTypeInMotion.handicapAssistedWheels),
+      ]);
+      print(data);
+      return data;
     }
-    print(this);
+    throw FormatException('Invalid JSON: $json', json);
   }
 
   @override
   Map<String, Object> toJson() {
-    // Initialize map with a field for each activity type with empty list
     Map<String, List<Map<String, Object>>> json = {
-      for (final type in ActivityTypeInMotion.values) type.name: []
+      for (final activity in ActivityTypeInMotion.values) activity.name: []
     };
 
-    // Add each person data stored in persons to the appropriate list.
     for (final person in persons) {
-      json[person.activity.name]!.add({
-        'polyline': person.polyline.toGeoPointList(),
-        'polylineLength': person.polylineLength,
-      });
+      final record = person.toJsonAndActivity();
+      json[record.activity.name]!.add(record.json);
     }
 
     return json;
@@ -2993,7 +3085,7 @@ class PeopleInMotionTest extends Test<PeopleInMotionData>
           scheduledTime: scheduledTime,
           projectRef: projectRef,
           collectionID: collectionID,
-          data: PeopleInMotionData(),
+          data: PeopleInMotionData.empty(),
           standingPoints: (standingPoints as List<StandingPoint>?) ?? [],
           testDuration: testDuration ?? -1,
         );
@@ -3181,17 +3273,16 @@ class AcousticDataPoint with JsonToString {
 class AcousticProfileData with JsonToString {
   final List<AcousticDataPoint> dataPoints;
 
-  AcousticProfileData({required this.dataPoints});
+  AcousticProfileData(this.dataPoints);
   AcousticProfileData.empty() : dataPoints = [];
 
-  factory AcousticProfileData.fromJson(Map<String, dynamic> data) {
-    if (data case {'dataPoints': List dataPoints}) {
-      return AcousticProfileData(
-          dataPoints: dataPoints
-              .map((dataPoint) => AcousticDataPoint.fromJson(dataPoint))
-              .toList());
+  factory AcousticProfileData.fromJson(Map<String, dynamic> json) {
+    if (json case {'dataPoints': List dataPoints}) {
+      return AcousticProfileData(dataPoints
+          .map((dataPoint) => AcousticDataPoint.fromJson(dataPoint))
+          .toList());
     }
-    throw FormatException('Invalid JSON: $data', data);
+    throw FormatException('Invalid JSON: $json', json);
   }
 
   @override
@@ -3296,14 +3387,14 @@ class AcousticProfileTest extends Test<AcousticProfileData>
     }
   }
 
-  factory AcousticProfileTest.fromJson(Map<String, dynamic> data) {
-    if (data
+  factory AcousticProfileTest.fromJson(Map<String, dynamic> json) {
+    if (json
         case {
           'title': String title,
           'id': String id,
           'scheduledTime': Timestamp scheduledTime,
           'project': DocumentReference project,
-          'data': Map<String, dynamic> testData,
+          'data': Map<String, dynamic> data,
           'creationTime': Timestamp creationTime,
           'maxResearchers': int maxResearchers,
           'isComplete': bool isComplete,
@@ -3317,7 +3408,7 @@ class AcousticProfileTest extends Test<AcousticProfileData>
         scheduledTime: scheduledTime,
         projectRef: project,
         collectionID: collectionIDStatic,
-        data: AcousticProfileData.fromJson(testData),
+        data: AcousticProfileData.fromJson(data),
         creationTime: creationTime,
         maxResearchers: maxResearchers.toInt(),
         isComplete: isComplete,
@@ -3326,7 +3417,7 @@ class AcousticProfileTest extends Test<AcousticProfileData>
         intervalCount: intervalCount,
       );
     }
-    throw FormatException('Invalid JSON: $data', data);
+    throw FormatException('Invalid JSON: $json', json);
   }
 
   @override

@@ -170,7 +170,7 @@ Polyline? createPolyline(List<LatLng> polylinePoints, Color color) {
   Polyline? polyline;
   final String polylineID;
   try {
-    // Creates polygon ID from time
+    // Creates polyline ID from time
     polylineID = DateTime.now().millisecondsSinceEpoch.toString();
 
     polyline = Polyline(
