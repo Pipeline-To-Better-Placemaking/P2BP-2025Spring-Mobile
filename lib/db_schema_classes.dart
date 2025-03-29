@@ -2722,19 +2722,39 @@ enum PostureType implements DisplayNameEnum {
 }
 
 class PersonInPlace with JsonToString {
-  final LatLng location;
+  final Marker marker;
   final AgeRangeType ageRange;
   final Set<ActivityTypeInPlace> activities;
   final GenderType gender;
   final PostureType posture;
 
   PersonInPlace({
-    required this.location,
+    required this.marker,
     required this.ageRange,
     required this.gender,
     required this.activities,
     required this.posture,
   });
+
+  factory PersonInPlace.fromLatLng({
+    required LatLng location,
+    required AgeRangeType ageRange,
+    required Set<ActivityTypeInPlace> activities,
+    required GenderType gender,
+    required PostureType posture,
+  }) {
+    return PersonInPlace(
+      marker: Marker(
+          markerId: MarkerId(location.toString()),
+          position: location,
+          consumeTapEvents: true,
+          icon: peopleInPlaceIconMap[(posture, gender)]!),
+      ageRange: ageRange,
+      gender: gender,
+      activities: activities,
+      posture: posture,
+    );
+  }
 
   factory PersonInPlace.fromJson(Map<String, dynamic> json) {
     if (json
@@ -2745,14 +2765,22 @@ class PersonInPlace with JsonToString {
           'gender': String gender,
           'posture': String posture,
         }) {
+      final LatLng point = location.toLatLng();
+      final GenderType genderType = GenderType.values.byName(gender);
+      final PostureType postureType = PostureType.values.byName(posture);
       return PersonInPlace(
-        location: location.toLatLng(),
+        marker: Marker(
+          markerId: MarkerId(point.toString()),
+          position: point,
+          consumeTapEvents: true,
+          icon: peopleInPlaceIconMap[(postureType, genderType)]!,
+        ),
         ageRange: AgeRangeType.values.byName(ageRange),
         activities: activities
             .map((activity) => ActivityTypeInPlace.values.byName(activity))
             .toSet(),
-        gender: GenderType.values.byName(gender),
-        posture: PostureType.values.byName(posture),
+        gender: genderType,
+        posture: postureType,
       );
     }
     throw FormatException('Invalid JSON: $json', json);
@@ -2761,7 +2789,7 @@ class PersonInPlace with JsonToString {
   @override
   Map<String, Object> toJson() {
     return {
-      'location': location.toGeoPoint(),
+      'location': marker.position.toGeoPoint(),
       'ageRange': ageRange.name,
       'activities': <String>[for (final activity in activities) activity.name],
       'gender': gender.name,
