@@ -399,10 +399,13 @@ class TimerButtonAndDisplay extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return SizedBox(
-      width: 75,
+      width: 68,
       child: Column(
+        spacing: 10,
         children: <Widget>[
-          Center(
+          SizedBox(
+            height: 50,
+            width: double.infinity,
             child: ElevatedButton(
               style: ElevatedButton.styleFrom(
                 disabledBackgroundColor: disabledGreyAlt,
@@ -422,18 +425,18 @@ class TimerButtonAndDisplay extends StatelessWidget {
               ),
             ),
           ),
-          Center(
-            child: Container(
-              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-              decoration: BoxDecoration(
-                color: Colors.black.withValues(alpha: 0.6),
-                borderRadius: BorderRadius.circular(8),
-              ),
-              child: Text(
-                textAlign: TextAlign.center,
-                formatTime(remainingSeconds),
-                style: TextStyle(color: Colors.white, fontSize: 16),
-              ),
+          Container(
+            height: 40,
+            width: double.infinity,
+            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
+            decoration: BoxDecoration(
+              color: Colors.black.withValues(alpha: 0.6),
+              borderRadius: BorderRadius.circular(8),
+            ),
+            child: Text(
+              textAlign: TextAlign.center,
+              formatTime(remainingSeconds),
+              style: TextStyle(color: Colors.white, fontSize: 16),
             ),
           ),
         ],
