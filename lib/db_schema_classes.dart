@@ -711,153 +711,190 @@ class LightingProfileTest extends Test<LightingProfileData>
   }
 }
 
-/// Parent class for data classes which need a single location point.
-///
-/// Created for use with [BehaviorPoint] and [MaintenancePoint] in
-/// [AbsenceOfOrderTest], but could potentially be used for other similar
-/// data types which use a single point with an arbitrary amount of other
-/// attributes attached to it.
-abstract class DataPoint {
-  LatLng? location;
+enum MisconductType implements DisplayNameEnum {
+  behavior(
+    displayName: 'Behavior',
+    iconName: 'assets/test_specific/absence_of_order_locator/'
+        'behavior-misconduct.png',
+  ),
+  maintenance(
+    displayName: 'Maintenance',
+    iconName: 'assets/test_specific/absence_of_order_locator/'
+        'maintenance-misconduct.png',
+  );
 
-  DataPoint({this.location});
+  const MisconductType({
+    required this.displayName,
+    required this.iconName,
+  });
+
+  @override
+  final String displayName;
+  final String iconName;
 }
 
-/// Class for points representing instances of Behavior Misconduct in
-/// [AbsenceOfOrderTest].
-class BehaviorPoint extends DataPoint with JsonToString {
-  bool boisterousVoice;
-  bool dangerousWildlife;
-  bool livingInPublic;
-  bool panhandling;
-  bool recklessBehavior;
-  bool unsafeEquipment;
-  String other;
+enum BehaviorType implements DisplayNameEnum {
+  boisterousVoice(displayName: 'Boisterous Voice'),
+  dangerousWildlife(displayName: 'Dangerous Wildlife'),
+  livingInPublic(displayName: 'Living in Public'),
+  panhandling(displayName: 'Panhandling'),
+  recklessBehavior(displayName: 'Reckless Behavior'),
+  unsafeEquipment(displayName: 'Unsafe Equipment'),
+  other(displayName: 'Other');
 
-  BehaviorPoint({
-    required super.location,
-    required this.boisterousVoice,
-    required this.dangerousWildlife,
-    required this.livingInPublic,
-    required this.panhandling,
-    required this.recklessBehavior,
-    required this.unsafeEquipment,
+  const BehaviorType({required this.displayName});
+
+  @override
+  final String displayName;
+}
+
+enum MaintenanceType implements DisplayNameEnum {
+  brokenEnvironment(displayName: 'Broken Environment'),
+  dirtyOrUnmaintained(displayName: 'Dirty/Unmaintained'),
+  littering(displayName: 'Littering'),
+  overfilledTrash(displayName: 'Overfilled Trashcan'),
+  unkeptLandscape(displayName: 'Unkept Landscape'),
+  unwantedGraffiti(displayName: 'Unwanted Graffiti'),
+  other(displayName: 'Other');
+
+  const MaintenanceType({required this.displayName});
+
+  @override
+  final String displayName;
+}
+
+class BehaviorMisconduct with JsonToString {
+  static const MisconductType misconductType = MisconductType.behavior;
+
+  final Marker marker;
+  final Set<BehaviorType> behaviorTypes;
+  final String other;
+
+  BehaviorMisconduct({
+    required this.marker,
+    required this.behaviorTypes,
     required this.other,
-  });
+  }) {
+    final hasOther = behaviorTypes.contains(BehaviorType.other);
+    if ((hasOther && other.isEmpty) || (!hasOther && other.isNotEmpty)) {
+      throw Exception('Other mismatch when constructing BehaviorMisconduct');
+    }
+  }
 
-  /// Constructor not requiring a location. Used when setting description
-  /// of misconduct before placing point on [AbsenceOfOrderTestPage].
-  BehaviorPoint.noLocation({
-    required this.boisterousVoice,
-    required this.dangerousWildlife,
-    required this.livingInPublic,
-    required this.panhandling,
-    required this.recklessBehavior,
-    required this.unsafeEquipment,
-    required this.other,
-  });
-
-  /// Directly takes a Json-type object and returns a new [BehaviorPoint]
-  /// created with that data.
-  static BehaviorPoint fromJson(Map<String, dynamic> dataPoint) {
-    return BehaviorPoint(
-      location: (dataPoint['location'] as GeoPoint).toLatLng(),
-      boisterousVoice: dataPoint['boisterousVoice'],
-      dangerousWildlife: dataPoint['dangerousWildlife'],
-      livingInPublic: dataPoint['livingInPublic'],
-      panhandling: dataPoint['panhandling'],
-      recklessBehavior: dataPoint['recklessBehavior'],
-      unsafeEquipment: dataPoint['unsafeEquipment'],
-      other: dataPoint['other'],
+  factory BehaviorMisconduct.fromLatLng(
+      LatLng location, Set<BehaviorType> behaviorTypes, String other) {
+    return BehaviorMisconduct(
+      marker: Marker(
+        markerId: MarkerId(location.toString()),
+        position: location,
+        consumeTapEvents: true,
+        icon: absenceOfOrderIconMap[misconductType]!,
+      ),
+      behaviorTypes: behaviorTypes.toSet(),
+      other: other,
     );
   }
 
-  /// Returns a new Json-type object containing all properties of this
-  /// [BehaviorPoint].
-  ///
-  /// Converts the [location] to [GeoPoint] since that is the type
-  /// used in Firestore. This leads to [location] not being as easily
-  /// converted to a String as the rest of the properties.
+  factory BehaviorMisconduct.fromJson(Map<String, dynamic> json) {
+    if (json
+        case {
+          'location': GeoPoint location,
+          'behaviorTypes': List behaviorTypes,
+          'other': String other,
+        }) {
+      if (behaviorTypes.isNotEmpty) {
+        final point = location.toLatLng();
+        return BehaviorMisconduct(
+          marker: Marker(
+            markerId: MarkerId(point.toString()),
+            position: point,
+            consumeTapEvents: true,
+            icon: absenceOfOrderIconMap[misconductType]!,
+          ),
+          behaviorTypes: behaviorTypes
+              .map((string) => BehaviorType.values.byName(string))
+              .toSet(),
+          other: other,
+        );
+      }
+    }
+    throw FormatException('Invalid JSON: $json', json);
+  }
+
   @override
-  Map<String, Object?> toJson() {
+  Map<String, Object> toJson() {
     return {
-      'location': location?.toGeoPoint(),
-      'boisterousVoice': boisterousVoice,
-      'dangerousWildlife': dangerousWildlife,
-      'livingInPublic': livingInPublic,
-      'panhandling': panhandling,
-      'recklessBehavior': recklessBehavior,
-      'unsafeEquipment': unsafeEquipment,
+      'location': marker.position.toGeoPoint(),
+      'behaviorTypes': behaviorTypes.map((behavior) => behavior.name).toList(),
       'other': other,
     };
   }
 }
 
-/// Class for points representing instances of Maintenance Misconduct in
-/// [AbsenceOfOrderTest].
-class MaintenancePoint extends DataPoint with JsonToString {
-  bool brokenEnvironment;
-  bool dirtyOrUnmaintained;
-  bool littering;
-  bool overfilledTrash;
-  bool unkeptLandscape;
-  bool unwantedGraffiti;
-  String other;
+class MaintenanceMisconduct with JsonToString {
+  static const MisconductType misconductType = MisconductType.maintenance;
 
-  MaintenancePoint({
-    required super.location,
-    required this.brokenEnvironment,
-    required this.dirtyOrUnmaintained,
-    required this.littering,
-    required this.overfilledTrash,
-    required this.unkeptLandscape,
-    required this.unwantedGraffiti,
+  final Marker marker;
+  final Set<MaintenanceType> maintenanceTypes;
+  final String other;
+
+  MaintenanceMisconduct({
+    required this.marker,
+    required this.maintenanceTypes,
     required this.other,
-  });
+  }) {
+    final hasOther = maintenanceTypes.contains(MaintenanceType.other);
+    if ((hasOther && other.isEmpty) || (!hasOther && other.isNotEmpty)) {
+      throw Exception('Other mismatch when constructing MaintenanceMisconduct');
+    }
+  }
 
-  /// Constructor not requiring a location. Used when setting description
-  /// of misconduct before placing point on [AbsenceOfOrderTestPage].
-  MaintenancePoint.noLocation({
-    required this.brokenEnvironment,
-    required this.dirtyOrUnmaintained,
-    required this.littering,
-    required this.overfilledTrash,
-    required this.unkeptLandscape,
-    required this.unwantedGraffiti,
-    required this.other,
-  });
-
-  /// Directly takes a Json-type object and returns a new [MaintenancePoint]
-  /// created with that data.
-  static MaintenancePoint fromJson(Map<String, dynamic> dataPoint) {
-    return MaintenancePoint(
-      location: (dataPoint['location'] as GeoPoint).toLatLng(),
-      brokenEnvironment: dataPoint['brokenEnvironment'],
-      dirtyOrUnmaintained: dataPoint['dirtyOrUnmaintained'],
-      littering: dataPoint['littering'],
-      overfilledTrash: dataPoint['overfilledTrash'],
-      unkeptLandscape: dataPoint['unkeptLandscape'],
-      unwantedGraffiti: dataPoint['unwantedGraffiti'],
-      other: dataPoint['other'],
+  factory MaintenanceMisconduct.fromLatLng(
+      LatLng location, Set<MaintenanceType> maintenanceTypes, String other) {
+    return MaintenanceMisconduct(
+      marker: Marker(
+        markerId: MarkerId(location.toString()),
+        position: location,
+        consumeTapEvents: true,
+        icon: absenceOfOrderIconMap[misconductType]!,
+      ),
+      maintenanceTypes: maintenanceTypes.toSet(),
+      other: other,
     );
   }
 
-  /// Returns a new Json-type object containing all properties of this
-  /// [MaintenancePoint].
-  ///
-  /// Converts the [location] to [GeoPoint] since that is the type
-  /// used in Firestore. This leads to [location] not being as easily
-  /// converted to a String as the rest of the properties.
+  factory MaintenanceMisconduct.fromJson(Map<String, dynamic> json) {
+    if (json
+        case {
+          'location': GeoPoint location,
+          'maintenanceTypes': List maintenanceTypes,
+          'other': String other,
+        }) {
+      if (maintenanceTypes.isNotEmpty) {
+        final point = location.toLatLng();
+        return MaintenanceMisconduct(
+          marker: Marker(
+            markerId: MarkerId(point.toString()),
+            position: point,
+            consumeTapEvents: true,
+            icon: absenceOfOrderIconMap[misconductType]!,
+          ),
+          maintenanceTypes: maintenanceTypes
+              .map((string) => MaintenanceType.values.byName(string))
+              .toSet(),
+          other: other,
+        );
+      }
+    }
+    throw FormatException('Invalid JSON: $json', json);
+  }
+
   @override
-  Map<String, Object?> toJson() {
+  Map<String, Object> toJson() {
     return {
-      'location': location?.toGeoPoint(),
-      'brokenEnvironment': brokenEnvironment,
-      'dirtyOrUnmaintained': dirtyOrUnmaintained,
-      'littering': littering,
-      'overfilledTrash': overfilledTrash,
-      'unkeptLandscape': unkeptLandscape,
-      'unwantedGraffiti': unwantedGraffiti,
+      'location': marker.position.toGeoPoint(),
+      'maintenanceTypes':
+          maintenanceTypes.map((maintenance) => maintenance.name).toList(),
       'other': other,
     };
   }
@@ -868,28 +905,37 @@ class MaintenancePoint extends DataPoint with JsonToString {
 /// This is used as the generic type in the definition
 /// of [AbsenceOfOrderTest].
 class AbsenceOfOrderData with JsonToString {
-  final List<BehaviorPoint> behaviorList = [];
-  final List<MaintenancePoint> maintenanceList = [];
+  final List<BehaviorMisconduct> behaviorList;
+  final List<MaintenanceMisconduct> maintenanceList;
 
-  AbsenceOfOrderData();
+  AbsenceOfOrderData({
+    required this.behaviorList,
+    required this.maintenanceList,
+  });
+  AbsenceOfOrderData.empty()
+      : behaviorList = [],
+        maintenanceList = [];
 
   /// Creates an [AbsenceOfOrderData] object from a Json-type object.
   ///
   /// Used for recreating data instances from existing
   /// [AbsenceOfOrderTest] instances in Firestore.
-  AbsenceOfOrderData.fromJson(Map<String, dynamic> data) {
-    if (data.containsKey('behaviorPoints') &&
-        (data['behaviorPoints'] as List).isNotEmpty) {
-      for (final point in data['behaviorPoints'] as List) {
-        behaviorList.add(BehaviorPoint.fromJson(point));
-      }
+  factory AbsenceOfOrderData.fromJson(Map<String, dynamic> json) {
+    if (json
+        case {
+          'behavior': List behaviorList,
+          'maintenance': List maintenanceList,
+        }) {
+      return AbsenceOfOrderData(
+        behaviorList: behaviorList
+            .map((behavior) => BehaviorMisconduct.fromJson(behavior))
+            .toList(),
+        maintenanceList: maintenanceList
+            .map((maintenance) => MaintenanceMisconduct.fromJson(maintenance))
+            .toList(),
+      );
     }
-    if (data.containsKey('maintenancePoints') &&
-        (data['maintenancePoints'] as List).isNotEmpty) {
-      for (final point in data['maintenancePoints'] as List) {
-        maintenanceList.add(MaintenancePoint.fromJson(point));
-      }
-    }
+    throw FormatException('Invalid JSON: $json', json);
   }
 
   /// Returns a new Json-type object containing all data from this
@@ -901,44 +947,18 @@ class AbsenceOfOrderData with JsonToString {
   @override
   Map<String, Object> toJson() {
     Map<String, List<Map<String, dynamic>?>> json = {
-      'behaviorPoints': [],
-      'maintenancePoints': [],
+      for (final type in MisconductType.values) type.name: [],
     };
+
     for (final behavior in behaviorList) {
-      json['behaviorPoints']!.add(behavior.toJson());
+      json[BehaviorMisconduct.misconductType.name]!.add(behavior.toJson());
     }
     for (final maintenance in maintenanceList) {
-      json['maintenancePoints']!.add(maintenance.toJson());
+      json[MaintenanceMisconduct.misconductType.name]!
+          .add(maintenance.toJson());
     }
+
     return json;
-  }
-
-  /// Adds given [dataPoint] to the appropriate List in this data set.
-  ///
-  /// An exception is thrown if [dataPoint] has a null `location`.
-  void addDataPoint(DataPoint dataPoint) {
-    if (dataPoint.location == null) {
-      print(
-          'Error: dataPoint in AbsenceOfOrderTest.addDataPoint has no location');
-      throw Exception('null-location-on-datapoint');
-    }
-    if (dataPoint is BehaviorPoint) {
-      behaviorList.add(dataPoint);
-      return;
-    }
-    if (dataPoint is MaintenancePoint) {
-      maintenanceList.add(dataPoint);
-      return;
-    }
-  }
-
-  /// Removes all data points where [location] matches the given [point]
-  /// from both Lists.
-  void removeDataPoint(LatLng point) {
-    behaviorList
-        .removeWhere((behaviorPoint) => behaviorPoint.location == point);
-    maintenanceList
-        .removeWhere((maintenancePoint) => maintenancePoint.location == point);
   }
 }
 
@@ -989,7 +1009,7 @@ class AbsenceOfOrderTest extends Test<AbsenceOfOrderData>
           scheduledTime: scheduledTime,
           projectRef: projectRef,
           collectionID: collectionID,
-          data: AbsenceOfOrderData(),
+          data: AbsenceOfOrderData.empty(),
           testDuration: testDuration ?? -1,
         );
     // Register for recreating an Absence of Order Test from Firestore
@@ -1037,25 +1057,38 @@ class AbsenceOfOrderTest extends Test<AbsenceOfOrderData>
   }
 
   /// Returns a new [AbsenceOfOrderTest] instance created from Json-type
-  /// object [doc].
+  /// object [json].
   ///
-  /// Typically, [doc] is a representation of an existing
+  /// Typically, [json] is a representation of an existing
   /// [AbsenceOfOrderTest] in Firestore and this is used for recreating
   /// that [Test] object.
-  static AbsenceOfOrderTest fromJson(Map<String, dynamic> doc) {
-    return AbsenceOfOrderTest._(
-      title: doc['title'],
-      testID: doc['id'],
-      scheduledTime: doc['scheduledTime'],
-      projectRef: doc['project'],
-      collectionID: collectionIDStatic,
-      data: AbsenceOfOrderData.fromJson(doc['data']),
-      creationTime: doc['creationTime'],
-      maxResearchers: doc['maxResearchers'],
-      isComplete: doc['isComplete'],
-      testDuration:
-          doc.containsKey('testDuration') ? doc['testDuration'] ?? -1 : -1,
-    );
+  static AbsenceOfOrderTest fromJson(Map<String, dynamic> json) {
+    if (json
+        case {
+          'title': String title,
+          'id': String id,
+          'scheduledTime': Timestamp scheduledTime,
+          'project': DocumentReference project,
+          'data': Map<String, dynamic> data,
+          'creationTime': Timestamp creationTime,
+          'maxResearchers': int maxResearchers,
+          'isComplete': bool isComplete,
+          'testDuration': int testDuration,
+        }) {
+      return AbsenceOfOrderTest._(
+        title: title,
+        testID: id,
+        scheduledTime: scheduledTime,
+        projectRef: project,
+        collectionID: collectionIDStatic,
+        data: AbsenceOfOrderData.fromJson(data),
+        creationTime: creationTime,
+        maxResearchers: maxResearchers,
+        isComplete: isComplete,
+        testDuration: testDuration,
+      );
+    }
+    throw FormatException('Invalid JSON: $json', json);
   }
 
   /// Returns a Json-type object representing this [AbsenceOfOrderTest]
@@ -3229,8 +3262,8 @@ class AcousticMeasurement with JsonToString {
     }
   }
 
-  factory AcousticMeasurement.fromJson(Map<String, dynamic> data) {
-    if (data
+  factory AcousticMeasurement.fromJson(Map<String, dynamic> json) {
+    if (json
         case {
           'decibels': num decibels,
           'soundTypes': List soundTypes,
@@ -3247,7 +3280,7 @@ class AcousticMeasurement with JsonToString {
             mainSoundType: SoundType.values.byName(mainSoundType));
       }
     }
-    throw FormatException('Invalid JSON: $data', data);
+    throw FormatException('Invalid JSON: $json', json);
   }
 
   @override
@@ -3267,8 +3300,8 @@ class AcousticDataPoint with JsonToString {
 
   AcousticDataPoint({required this.standingPoint, required this.measurements});
 
-  factory AcousticDataPoint.fromJson(Map<String, dynamic> data) {
-    if (data
+  factory AcousticDataPoint.fromJson(Map<String, dynamic> json) {
+    if (json
         case {
           'standingPoint': Map<String, dynamic> point,
           'measurements': List measurements,
@@ -3280,7 +3313,7 @@ class AcousticDataPoint with JsonToString {
             .toList(),
       );
     }
-    throw FormatException('Invalid JSON: $data', data);
+    throw FormatException('Invalid JSON: $json', json);
   }
 
   @override

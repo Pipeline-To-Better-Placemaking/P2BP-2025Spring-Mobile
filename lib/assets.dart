@@ -30,6 +30,14 @@ final Map<LightType, AssetMapBitmap> lightingProfileIconMap = {
       height: 36,
     )
 };
+final Map<MisconductType, AssetMapBitmap> absenceOfOrderIconMap = {
+  for (final misconduct in MisconductType.values)
+    misconduct: AssetMapBitmap(
+      misconduct.iconName,
+      width: 36,
+      height: 36,
+    )
+};
 final Map<(PostureType, GenderType), AssetMapBitmap> peopleInPlaceIconMap = {
   for (final posture in PostureType.values)
     for (final gender in GenderType.values)

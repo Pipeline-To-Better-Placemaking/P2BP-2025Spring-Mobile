@@ -109,7 +109,6 @@ class _LightingProfileTestPageState extends State<LightingProfileTestPage> {
       _newData.lights.add(Light.fromLatLng(point, _selectedType!));
       final markerId = _newData.lights.last.marker.markerId;
       setState(() {
-        // Create marker
         _markers.add(_newData.lights.last.marker.copyWith(onTapParam: () {
           _newData.lights
               .removeWhere((light) => light.marker.position == point);
