@@ -1,5 +1,4 @@
 import 'dart:async';
-import 'dart:io';
 
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -11,7 +10,7 @@ import 'package:p2bp_2025spring_mobile/db_schema_classes.dart';
 import 'package:p2bp_2025spring_mobile/firestore_functions.dart';
 import 'package:p2bp_2025spring_mobile/google_maps_functions.dart';
 import 'package:p2bp_2025spring_mobile/theme.dart';
-import 'package:p2bp_2025spring_mobile/widgets.dart'; // for _showInstructionOverlay
+import 'package:p2bp_2025spring_mobile/widgets.dart';
 
 /// AcousticProfileTestPage displays a Google Map (with the project polygon)
 /// in the background and uses a timer to prompt the researcher for sound
@@ -413,24 +412,17 @@ class _AcousticProfileTestPageState extends State<AcousticProfileTestPage> {
 
   @override
   Widget build(BuildContext context) {
-    final double topOverlayPadding = Platform.isIOS ? 60 : 15.0;
-    return AdaptiveSafeArea(
+    return AnnotatedRegion<SystemUiOverlayStyle>(
+      value: (_currentMapType == MapType.normal)
+          ? SystemUiOverlayStyle.dark.copyWith(
+              statusBarColor: Colors.transparent,
+            )
+          : SystemUiOverlayStyle.light.copyWith(
+              statusBarColor: Colors.transparent,
+            ),
       child: Scaffold(
-        extendBodyBehindAppBar: true,
-        appBar: AppBar(
-          systemOverlayStyle: Platform.isIOS
-              ? (_currentMapType == MapType.normal
-                  ? SystemUiOverlayStyle.dark.copyWith(
-                      statusBarColor: Colors.transparent,
-                    )
-                  : SystemUiOverlayStyle.light.copyWith(
-                      statusBarColor: Colors.transparent,
-                    ))
-              : null,
-          backgroundColor: Colors.transparent,
-          automaticallyImplyLeading: false,
-          forceMaterialTransparency: true,
-        ),
+        resizeToAvoidBottomInset: false,
+        extendBody: true,
         body: Stack(
           children: [
             SizedBox(
@@ -448,102 +440,99 @@ class _AcousticProfileTestPageState extends State<AcousticProfileTestPage> {
                 myLocationButtonEnabled: false,
               ),
             ),
-            Row(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: <Widget>[
-                Padding(
-                  padding: EdgeInsets.only(top: topOverlayPadding, left: 15.0),
-                  child: Column(
-                    spacing: 10,
-                    children: <Widget>[
-                      TimerButtonAndDisplay(
-                        onPressed:
-                            (!_isIntervalCycleRunning && _activeMarker != null)
-                                ? () {
-                                    setState(() {
-                                      if (_isIntervalCycleRunning) {
-                                        setState(() {
-                                          _isIntervalCycleRunning = false;
-                                          _timer?.cancel();
-                                        });
-                                      } else {
-                                        _startIntervalCycles();
-                                      }
-                                    });
-                                  }
-                                : null,
-                        isTestRunning: _isIntervalCycleRunning,
-                        remainingSeconds: _remainingSeconds,
-                      ),
-                      Container(
-                        padding: const EdgeInsets.symmetric(
-                            horizontal: 12, vertical: 8),
-                        decoration: BoxDecoration(
-                          color: Colors.black.withValues(alpha: 0.6),
-                          borderRadius: BorderRadius.circular(8),
+            SafeArea(
+              child: Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 15),
+                child: Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: <Widget>[
+                    Column(
+                      spacing: 10,
+                      children: <Widget>[
+                        TimerButtonAndDisplay(
+                          onPressed: (!_isIntervalCycleRunning &&
+                                  _activeMarker != null)
+                              ? () {
+                                  setState(() {
+                                    if (_isIntervalCycleRunning) {
+                                      setState(() {
+                                        _isIntervalCycleRunning = false;
+                                        _timer?.cancel();
+                                      });
+                                    } else {
+                                      _startIntervalCycles();
+                                    }
+                                  });
+                                }
+                              : null,
+                          isTestRunning: _isIntervalCycleRunning,
+                          remainingSeconds: _remainingSeconds,
                         ),
-                        child: Text(
-                          '${_intervalCount - _intervalsRemaining} / $_intervalCount',
-                          style: const TextStyle(
-                              color: Colors.white, fontSize: 14),
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-                Expanded(
-                  child: _directionsVisible
-                      ? Padding(
-                          padding: EdgeInsets.symmetric(
-                              horizontal: 15.0, vertical: topOverlayPadding),
-                          child: DirectionsText(
-                            onTap: () {
-                              setState(() {
-                                _directionsVisible = !_directionsVisible;
-                              });
-                            },
-                            text: _getDirections(),
+                        Container(
+                          padding: const EdgeInsets.symmetric(
+                              horizontal: 12, vertical: 8),
+                          decoration: BoxDecoration(
+                            color: Colors.black.withValues(alpha: 0.6),
+                            borderRadius: BorderRadius.circular(8),
                           ),
-                        )
-                      : SizedBox(),
-                ),
-                Padding(
-                  padding: EdgeInsets.only(top: topOverlayPadding, right: 15.0),
-                  child: Column(
-                    spacing: 10,
-                    children: <Widget>[
-                      DirectionsButton(
-                        onTap: () {
-                          setState(() {
-                            _directionsVisible = !_directionsVisible;
-                          });
-                        },
-                      ),
-                      CircularIconMapButton(
-                        backgroundColor:
-                            const Color(0xFF7EAD80).withValues(alpha: 0.9),
-                        borderColor: Color(0xFF2D6040),
-                        onPressed: _toggleMapType,
-                        icon: Icon(
-                          Icons.layers,
-                          color: Color(0xFF2D6040),
+                          child: Text(
+                            '${_intervalCount - _intervalsRemaining} / $_intervalCount',
+                            style: const TextStyle(
+                                color: Colors.white, fontSize: 14),
+                          ),
                         ),
-                      ),
-                      CircularIconMapButton(
-                        backgroundColor:
-                            Color(0xFFBACFEB).withValues(alpha: 0.9),
-                        borderColor: Color(0xFF37597D),
-                        onPressed: _showInstructionOverlay,
-                        icon: Icon(
-                          FontAwesomeIcons.info,
-                          color: Color(0xFF37597D),
+                      ],
+                    ),
+                    SizedBox(width: 15),
+                    Expanded(
+                      child: _directionsVisible
+                          ? DirectionsText(
+                              onTap: () {
+                                setState(() {
+                                  _directionsVisible = !_directionsVisible;
+                                });
+                              },
+                              text: _getDirections(),
+                            )
+                          : SizedBox(),
+                    ),
+                    SizedBox(width: 15),
+                    Column(
+                      spacing: 10,
+                      children: <Widget>[
+                        DirectionsButton(
+                          onTap: () {
+                            setState(() {
+                              _directionsVisible = !_directionsVisible;
+                            });
+                          },
                         ),
-                      ),
-                    ],
-                  ),
+                        CircularIconMapButton(
+                          backgroundColor:
+                              const Color(0xFF7EAD80).withValues(alpha: 0.9),
+                          borderColor: Color(0xFF2D6040),
+                          onPressed: _toggleMapType,
+                          icon: Icon(
+                            Icons.layers,
+                            color: Color(0xFF2D6040),
+                          ),
+                        ),
+                        CircularIconMapButton(
+                          backgroundColor:
+                              Color(0xFFBACFEB).withValues(alpha: 0.9),
+                          borderColor: Color(0xFF37597D),
+                          onPressed: _showInstructionOverlay,
+                          icon: Icon(
+                            FontAwesomeIcons.info,
+                            color: Color(0xFF37597D),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ],
                 ),
-              ],
+              ),
             ),
           ],
         ),

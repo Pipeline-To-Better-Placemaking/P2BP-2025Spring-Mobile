@@ -1,17 +1,18 @@
 import 'dart:async';
-import 'dart:io';
+
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
+import 'package:maps_toolkit/maps_toolkit.dart' as mp;
+import 'package:p2bp_2025spring_mobile/db_schema_classes.dart';
 import 'package:p2bp_2025spring_mobile/firestore_functions.dart';
+import 'package:p2bp_2025spring_mobile/people_in_motion_instructions.dart';
 import 'package:p2bp_2025spring_mobile/theme.dart';
 import 'package:p2bp_2025spring_mobile/widgets.dart';
+
 import 'assets.dart';
 import 'google_maps_functions.dart';
-import 'package:p2bp_2025spring_mobile/db_schema_classes.dart';
-import 'package:p2bp_2025spring_mobile/people_in_motion_instructions.dart';
-import 'package:maps_toolkit/maps_toolkit.dart' as mp;
 
 class PeopleInMotionTestPage extends StatefulWidget {
   final Project activeProject;
@@ -295,17 +296,17 @@ class _PeopleInMotionTestPageState extends State<PeopleInMotionTestPage> {
 
   @override
   Widget build(BuildContext context) {
-    final double topOverlayPadding = Platform.isIOS ? 60 : 15.0;
-    return AdaptiveSafeArea(
+    return AnnotatedRegion<SystemUiOverlayStyle>(
+      value: (_currentMapType == MapType.normal)
+          ? SystemUiOverlayStyle.dark.copyWith(
+              statusBarColor: Colors.transparent,
+            )
+          : SystemUiOverlayStyle.light.copyWith(
+              statusBarColor: Colors.transparent,
+            ),
       child: Scaffold(
-        extendBodyBehindAppBar: true,
-        appBar: AppBar(
-          systemOverlayStyle:
-              SystemUiOverlayStyle(statusBarBrightness: Brightness.light),
-          backgroundColor: Colors.transparent,
-          automaticallyImplyLeading: false,
-          forceMaterialTransparency: true,
-        ),
+        resizeToAvoidBottomInset: false,
+        extendBody: true,
         body: Stack(
           children: [
             SizedBox(
@@ -335,112 +336,109 @@ class _PeopleInMotionTestPageState extends State<PeopleInMotionTestPage> {
                 myLocationButtonEnabled: false,
               ),
             ),
-            Row(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: <Widget>[
-                Padding(
-                  padding: EdgeInsets.only(top: topOverlayPadding, left: 15.0),
-                  child: TimerButtonAndDisplay(
-                    onPressed: () {
-                      setState(() {
-                        if (_isTestRunning) {
-                          setState(() {
-                            _isTestRunning = false;
-                            _timer?.cancel();
-                            _clearTracing();
-                          });
-                        } else {
-                          _startTest();
-                        }
-                      });
-                    },
-                    isTestRunning: _isTestRunning,
-                    remainingSeconds: _remainingSeconds,
-                  ),
-                ),
-                Expanded(
-                  child: _directionsVisible
-                      ? Padding(
-                          padding: EdgeInsets.symmetric(
-                              horizontal: 15.0, vertical: topOverlayPadding),
-                          child: DirectionsText(
-                            onTap: () {
-                              setState(() {
-                                _directionsVisible = !_directionsVisible;
-                              });
-                            },
-                            text: 'Tap the screen to trace.',
-                          ),
-                        )
-                      : SizedBox(),
-                ),
-                Padding(
-                  padding: EdgeInsets.only(top: topOverlayPadding, right: 15),
-                  child: Column(
-                    spacing: 10,
-                    children: <Widget>[
-                      DirectionsButton(
-                        onTap: () {
-                          setState(() {
-                            _directionsVisible = !_directionsVisible;
-                          });
-                        },
-                      ),
-                      CircularIconMapButton(
-                        backgroundColor:
-                            const Color(0xFF7EAD80).withValues(alpha: 0.9),
-                        borderColor: Color(0xFF2D6040),
-                        onPressed: _toggleMapType,
-                        icon: Center(
-                          child: Icon(Icons.layers, color: Color(0xFF2D6040)),
+            SafeArea(
+              child: Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 15),
+                child: Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: <Widget>[
+                    TimerButtonAndDisplay(
+                      onPressed: () {
+                        setState(() {
+                          if (_isTestRunning) {
+                            setState(() {
+                              _isTestRunning = false;
+                              _timer?.cancel();
+                              _clearTracing();
+                            });
+                          } else {
+                            _startTest();
+                          }
+                        });
+                      },
+                      isTestRunning: _isTestRunning,
+                      remainingSeconds: _remainingSeconds,
+                    ),
+                    SizedBox(width: 15),
+                    Expanded(
+                      child: _directionsVisible
+                          ? DirectionsText(
+                              onTap: () {
+                                setState(() {
+                                  _directionsVisible = !_directionsVisible;
+                                });
+                              },
+                              text: 'Tap the screen to trace.',
+                            )
+                          : SizedBox(),
+                    ),
+                    SizedBox(width: 15),
+                    Column(
+                      spacing: 10,
+                      children: <Widget>[
+                        DirectionsButton(
+                          onTap: () {
+                            setState(() {
+                              _directionsVisible = !_directionsVisible;
+                            });
+                          },
                         ),
-                      ),
-                      CircularIconMapButton(
-                        backgroundColor:
-                            Color(0xFFBACFEB).withValues(alpha: 0.9),
-                        borderColor: Color(0xFF37597D),
-                        onPressed: _showInstructionOverlay,
-                        icon: Center(
-                          child: Icon(
-                            FontAwesomeIcons.info,
-                            color: Color(0xFF37597D),
+                        CircularIconMapButton(
+                          backgroundColor:
+                              const Color(0xFF7EAD80).withValues(alpha: 0.9),
+                          borderColor: Color(0xFF2D6040),
+                          onPressed: _toggleMapType,
+                          icon: Center(
+                            child: Icon(Icons.layers, color: Color(0xFF2D6040)),
                           ),
                         ),
-                      ),
-                      CircularIconMapButton(
-                        backgroundColor:
-                            Color(0xFFBD9FE4).withValues(alpha: 0.9),
-                        borderColor: Color(0xFF5A3E85),
-                        onPressed: () {
-                          setState(() {
-                            _isPointsMenuVisible = !_isPointsMenuVisible;
-                          });
-                        },
-                        icon: Icon(
-                          FontAwesomeIcons.locationDot,
-                          color: Color(0xFF5A3E85),
+                        CircularIconMapButton(
+                          backgroundColor:
+                              Color(0xFFBACFEB).withValues(alpha: 0.9),
+                          borderColor: Color(0xFF37597D),
+                          onPressed: _showInstructionOverlay,
+                          icon: Center(
+                            child: Icon(
+                              FontAwesomeIcons.info,
+                              color: Color(0xFF37597D),
+                            ),
+                          ),
                         ),
-                      ),
-                      CircularIconMapButton(
-                        backgroundColor:
-                            Color(0xFFFF9800).withValues(alpha: 0.9),
-                        borderColor: Color(0xFF8C2F00),
-                        onPressed: () {
-                          setState(() {
-                            _isTracingMode = !_isTracingMode;
-                            _clearTracing();
-                          });
-                        },
-                        icon: Icon(
-                          FontAwesomeIcons.pen,
-                          color: Color(0xFF8C2F00),
+                        CircularIconMapButton(
+                          backgroundColor:
+                              Color(0xFFBD9FE4).withValues(alpha: 0.9),
+                          borderColor: Color(0xFF5A3E85),
+                          onPressed: () {
+                            setState(() {
+                              _isPointsMenuVisible = !_isPointsMenuVisible;
+                            });
+                          },
+                          icon: Icon(
+                            FontAwesomeIcons.locationDot,
+                            color: Color(0xFF5A3E85),
+                          ),
                         ),
-                      ),
-                    ],
-                  ),
-                )
-              ],
+                        CircularIconMapButton(
+                          backgroundColor:
+                              Color(0xFFFF9800).withValues(alpha: 0.9),
+                          borderColor: Color(0xFF8C2F00),
+                          onPressed: () {
+                            setState(() {
+                              _isTracingMode = !_isTracingMode;
+                              _clearTracing();
+                            });
+                          },
+                          icon: Icon(
+                            FontAwesomeIcons.pen,
+                            color: Color(0xFF8C2F00),
+                          ),
+                        ),
+                      ],
+                    )
+                  ],
+                ),
+              ),
             ),
             if (_outsidePoint)
               TestErrorText(

@@ -400,36 +400,44 @@ class TimerButtonAndDisplay extends StatelessWidget {
   Widget build(BuildContext context) {
     return SizedBox(
       width: 75,
-      child: Column(children: <Widget>[
-        ElevatedButton(
-          style: ElevatedButton.styleFrom(
-            disabledBackgroundColor: disabledGreyAlt,
-            disabledForegroundColor: Colors.grey,
-            foregroundColor: Colors.white,
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(8),
+      child: Column(
+        children: <Widget>[
+          Center(
+            child: ElevatedButton(
+              style: ElevatedButton.styleFrom(
+                disabledBackgroundColor: disabledGreyAlt,
+                disabledForegroundColor: Colors.grey,
+                foregroundColor: Colors.white,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                backgroundColor: isTestRunning ? Colors.red : Colors.green,
+                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
+              ),
+              onPressed: onPressed,
+              child: Text(
+                isTestRunning ? 'Stop' : 'Start',
+                textAlign: TextAlign.center,
+                style: const TextStyle(fontSize: 16),
+              ),
             ),
-            backgroundColor: isTestRunning ? Colors.red : Colors.green,
-            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
           ),
-          onPressed: onPressed,
-          child: Text(
-            isTestRunning ? 'Stop' : 'Start',
-            style: const TextStyle(fontSize: 16),
+          Center(
+            child: Container(
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+              decoration: BoxDecoration(
+                color: Colors.black.withValues(alpha: 0.6),
+                borderRadius: BorderRadius.circular(8),
+              ),
+              child: Text(
+                textAlign: TextAlign.center,
+                formatTime(remainingSeconds),
+                style: TextStyle(color: Colors.white, fontSize: 16),
+              ),
+            ),
           ),
-        ),
-        Container(
-          padding: EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-          decoration: BoxDecoration(
-            color: Colors.black.withValues(alpha: 0.6),
-            borderRadius: BorderRadius.circular(8),
-          ),
-          child: Text(
-            formatTime(remainingSeconds),
-            style: TextStyle(color: Colors.white, fontSize: 16),
-          ),
-        ),
-      ]),
+        ],
+      ),
     );
   }
 }

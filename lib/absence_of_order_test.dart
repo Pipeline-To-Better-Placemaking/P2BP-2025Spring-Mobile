@@ -256,7 +256,7 @@ class _AbsenceOfOrderTestPageState extends State<AbsenceOfOrderTestPage> {
             ),
             SafeArea(
               child: Padding(
-                padding: EdgeInsets.symmetric(horizontal: 15),
+                padding: const EdgeInsets.symmetric(horizontal: 15),
                 child: Row(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,

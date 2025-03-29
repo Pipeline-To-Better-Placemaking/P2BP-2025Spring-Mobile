@@ -1,5 +1,4 @@
 import 'dart:async';
-import 'dart:io';
 
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -276,17 +275,17 @@ class _PeopleInPlaceTestPageState extends State<PeopleInPlaceTestPage> {
 
   @override
   Widget build(BuildContext context) {
-    final double topOverlayPadding = Platform.isIOS ? 60 : 15.0;
-    return AdaptiveSafeArea(
+    return AnnotatedRegion<SystemUiOverlayStyle>(
+      value: (_currentMapType == MapType.normal)
+          ? SystemUiOverlayStyle.dark.copyWith(
+              statusBarColor: Colors.transparent,
+            )
+          : SystemUiOverlayStyle.light.copyWith(
+              statusBarColor: Colors.transparent,
+            ),
       child: Scaffold(
-        extendBodyBehindAppBar: true,
-        appBar: AppBar(
-          systemOverlayStyle:
-              SystemUiOverlayStyle(statusBarBrightness: Brightness.light),
-          backgroundColor: Colors.transparent,
-          automaticallyImplyLeading: false,
-          forceMaterialTransparency: true,
-        ),
+        resizeToAvoidBottomInset: false,
+        extendBody: true,
         body: Stack(
           children: [
             SizedBox(
@@ -304,96 +303,93 @@ class _PeopleInPlaceTestPageState extends State<PeopleInPlaceTestPage> {
                 myLocationButtonEnabled: false,
               ),
             ),
-            Row(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: <Widget>[
-                Padding(
-                  padding: EdgeInsets.only(top: topOverlayPadding, left: 15.0),
-                  child: TimerButtonAndDisplay(
-                    onPressed: () {
-                      setState(() {
-                        if (_isTestRunning) {
-                          setState(() {
-                            _isTestRunning = false;
-                            _timer?.cancel();
-                          });
-                        } else {
-                          _startTest();
-                        }
-                      });
-                    },
-                    isTestRunning: _isTestRunning,
-                    remainingSeconds: _remainingSeconds,
-                  ),
-                ),
-                Expanded(
-                  child: _directionsVisible
-                      ? Padding(
-                          padding: EdgeInsets.symmetric(
-                              horizontal: 15.0, vertical: topOverlayPadding),
-                          child: DirectionsText(
-                            onTap: () {
-                              setState(() {
-                                _directionsVisible = !_directionsVisible;
-                              });
-                            },
-                            text: 'Tap to log data point.',
-                          ),
-                        )
-                      : SizedBox(),
-                ),
-                Padding(
-                  padding: EdgeInsets.only(top: topOverlayPadding, right: 15),
-                  child: Column(
-                    spacing: 10,
-                    children: <Widget>[
-                      DirectionsButton(
-                        onTap: () {
-                          setState(() {
-                            _directionsVisible = !_directionsVisible;
-                          });
-                        },
-                      ),
-                      CircularIconMapButton(
-                        backgroundColor:
-                            const Color(0xFF7EAD80).withValues(alpha: 0.9),
-                        borderColor: Color(0xFF2D6040),
-                        onPressed: _toggleMapType,
-                        icon: Center(
-                          child: Icon(Icons.layers, color: Color(0xFF2D6040)),
+            SafeArea(
+              child: Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 15),
+                child: Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: <Widget>[
+                    TimerButtonAndDisplay(
+                      onPressed: () {
+                        setState(() {
+                          if (_isTestRunning) {
+                            setState(() {
+                              _isTestRunning = false;
+                              _timer?.cancel();
+                            });
+                          } else {
+                            _startTest();
+                          }
+                        });
+                      },
+                      isTestRunning: _isTestRunning,
+                      remainingSeconds: _remainingSeconds,
+                    ),
+                    SizedBox(width: 15),
+                    Expanded(
+                      child: _directionsVisible
+                          ? DirectionsText(
+                              onTap: () {
+                                setState(() {
+                                  _directionsVisible = !_directionsVisible;
+                                });
+                              },
+                              text: 'Tap to log data point.',
+                            )
+                          : SizedBox(),
+                    ),
+                    SizedBox(width: 15),
+                    Column(
+                      spacing: 10,
+                      children: <Widget>[
+                        DirectionsButton(
+                          onTap: () {
+                            setState(() {
+                              _directionsVisible = !_directionsVisible;
+                            });
+                          },
                         ),
-                      ),
-                      CircularIconMapButton(
-                        backgroundColor:
-                            Color(0xFFBACFEB).withValues(alpha: 0.9),
-                        borderColor: Color(0xFF37597D),
-                        onPressed: _showInstructionOverlay,
-                        icon: Center(
-                          child: Icon(
-                            FontAwesomeIcons.info,
-                            color: Color(0xFF37597D),
+                        CircularIconMapButton(
+                          backgroundColor:
+                              const Color(0xFF7EAD80).withValues(alpha: 0.9),
+                          borderColor: Color(0xFF2D6040),
+                          onPressed: _toggleMapType,
+                          icon: Center(
+                            child: Icon(Icons.layers, color: Color(0xFF2D6040)),
                           ),
                         ),
-                      ),
-                      CircularIconMapButton(
-                        backgroundColor:
-                            Color(0xFFBD9FE4).withValues(alpha: 0.9),
-                        borderColor: Color(0xFF5A3E85),
-                        onPressed: () {
-                          setState(() {
-                            _isPointsMenuVisible = !_isPointsMenuVisible;
-                          });
-                        },
-                        icon: Icon(
-                          FontAwesomeIcons.locationDot,
-                          color: Color(0xFF5A3E85),
+                        CircularIconMapButton(
+                          backgroundColor:
+                              Color(0xFFBACFEB).withValues(alpha: 0.9),
+                          borderColor: Color(0xFF37597D),
+                          onPressed: _showInstructionOverlay,
+                          icon: Center(
+                            child: Icon(
+                              FontAwesomeIcons.info,
+                              color: Color(0xFF37597D),
+                            ),
+                          ),
                         ),
-                      ),
-                    ],
-                  ),
-                )
-              ],
+                        CircularIconMapButton(
+                          backgroundColor:
+                              Color(0xFFBD9FE4).withValues(alpha: 0.9),
+                          borderColor: Color(0xFF5A3E85),
+                          onPressed: () {
+                            setState(() {
+                              _isPointsMenuVisible = !_isPointsMenuVisible;
+                            });
+                          },
+                          icon: Icon(
+                            FontAwesomeIcons.locationDot,
+                            color: Color(0xFF5A3E85),
+                          ),
+                        ),
+                      ],
+                    )
+                  ],
+                ),
+              ),
             ),
             if (_outsidePoint)
               TestErrorText(

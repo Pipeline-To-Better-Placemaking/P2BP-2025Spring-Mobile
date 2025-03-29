@@ -79,7 +79,7 @@ class _NaturePrevalenceState extends State<NaturePrevalence> {
     _projectPolygon = getProjectPolygon(widget.activeProject.polygonPoints);
     _location = getPolygonCentroid(_projectPolygon);
     _projectArea = _projectPolygon.toMPLatLngList();
-    _zoom = getIdealZoom(_projectArea, _location.toMPLatLng());
+    _zoom = getIdealZoom(_projectArea, _location.toMPLatLng()) - 0.4;
     _remainingSeconds = widget.activeTest.testDuration;
     WidgetsBinding.instance.addPostFrameCallback((_) async {
       _setWeatherData();
@@ -630,12 +630,17 @@ class _NaturePrevalenceState extends State<NaturePrevalence> {
 
   @override
   Widget build(BuildContext context) {
-    final double topOverlayPadding = Platform.isIOS ? 60 : 15.0;
-    return AdaptiveSafeArea(
+    return AnnotatedRegion<SystemUiOverlayStyle>(
+      value: (_currentMapType == MapType.normal)
+          ? SystemUiOverlayStyle.dark.copyWith(
+              statusBarColor: Colors.transparent,
+            )
+          : SystemUiOverlayStyle.light.copyWith(
+              statusBarColor: Colors.transparent,
+            ),
       child: Scaffold(
         resizeToAvoidBottomInset: false,
         extendBody: true,
-        extendBodyBehindAppBar: true,
         body: Stack(
           children: [
             SizedBox(
@@ -655,105 +660,102 @@ class _NaturePrevalenceState extends State<NaturePrevalence> {
                 mapType: _currentMapType, // Use current map type
               ),
             ),
-            Row(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: <Widget>[
-                Padding(
-                  padding: EdgeInsets.only(top: topOverlayPadding, left: 15.0),
-                  child: TimerButtonAndDisplay(
-                    onPressed: () {
-                      if (_isTestRunning) {
-                        setState(() {
-                          _isTestRunning = false;
-                          _timer?.cancel();
-                          _clearTypes();
-                        });
-                      } else {
-                        _startTest();
-                      }
-                    },
-                    isTestRunning: _isTestRunning,
-                    remainingSeconds: _remainingSeconds,
-                  ),
-                ),
-                Expanded(
-                  child: _directionsVisible
-                      ? Padding(
-                          padding: EdgeInsets.symmetric(
-                              horizontal: 15.0, vertical: topOverlayPadding),
-                          child: DirectionsText(
+            SafeArea(
+              child: Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 15),
+                child: Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: <Widget>[
+                    TimerButtonAndDisplay(
+                      onPressed: () {
+                        if (_isTestRunning) {
+                          setState(() {
+                            _isTestRunning = false;
+                            _timer?.cancel();
+                            _clearTypes();
+                          });
+                        } else {
+                          _startTest();
+                        }
+                      },
+                      isTestRunning: _isTestRunning,
+                      remainingSeconds: _remainingSeconds,
+                    ),
+                    SizedBox(width: 15),
+                    Expanded(
+                      child: _directionsVisible
+                          ? DirectionsText(
                               onTap: () {
                                 setState(() {
                                   _directionsVisible = !_directionsVisible;
                                 });
                               },
-                              text: _directions),
-                        )
-                      : SizedBox(),
-                ),
-                Padding(
-                  padding: EdgeInsets.only(top: topOverlayPadding, right: 15.0),
-                  child: Column(
-                    spacing: 10,
-                    children: [
-                      DirectionsButton(
-                        onTap: () {
-                          setState(() {
-                            _directionsVisible = !_directionsVisible;
-                          });
-                        },
-                      ),
-                      CircularIconMapButton(
-                        backgroundColor: Colors.green,
-                        borderColor: Color(0xFF2D6040),
-                        onPressed: _toggleMapType,
-                        icon: const Icon(Icons.map),
-                      ),
-                      if (!_polygonMode && !_pointMode)
-                        CircularIconMapButton(
-                          borderColor: Color(0xFF2D6040),
-                          onPressed: () {
+                              text: _directions)
+                          : SizedBox(),
+                    ),
+                    SizedBox(width: 15),
+                    Column(
+                      spacing: 10,
+                      children: [
+                        DirectionsButton(
+                          onTap: () {
                             setState(() {
-                              _deleteMode = !_deleteMode;
-                              if (_deleteMode == true) {
-                                _outsidePoint = false;
-                                _errorText = 'You are in delete mode.';
-                              } else {
-                                _outsidePoint = false;
-                                _errorText =
-                                    'You tried to place a point outside of the project area!';
-                              }
+                              _directionsVisible = !_directionsVisible;
                             });
                           },
+                        ),
+                        CircularIconMapButton(
+                          backgroundColor: Colors.green,
+                          borderColor: Color(0xFF2D6040),
+                          onPressed: _toggleMapType,
+                          icon: const Icon(Icons.map),
+                        ),
+                        if (!_polygonMode && !_pointMode)
+                          CircularIconMapButton(
+                            borderColor: Color(0xFF2D6040),
+                            onPressed: () {
+                              setState(() {
+                                _deleteMode = !_deleteMode;
+                                if (_deleteMode == true) {
+                                  _outsidePoint = false;
+                                  _errorText = 'You are in delete mode.';
+                                } else {
+                                  _outsidePoint = false;
+                                  _errorText =
+                                      'You tried to place a point outside of the project area!';
+                                }
+                              });
+                            },
+                            backgroundColor:
+                                _deleteMode ? Colors.blue : Colors.red,
+                            icon: Icon(
+                              _deleteMode ? Icons.location_on : Icons.delete,
+                              size: 30,
+                            ),
+                          ),
+                        CircularIconMapButton(
                           backgroundColor:
-                              _deleteMode ? Colors.blue : Colors.red,
+                              Color(0xFFE4E9EF).withValues(alpha: 0.9),
+                          borderColor: const Color(0xFF4A5D75),
+                          onPressed: () {
+                            setState(() {
+                              _oldVisibility = !_oldVisibility;
+                            });
+                          },
                           icon: Icon(
-                            _deleteMode ? Icons.location_on : Icons.delete,
+                            _oldVisibility
+                                ? Icons.visibility_off
+                                : Icons.visibility,
                             size: 30,
+                            color: const Color(0xFF4A5D75),
                           ),
                         ),
-                      CircularIconMapButton(
-                        backgroundColor:
-                            Color(0xFFE4E9EF).withValues(alpha: 0.9),
-                        borderColor: const Color(0xFF4A5D75),
-                        onPressed: () {
-                          setState(() {
-                            _oldVisibility = !_oldVisibility;
-                          });
-                        },
-                        icon: Icon(
-                          _oldVisibility
-                              ? Icons.visibility_off
-                              : Icons.visibility,
-                          size: 30,
-                          color: const Color(0xFF4A5D75),
-                        ),
-                      ),
-                    ],
-                  ),
+                      ],
+                    ),
+                  ],
                 ),
-              ],
+              ),
             ),
             if (_outsidePoint || _deleteMode)
               TestErrorText(
