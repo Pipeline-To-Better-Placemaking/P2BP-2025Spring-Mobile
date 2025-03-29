@@ -25,7 +25,7 @@ final AssetMapBitmap standingPointActiveIcon = AssetMapBitmap(
 final Map<LightType, AssetMapBitmap> lightingProfileIconMap = {
   for (final light in LightType.values)
     light: AssetMapBitmap(
-      'assets/temp_point_marker.png', // TODO put real light icons in enum and change this
+      light.iconName,
       width: 36,
       height: 36,
     )

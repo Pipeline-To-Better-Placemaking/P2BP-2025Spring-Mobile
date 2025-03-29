@@ -484,9 +484,18 @@ mixin JsonToString {
 
 /// Types of light for lighting profile test.
 enum LightType implements DisplayNameEnum {
-  rhythmic(displayName: 'Rhythmic', iconName: ''),
-  building(displayName: 'Building', iconName: ''),
-  task(displayName: 'Task', iconName: '');
+  rhythmic(
+    displayName: 'Rhythmic',
+    iconName: 'assets/test_specific/lighting_profile/rhythmic-light.png',
+  ),
+  building(
+    displayName: 'Building',
+    iconName: 'assets/test_specific/lighting_profile/building-light.png',
+  ),
+  task(
+    displayName: 'Task',
+    iconName: 'assets/test_specific/lighting_profile/task-light.png',
+  );
 
   const LightType({
     required this.displayName,
@@ -3136,21 +3145,35 @@ class PeopleInMotionTest extends Test<PeopleInMotionData>
     }
   }
 
-  static PeopleInMotionTest fromJson(Map<String, dynamic> doc) {
-    return PeopleInMotionTest._(
-      title: doc['title'],
-      testID: doc['id'],
-      scheduledTime: doc['scheduledTime'],
-      projectRef: doc['project'],
-      collectionID: collectionIDStatic,
-      data: PeopleInMotionData.fromJson(doc['data']),
-      creationTime: doc['creationTime'],
-      maxResearchers: doc['maxResearchers'],
-      isComplete: doc['isComplete'],
-      standingPoints: StandingPoint.fromJsonList(doc['standingPoints']),
-      testDuration:
-          doc.containsKey('testDuration') ? doc['testDuration'] ?? -1 : -1,
-    );
+  factory PeopleInMotionTest.fromJson(Map<String, dynamic> json) {
+    if (json
+        case {
+          'title': String title,
+          'id': String id,
+          'scheduledTime': Timestamp scheduledTime,
+          'project': DocumentReference project,
+          'data': Map<String, dynamic> data,
+          'creationTime': Timestamp creationTime,
+          'maxResearchers': int maxResearchers,
+          'isComplete': bool isComplete,
+          'standingPoints': List standingPoints,
+          'testDuration': int testDuration,
+        }) {
+      return PeopleInMotionTest._(
+        title: title,
+        testID: id,
+        scheduledTime: scheduledTime,
+        projectRef: project,
+        collectionID: collectionIDStatic,
+        data: PeopleInMotionData.fromJson(data),
+        creationTime: creationTime,
+        maxResearchers: maxResearchers,
+        isComplete: isComplete,
+        standingPoints: StandingPoint.fromJsonList(standingPoints),
+        testDuration: testDuration,
+      );
+    }
+    throw FormatException('Invalid JSON: $json', json);
   }
 
   @override
