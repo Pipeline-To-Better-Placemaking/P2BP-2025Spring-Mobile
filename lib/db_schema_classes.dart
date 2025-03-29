@@ -1,22 +1,23 @@
 import 'dart:io';
 import 'dart:math';
+
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:file_selector/file_selector.dart';
+import 'package:firebase_storage/firebase_storage.dart';
+import 'package:flutter/material.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
+import 'package:maps_toolkit/maps_toolkit.dart' as mp;
 import 'package:p2bp_2025spring_mobile/absence_of_order_test.dart';
+import 'package:p2bp_2025spring_mobile/acoustic_profile_test.dart';
 import 'package:p2bp_2025spring_mobile/google_maps_functions.dart';
 import 'package:p2bp_2025spring_mobile/lighting_profile_test.dart';
-import 'package:p2bp_2025spring_mobile/section_cutter_test.dart';
-import 'package:p2bp_2025spring_mobile/people_in_place_test.dart';
 import 'package:p2bp_2025spring_mobile/people_in_motion_test.dart';
-import 'package:p2bp_2025spring_mobile/acoustic_profile_test.dart';
+import 'package:p2bp_2025spring_mobile/people_in_place_test.dart';
+import 'package:p2bp_2025spring_mobile/section_cutter_test.dart';
 import 'package:p2bp_2025spring_mobile/spatial_boundaries_test.dart';
 import 'package:p2bp_2025spring_mobile/theme.dart';
-import 'firestore_functions.dart';
-import 'package:flutter/material.dart';
-import 'package:firebase_storage/firebase_storage.dart';
-import 'package:maps_toolkit/maps_toolkit.dart' as mp;
 
+import 'firestore_functions.dart';
 import 'identifying_access_test.dart';
 import 'nature_prevalence_test.dart';
 
@@ -243,6 +244,8 @@ abstract class Test<T> {
         required String collectionID,
         List? standingPoints,
         int? testDuration,
+        int? intervalDuration,
+        int? intervalCount,
       })> _newTestConstructors = {};
 
   /// Maps from collection ID to a function which should use a constructor
@@ -273,6 +276,11 @@ abstract class Test<T> {
   /// Used to check for test creation and saving.
   static final Set<String> _timerTestCollectionIDs = {};
 
+  /// Set containing all tests that use a timer with intervals.
+  ///
+  /// Used to check for test creation and saving.
+  static final Set<String> _intervalTimerTestCollectionIDs = {};
+
   /// Returns a new instance of the [Test] subclass associated with
   /// [collectionID].
   ///
@@ -287,7 +295,9 @@ abstract class Test<T> {
       required DocumentReference projectRef,
       required String collectionID,
       List? standingPoints,
-      int? testDuration}) {
+      int? testDuration,
+      int? intervalDuration,
+      int? intervalCount}) {
     final constructor = _newTestConstructors[collectionID];
 
     if (constructor != null) {
@@ -299,6 +309,8 @@ abstract class Test<T> {
         collectionID: collectionID,
         standingPoints: standingPoints,
         testDuration: testDuration,
+        intervalDuration: intervalDuration,
+        intervalCount: intervalCount,
       );
     }
     throw Exception('Unregistered Test type for collection: $collectionID');
@@ -352,6 +364,12 @@ abstract class Test<T> {
   /// registered as a timer test.
   static bool isTimerTest(String? collectionID) {
     return _timerTestCollectionIDs.contains(collectionID);
+  }
+
+  /// Returns whether [Test] subclass with given collection ID is
+  /// registered as an interval timer test.
+  static bool isIntervalTimerTest(String? collectionID) {
+    return _intervalTimerTestCollectionIDs.contains(collectionID);
   }
 
   /// Returns 2-letter initials for given test type if they are registered.
@@ -430,9 +448,27 @@ extension StandingPointListHelpers on List<StandingPoint> {
 ///
 /// Using this also requires that the class run
 /// [Test._standingPointTestCollectionIDs.add(collectionIDStatic)]
-/// in its register method so that it can be recognized as such.
+/// in its register method to be recognized as using standing points.
 abstract interface class StandingPointTest {
   final List<StandingPoint> standingPoints = [];
+}
+
+/// Class to be implemented by all Test subclasses which use a timer.
+///
+/// Using this also requires that the class run
+/// [Test._timerTestCollectionIDs.add(collectionIDStatic)]
+/// in its register method to be recognized as using a timer.
+abstract interface class TimerTest {
+  final int testDuration;
+
+  TimerTest(this.testDuration);
+}
+
+abstract interface class IntervalTimerTest {
+  final int intervalDuration;
+  final int intervalCount;
+
+  IntervalTimerTest(this.intervalDuration, this.intervalCount);
 }
 
 /// Mixin to add toString functionality to any class with a toJson() method.
@@ -497,10 +533,13 @@ class LightingProfileData with JsonToString {
 }
 
 /// Class for Lighting Profile Test info and methods.
-class LightingProfileTest extends Test<LightingProfileData> with JsonToString {
+class LightingProfileTest extends Test<LightingProfileData>
+    with JsonToString
+    implements TimerTest {
   /// Static constant definition of collection ID for this test type.
   static const String collectionIDStatic = 'lighting_profile_tests';
 
+  @override
   final int testDuration;
 
   /// Creates a new [LightingProfileTest] instance from the given arguments.
@@ -524,14 +563,17 @@ class LightingProfileTest extends Test<LightingProfileData> with JsonToString {
   /// Registers this class within the Maps required by class [Test].
   static void register() {
     // Register for creating new Lighting Profile Tests
-    Test._newTestConstructors[collectionIDStatic] = (
-            {required String title,
-            required String testID,
-            required Timestamp scheduledTime,
-            required DocumentReference projectRef,
-            required String collectionID,
-            List? standingPoints,
-            int? testDuration}) =>
+    Test._newTestConstructors[collectionIDStatic] = ({
+      required String title,
+      required String testID,
+      required Timestamp scheduledTime,
+      required DocumentReference projectRef,
+      required String collectionID,
+      List? standingPoints,
+      int? testDuration,
+      int? intervalDuration,
+      int? intervalCount,
+    }) =>
         LightingProfileTest._(
           title: title,
           testID: testID,
@@ -849,9 +891,12 @@ class AbsenceOfOrderData with JsonToString {
 }
 
 /// Class for Absence of Order Test info and methods.
-class AbsenceOfOrderTest extends Test<AbsenceOfOrderData> with JsonToString {
+class AbsenceOfOrderTest extends Test<AbsenceOfOrderData>
+    with JsonToString
+    implements TimerTest {
   static const String collectionIDStatic = 'absence_of_order_tests';
 
+  @override
   final int testDuration;
 
   /// Creates a new [AbsenceOfOrderTest] instance from the given arguments.
@@ -883,6 +928,8 @@ class AbsenceOfOrderTest extends Test<AbsenceOfOrderData> with JsonToString {
       required String collectionID,
       List? standingPoints,
       int? testDuration,
+      int? intervalDuration,
+      int? intervalCount,
     }) =>
         AbsenceOfOrderTest._(
           title: title,
@@ -1203,9 +1250,11 @@ class SpatialBoundariesData with JsonToString {
 }
 
 class SpatialBoundariesTest extends Test<SpatialBoundariesData>
-    with JsonToString {
+    with JsonToString
+    implements TimerTest {
   static const String collectionIDStatic = 'spatial_boundaries_tests';
 
+  @override
   final int testDuration;
 
   SpatialBoundariesTest._({
@@ -1232,6 +1281,8 @@ class SpatialBoundariesTest extends Test<SpatialBoundariesData>
       required String collectionID,
       List? standingPoints,
       int? testDuration,
+      int? intervalDuration,
+      int? intervalCount,
     }) =>
         SpatialBoundariesTest._(
           title: title,
@@ -1265,6 +1316,7 @@ class SpatialBoundariesTest extends Test<SpatialBoundariesData>
       await testRef.set(test as SpatialBoundariesTest, SetOptions(merge: true));
     };
     Test._testInitialsMap[SpatialBoundariesTest] = 'SB';
+    Test._timerTestCollectionIDs.add(collectionIDStatic);
   }
 
   @override
@@ -1381,6 +1433,8 @@ class SectionCutterTest extends Test<Section> with JsonToString {
       required String collectionID,
       List? standingPoints,
       int? testDuration,
+      int? intervalDuration,
+      int? intervalCount,
     }) =>
         SectionCutterTest._(
           title: title,
@@ -1695,6 +1749,8 @@ class IdentifyingAccessTest extends Test<AccessData> {
       required String collectionID,
       List? standingPoints,
       int? testDuration,
+      int? intervalDuration,
+      int? intervalCount,
     }) =>
         IdentifyingAccessTest._(
           title: title,
@@ -1998,12 +2054,12 @@ class NatureData implements NatureTypes {
 
 /// Types of weather for Nature Prevalence. Types include [sunny], [cloudy],
 /// [rainy], [windy], and [stormy].
-enum Weather { sunny, cloudy, rainy, windy, stormy }
+enum WeatherType { sunny, cloudy, rainy, windy, stormy }
 
 /// Class for weather in Nature Prevalence Test. Implements enum type
 /// [weather].
 class WeatherData implements NatureTypes {
-  final List<Weather> weatherTypes;
+  final List<WeatherType> weatherTypes; // TODO make this a set?
   final double temp;
 
   WeatherData({required this.weatherTypes, required this.temp});
@@ -2014,7 +2070,7 @@ class WeatherData implements NatureTypes {
     Map<String, bool> weatherMap = {};
     try {
       // Initialize a map for Firestore with true or false depending on weather.
-      for (Weather weatherType in Weather.values) {
+      for (WeatherType weatherType in WeatherType.values) {
         weatherTypes.contains(weatherType)
             ? weatherMap[weatherType.name] = true
             : weatherMap[weatherType.name] = false;
@@ -2174,7 +2230,7 @@ class Animal implements NatureTypes {
 }
 
 /// Class for Nature Prevalence test info and methods.
-class NaturePrevalenceTest extends Test<NatureData> {
+class NaturePrevalenceTest extends Test<NatureData> implements TimerTest {
   /// Returns a new instance of the initial data structure used for
   /// Nature Prevalence Test.
   static NatureData newInitialDataDeepCopy() {
@@ -2185,6 +2241,7 @@ class NaturePrevalenceTest extends Test<NatureData> {
   static const String collectionIDStatic = 'nature_prevalence_tests';
 
   /// User defined test timer duration in seconds.
+  @override
   final int testDuration;
 
   /// Creates a new [NaturePrevalenceTest] instance from the given arguments.
@@ -2212,6 +2269,8 @@ class NaturePrevalenceTest extends Test<NatureData> {
       required String collectionID,
       List? standingPoints,
       int? testDuration,
+      int? intervalDuration,
+      int? intervalCount,
     }) =>
         NaturePrevalenceTest._(
           title: title,
@@ -2260,8 +2319,8 @@ class NaturePrevalenceTest extends Test<NatureData> {
         'testDuration': (test as NaturePrevalenceTest).testDuration,
       }, SetOptions(merge: true));
     };
-    Test._timerTestCollectionIDs.add(collectionIDStatic);
     Test._testInitialsMap[NaturePrevalenceTest] = 'NP';
+    Test._timerTestCollectionIDs.add(collectionIDStatic);
   }
 
   @override
@@ -2296,11 +2355,11 @@ class NaturePrevalenceTest extends Test<NatureData> {
     List<WaterBody> waterBodyList = [];
     List<Vegetation> vegetationList = [];
     WeatherData? weatherData;
-    List<Weather> weatherTypes = [];
+    List<WeatherType> weatherTypes = [];
 
     try {
       if (data.containsKey('weather')) {
-        for (Weather weatherType in Weather.values) {
+        for (WeatherType weatherType in WeatherType.values) {
           if (data['weather'].containsKey(weatherType) &&
               data['weather'][weatherType] == true) {
             weatherTypes.add(weatherType);
@@ -2481,15 +2540,18 @@ enum AgeRangeType implements DisplayNameEnum {
 }
 
 enum GenderType implements DisplayNameEnum {
-  male(displayName: 'Male'),
-  female(displayName: 'Female'),
-  nonbinary(displayName: 'Nonbinary'),
-  unspecified(displayName: 'Unspecified');
+  male(displayName: 'Male', iconNameSegment: 'male'),
+  female(displayName: 'Female', iconNameSegment: 'female'),
+  unspecified(displayName: 'Unspecified', iconNameSegment: 'na');
 
-  const GenderType({required this.displayName});
+  const GenderType({
+    required this.displayName,
+    required this.iconNameSegment,
+  });
 
   @override
   final String displayName;
+  final String iconNameSegment;
 
   /// Returns the enumerated type with the matching displayName.
   factory GenderType.byDisplayName(String displayName) {
@@ -2530,16 +2592,37 @@ enum ActivityTypeInPlace implements DisplayNameEnum {
 }
 
 enum PostureType implements DisplayNameEnum {
-  standing(displayName: 'Standing', color: Color(0xFF4285f4)),
-  sitting(displayName: 'Sitting', color: Color(0xFF28a745)),
-  layingDown(displayName: 'Laying Down', color: Color(0xFFc41484)),
-  squatting(displayName: 'Squatting', color: Color(0xFF6f42c1));
+  standing(
+    displayName: 'Standing',
+    color: Color(0xFF4285f4),
+    iconNameSegment: 'standing',
+  ),
+  sitting(
+    displayName: 'Sitting',
+    color: Color(0xFF28a745),
+    iconNameSegment: 'sitting',
+  ),
+  layingDown(
+    displayName: 'Laying Down',
+    color: Color(0xFFc41484),
+    iconNameSegment: 'laying',
+  ),
+  squatting(
+    displayName: 'Squatting',
+    color: Color(0xFF6f42c1),
+    iconNameSegment: 'squatting',
+  );
 
-  const PostureType({required this.displayName, required this.color});
+  const PostureType({
+    required this.displayName,
+    required this.color,
+    required this.iconNameSegment,
+  });
 
   @override
   final String displayName;
   final Color color;
+  final String iconNameSegment;
 
   /// Returns the enumerated type with the matching displayName.
   factory PostureType.byDisplayName(String displayName) {
@@ -2633,11 +2716,12 @@ class PeopleInPlaceData with JsonToString {
 
 class PeopleInPlaceTest extends Test<PeopleInPlaceData>
     with JsonToString
-    implements StandingPointTest {
+    implements StandingPointTest, TimerTest {
   static const String collectionIDStatic = 'people_in_place_tests';
 
   @override
   final List<StandingPoint> standingPoints;
+  @override
   final int testDuration;
 
   PeopleInPlaceTest._({
@@ -2663,6 +2747,8 @@ class PeopleInPlaceTest extends Test<PeopleInPlaceData>
       required String collectionID,
       List? standingPoints,
       int? testDuration,
+      int? intervalDuration,
+      int? intervalCount,
     }) =>
         PeopleInPlaceTest._(
           title: title,
@@ -2751,21 +2837,42 @@ class PeopleInPlaceTest extends Test<PeopleInPlaceData>
 }
 
 enum ActivityTypeInMotion implements DisplayNameEnum {
-  walking(displayName: 'Walking', color: Colors.teal),
-  running(displayName: 'Running', color: Colors.red),
-  swimming(displayName: 'Swimming', color: Colors.cyan),
-  activityOnWheels(displayName: 'Activity on Wheels', color: Colors.orange),
+  walking(
+    displayName: 'Walking',
+    color: Colors.teal,
+    iconName: 'assets/test_specific/people_in_motion/square_marker_teal.png',
+  ),
+  running(
+    displayName: 'Running',
+    color: Colors.red,
+    iconName: 'assets/test_specific/people_in_motion/square_marker_red.png',
+  ),
+  swimming(
+    displayName: 'Swimming',
+    color: Colors.cyan,
+    iconName: 'assets/test_specific/people_in_motion/square_marker_cyan.png',
+  ),
+  activityOnWheels(
+    displayName: 'Activity on Wheels',
+    color: Colors.orange,
+    iconName: 'assets/test_specific/people_in_motion/square_marker_orange.png',
+  ),
   handicapAssistedWheels(
-      displayName: 'Handicap Assisted Wheels', color: Colors.purple);
+    displayName: 'Handicap Assisted Wheels',
+    color: Colors.purple,
+    iconName: 'assets/test_specific/people_in_motion/square_marker_purple.png',
+  );
 
   const ActivityTypeInMotion({
     required this.displayName,
     required this.color,
+    required this.iconName,
   });
 
   @override
   final String displayName;
   final Color color;
+  final String iconName;
 
   factory ActivityTypeInMotion.byDisplayName(String displayName) {
     try {
@@ -2840,7 +2947,7 @@ class PeopleInMotionData with JsonToString {
 
 class PeopleInMotionTest extends Test<PeopleInMotionData>
     with JsonToString
-    implements StandingPointTest {
+    implements StandingPointTest, TimerTest {
   /// Static constant definition of collection ID for this test type.
   static const String collectionIDStatic = 'people_in_motion_tests';
 
@@ -2848,6 +2955,7 @@ class PeopleInMotionTest extends Test<PeopleInMotionData>
   final List<StandingPoint> standingPoints;
 
   /// User defined test timer duration in seconds.
+  @override
   final int testDuration;
 
   /// Private constructor for PeopleInMotionTest.
@@ -2876,6 +2984,8 @@ class PeopleInMotionTest extends Test<PeopleInMotionData>
       required String collectionID,
       List? standingPoints,
       int? testDuration,
+      int? intervalDuration,
+      int? intervalCount,
     }) =>
         PeopleInMotionTest._(
           title: title,
@@ -3093,14 +3203,16 @@ class AcousticProfileData with JsonToString {
 /// Class for Acoustic Profile Test info and methods.
 class AcousticProfileTest extends Test<AcousticProfileData>
     with JsonToString
-    implements StandingPointTest {
+    implements StandingPointTest, IntervalTimerTest {
   /// Static constant definition of collection ID for this test type.
   static const String collectionIDStatic = 'acoustic_profile_tests';
 
   @override
   final List<StandingPoint> standingPoints;
-  // final int duration;
-  // final int intervalCount;
+  @override
+  final int intervalDuration;
+  @override
+  final int intervalCount;
 
   /// Private constructor for AcousticProfileTest.
   AcousticProfileTest._({
@@ -3111,6 +3223,8 @@ class AcousticProfileTest extends Test<AcousticProfileData>
     required super.collectionID,
     required super.data,
     required this.standingPoints,
+    required this.intervalDuration,
+    required this.intervalCount,
     super.creationTime,
     super.maxResearchers,
     super.isComplete,
@@ -3118,14 +3232,17 @@ class AcousticProfileTest extends Test<AcousticProfileData>
 
   /// Registers this test type in the Test class system.
   static void register() {
-    Test._newTestConstructors[collectionIDStatic] = (
-            {required String title,
-            required String testID,
-            required Timestamp scheduledTime,
-            required DocumentReference projectRef,
-            required String collectionID,
-            List? standingPoints,
-            int? testDuration}) =>
+    Test._newTestConstructors[collectionIDStatic] = ({
+      required String title,
+      required String testID,
+      required Timestamp scheduledTime,
+      required DocumentReference projectRef,
+      required String collectionID,
+      List? standingPoints,
+      int? testDuration,
+      int? intervalDuration,
+      int? intervalCount,
+    }) =>
         AcousticProfileTest._(
           title: title,
           testID: testID,
@@ -3134,6 +3251,8 @@ class AcousticProfileTest extends Test<AcousticProfileData>
           collectionID: collectionID,
           data: AcousticProfileData.empty(),
           standingPoints: (standingPoints as List<StandingPoint>?) ?? [],
+          intervalDuration: intervalDuration ?? -1,
+          intervalCount: intervalCount ?? -1,
         );
     Test._recreateTestConstructors[collectionIDStatic] = (testDoc) {
       return AcousticProfileTest.fromJson(testDoc.data()!);
@@ -3154,8 +3273,9 @@ class AcousticProfileTest extends Test<AcousticProfileData>
           );
       await testRef.set(test as AcousticProfileTest, SetOptions(merge: true));
     };
-    Test._standingPointTestCollectionIDs.add(collectionIDStatic);
     Test._testInitialsMap[AcousticProfileTest] = 'AP';
+    Test._standingPointTestCollectionIDs.add(collectionIDStatic);
+    Test._intervalTimerTestCollectionIDs.add(collectionIDStatic);
   }
 
   @override
@@ -3188,6 +3308,8 @@ class AcousticProfileTest extends Test<AcousticProfileData>
           'maxResearchers': int maxResearchers,
           'isComplete': bool isComplete,
           'standingPoints': List standingPoints,
+          'intervalDuration': int intervalDuration,
+          'intervalCount': int intervalCount,
         }) {
       return AcousticProfileTest._(
         title: title,
@@ -3200,6 +3322,8 @@ class AcousticProfileTest extends Test<AcousticProfileData>
         maxResearchers: maxResearchers.toInt(),
         isComplete: isComplete,
         standingPoints: StandingPoint.fromJsonList(standingPoints),
+        intervalDuration: intervalDuration,
+        intervalCount: intervalCount,
       );
     }
     throw FormatException('Invalid JSON: $data', data);
@@ -3217,6 +3341,8 @@ class AcousticProfileTest extends Test<AcousticProfileData>
       'maxResearchers': maxResearchers,
       'isComplete': isComplete,
       'standingPoints': standingPoints.toJsonList(),
+      'intervalDuration': intervalDuration,
+      'intervalCount': intervalCount,
     };
   }
 }

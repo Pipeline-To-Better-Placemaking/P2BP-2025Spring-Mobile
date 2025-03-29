@@ -392,41 +392,52 @@ class TimerButtonAndDisplay extends StatelessWidget {
     required this.remainingSeconds,
   });
 
-  final VoidCallback onPressed;
+  final void Function()? onPressed;
   final bool isTestRunning;
   final int remainingSeconds;
 
   @override
   Widget build(BuildContext context) {
     return SizedBox(
-      width: 66,
-      child: Column(children: <Widget>[
-        ElevatedButton(
-          style: ElevatedButton.styleFrom(
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(8),
+      width: 75,
+      child: Column(
+        children: <Widget>[
+          Center(
+            child: ElevatedButton(
+              style: ElevatedButton.styleFrom(
+                disabledBackgroundColor: disabledGreyAlt,
+                disabledForegroundColor: Colors.grey,
+                foregroundColor: Colors.white,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                backgroundColor: isTestRunning ? Colors.red : Colors.green,
+                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
+              ),
+              onPressed: onPressed,
+              child: Text(
+                isTestRunning ? 'Stop' : 'Start',
+                textAlign: TextAlign.center,
+                style: const TextStyle(fontSize: 16),
+              ),
             ),
-            backgroundColor: isTestRunning ? Colors.red : Colors.green,
-            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
           ),
-          onPressed: onPressed,
-          child: Text(
-            isTestRunning ? 'Stop' : 'Start',
-            style: const TextStyle(color: Colors.white, fontSize: 16),
+          Center(
+            child: Container(
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+              decoration: BoxDecoration(
+                color: Colors.black.withValues(alpha: 0.6),
+                borderRadius: BorderRadius.circular(8),
+              ),
+              child: Text(
+                textAlign: TextAlign.center,
+                formatTime(remainingSeconds),
+                style: TextStyle(color: Colors.white, fontSize: 16),
+              ),
+            ),
           ),
-        ),
-        Container(
-          padding: EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-          decoration: BoxDecoration(
-            color: Colors.black.withValues(alpha: 0.6),
-            borderRadius: BorderRadius.circular(8),
-          ),
-          child: Text(
-            formatTime(remainingSeconds),
-            style: TextStyle(color: Colors.white, fontSize: 16),
-          ),
-        ),
-      ]),
+        ],
+      ),
     );
   }
 }
@@ -830,7 +841,7 @@ class DirectionsText extends StatelessWidget {
           child: Text(
             text,
             textAlign: TextAlign.center,
-            maxLines: 3,
+            maxLines: 5,
             overflow: TextOverflow.ellipsis,
             style: TextStyle(
               fontSize: 18,

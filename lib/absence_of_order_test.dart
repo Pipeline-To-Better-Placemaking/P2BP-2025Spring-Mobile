@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:maps_toolkit/maps_toolkit.dart' as mp;
 import 'package:p2bp_2025spring_mobile/firestore_functions.dart';
@@ -52,10 +53,9 @@ class AbsenceOfOrderTestPage extends StatefulWidget {
 }
 
 class _AbsenceOfOrderTestPageState extends State<AbsenceOfOrderTestPage> {
-  bool _isLoading = true;
   bool _outsidePoint = false;
   bool _isTestRunning = false;
-  bool _directionsVisible = false;
+  bool _directionsVisible = true;
   bool _isDescriptionReady = false;
 
   late GoogleMapController mapController;
@@ -69,8 +69,9 @@ class _AbsenceOfOrderTestPageState extends State<AbsenceOfOrderTestPage> {
   DataPoint? _tempDataPoint;
 
   Timer? _timer;
+  Timer? _outsidePointTimer;
   int _remainingSeconds = -1;
-  static const double _bottomSheetHeight = 165;
+  static const double _bottomSheetHeight = 185;
 
   @override
   void initState() {
@@ -80,12 +81,12 @@ class _AbsenceOfOrderTestPageState extends State<AbsenceOfOrderTestPage> {
     _projectArea = _polygons.first.toMPLatLngList();
     _zoom = getIdealZoom(_projectArea, _location.toMPLatLng());
     _remainingSeconds = widget.activeTest.testDuration;
-    _isLoading = false;
   }
 
   @override
   void dispose() {
     _timer?.cancel();
+    _outsidePointTimer?.cancel();
     super.dispose();
   }
 
@@ -114,27 +115,33 @@ class _AbsenceOfOrderTestPageState extends State<AbsenceOfOrderTestPage> {
 
   /// Places point on the map and adds that location and the description from
   /// [_tempDataPoint] to the appropriate `List` in [_newData].
-  void _togglePoint(LatLng point) async {
+  void _togglePoint(LatLng point) {
     try {
       if (!isPointInsidePolygon(point, _polygons.first)) {
         setState(() {
           _outsidePoint = true;
         });
+        _outsidePointTimer?.cancel();
+        _outsidePointTimer = Timer(Duration(seconds: 3), () {
+          setState(() {
+            _outsidePoint = false;
+          });
+        });
       }
-      // Add point to data and then add to AbsenceOfOrderData list
+
+      // Add point to data and then add to AbsenceOfOrderData list.
       _tempDataPoint!.location = LatLng(point.latitude, point.longitude);
       _newData.addDataPoint(_tempDataPoint!);
 
       final markerId = MarkerId(point.toString());
       setState(() {
-        // Create marker
         _markers.add(
           Marker(
             markerId: markerId,
             position: point,
             consumeTapEvents: true,
             onTap: () {
-              // If the marker is tapped again, it will be removed
+              // If the marker is tapped again, it will be removed.
               _newData.removeDataPoint(point);
               setState(() {
                 _markers.removeWhere((marker) => marker.markerId == markerId);
@@ -145,14 +152,6 @@ class _AbsenceOfOrderTestPageState extends State<AbsenceOfOrderTestPage> {
 
         _setTempData(null);
       });
-
-      if (_outsidePoint) {
-        // TODO: fix delay. delay will overlap with consecutive taps. this means taps do not necessarily refresh the timer and will end prematurely
-        await Future.delayed(const Duration(seconds: 2));
-        setState(() {
-          _outsidePoint = false;
-        });
-      }
     } catch (e, stacktrace) {
       print('Error in absence_of_order_test.dart, _togglePoint(): $e');
       print('Stacktrace: $stacktrace');
@@ -171,6 +170,7 @@ class _AbsenceOfOrderTestPageState extends State<AbsenceOfOrderTestPage> {
           timer.cancel();
           showDialog(
             context: context,
+            barrierDismissible: false,
             builder: (context) {
               return TimerEndDialog(onSubmit: () {
                 Navigator.pop(context);
@@ -191,6 +191,7 @@ class _AbsenceOfOrderTestPageState extends State<AbsenceOfOrderTestPage> {
   /// Cancels timer, submits data, and pops test page.
   void _endTest() {
     _timer?.cancel();
+    _outsidePointTimer?.cancel();
     widget.activeTest.submitData(_newData);
     Navigator.pop(context);
   }
@@ -226,204 +227,202 @@ class _AbsenceOfOrderTestPageState extends State<AbsenceOfOrderTestPage> {
 
   @override
   Widget build(BuildContext context) {
-    return AdaptiveSafeArea(
+    return AnnotatedRegion<SystemUiOverlayStyle>(
+      value: (_currentMapType == MapType.normal)
+          ? SystemUiOverlayStyle.dark.copyWith(
+              statusBarColor: Colors.transparent,
+            )
+          : SystemUiOverlayStyle.light.copyWith(
+              statusBarColor: Colors.transparent,
+            ),
       child: Scaffold(
         resizeToAvoidBottomInset: false,
         extendBody: true,
-        body: _isLoading
-            ? const Center(child: CircularProgressIndicator())
-            : Stack(
-                children: <Widget>[
-                  SizedBox(
-                    height: MediaQuery.sizeOf(context).height,
-                    child: GoogleMap(
-                      padding: EdgeInsets.only(bottom: _bottomSheetHeight),
-                      onMapCreated: _onMapCreated,
-                      initialCameraPosition:
-                          CameraPosition(target: _location, zoom: _zoom),
-                      markers: _markers,
-                      polygons: _polygons,
-                      onTap: _isDescriptionReady ? _togglePoint : null,
-                      mapType: _currentMapType,
-                    ),
-                  ),
-                  Row(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: <Widget>[
-                      Padding(
-                        padding: const EdgeInsets.only(top: 15.0, left: 15.0),
-                        child: TimerButtonAndDisplay(
-                          onPressed: () {
+        body: Stack(
+          children: <Widget>[
+            SizedBox(
+              height: MediaQuery.sizeOf(context).height,
+              child: GoogleMap(
+                padding: EdgeInsets.only(bottom: _bottomSheetHeight),
+                onMapCreated: _onMapCreated,
+                initialCameraPosition:
+                    CameraPosition(target: _location, zoom: _zoom),
+                markers: _markers,
+                polygons: _polygons,
+                onTap: _isDescriptionReady ? _togglePoint : null,
+                mapType: _currentMapType,
+                myLocationButtonEnabled: false,
+              ),
+            ),
+            SafeArea(
+              child: Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 15),
+                child: Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: <Widget>[
+                    TimerButtonAndDisplay(
+                      onPressed: () {
+                        setState(() {
+                          if (_isTestRunning) {
                             setState(() {
-                              if (_isTestRunning) {
-                                setState(() {
-                                  _isTestRunning = false;
-                                  _timer?.cancel();
-                                  _setTempData(null);
-                                });
-                              } else {
-                                _startTest();
-                              }
+                              _isTestRunning = false;
+                              _timer?.cancel();
+                              _setTempData(null);
                             });
-                          },
-                          isTestRunning: _isTestRunning,
-                          remainingSeconds: _remainingSeconds,
-                        ),
-                      ),
-                      Expanded(
-                        child: _directionsVisible
-                            ? Padding(
-                                padding: const EdgeInsets.symmetric(
-                                    horizontal: 15.0, vertical: 15.0),
-                                child: DirectionsText(
-                                  onTap: () {
-                                    setState(() {
-                                      _directionsVisible = !_directionsVisible;
-                                    });
-                                  },
-                                  text: !_isDescriptionReady
-                                      ? 'Select a type of misconduct.'
-                                      : 'Drop a pin where the misconduct is.',
-                                ),
-                              )
-                            : SizedBox(),
-                      ),
-                      Padding(
-                        padding: const EdgeInsets.only(top: 15, right: 15),
-                        child: Column(
-                          spacing: 10,
-                          children: <Widget>[
-                            DirectionsButton(
+                          } else {
+                            _startTest();
+                          }
+                        });
+                      },
+                      isTestRunning: _isTestRunning,
+                      remainingSeconds: _remainingSeconds,
+                    ),
+                    SizedBox(width: 15),
+                    Expanded(
+                      child: _directionsVisible
+                          ? DirectionsText(
                               onTap: () {
                                 setState(() {
                                   _directionsVisible = !_directionsVisible;
                                 });
                               },
-                            ),
-                            CircularIconMapButton(
-                              backgroundColor: Colors.green,
-                              borderColor: Color(0xFF2D6040),
-                              onPressed: _toggleMapType,
-                              icon: const Icon(Icons.map),
-                            ),
-                          ],
-                        ),
-                      ),
-                    ],
-                  ),
-                  if (_outsidePoint)
-                    TestErrorText(
-                      padding: EdgeInsets.fromLTRB(
-                          50, 0, 50, _bottomSheetHeight + 20),
+                              text: !_isDescriptionReady
+                                  ? 'Select a type of misconduct.'
+                                  : 'Drop a pin where the misconduct is.',
+                            )
+                          : SizedBox(),
                     ),
-                ],
-              ),
-        bottomSheet: _isLoading
-            ? SizedBox()
-            : SizedBox(
-                height: _bottomSheetHeight,
-                child: Container(
-                  padding: const EdgeInsets.symmetric(
-                      horizontal: 12.0, vertical: 10.0),
-                  decoration: BoxDecoration(
-                    gradient: defaultGrad,
-                    borderRadius: const BorderRadius.only(
-                      topLeft: Radius.circular(24.0),
-                      topRight: Radius.circular(24.0),
-                    ),
-                    boxShadow: [
-                      BoxShadow(
-                        color: Colors.black,
-                        offset: Offset(0.0, 1.0), //(x,y)
-                        blurRadius: 6.0,
-                      ),
-                    ],
-                  ),
-                  child: Column(
-                    children: <Widget>[
-                      Center(
-                        child: Text(
-                          'Absence of Order Locator',
-                          style: TextStyle(
-                            fontSize: 20,
-                            fontWeight: FontWeight.bold,
-                            color: placeYellow,
-                          ),
+                    SizedBox(width: 15),
+                    Column(
+                      spacing: 10,
+                      children: <Widget>[
+                        DirectionsButton(
+                          onTap: () {
+                            setState(() {
+                              _directionsVisible = !_directionsVisible;
+                            });
+                          },
                         ),
-                      ),
-                      SizedBox(height: 5),
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                        spacing: 10,
-                        children: <Widget>[
-                          Expanded(
-                            child: FilledButton(
-                              style: testButtonStyle,
-                              onPressed:
-                                  (!_isDescriptionReady && _isTestRunning)
-                                      ? () {
-                                          _doBehaviorModal(context);
-                                        }
-                                      : null,
-                              child: Text('Behavior'),
-                            ),
-                          ),
-                          Expanded(
-                            child: FilledButton(
-                              style: testButtonStyle,
-                              onPressed:
-                                  (!_isDescriptionReady && _isTestRunning)
-                                      ? () {
-                                          _doMaintenanceModal(context);
-                                        }
-                                      : null,
-                              child: Text('Maintenance'),
-                            ),
-                          ),
-                        ],
-                      ),
-                      SizedBox(height: 15),
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                        spacing: 10,
-                        children: <Widget>[
-                          Flexible(
-                            child: FilledButton.icon(
-                              style: testButtonStyle,
-                              onPressed: () => Navigator.pop(context),
-                              label: Text('Back'),
-                              icon: Icon(Icons.chevron_left),
-                              iconAlignment: IconAlignment.start,
-                            ),
-                          ),
-                          Flexible(
-                            child: FilledButton.icon(
-                              style: testButtonStyle,
-                              onPressed:
-                                  (!_isDescriptionReady && !_isTestRunning)
-                                      ? () {
-                                          showDialog(
-                                            context: context,
-                                            builder: (context) =>
-                                                TestFinishDialog(onNext: () {
-                                              Navigator.pop(context);
-                                              _endTest();
-                                            }),
-                                          );
-                                        }
-                                      : null,
-                              label: Text('Finish'),
-                              icon: Icon(Icons.chevron_right),
-                              iconAlignment: IconAlignment.end,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ],
-                  ),
+                        CircularIconMapButton(
+                          backgroundColor: Colors.green,
+                          borderColor: Color(0xFF2D6040),
+                          onPressed: _toggleMapType,
+                          icon: const Icon(Icons.map),
+                        ),
+                      ],
+                    ),
+                  ],
                 ),
               ),
+            ),
+            if (_outsidePoint)
+              TestErrorText(
+                padding:
+                    EdgeInsets.fromLTRB(50, 0, 50, _bottomSheetHeight + 20),
+              ),
+          ],
+        ),
+        bottomSheet: SizedBox(
+          height: _bottomSheetHeight,
+          child: Container(
+            padding:
+                const EdgeInsets.symmetric(horizontal: 12.0, vertical: 10.0),
+            decoration: BoxDecoration(
+              gradient: defaultGrad,
+              borderRadius: const BorderRadius.only(
+                topLeft: Radius.circular(24.0),
+                topRight: Radius.circular(24.0),
+              ),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black,
+                  offset: Offset(0.0, 1.0), //(x,y)
+                  blurRadius: 6.0,
+                ),
+              ],
+            ),
+            child: Column(
+              children: <Widget>[
+                Center(
+                  child: Text(
+                    'Absence of Order Locator',
+                    style: TextStyle(
+                      fontSize: 20,
+                      fontWeight: FontWeight.bold,
+                      color: placeYellow,
+                    ),
+                  ),
+                ),
+                SizedBox(height: 5),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                  spacing: 10,
+                  children: <Widget>[
+                    Expanded(
+                      child: FilledButton(
+                        style: testButtonStyle,
+                        onPressed: (!_isDescriptionReady && _isTestRunning)
+                            ? () {
+                                _doBehaviorModal(context);
+                              }
+                            : null,
+                        child: Text('Behavior'),
+                      ),
+                    ),
+                    Expanded(
+                      child: FilledButton(
+                        style: testButtonStyle,
+                        onPressed: (!_isDescriptionReady && _isTestRunning)
+                            ? () {
+                                _doMaintenanceModal(context);
+                              }
+                            : null,
+                        child: Text('Maintenance'),
+                      ),
+                    ),
+                  ],
+                ),
+                SizedBox(height: 15),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  spacing: 10,
+                  children: <Widget>[
+                    Flexible(
+                      child: FilledButton.icon(
+                        style: testButtonStyle,
+                        onPressed: () => Navigator.pop(context),
+                        label: Text('Back'),
+                        icon: Icon(Icons.chevron_left),
+                        iconAlignment: IconAlignment.start,
+                      ),
+                    ),
+                    Flexible(
+                      child: FilledButton.icon(
+                        style: testButtonStyle,
+                        onPressed: (!_isDescriptionReady && !_isTestRunning)
+                            ? () {
+                                showDialog(
+                                  context: context,
+                                  builder: (context) =>
+                                      TestFinishDialog(onNext: () {
+                                    Navigator.pop(context);
+                                    _endTest();
+                                  }),
+                                );
+                              }
+                            : null,
+                        label: Text('Finish'),
+                        icon: Icon(Icons.chevron_right),
+                        iconAlignment: IconAlignment.end,
+                      ),
+                    ),
+                  ],
+                ),
+              ],
+            ),
+          ),
+        ),
       ),
     );
   }

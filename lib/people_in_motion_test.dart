@@ -1,22 +1,18 @@
 import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
+import 'package:maps_toolkit/maps_toolkit.dart' as mp;
+import 'package:p2bp_2025spring_mobile/db_schema_classes.dart';
 import 'package:p2bp_2025spring_mobile/firestore_functions.dart';
+import 'package:p2bp_2025spring_mobile/people_in_motion_instructions.dart';
 import 'package:p2bp_2025spring_mobile/theme.dart';
 import 'package:p2bp_2025spring_mobile/widgets.dart';
+
 import 'assets.dart';
 import 'google_maps_functions.dart';
-import 'package:p2bp_2025spring_mobile/db_schema_classes.dart';
-import 'package:p2bp_2025spring_mobile/people_in_motion_instructions.dart';
-import 'package:maps_toolkit/maps_toolkit.dart' as mp;
-
-final AssetMapBitmap tempMarkerIcon = AssetMapBitmap(
-  'assets/test_specific/people_in_motion/polyline_marker4.png',
-  width: 48,
-  height: 48,
-);
 
 class PeopleInMotionTestPage extends StatefulWidget {
   final Project activeProject;
@@ -33,20 +29,17 @@ class PeopleInMotionTestPage extends StatefulWidget {
 }
 
 class _PeopleInMotionTestPageState extends State<PeopleInMotionTestPage> {
-  bool _isLoading = true;
   bool _isTestRunning = false;
   bool _isTracingMode = false;
-  bool _showErrorMessage = false;
+  bool _outsidePoint = false;
   bool _isPointsMenuVisible = false;
+  bool _directionsVisible = true;
 
   double _zoom = 18;
   late GoogleMapController mapController;
   LatLng _location = defaultLocation;
   List<mp.LatLng> _projectArea = [];
   final Set<Polygon> _polygons = {}; // Only gets project polygon.
-
-  Timer? _timer;
-
   MapType _currentMapType = MapType.satellite;
 
   /// Markers placed while in TracingMode.
@@ -69,11 +62,12 @@ class _PeopleInMotionTestPageState extends State<PeopleInMotionTestPage> {
   final Set<Marker> _confirmedPolylineEndMarkers = {};
 
   final Set<Marker> _standingPointMarkers = {};
-
   final PeopleInMotionData _newData = PeopleInMotionData();
 
   // Define an initial time
-  int _remainingSeconds = 300;
+  int _remainingSeconds = -1;
+  Timer? _timer;
+  Timer? _outsidePointTimer;
 
   @override
   void initState() {
@@ -82,7 +76,7 @@ class _PeopleInMotionTestPageState extends State<PeopleInMotionTestPage> {
     _location = getPolygonCentroid(_polygons.first);
     _projectArea = _polygons.first.toMPLatLngList();
     _zoom = getIdealZoom(_projectArea, _location.toMPLatLng());
-    _isLoading = false;
+    _remainingSeconds = widget.activeTest.testDuration;
     for (final point in widget.activeTest.standingPoints) {
       _standingPointMarkers.add(Marker(
         markerId: MarkerId(point.toString()),
@@ -100,25 +94,8 @@ class _PeopleInMotionTestPageState extends State<PeopleInMotionTestPage> {
   @override
   void dispose() {
     _timer?.cancel();
+    _outsidePointTimer?.cancel();
     super.dispose();
-  }
-
-  // Returns Marker icon for the given [ActivityTypeInMotion].
-  BitmapDescriptor _getMarkerIcon(ActivityTypeInMotion? key) {
-    switch (key) {
-      case ActivityTypeInMotion.walking:
-        return walkingConnector;
-      case ActivityTypeInMotion.running:
-        return runningConnector;
-      case ActivityTypeInMotion.swimming:
-        return swimmingConnector;
-      case ActivityTypeInMotion.activityOnWheels:
-        return wheelsConnector;
-      case ActivityTypeInMotion.handicapAssistedWheels:
-        return handicapConnector;
-      default:
-        return BitmapDescriptor.defaultMarker;
-    }
   }
 
   void _showInstructionOverlay() {
@@ -126,11 +103,8 @@ class _PeopleInMotionTestPageState extends State<PeopleInMotionTestPage> {
       context: context,
       barrierDismissible: false,
       builder: (context) {
-        final screenSize = MediaQuery.of(context).size;
         return AlertDialog(
-          insetPadding: EdgeInsets.symmetric(
-              horizontal: MediaQuery.of(context).size.width * 0.05,
-              vertical: MediaQuery.of(context).size.height * 0.005),
+          insetPadding: const EdgeInsets.all(10),
           actionsPadding: EdgeInsets.zero,
           title: Text(
             'How It Works:',
@@ -139,7 +113,7 @@ class _PeopleInMotionTestPageState extends State<PeopleInMotionTestPage> {
           ),
           content: SingleChildScrollView(
             child: SizedBox(
-              width: screenSize.width * 0.95,
+              width: double.maxFinite,
               child: Column(
                 mainAxisSize: MainAxisSize.min,
                 children: [
@@ -200,44 +174,42 @@ class _PeopleInMotionTestPageState extends State<PeopleInMotionTestPage> {
   }
 
   // When in tracing mode, each tap creates a dot marker and updates the temporary polyline
-  Future<void> _handleMapTap(LatLng point) async {
+  void _handleMapTap(LatLng point) {
     // If point is outside the project boundary, display error message
     if (!isPointInsidePolygon(point, _polygons.first)) {
       setState(() {
-        _showErrorMessage = true;
+        _outsidePoint = true;
       });
-      Timer(Duration(seconds: 3), () {
+      _outsidePointTimer?.cancel();
+      _outsidePointTimer = Timer(Duration(seconds: 3), () {
         setState(() {
-          _showErrorMessage = false;
+          _outsidePoint = false;
         });
       });
     }
-    if (_isTracingMode) {
-      // Add this tap as a dot marker.
-      final markerId = MarkerId(point.toString());
-      // Using a different hue for temporary markers.
-      final Marker marker = Marker(
-        markerId: markerId,
-        position: point,
-        icon: tempMarkerIcon,
-        anchor: const Offset(0.5, 0.9),
-      );
 
-      setState(() {
-        _tracingPoints.add(point);
-        _tracingMarkers.add(marker);
-      });
+    final markerId = MarkerId(point.toString());
+    final Marker marker = Marker(
+      markerId: markerId,
+      position: point,
+      icon: tempMarkerIcon,
+      anchor: const Offset(0.5, 0.9),
+    );
 
-      // Append the tapped point to the traced polyline.
-      Polyline? polyline = createPolyline(_tracingPoints, Colors.grey);
-      if (polyline == null) {
-        throw Exception('Failed to create Polyline from given points.');
-      }
+    setState(() {
+      _tracingPoints.add(point);
+      _tracingMarkers.add(marker);
+    });
 
-      setState(() {
-        _tracingPolyline = polyline;
-      });
+    // Rebuild polyline with new point.
+    Polyline? polyline = createPolyline(_tracingPoints, Colors.grey);
+    if (polyline == null) {
+      throw Exception('Failed to create Polyline from given points.');
     }
+
+    setState(() {
+      _tracingPolyline = polyline;
+    });
   }
 
   void _doActivityDataSheet() async {
@@ -250,8 +222,7 @@ class _PeopleInMotionTestPageState extends State<PeopleInMotionTestPage> {
     if (activity == null) return;
 
     // Map the selected activity to its corresponding marker icon.
-    BitmapDescriptor connectorIcon = _getMarkerIcon(activity);
-
+    final AssetMapBitmap connectorIcon = peopleInMotionIconMap[activity]!;
     final newPolyline = _tracingPolyline!.copyWith(colorParam: activity.color);
 
     // Create a data point from the polyline and activity
@@ -276,220 +247,203 @@ class _PeopleInMotionTestPageState extends State<PeopleInMotionTestPage> {
         ),
       ]);
 
-      // Clear temp values previously holding polyline info and turn off tracing
-      _tracingPoints.clear();
-      _tracingMarkers.clear();
-      _tracingPolyline = null;
-      _isTracingMode = false;
+      _clearTracing();
     });
+  }
+
+  void _clearTracing() {
+    _tracingPoints.clear();
+    _tracingMarkers.clear();
+    _tracingPolyline = null;
   }
 
   void _startTest() {
     setState(() {
       _isTestRunning = true;
-      _remainingSeconds = 300; // Reset countdown value
     });
     _timer = Timer.periodic(Duration(seconds: 1), (timer) {
-      // TODO: extract the timer and necessary functionality to its own
-      // stateful widget to stop this from forcing the whole screen to
-      // need to rebuild every second.
       setState(() {
+        _remainingSeconds--;
         if (_remainingSeconds <= 0) {
+          _isTestRunning = false;
           timer.cancel();
-        } else {
-          _remainingSeconds--;
+          showDialog(
+            context: context,
+            barrierDismissible: false,
+            builder: (context) {
+              return TimerEndDialog(onSubmit: () {
+                Navigator.pop(context);
+                _endTest();
+              }, onBack: () {
+                setState(() {
+                  _remainingSeconds = widget.activeTest.testDuration;
+                });
+                Navigator.pop(context);
+              });
+            },
+          );
         }
       });
     });
   }
 
-  void _endTest() async {
-    _isTestRunning = false;
+  void _endTest() {
     _timer?.cancel();
+    _outsidePointTimer?.cancel();
     widget.activeTest.submitData(_newData);
     Navigator.pop(context);
   }
 
   @override
   Widget build(BuildContext context) {
-    Set<Marker> visibleMarkers = {
-      ..._standingPointMarkers,
-      if (_tracingMarkers.isNotEmpty) ...{
-        _tracingMarkers.first,
-        _tracingMarkers.last,
-      },
-      ..._confirmedPolylineEndMarkers
-    };
-    return SafeArea(
-      child: Scaffold(
-        extendBodyBehindAppBar: true,
-        appBar: AppBar(
-          systemOverlayStyle:
-              SystemUiOverlayStyle(statusBarBrightness: Brightness.light),
-          backgroundColor: Colors.transparent,
-          elevation: 0,
-          leadingWidth: 100,
-          // Start/End button on the left.
-          leading: Padding(
-            padding: const EdgeInsets.only(left: 20, top: 4, bottom: 4),
-            child: ElevatedButton(
-              style: ElevatedButton.styleFrom(
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(20),
-                ),
-                backgroundColor: _isTestRunning ? Colors.red : Colors.green,
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 16,
-                  vertical: 8,
-                ),
-              ),
-              onPressed: () {
-                if (_isTestRunning) {
-                  _endTest();
-                } else {
-                  _startTest();
-                }
-              },
-              child: Text(
-                _isTestRunning ? 'End' : 'Start',
-                style: const TextStyle(color: Colors.white, fontSize: 16),
-              ),
-            ),
-          ),
-          // Persistent prompt in the middle.
-          title: _isTracingMode
-              ? Container(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 12,
-                    vertical: 4,
-                  ),
-                  decoration: BoxDecoration(
-                    color: Colors.black.withValues(alpha: 0.6),
-                    borderRadius: BorderRadius.circular(8),
-                  ),
-                  child: Text(
-                    'Tap the screen to trace',
-                    textAlign: TextAlign.center,
-                    maxLines: 2,
-                    style: const TextStyle(color: Colors.white, fontSize: 16),
-                  ),
-                )
-              : null,
-          centerTitle: true,
-          // Timer on the right.
-          actions: [
-            Padding(
-              padding: const EdgeInsets.only(right: 20),
-              child: Center(
-                child: Container(
-                  padding: EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-                  decoration: BoxDecoration(
-                    color: Colors.black.withValues(alpha: 0.6),
-                    borderRadius: BorderRadius.circular(8),
-                  ),
-                  child: Text(
-                    formatTime(_remainingSeconds),
-                    style: TextStyle(color: Colors.white, fontSize: 16),
-                  ),
-                ),
-              ),
+    return AnnotatedRegion<SystemUiOverlayStyle>(
+      value: (_currentMapType == MapType.normal)
+          ? SystemUiOverlayStyle.dark.copyWith(
+              statusBarColor: Colors.transparent,
             )
-          ],
-        ),
+          : SystemUiOverlayStyle.light.copyWith(
+              statusBarColor: Colors.transparent,
+            ),
+      child: Scaffold(
+        resizeToAvoidBottomInset: false,
+        extendBody: true,
         body: Stack(
           children: [
-            // Full-screen map with polylines.
             SizedBox(
-              height: MediaQuery.of(context).size.height,
+              height: MediaQuery.sizeOf(context).height,
               child: GoogleMap(
                 onMapCreated: _onMapCreated,
                 initialCameraPosition: CameraPosition(
                   target: _location,
                   zoom: _zoom,
                 ),
-                markers: visibleMarkers,
+                markers: {
+                  ..._standingPointMarkers,
+                  if (_tracingMarkers.isNotEmpty) ...{
+                    _tracingMarkers.first,
+                    _tracingMarkers.last,
+                  },
+                  ..._confirmedPolylineEndMarkers
+                },
                 polygons: _polygons,
                 polylines: {
                   ..._confirmedPolylines,
                   if (_tracingPolyline != null) _tracingPolyline!
                 },
-                onTap: (_isTracingMode) ? _handleMapTap : null,
+                onTap:
+                    (_isTestRunning && _isTracingMode) ? _handleMapTap : null,
                 mapType: _currentMapType,
                 myLocationButtonEnabled: false,
               ),
             ),
-
-            if (_showErrorMessage) OutsideBoundsWarning(),
-            // Buttons in top right corner of map below timer.
-            // Button for toggling map type.
-            Positioned(
-              top: MediaQuery.of(context).padding.top + kToolbarHeight + 8.0,
-              right: 20.0,
-              child: CircularIconMapButton(
-                backgroundColor: const Color(0xFF7EAD80).withValues(alpha: 0.9),
-                borderColor: Color(0xFF2D6040),
-                onPressed: _toggleMapType,
-                icon: Center(
-                  child: Icon(Icons.layers, color: Color(0xFF2D6040)),
-                ),
-              ),
-            ),
-            // Button for toggling instructions.
-            if (!_isLoading)
-              Positioned(
-                top: MediaQuery.of(context).padding.top + kToolbarHeight + 70.0,
-                right: 20,
-                child: CircularIconMapButton(
-                  backgroundColor: Color(0xFFBACFEB).withValues(alpha: 0.9),
-                  borderColor: Color(0xFF37597D),
-                  onPressed: _showInstructionOverlay,
-                  icon: Center(
-                    child: Icon(
-                      FontAwesomeIcons.info,
-                      color: Color(0xFF37597D),
+            SafeArea(
+              child: Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 15),
+                child: Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: <Widget>[
+                    TimerButtonAndDisplay(
+                      onPressed: () {
+                        setState(() {
+                          if (_isTestRunning) {
+                            setState(() {
+                              _isTestRunning = false;
+                              _timer?.cancel();
+                              _clearTracing();
+                            });
+                          } else {
+                            _startTest();
+                          }
+                        });
+                      },
+                      isTestRunning: _isTestRunning,
+                      remainingSeconds: _remainingSeconds,
                     ),
-                  ),
-                ),
-              ),
-            // Button for toggling points menu.
-            Positioned(
-              top: MediaQuery.of(context).padding.top + kToolbarHeight + 132.0,
-              right: 20.0,
-              child: CircularIconMapButton(
-                backgroundColor: Color(0xFFBD9FE4).withValues(alpha: 0.9),
-                borderColor: Color(0xFF5A3E85),
-                onPressed: () {
-                  setState(() {
-                    _isPointsMenuVisible = !_isPointsMenuVisible;
-                  });
-                },
-                icon: Icon(
-                  FontAwesomeIcons.locationDot,
-                  color: Color(0xFF5A3E85),
+                    SizedBox(width: 15),
+                    Expanded(
+                      child: _directionsVisible
+                          ? DirectionsText(
+                              onTap: () {
+                                setState(() {
+                                  _directionsVisible = !_directionsVisible;
+                                });
+                              },
+                              text: 'Tap the screen to trace.',
+                            )
+                          : SizedBox(),
+                    ),
+                    SizedBox(width: 15),
+                    Column(
+                      spacing: 10,
+                      children: <Widget>[
+                        DirectionsButton(
+                          onTap: () {
+                            setState(() {
+                              _directionsVisible = !_directionsVisible;
+                            });
+                          },
+                        ),
+                        CircularIconMapButton(
+                          backgroundColor:
+                              const Color(0xFF7EAD80).withValues(alpha: 0.9),
+                          borderColor: Color(0xFF2D6040),
+                          onPressed: _toggleMapType,
+                          icon: Center(
+                            child: Icon(Icons.layers, color: Color(0xFF2D6040)),
+                          ),
+                        ),
+                        CircularIconMapButton(
+                          backgroundColor:
+                              Color(0xFFBACFEB).withValues(alpha: 0.9),
+                          borderColor: Color(0xFF37597D),
+                          onPressed: _showInstructionOverlay,
+                          icon: Center(
+                            child: Icon(
+                              FontAwesomeIcons.info,
+                              color: Color(0xFF37597D),
+                            ),
+                          ),
+                        ),
+                        CircularIconMapButton(
+                          backgroundColor:
+                              Color(0xFFBD9FE4).withValues(alpha: 0.9),
+                          borderColor: Color(0xFF5A3E85),
+                          onPressed: () {
+                            setState(() {
+                              _isPointsMenuVisible = !_isPointsMenuVisible;
+                            });
+                          },
+                          icon: Icon(
+                            FontAwesomeIcons.locationDot,
+                            color: Color(0xFF5A3E85),
+                          ),
+                        ),
+                        CircularIconMapButton(
+                          backgroundColor:
+                              Color(0xFFFF9800).withValues(alpha: 0.9),
+                          borderColor: Color(0xFF8C2F00),
+                          onPressed: () {
+                            setState(() {
+                              _isTracingMode = !_isTracingMode;
+                              _clearTracing();
+                            });
+                          },
+                          icon: Icon(
+                            FontAwesomeIcons.pen,
+                            color: Color(0xFF8C2F00),
+                          ),
+                        ),
+                      ],
+                    )
+                  ],
                 ),
               ),
             ),
-            // Button for activating tracing mode.
-            Positioned(
-              top: MediaQuery.of(context).padding.top + kToolbarHeight + 194.0,
-              right: 20.0,
-              child: CircularIconMapButton(
-                backgroundColor: Color(0xFFFF9800).withValues(alpha: 0.9),
-                borderColor: Color(0xFF8C2F00),
-                onPressed: () {
-                  setState(() {
-                    _isTracingMode = !_isTracingMode;
-                    _tracingPoints.clear();
-                    _tracingMarkers.clear();
-                    _tracingPolyline = null;
-                  });
-                },
-                icon: Icon(
-                  FontAwesomeIcons.pen,
-                  color: Color(0xFF8C2F00),
-                ),
+            if (_outsidePoint)
+              TestErrorText(
+                padding: EdgeInsets.symmetric(horizontal: 50, vertical: 150),
               ),
-            ),
             if (_isPointsMenuVisible)
               Center(
                 child: Padding(
@@ -582,9 +536,7 @@ class _PeopleInMotionTestPageState extends State<PeopleInMotionTestPage> {
           ElevatedButton(
             onPressed: () {
               setState(() {
-                _tracingPoints.clear();
-                _tracingMarkers.clear();
-                _tracingPolyline = null;
+                _clearTracing();
                 _isTracingMode = false;
               });
             },

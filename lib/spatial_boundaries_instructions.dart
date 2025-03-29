@@ -148,11 +148,12 @@ Widget spatialBoundariesInstructions() {
               border: Border.all(color: Color(0xFF4A5D75), width: 2),
             ),
             child: Center(
-                child: Transform.translate(
-              offset: Offset(-1, 0),
-              child: Icon(FontAwesomeIcons.solidEyeSlash,
-                  size: 13, color: Color(0xFF4A5D75)),
-            )),
+              child: Icon(
+                Icons.visibility_off,
+                size: 15,
+                color: Color(0xFF4A5D75),
+              ),
+            ),
           ),
         ),
         TextSpan(
@@ -219,44 +220,45 @@ Widget buildLegends() {
             runSpacing: spacing,
             children: [
               legendItem(
-                  Icons.layers,
-                  "Toggle Map View",
-                  const Color.fromARGB(255, 126, 173, 128)
-                      .withValues(alpha: 0.9),
-                  BoxShape.circle,
-                  Border.all(color: const Color(0xFF2D6040), width: 2),
-                  const Color(0xFF2D6040),
-                  itemWidth),
+                Icons.layers,
+                "Toggle Map View",
+                const Color.fromARGB(255, 126, 173, 128).withValues(alpha: 0.9),
+                BoxShape.circle,
+                Border.all(color: const Color(0xFF2D6040), width: 2),
+                const Color(0xFF2D6040),
+                itemWidth,
+              ),
               legendItem(
-                  FontAwesomeIcons.info,
-                  "Toggle Instructions",
-                  const Color.fromARGB(255, 186, 207, 235)
-                      .withValues(alpha: 0.9),
-                  BoxShape.circle,
-                  Border.all(
-                    color: const Color(0xFF37597D),
-                    width: 2,
-                  ),
-                  const Color(0xFF37597D),
-                  itemWidth),
+                FontAwesomeIcons.info,
+                "Toggle Instructions",
+                const Color.fromARGB(255, 186, 207, 235).withValues(alpha: 0.9),
+                BoxShape.circle,
+                Border.all(
+                  color: const Color(0xFF37597D),
+                  width: 2,
+                ),
+                const Color(0xFF37597D),
+                itemWidth,
+              ),
               legendItem(
-                  Icons.shape_line_rounded,
-                  "Recorded Boundaries",
-                  const Color.fromARGB(255, 189, 159, 228)
-                      .withValues(alpha: 0.9),
-                  BoxShape.circle,
-                  Border.all(color: const Color(0xFF5A3E85), width: 2),
-                  const Color(0xFF5A3E85),
-                  itemWidth),
+                Icons.shape_line_rounded,
+                "Recorded Boundaries",
+                const Color.fromARGB(255, 189, 159, 228).withValues(alpha: 0.9),
+                BoxShape.circle,
+                Border.all(color: const Color(0xFF5A3E85), width: 2),
+                const Color(0xFF5A3E85),
+                itemWidth,
+              ),
               legendItem(
-                  FontAwesomeIcons.solidEyeSlash,
-                  "Toggle Visibility",
-                  const Color.fromARGB(255, 207, 211, 217),
-                  BoxShape.circle,
-                  Border.all(color: const Color(0xFF4A5D75), width: 2),
-                  const Color(0xFF4A5D75),
-                  itemWidth,
-                  iconOffset: Offset(-2, 0)),
+                Icons.visibility_off,
+                "Toggle Visibility",
+                const Color.fromARGB(255, 207, 211, 217),
+                BoxShape.circle,
+                Border.all(color: const Color(0xFF4A5D75), width: 2),
+                const Color(0xFF4A5D75),
+                itemWidth,
+                iconSize: 18,
+              ),
             ],
           ),
         ],
@@ -267,7 +269,7 @@ Widget buildLegends() {
 
 Widget legendItem(IconData icon, String label, Color buttonColor,
     BoxShape buttonShape, Border border, Color iconColor, double width,
-    {Offset iconOffset = Offset.zero}) {
+    {Offset iconOffset = Offset.zero, double iconSize = 15}) {
   return SizedBox(
     width: width,
     child: Row(
@@ -285,7 +287,7 @@ Widget legendItem(IconData icon, String label, Color buttonColor,
               offset: iconOffset,
               child: Icon(
                 icon,
-                size: 15,
+                size: iconSize,
                 color: iconColor,
               ),
             ),

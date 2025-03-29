@@ -5,32 +5,12 @@ import 'package:flutter/services.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:p2bp_2025spring_mobile/acoustic_instructions.dart';
+import 'package:p2bp_2025spring_mobile/assets.dart';
 import 'package:p2bp_2025spring_mobile/db_schema_classes.dart';
 import 'package:p2bp_2025spring_mobile/firestore_functions.dart';
 import 'package:p2bp_2025spring_mobile/google_maps_functions.dart';
 import 'package:p2bp_2025spring_mobile/theme.dart';
-import 'package:p2bp_2025spring_mobile/widgets.dart'; // for _showInstructionOverlay
-
-/// Icon for a standing point that hasn't been measured yet
-final AssetMapBitmap _incompleteIcon = AssetMapBitmap(
-  'assets/standing_point_disabled.png',
-  width: 48,
-  height: 48,
-);
-
-/// Icon for a standing point that has completed its measurement
-final AssetMapBitmap _completeIcon = AssetMapBitmap(
-  'assets/standing_point_enabled.png',
-  width: 48,
-  height: 48,
-);
-
-/// Icon for a standing point that is actively being measured
-final AssetMapBitmap _activeIcon = AssetMapBitmap(
-  'assets/standing_point_active.png',
-  width: 48,
-  height: 48,
-);
+import 'package:p2bp_2025spring_mobile/widgets.dart';
 
 /// AcousticProfileTestPage displays a Google Map (with the project polygon)
 /// in the background and uses a timer to prompt the researcher for sound
@@ -51,11 +31,10 @@ class AcousticProfileTestPage extends StatefulWidget {
 }
 
 class _AcousticProfileTestPageState extends State<AcousticProfileTestPage> {
-  bool _isLoading = true;
   bool _isIntervalCycleRunning = false;
-  bool _isBottomSheetOpen = false;
   bool _isErrorTextShown = false;
   bool _isTestComplete = false;
+  bool _directionsVisible = true;
 
   late GoogleMapController mapController;
   LatLng _location = defaultLocation;
@@ -67,9 +46,9 @@ class _AcousticProfileTestPageState extends State<AcousticProfileTestPage> {
   Set<Marker> _markers = {};
   late final List<StandingPoint> _standingPoints;
 
-  Timer? _intervalTimer;
-  final int _intervalDuration = 4; // TODO replace with member of test later
-  final int _intervalCount = 3; // TODO replace with member of test later
+  Timer? _timer;
+  int _intervalDuration = -1;
+  int _intervalCount = -1;
   int _remainingSeconds = 0;
   int _intervalsRemaining = 0;
 
@@ -82,13 +61,15 @@ class _AcousticProfileTestPageState extends State<AcousticProfileTestPage> {
   @override
   void initState() {
     super.initState();
-    _intervalsRemaining = _intervalCount;
     _polygons.add(getProjectPolygon(widget.activeProject.polygonPoints));
     _location = getPolygonCentroid(_polygons.first);
     _zoom = getIdealZoom(
       _polygons.first.toMPLatLngList(),
       _location.toMPLatLng(),
     );
+    _intervalDuration = widget.activeTest.intervalDuration;
+    _intervalCount = widget.activeTest.intervalCount;
+    _intervalsRemaining = _intervalCount;
     _standingPoints = widget.activeTest.standingPoints.toList();
     // Create an AcousticDataPoint in _newData for each standing point.
     for (final point in _standingPoints) {
@@ -98,7 +79,6 @@ class _AcousticProfileTestPageState extends State<AcousticProfileTestPage> {
       ));
     }
     _markers = _buildStandingPointMarkers();
-    _isLoading = false;
   }
 
   /// Creates a marker for each standing point and returns that set of markers.
@@ -112,7 +92,7 @@ class _AcousticProfileTestPageState extends State<AcousticProfileTestPage> {
         Marker(
           markerId: markerId,
           position: point.location,
-          icon: _incompleteIcon,
+          icon: standingPointDisabledIcon,
           infoWindow: InfoWindow(
             title: point.title,
             snippet: '${point.location.latitude.toStringAsFixed(5)},'
@@ -134,7 +114,7 @@ class _AcousticProfileTestPageState extends State<AcousticProfileTestPage> {
 
   @override
   void dispose() {
-    _intervalTimer?.cancel();
+    _timer?.cancel();
     super.dispose();
   }
 
@@ -165,26 +145,28 @@ class _AcousticProfileTestPageState extends State<AcousticProfileTestPage> {
   ///
   /// This includes exchanging the marker's icon for the [_activeIcon].
   void _setActiveMarker(Marker marker) {
-    if (marker.icon == _incompleteIcon) {
+    if (marker.icon == standingPointDisabledIcon) {
       // If activeMarker already set then change icon back to incomplete.
       if (_activeMarker != null) {
-        final newMarker = _activeMarker!.copyWith(iconParam: _incompleteIcon);
+        final newMarker =
+            _activeMarker!.copyWith(iconParam: standingPointDisabledIcon);
         setState(() {
           _markers.add(newMarker);
           _markers.remove(_activeMarker);
         });
       }
       // Change selected marker icon to active icon and assign to _activeMarker.
-      final newActiveMarker = marker.copyWith(iconParam: _activeIcon);
+      final newActiveMarker =
+          marker.copyWith(iconParam: standingPointActiveIcon);
       setState(() {
         _markers.add(newActiveMarker);
         _activeMarker = newActiveMarker;
         _markers.remove(marker);
       });
-    } else if (marker.icon == _completeIcon) {
+    } else if (marker.icon == standingPointEnabledIcon) {
       print('_setActiveMarker called on complete marker');
       return;
-    } else if (marker.icon == _activeIcon) {
+    } else if (marker.icon == standingPointActiveIcon) {
       print('_setActiveMarker called on active marker');
       return;
     }
@@ -208,19 +190,13 @@ class _AcousticProfileTestPageState extends State<AcousticProfileTestPage> {
       });
 
       // Start timer and wait for it to end before proceeding.
-      _intervalTimer = _startIntervalTimer();
-      while (_intervalTimer!.isActive) {
+      _timer = _startIntervalTimer();
+      while (_timer!.isActive) {
         await Future.delayed(Duration(seconds: 1));
       }
       if (!mounted) return;
 
-      setState(() {
-        _isBottomSheetOpen = true;
-      });
       final measurement = await _doBottomSheetSequence();
-      setState(() {
-        _isBottomSheetOpen = false;
-      });
 
       // If user closed a sheet without entering data then show error
       // and restart interval.
@@ -251,7 +227,8 @@ class _AcousticProfileTestPageState extends State<AcousticProfileTestPage> {
       _intervalsRemaining = _intervalCount;
       _remainingSeconds = 0;
     });
-    final newMarker = _activeMarker!.copyWith(iconParam: _completeIcon);
+    final newMarker =
+        _activeMarker!.copyWith(iconParam: standingPointEnabledIcon);
     _standingPointCompletionStatus[_activeMarker!.markerId] = true;
     setState(() {
       _markers.add(newMarker);
@@ -289,7 +266,7 @@ class _AcousticProfileTestPageState extends State<AcousticProfileTestPage> {
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
       builder: (context) {
         return Padding(
-          padding: MediaQuery.of(context).viewInsets + const EdgeInsets.all(16),
+          padding: MediaQuery.viewInsetsOf(context) + const EdgeInsets.all(16),
           child: _DecibelLevelForm(),
         );
       },
@@ -308,7 +285,7 @@ class _AcousticProfileTestPageState extends State<AcousticProfileTestPage> {
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
       builder: (context) {
         return Padding(
-          padding: MediaQuery.of(context).viewInsets + const EdgeInsets.all(16),
+          padding: MediaQuery.viewInsetsOf(context) + const EdgeInsets.all(16),
           child: _SoundTypeForm(),
         );
       },
@@ -327,7 +304,7 @@ class _AcousticProfileTestPageState extends State<AcousticProfileTestPage> {
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
       builder: (context) {
         return Padding(
-          padding: MediaQuery.of(context).viewInsets + const EdgeInsets.all(16),
+          padding: MediaQuery.viewInsetsOf(context) + const EdgeInsets.all(16),
           child: _MainSoundTypeForm(selectedSoundTypes),
         );
       },
@@ -350,7 +327,7 @@ class _AcousticProfileTestPageState extends State<AcousticProfileTestPage> {
   /// Update the completed status of each standing point
   /// If all points are completed, navigate to the Project Details Page
   Future<void> _endTest() async {
-    _intervalTimer?.cancel();
+    _timer?.cancel();
     widget.activeTest.submitData(_newData);
     _isTestComplete = true;
     await Future.delayed(Duration(seconds: 3));
@@ -411,194 +388,154 @@ class _AcousticProfileTestPageState extends State<AcousticProfileTestPage> {
     );
   }
 
+  String _getDirections() {
+    if (!_isTestComplete) {
+      if (_isErrorTextShown) {
+        return 'No information given. Please do '
+            'not close bottom pane without submitting.';
+      } else {
+        if (_activeMarker == null) {
+          return 'Tap one of the marked standing points to begin '
+              'measurements at that location.';
+        } else {
+          if (!_isIntervalCycleRunning) {
+            return 'Press Start once you have arrived at the selected location.';
+          } else {
+            return 'Listen carefully to your surroundings.';
+          }
+        }
+      }
+    } else {
+      return 'Test completed! Now returning to previous screen.';
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
-    return SafeArea(
+    return AnnotatedRegion<SystemUiOverlayStyle>(
+      value: (_currentMapType == MapType.normal)
+          ? SystemUiOverlayStyle.dark.copyWith(
+              statusBarColor: Colors.transparent,
+            )
+          : SystemUiOverlayStyle.light.copyWith(
+              statusBarColor: Colors.transparent,
+            ),
       child: Scaffold(
-        extendBodyBehindAppBar: true,
-        appBar: AppBar(
-          systemOverlayStyle:
-              const SystemUiOverlayStyle(statusBarBrightness: Brightness.light),
-          backgroundColor: Colors.transparent,
-          elevation: 0,
-          leadingWidth: 100,
-          // Start/End button (for this test, we rely solely on the interval timer)
-          leading: Padding(
-            padding: const EdgeInsets.only(left: 20, top: 4, bottom: 4),
-            child: ElevatedButton(
-              style: ElevatedButton.styleFrom(
-                shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(20)),
-                backgroundColor: Colors.green,
-                padding: EdgeInsets.zero,
-              ),
-              onPressed: (!_isIntervalCycleRunning && _activeMarker != null)
-                  ? _startIntervalCycles
-                  : null,
-              child: const Text(
-                'Start',
-                style: TextStyle(color: Colors.white, fontSize: 16),
+        resizeToAvoidBottomInset: false,
+        extendBody: true,
+        body: Stack(
+          children: [
+            SizedBox(
+              height: MediaQuery.sizeOf(context).height,
+              child: GoogleMap(
+                onMapCreated: _onMapCreated,
+                initialCameraPosition: CameraPosition(
+                  target: _location,
+                  zoom: _zoom,
+                ),
+                markers: _markers,
+                polygons: _polygons,
+                circles: _circles,
+                mapType: _currentMapType,
+                myLocationButtonEnabled: false,
               ),
             ),
-          ),
-          // Interval counter (e.g. "Interval 3/15")
-          title: Container(
-            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-            decoration: BoxDecoration(
-              color: Colors.black.withValues(alpha: 0.6),
-              borderRadius: BorderRadius.circular(8),
-            ),
-            child: Text(
-              '${_intervalCount - _intervalsRemaining} / $_intervalCount',
-              style: const TextStyle(color: Colors.white, fontSize: 14),
-            ),
-          ),
-          centerTitle: true,
-          // Timer display on the right
-          actions: [
-            Padding(
-              padding: const EdgeInsets.only(right: 20),
-              child: Center(
-                child: Container(
-                  padding:
-                      const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-                  decoration: BoxDecoration(
-                    color: Colors.black.withValues(alpha: 0.6),
-                    borderRadius: BorderRadius.circular(8),
-                  ),
-                  child: Text(
-                    formatTime(_remainingSeconds),
-                    style: const TextStyle(color: Colors.white, fontSize: 16),
-                  ),
+            SafeArea(
+              child: Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 15),
+                child: Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: <Widget>[
+                    Column(
+                      spacing: 10,
+                      children: <Widget>[
+                        TimerButtonAndDisplay(
+                          onPressed: (!_isIntervalCycleRunning &&
+                                  _activeMarker != null)
+                              ? () {
+                                  setState(() {
+                                    if (_isIntervalCycleRunning) {
+                                      setState(() {
+                                        _isIntervalCycleRunning = false;
+                                        _timer?.cancel();
+                                      });
+                                    } else {
+                                      _startIntervalCycles();
+                                    }
+                                  });
+                                }
+                              : null,
+                          isTestRunning: _isIntervalCycleRunning,
+                          remainingSeconds: _remainingSeconds,
+                        ),
+                        Container(
+                          padding: const EdgeInsets.symmetric(
+                              horizontal: 12, vertical: 8),
+                          decoration: BoxDecoration(
+                            color: Colors.black.withValues(alpha: 0.6),
+                            borderRadius: BorderRadius.circular(8),
+                          ),
+                          child: Text(
+                            '${_intervalCount - _intervalsRemaining} / $_intervalCount',
+                            style: const TextStyle(
+                                color: Colors.white, fontSize: 14),
+                          ),
+                        ),
+                      ],
+                    ),
+                    SizedBox(width: 15),
+                    Expanded(
+                      child: _directionsVisible
+                          ? DirectionsText(
+                              onTap: () {
+                                setState(() {
+                                  _directionsVisible = !_directionsVisible;
+                                });
+                              },
+                              text: _getDirections(),
+                            )
+                          : SizedBox(),
+                    ),
+                    SizedBox(width: 15),
+                    Column(
+                      spacing: 10,
+                      children: <Widget>[
+                        DirectionsButton(
+                          onTap: () {
+                            setState(() {
+                              _directionsVisible = !_directionsVisible;
+                            });
+                          },
+                        ),
+                        CircularIconMapButton(
+                          backgroundColor:
+                              const Color(0xFF7EAD80).withValues(alpha: 0.9),
+                          borderColor: Color(0xFF2D6040),
+                          onPressed: _toggleMapType,
+                          icon: Icon(
+                            Icons.layers,
+                            color: Color(0xFF2D6040),
+                          ),
+                        ),
+                        CircularIconMapButton(
+                          backgroundColor:
+                              Color(0xFFBACFEB).withValues(alpha: 0.9),
+                          borderColor: Color(0xFF37597D),
+                          onPressed: _showInstructionOverlay,
+                          icon: Icon(
+                            FontAwesomeIcons.info,
+                            color: Color(0xFF37597D),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ],
                 ),
               ),
             ),
           ],
         ),
-        body: _isLoading
-            ? const Center(child: CircularProgressIndicator())
-            : _buildBody(context),
-      ),
-    );
-  }
-
-  /// Builds the main body of this page including the map and overlaid buttons.
-  Widget _buildBody(BuildContext context) {
-    return Stack(
-      children: [
-        SizedBox(
-          height: MediaQuery.sizeOf(context).height,
-          child: GoogleMap(
-            onMapCreated: _onMapCreated,
-            initialCameraPosition: CameraPosition(
-              target: _location,
-              zoom: _zoom,
-            ),
-            markers: _markers,
-            polygons: _polygons,
-            circles: _circles,
-            mapType: _currentMapType,
-            myLocationButtonEnabled: false,
-          ),
-        ),
-        Align(
-          alignment: Alignment.topRight,
-          child: Padding(
-            padding: const EdgeInsets.only(top: kToolbarHeight, right: 20),
-            child: Column(
-              spacing: 10,
-              children: [
-                CircularIconMapButton(
-                  backgroundColor:
-                      const Color(0xFF7EAD80).withValues(alpha: 0.9),
-                  borderColor: Color(0xFF2D6040),
-                  onPressed: _toggleMapType,
-                  icon: Icon(
-                    Icons.layers,
-                    color: Color(0xFF2D6040),
-                  ),
-                ),
-                CircularIconMapButton(
-                  backgroundColor: Color(0xFFBACFEB).withValues(alpha: 0.9),
-                  borderColor: Color(0xFF37597D),
-                  onPressed: _showInstructionOverlay,
-                  icon: Icon(
-                    FontAwesomeIcons.info,
-                    color: Color(0xFF37597D),
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ),
-        if (!_isBottomSheetOpen)
-          (!_isTestComplete)
-              ? Align(
-                  alignment: Alignment.topLeft,
-                  child: Padding(
-                    padding: const EdgeInsets.fromLTRB(
-                        16, kToolbarHeight + 8, 80, 16),
-                    child: _buildDirections(),
-                  ),
-                )
-              : Center(
-                  child: Padding(
-                    padding: const EdgeInsets.all(16),
-                    child: _DirectionsTextBox(
-                      text: 'Test completed! Now returning to previous screen.',
-                      backgroundColor: Colors.black.withValues(alpha: 0.75),
-                    ),
-                  ),
-                ),
-      ],
-    );
-  }
-
-  Widget _buildDirections() {
-    if (_isErrorTextShown) {
-      return _DirectionsTextBox(
-        text: 'No information received for that measurement. Please do '
-            'not close bottom panels without providing the requested info.',
-        backgroundColor: Colors.red.withValues(alpha: 0.9),
-      );
-    } else {
-      return _DirectionsTextBox(
-        text: (_activeMarker == null)
-            ? 'Tap one of the marked standing points to begin '
-                'measurements at that location'
-            : (!_isIntervalCycleRunning)
-                ? 'Press Start once you have arrived at the selected location'
-                : 'Listen carefully to your surroundings',
-        backgroundColor: Colors.black.withValues(alpha: 0.75),
-      );
-    }
-  }
-}
-
-class _DirectionsTextBox extends StatelessWidget {
-  final String text;
-  final Color backgroundColor;
-
-  const _DirectionsTextBox({
-    required this.text,
-    required this.backgroundColor,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.symmetric(
-        horizontal: 10,
-        vertical: 5,
-      ),
-      decoration: BoxDecoration(
-        color: backgroundColor,
-        borderRadius: BorderRadius.circular(12),
-      ),
-      child: Text(
-        text,
-        style: const TextStyle(color: Colors.white, fontSize: 18),
-        textAlign: TextAlign.center,
       ),
     );
   }

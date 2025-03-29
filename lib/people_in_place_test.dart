@@ -31,7 +31,7 @@ class _PeopleInPlaceTestPageState extends State<PeopleInPlaceTestPage> {
   bool _isTestRunning = false;
   bool _outsidePoint = false;
   bool _isPointsMenuVisible = false;
-  bool _directionsVisible = false;
+  bool _directionsVisible = true;
 
   double _zoom = 18;
   late GoogleMapController mapController;
@@ -47,6 +47,7 @@ class _PeopleInPlaceTestPageState extends State<PeopleInPlaceTestPage> {
 
   int _remainingSeconds = -1;
   Timer? _timer;
+  Timer? _outsidePointTimer;
 
   MarkerId? _openMarkerId;
 
@@ -65,6 +66,7 @@ class _PeopleInPlaceTestPageState extends State<PeopleInPlaceTestPage> {
         markerId: MarkerId(point.toString()),
         position: point.location,
         icon: standingPointDisabledIcon,
+        consumeTapEvents: true,
       ));
     }
     WidgetsBinding.instance.addPostFrameCallback((_) {
@@ -76,6 +78,7 @@ class _PeopleInPlaceTestPageState extends State<PeopleInPlaceTestPage> {
   @override
   void dispose() {
     _timer?.cancel();
+    _outsidePointTimer?.cancel();
     super.dispose();
   }
 
@@ -85,10 +88,7 @@ class _PeopleInPlaceTestPageState extends State<PeopleInPlaceTestPage> {
       barrierDismissible: false,
       builder: (context) {
         return AlertDialog(
-          insetPadding: EdgeInsets.symmetric(
-            horizontal: 10,
-            vertical: 10,
-          ),
+          insetPadding: const EdgeInsets.all(10),
           actionsPadding: EdgeInsets.zero,
           title: Text(
             'How It Works:',
@@ -97,9 +97,9 @@ class _PeopleInPlaceTestPageState extends State<PeopleInPlaceTestPage> {
             ),
             textAlign: TextAlign.center,
           ),
-          content: SizedBox(
-            width: MediaQuery.sizeOf(context).width,
-            child: SingleChildScrollView(
+          content: SingleChildScrollView(
+            child: SizedBox(
+              width: double.maxFinite,
               child: Column(
                 mainAxisSize: MainAxisSize.min,
                 children: [
@@ -175,18 +175,18 @@ class _PeopleInPlaceTestPageState extends State<PeopleInPlaceTestPage> {
       builder: (context) => _DescriptionForm(location: point),
     );
     if (person == null) {
-      if (_outsidePoint) {
-        await Future.delayed(const Duration(seconds: 2));
+      _outsidePointTimer?.cancel();
+      _outsidePointTimer = Timer(Duration(seconds: 3), () {
         setState(() {
           _outsidePoint = false;
         });
-      }
+      });
       return;
     }
 
     final MarkerId markerId = MarkerId(point.toString());
-    final key = '${person.posture.name}_${person.gender.name}';
-    AssetMapBitmap markerIcon = _getMarkerIcon(key);
+    AssetMapBitmap markerIcon =
+        peopleInPlaceIconMap[(person.posture, person.gender)]!;
 
     // Add this data point to set of visible markers and other data lists.
     setState(() {
@@ -227,40 +227,12 @@ class _PeopleInPlaceTestPageState extends State<PeopleInPlaceTestPage> {
     });
 
     if (_outsidePoint) {
-      // TODO: fix delay. delay will overlap with consecutive taps.
-      await Future.delayed(const Duration(seconds: 2));
-      setState(() {
-        _outsidePoint = false;
+      _outsidePointTimer?.cancel();
+      _outsidePointTimer = Timer(Duration(seconds: 3), () {
+        setState(() {
+          _outsidePoint = false;
+        });
       });
-    }
-  }
-
-  AssetMapBitmap _getMarkerIcon(String key) {
-    switch (key) {
-      case 'standing_male':
-        return standingMaleMarker;
-      case 'sitting_male':
-        return sittingMaleMarker;
-      case 'layingDown_male':
-        return layingMaleMarker;
-      case 'squatting_male':
-        return squattingMaleMarker;
-      case 'standing_female':
-        return standingFemaleMarker;
-      case 'sitting_female':
-        return sittingFemaleMarker;
-      case 'layingDown_female':
-        return layingFemaleMarker;
-      case 'squatting_female':
-        return squattingFemaleMarker;
-      case 'standing_nonbinary' || 'standing_unspecified':
-        return standingNAMarker;
-      case 'sitting_nonbinary' || 'sitting_unspecified':
-        return sittingNAMarker;
-      case 'layingDown_nonbinary' || 'layingDown_unspecified':
-        return layingNAMarker;
-      default:
-        return squattingNAMarker;
     }
   }
 
@@ -276,6 +248,7 @@ class _PeopleInPlaceTestPageState extends State<PeopleInPlaceTestPage> {
           timer.cancel();
           showDialog(
             context: context,
+            barrierDismissible: false,
             builder: (context) {
               return TimerEndDialog(onSubmit: () {
                 Navigator.pop(context);
@@ -295,22 +268,24 @@ class _PeopleInPlaceTestPageState extends State<PeopleInPlaceTestPage> {
 
   void _endTest() {
     _timer?.cancel();
+    _outsidePointTimer?.cancel();
     widget.activeTest.submitData(_newData);
     Navigator.pop(context);
   }
 
   @override
   Widget build(BuildContext context) {
-    return SafeArea(
+    return AnnotatedRegion<SystemUiOverlayStyle>(
+      value: (_currentMapType == MapType.normal)
+          ? SystemUiOverlayStyle.dark.copyWith(
+              statusBarColor: Colors.transparent,
+            )
+          : SystemUiOverlayStyle.light.copyWith(
+              statusBarColor: Colors.transparent,
+            ),
       child: Scaffold(
-        extendBodyBehindAppBar: true,
-        appBar: AppBar(
-          systemOverlayStyle:
-              SystemUiOverlayStyle(statusBarBrightness: Brightness.light),
-          backgroundColor: Colors.transparent,
-          automaticallyImplyLeading: false,
-          forceMaterialTransparency: true,
-        ),
+        resizeToAvoidBottomInset: false,
+        extendBody: true,
         body: Stack(
           children: [
             SizedBox(
@@ -328,96 +303,93 @@ class _PeopleInPlaceTestPageState extends State<PeopleInPlaceTestPage> {
                 myLocationButtonEnabled: false,
               ),
             ),
-            Row(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: <Widget>[
-                Padding(
-                  padding: const EdgeInsets.only(top: 15.0, left: 15.0),
-                  child: TimerButtonAndDisplay(
-                    onPressed: () {
-                      setState(() {
-                        if (_isTestRunning) {
-                          setState(() {
-                            _isTestRunning = false;
-                            _timer?.cancel();
-                          });
-                        } else {
-                          _startTest();
-                        }
-                      });
-                    },
-                    isTestRunning: _isTestRunning,
-                    remainingSeconds: _remainingSeconds,
-                  ),
-                ),
-                Expanded(
-                  child: _directionsVisible
-                      ? Padding(
-                          padding: const EdgeInsets.symmetric(
-                              horizontal: 15.0, vertical: 15.0),
-                          child: DirectionsText(
-                            onTap: () {
-                              setState(() {
-                                _directionsVisible = !_directionsVisible;
-                              });
-                            },
-                            text: 'Tap to log data point.',
-                          ),
-                        )
-                      : SizedBox(),
-                ),
-                Padding(
-                  padding: const EdgeInsets.only(top: 15, right: 15),
-                  child: Column(
-                    spacing: 10,
-                    children: <Widget>[
-                      DirectionsButton(
-                        onTap: () {
-                          setState(() {
-                            _directionsVisible = !_directionsVisible;
-                          });
-                        },
-                      ),
-                      CircularIconMapButton(
-                        backgroundColor:
-                            const Color(0xFF7EAD80).withValues(alpha: 0.9),
-                        borderColor: Color(0xFF2D6040),
-                        onPressed: _toggleMapType,
-                        icon: Center(
-                          child: Icon(Icons.layers, color: Color(0xFF2D6040)),
+            SafeArea(
+              child: Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 15),
+                child: Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: <Widget>[
+                    TimerButtonAndDisplay(
+                      onPressed: () {
+                        setState(() {
+                          if (_isTestRunning) {
+                            setState(() {
+                              _isTestRunning = false;
+                              _timer?.cancel();
+                            });
+                          } else {
+                            _startTest();
+                          }
+                        });
+                      },
+                      isTestRunning: _isTestRunning,
+                      remainingSeconds: _remainingSeconds,
+                    ),
+                    SizedBox(width: 15),
+                    Expanded(
+                      child: _directionsVisible
+                          ? DirectionsText(
+                              onTap: () {
+                                setState(() {
+                                  _directionsVisible = !_directionsVisible;
+                                });
+                              },
+                              text: 'Tap to log data point.',
+                            )
+                          : SizedBox(),
+                    ),
+                    SizedBox(width: 15),
+                    Column(
+                      spacing: 10,
+                      children: <Widget>[
+                        DirectionsButton(
+                          onTap: () {
+                            setState(() {
+                              _directionsVisible = !_directionsVisible;
+                            });
+                          },
                         ),
-                      ),
-                      CircularIconMapButton(
-                        backgroundColor:
-                            Color(0xFFBACFEB).withValues(alpha: 0.9),
-                        borderColor: Color(0xFF37597D),
-                        onPressed: _showInstructionOverlay,
-                        icon: Center(
-                          child: Icon(
-                            FontAwesomeIcons.info,
-                            color: Color(0xFF37597D),
+                        CircularIconMapButton(
+                          backgroundColor:
+                              const Color(0xFF7EAD80).withValues(alpha: 0.9),
+                          borderColor: Color(0xFF2D6040),
+                          onPressed: _toggleMapType,
+                          icon: Center(
+                            child: Icon(Icons.layers, color: Color(0xFF2D6040)),
                           ),
                         ),
-                      ),
-                      CircularIconMapButton(
-                        backgroundColor:
-                            Color(0xFFBD9FE4).withValues(alpha: 0.9),
-                        borderColor: Color(0xFF5A3E85),
-                        onPressed: () {
-                          setState(() {
-                            _isPointsMenuVisible = !_isPointsMenuVisible;
-                          });
-                        },
-                        icon: Icon(
-                          FontAwesomeIcons.locationDot,
-                          color: Color(0xFF5A3E85),
+                        CircularIconMapButton(
+                          backgroundColor:
+                              Color(0xFFBACFEB).withValues(alpha: 0.9),
+                          borderColor: Color(0xFF37597D),
+                          onPressed: _showInstructionOverlay,
+                          icon: Center(
+                            child: Icon(
+                              FontAwesomeIcons.info,
+                              color: Color(0xFF37597D),
+                            ),
+                          ),
                         ),
-                      ),
-                    ],
-                  ),
-                )
-              ],
+                        CircularIconMapButton(
+                          backgroundColor:
+                              Color(0xFFBD9FE4).withValues(alpha: 0.9),
+                          borderColor: Color(0xFF5A3E85),
+                          onPressed: () {
+                            setState(() {
+                              _isPointsMenuVisible = !_isPointsMenuVisible;
+                            });
+                          },
+                          icon: Icon(
+                            FontAwesomeIcons.locationDot,
+                            color: Color(0xFF5A3E85),
+                          ),
+                        ),
+                      ],
+                    )
+                  ],
+                ),
+              ),
             ),
             if (_outsidePoint)
               TestErrorText(

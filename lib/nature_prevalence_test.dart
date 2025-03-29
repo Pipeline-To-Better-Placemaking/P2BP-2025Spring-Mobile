@@ -1,15 +1,17 @@
 import 'dart:async';
+import 'dart:io';
 
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
+import 'package:maps_toolkit/maps_toolkit.dart' as mp;
 import 'package:p2bp_2025spring_mobile/firestore_functions.dart';
 import 'package:p2bp_2025spring_mobile/theme.dart';
 import 'package:p2bp_2025spring_mobile/widgets.dart';
+
 import 'db_schema_classes.dart';
 import 'google_maps_functions.dart';
-import 'package:maps_toolkit/maps_toolkit.dart' as mp;
 
 class NaturePrevalence extends StatefulWidget {
   final Project activeProject;
@@ -26,7 +28,7 @@ class NaturePrevalence extends StatefulWidget {
 }
 
 class _NaturePrevalenceState extends State<NaturePrevalence> {
-  bool _isLoading = true;
+  bool _isTestRunning = false;
   bool _polygonMode = false;
   bool _pointMode = false;
   bool _outsidePoint = false;
@@ -37,8 +39,8 @@ class _NaturePrevalenceState extends State<NaturePrevalence> {
   late final Polygon _projectPolygon;
   List<mp.LatLng> _projectArea = [];
   String _directions = "Choose a category.";
-  bool _directionsVisible = false;
-  static const double _bottomSheetHeight = 300;
+  bool _directionsVisible = true;
+  static const double _bottomSheetHeight = 320;
   late DocumentReference teamRef;
   late GoogleMapController mapController;
   LatLng _location = defaultLocation; // Default location
@@ -50,8 +52,8 @@ class _NaturePrevalenceState extends State<NaturePrevalence> {
   bool _oldVisibility = true;
 
   Timer? _timer;
+  Timer? _outsidePointTimer;
   int _remainingSeconds = -1;
-  bool _isTestRunning = false;
 
   final NatureData _natureData = NatureData();
 
@@ -77,9 +79,8 @@ class _NaturePrevalenceState extends State<NaturePrevalence> {
     _projectPolygon = getProjectPolygon(widget.activeProject.polygonPoints);
     _location = getPolygonCentroid(_projectPolygon);
     _projectArea = _projectPolygon.toMPLatLngList();
-    _zoom = getIdealZoom(_projectArea, _location.toMPLatLng());
+    _zoom = getIdealZoom(_projectArea, _location.toMPLatLng()) - 0.4;
     _remainingSeconds = widget.activeTest.testDuration;
-    _isLoading = false;
     WidgetsBinding.instance.addPostFrameCallback((_) async {
       _setWeatherData();
     });
@@ -88,6 +89,7 @@ class _NaturePrevalenceState extends State<NaturePrevalence> {
   @override
   void dispose() {
     _timer?.cancel();
+    _outsidePointTimer?.cancel();
     super.dispose();
   }
 
@@ -103,6 +105,7 @@ class _NaturePrevalenceState extends State<NaturePrevalence> {
           timer.cancel();
           showDialog(
             context: context,
+            barrierDismissible: false,
             builder: (context) {
               return TimerEndDialog(onSubmit: () {
                 Navigator.pop(context);
@@ -123,6 +126,7 @@ class _NaturePrevalenceState extends State<NaturePrevalence> {
   /// Cancels timer, compiles and submits data, and then pops test page.
   void _endTest() {
     _timer?.cancel();
+    _outsidePointTimer?.cancel();
     _natureData.animals = _animalData;
     _natureData.vegetation = _vegetationData;
     _natureData.waterBodies = _waterBodyData;
@@ -161,219 +165,13 @@ class _NaturePrevalenceState extends State<NaturePrevalence> {
 
   void _setWeatherData() async {
     WeatherData? weatherData;
-    double? temperature;
-    bool erroredTemp = false;
-    bool erroredSelect = false;
-    Map<Weather, bool> selectedMap = {
-      Weather.stormy: false,
-      Weather.sunny: false,
-      Weather.rainy: false,
-      Weather.windy: false,
-      Weather.cloudy: false,
-    };
+
     try {
       weatherData = await showDialog(
           barrierDismissible: false,
           context: context,
           builder: (context) {
-            return StatefulBuilder(builder: (context, StateSetter setState) {
-              return AlertDialog(
-                scrollable: true,
-                title: Column(
-                  children: [
-                    Text(
-                      'Weather',
-                      style: TextStyle(
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                  ],
-                ),
-                content: Column(
-                  spacing: 5,
-                  children: [
-                    Text(
-                      'Temperature',
-                      style:
-                          TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
-                    ),
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      spacing: 10,
-                      children: [
-                        Flexible(
-                          child: DialogTextBox(
-                            textAlign: TextAlign.center,
-                            inputFormatter: [
-                              FilteringTextInputFormatter.allow(
-                                  RegExp('[1234567890.-]'))
-                            ],
-                            keyboardType: TextInputType.numberWithOptions(
-                                signed: true, decimal: true),
-                            maxLength: 6,
-                            labelText: 'Temp.',
-                            onChanged: (inputText) {
-                              setState(() {
-                                erroredTemp = false;
-                              });
-                              temperature = double.tryParse(inputText);
-                            },
-                          ),
-                        ),
-                        Flexible(
-                            child: Text(
-                          '°F',
-                          style: TextStyle(fontSize: 14),
-                        ))
-                      ],
-                    ),
-                    erroredTemp
-                        ? Text(
-                            "Please input a value!",
-                            style: TextStyle(color: Colors.red[900]),
-                          )
-                        : SizedBox(),
-                    SizedBox(height: 30),
-                    Center(
-                      child: Text(
-                        "Type",
-                        style: TextStyle(
-                            fontWeight: FontWeight.bold, fontSize: 16),
-                      ),
-                    ),
-                    Row(
-                      spacing: 5,
-                      children: <Widget>[
-                        TestButton(
-                          buttonText: "Sunny",
-                          backgroundColor: selectedMap[Weather.sunny] == true
-                              ? Colors.blue
-                              : null,
-                          onPressed: () {
-                            setState(() {
-                              erroredSelect = false;
-                              selectedMap[Weather.sunny] =
-                                  !selectedMap[Weather.sunny]!;
-                            });
-                          },
-                        ),
-                        TestButton(
-                          buttonText: "Rainy",
-                          backgroundColor: selectedMap[Weather.rainy] == true
-                              ? Colors.blue
-                              : null,
-                          onPressed: () {
-                            setState(() {
-                              erroredSelect = false;
-                              selectedMap[Weather.rainy] =
-                                  !selectedMap[Weather.rainy]!;
-                            });
-                          },
-                        )
-                      ],
-                    ),
-                    Row(
-                      spacing: 5,
-                      children: <Widget>[
-                        TestButton(
-                          buttonText: "Windy",
-                          backgroundColor: selectedMap[Weather.windy] == true
-                              ? Colors.blue
-                              : null,
-                          onPressed: () {
-                            setState(() {
-                              erroredSelect = false;
-                              selectedMap[Weather.windy] =
-                                  !selectedMap[Weather.windy]!;
-                            });
-                          },
-                        ),
-                        TestButton(
-                          buttonText: "Stormy",
-                          backgroundColor: selectedMap[Weather.stormy] == true
-                              ? Colors.blue
-                              : null,
-                          onPressed: () {
-                            setState(() {
-                              erroredSelect = false;
-                              selectedMap[Weather.stormy] =
-                                  !selectedMap[Weather.stormy]!;
-                            });
-                          },
-                        )
-                      ],
-                    ),
-                    Row(
-                      spacing: 5,
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        Spacer(),
-                        TestButton(
-                          flex: 2,
-                          buttonText: "Cloudy",
-                          backgroundColor: selectedMap[Weather.cloudy] == true
-                              ? Colors.blue
-                              : null,
-                          onPressed: () {
-                            setState(() {
-                              erroredSelect = false;
-                              selectedMap[Weather.cloudy] =
-                                  !selectedMap[Weather.cloudy]!;
-                            });
-                          },
-                        ),
-                        Spacer(),
-                      ],
-                    ),
-                    erroredSelect
-                        ? Text(
-                            "Please select a type!",
-                            style: TextStyle(color: Colors.red[900]),
-                          )
-                        : SizedBox(),
-                  ],
-                ),
-                actions: <Widget>[
-                  TextButton(
-                    onPressed: () {
-                      Navigator.pop(context, null);
-                    },
-                    child: const Text('Cancel'),
-                  ),
-                  TextButton(
-                    onPressed: () {
-                      List<Weather> selectedWeather = [];
-                      for (Weather weatherType in selectedMap.keys) {
-                        if (selectedMap[weatherType] != null &&
-                            selectedMap[weatherType] == true) {
-                          selectedWeather.add(weatherType);
-                        }
-                      }
-                      if (temperature == null) {
-                        setState(() {
-                          erroredTemp = true;
-                        });
-                      }
-                      print(erroredSelect);
-                      if (selectedWeather.isEmpty) {
-                        print("\n");
-                        setState(() {
-                          erroredSelect = true;
-                        });
-                      }
-                      if (erroredSelect || erroredTemp) {
-                        return;
-                      }
-                      weatherData = WeatherData(
-                          weatherTypes: selectedWeather, temp: temperature!);
-                      Navigator.pop(context, weatherData);
-                      print('${weatherData!.weatherTypes} temp: $temperature');
-                    },
-                    child: const Text('Next'),
-                  ),
-                ],
-              );
-            });
+            return WeatherDialog();
           });
       if (weatherData == null && mounted) {
         Navigator.pop(context);
@@ -403,7 +201,7 @@ class _NaturePrevalenceState extends State<NaturePrevalence> {
       subtitle: 'Then mark the boundary on the map.',
       contentList: <Widget>[
         Text(
-          'Body of Waster Type',
+          'Body of Water Type',
           style: TextStyle(
             fontSize: 16,
             fontWeight: FontWeight.bold,
@@ -697,21 +495,19 @@ class _NaturePrevalenceState extends State<NaturePrevalence> {
 
   Future<void> _togglePoint(LatLng point) async {
     try {
-      if (!mp.PolygonUtil.containsLocation(
-          mp.LatLng(point.latitude, point.longitude), _projectArea, true)) {
+      if (!isPointInsidePolygon(point, _projectPolygon)) {
         setState(() {
           _outsidePoint = true;
+        });
+        _outsidePointTimer?.cancel();
+        _outsidePointTimer = Timer(Duration(seconds: 3), () {
+          setState(() {
+            _outsidePoint = false;
+          });
         });
       }
       if (_pointMode) _pointTap(point);
       if (_polygonMode) _polygonTap(point);
-      if (_outsidePoint) {
-        // TODO: fix delay. delay will overlap with consecutive taps. this means taps do not necessarily refresh the timer and will end prematurely
-        await Future.delayed(const Duration(seconds: 2));
-        setState(() {
-          _outsidePoint = false;
-        });
-      }
     } catch (e, stacktrace) {
       print('Error in nature_prevalence_test.dart, _togglePoint(): $e');
       print('Stacktrace: $stacktrace');
@@ -790,7 +586,7 @@ class _NaturePrevalenceState extends State<NaturePrevalence> {
       if (_natureType == NatureType.vegetation) {
         tempPolygon = finalizePolygon(
           _polygonPoints,
-          polygonColor: Vegetation.vegetationTypeToColor[_vegetationType],
+          strokeColor: Vegetation.vegetationTypeToColor[_vegetationType],
         );
         // Create polygon.
         _polygons.addAll(tempPolygon);
@@ -800,7 +596,7 @@ class _NaturePrevalenceState extends State<NaturePrevalence> {
             otherType: _otherType));
       } else if (_natureType == NatureType.waterBody) {
         tempPolygon = finalizePolygon(_polygonPoints,
-            polygonColor: WaterBody.waterBodyTypeToColor[_waterBodyType]);
+            strokeColor: WaterBody.waterBodyTypeToColor[_waterBodyType]);
         // Create polygon.
         _polygons.addAll(tempPolygon);
         _waterBodyData.add(WaterBody(
@@ -834,340 +630,333 @@ class _NaturePrevalenceState extends State<NaturePrevalence> {
 
   @override
   Widget build(BuildContext context) {
-    return SafeArea(
+    return AnnotatedRegion<SystemUiOverlayStyle>(
+      value: (_currentMapType == MapType.normal)
+          ? SystemUiOverlayStyle.dark.copyWith(
+              statusBarColor: Colors.transparent,
+            )
+          : SystemUiOverlayStyle.light.copyWith(
+              statusBarColor: Colors.transparent,
+            ),
       child: Scaffold(
         resizeToAvoidBottomInset: false,
         extendBody: true,
-        extendBodyBehindAppBar: true,
-        body: _isLoading
-            ? const Center(child: CircularProgressIndicator())
-            : Stack(
-                children: [
-                  SizedBox(
-                    height: MediaQuery.sizeOf(context).height,
-                    child: GoogleMap(
-                      // TODO: size based off of bottomsheet container
-                      padding: EdgeInsets.only(bottom: _bottomSheetHeight),
-                      onMapCreated: _onMapCreated,
-                      initialCameraPosition:
-                          CameraPosition(target: _location, zoom: 14),
-                      polygons: (_oldVisibility || _polygons.isEmpty)
-                          ? {..._polygons, _projectPolygon}
-                          : {_polygons.last, _projectPolygon},
-                      markers: (_oldVisibility || _markers.isEmpty)
-                          ? {..._markers, ..._polygonMarkers}
-                          : {_markers.last, ..._polygonMarkers},
-                      onTap: (_pointMode || _polygonMode) ? _togglePoint : null,
-                      mapType: _currentMapType, // Use current map type
+        body: Stack(
+          children: [
+            SizedBox(
+              height: MediaQuery.sizeOf(context).height,
+              child: GoogleMap(
+                padding: EdgeInsets.only(bottom: _bottomSheetHeight),
+                onMapCreated: _onMapCreated,
+                initialCameraPosition:
+                    CameraPosition(target: _location, zoom: 14),
+                polygons: (_oldVisibility || _polygons.isEmpty)
+                    ? {..._polygons, _projectPolygon}
+                    : {_polygons.last, _projectPolygon},
+                markers: (_oldVisibility || _markers.isEmpty)
+                    ? {..._markers, ..._polygonMarkers}
+                    : {_markers.last, ..._polygonMarkers},
+                onTap: (_pointMode || _polygonMode) ? _togglePoint : null,
+                mapType: _currentMapType, // Use current map type
+              ),
+            ),
+            SafeArea(
+              child: Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 15),
+                child: Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: <Widget>[
+                    TimerButtonAndDisplay(
+                      onPressed: () {
+                        if (_isTestRunning) {
+                          setState(() {
+                            _isTestRunning = false;
+                            _timer?.cancel();
+                            _clearTypes();
+                          });
+                        } else {
+                          _startTest();
+                        }
+                      },
+                      isTestRunning: _isTestRunning,
+                      remainingSeconds: _remainingSeconds,
                     ),
-                  ),
-                  Row(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: <Widget>[
-                      Padding(
-                        padding: const EdgeInsets.only(top: 15.0, left: 15.0),
-                        child: TimerButtonAndDisplay(
-                          onPressed: () {
-                            if (_isTestRunning) {
-                              setState(() {
-                                _isTestRunning = false;
-                                _timer?.cancel();
-                                _clearTypes();
-                              });
-                            } else {
-                              _startTest();
-                            }
-                          },
-                          isTestRunning: _isTestRunning,
-                          remainingSeconds: _remainingSeconds,
-                        ),
-                      ),
-                      Expanded(
-                        child: _directionsVisible
-                            ? Padding(
-                                padding: const EdgeInsets.symmetric(
-                                    horizontal: 15.0, vertical: 15.0),
-                                child: DirectionsText(
-                                    onTap: () {
-                                      setState(() {
-                                        _directionsVisible =
-                                            !_directionsVisible;
-                                      });
-                                    },
-                                    text: _directions),
-                              )
-                            : SizedBox(),
-                      ),
-                      Padding(
-                        padding: const EdgeInsets.only(top: 15.0, right: 15.0),
-                        child: Column(
-                          spacing: 10,
-                          children: [
-                            DirectionsButton(
+                    SizedBox(width: 15),
+                    Expanded(
+                      child: _directionsVisible
+                          ? DirectionsText(
                               onTap: () {
                                 setState(() {
                                   _directionsVisible = !_directionsVisible;
                                 });
                               },
-                            ),
-                            CircularIconMapButton(
-                              backgroundColor: Colors.green,
-                              borderColor: Color(0xFF2D6040),
-                              onPressed: _toggleMapType,
-                              icon: const Icon(Icons.map),
-                            ),
-                            (!_polygonMode && !_pointMode)
-                                ? CircularIconMapButton(
-                                    borderColor: Color(0xFF2D6040),
-                                    onPressed: () {
-                                      setState(() {
-                                        _deleteMode = !_deleteMode;
-                                        if (_deleteMode == true) {
-                                          _outsidePoint = false;
-                                          _errorText =
-                                              'You are in delete mode.';
-                                        } else {
-                                          _outsidePoint = false;
-                                          _errorText =
-                                              'You tried to place a point outside of the project area!';
-                                        }
-                                      });
-                                    },
-                                    backgroundColor:
-                                        _deleteMode ? Colors.blue : Colors.red,
-                                    icon: Icon(
-                                      _deleteMode
-                                          ? Icons.location_on
-                                          : Icons.delete,
-                                      size: 30,
-                                    ),
-                                  )
-                                : SizedBox(),
-                          ],
-                        ),
-                      ),
-                    ],
-                  ),
-                  Align(
-                    alignment: Alignment.bottomLeft,
-                    child: Padding(
-                      padding: EdgeInsets.only(
-                          bottom: _bottomSheetHeight + 35, left: 5),
-                      child: VisibilitySwitch(
-                        visibility: _oldVisibility,
-                        onChanged: (value) {
-                          // This is called when the user toggles the switch.
-                          setState(() {
-                            _oldVisibility = value;
-                          });
-                        },
-                      ),
+                              text: _directions)
+                          : SizedBox(),
                     ),
-                  ),
-                  if (_outsidePoint || _deleteMode)
-                    TestErrorText(
-                      text: _errorText,
-                      padding: EdgeInsets.fromLTRB(
-                          50, 0, 50, _bottomSheetHeight + 20),
-                    ),
-                ],
-              ),
-        bottomSheet: _isLoading
-            ? SizedBox()
-            : SizedBox(
-                height: _bottomSheetHeight,
-                child: Stack(
-                  children: [
-                    Container(
-                      padding: const EdgeInsets.symmetric(
-                          horizontal: 12.0, vertical: 10.0),
-                      decoration: BoxDecoration(
-                        gradient: defaultGrad,
-                        borderRadius: const BorderRadius.only(
-                          topLeft: Radius.circular(24.0),
-                          topRight: Radius.circular(24.0),
+                    SizedBox(width: 15),
+                    Column(
+                      spacing: 10,
+                      children: [
+                        DirectionsButton(
+                          onTap: () {
+                            setState(() {
+                              _directionsVisible = !_directionsVisible;
+                            });
+                          },
                         ),
-                        boxShadow: [
-                          BoxShadow(
-                            color: Colors.black,
-                            offset: Offset(0.0, 1.0), //(x,y)
-                            blurRadius: 6.0,
-                          ),
-                        ],
-                      ),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          SizedBox(height: 5),
-                          Center(
-                            child: Text(
-                              'Nature Prevalence',
-                              style: TextStyle(
-                                fontSize: 20,
-                                fontWeight: FontWeight.bold,
-                                color: placeYellow,
-                              ),
+                        CircularIconMapButton(
+                          backgroundColor: Colors.green,
+                          borderColor: Color(0xFF2D6040),
+                          onPressed: _toggleMapType,
+                          icon: const Icon(Icons.map),
+                        ),
+                        if (!_polygonMode && !_pointMode)
+                          CircularIconMapButton(
+                            borderColor: Color(0xFF2D6040),
+                            onPressed: () {
+                              setState(() {
+                                _deleteMode = !_deleteMode;
+                                if (_deleteMode == true) {
+                                  _outsidePoint = false;
+                                  _errorText = 'You are in delete mode.';
+                                } else {
+                                  _outsidePoint = false;
+                                  _errorText =
+                                      'You tried to place a point outside of the project area!';
+                                }
+                              });
+                            },
+                            backgroundColor:
+                                _deleteMode ? Colors.blue : Colors.red,
+                            icon: Icon(
+                              _deleteMode ? Icons.location_on : Icons.delete,
+                              size: 30,
                             ),
                           ),
-                          SizedBox(height: 10),
-                          Text(
-                            'Natural Boundaries',
-                            style: TextStyle(
-                              fontSize: 16,
-                              fontWeight: FontWeight.bold,
-                              color: Colors.white,
-                            ),
+                        CircularIconMapButton(
+                          backgroundColor:
+                              Color(0xFFE4E9EF).withValues(alpha: 0.9),
+                          borderColor: const Color(0xFF4A5D75),
+                          onPressed: () {
+                            setState(() {
+                              _oldVisibility = !_oldVisibility;
+                            });
+                          },
+                          icon: Icon(
+                            _oldVisibility
+                                ? Icons.visibility_off
+                                : Icons.visibility,
+                            size: 30,
+                            color: const Color(0xFF4A5D75),
                           ),
-                          SizedBox(height: 5),
-                          Row(
-                            spacing: 10,
-                            children: [
-                              DisplayModalButton(
-                                  onPressed: (_pointMode ||
-                                          _polygonMode ||
-                                          _deleteMode ||
-                                          !_isTestRunning)
-                                      ? null
-                                      : () {
-                                          showModalAnimal(context);
-                                        },
-                                  text: 'Animal',
-                                  icon: Icon(Icons.pets)),
-                              DisplayModalButton(
-                                  onPressed: (_pointMode ||
-                                          _polygonMode ||
-                                          _deleteMode ||
-                                          !_isTestRunning)
-                                      ? null
-                                      : () {
-                                          showModalVegetation(context);
-                                        },
-                                  text: 'Vegetation',
-                                  icon: Icon(Icons.grass)),
-                            ],
-                          ),
-                          SizedBox(
-                            height: 10,
-                          ),
-                          Text(
-                            'Animals',
-                            style: TextStyle(
-                              fontSize: 16,
-                              fontWeight: FontWeight.bold,
-                              color: Colors.white,
-                            ),
-                          ),
-                          SizedBox(height: 5),
-                          Row(
-                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                            spacing: 10,
-                            children: [
-                              DisplayModalButton(
-                                  onPressed: (_pointMode ||
-                                          _polygonMode ||
-                                          _deleteMode ||
-                                          !_isTestRunning)
-                                      ? null
-                                      : () {
-                                          showModalWaterBody(context);
-                                        },
-                                  text: 'Body of Water',
-                                  icon: Icon(Icons.water)),
-                            ],
-                          ),
-                          SizedBox(height: 20),
-                          Expanded(
-                            child: Row(
-                              spacing: 10,
-                              children: <Widget>[
-                                Expanded(
-                                  child: Row(
-                                    spacing: 10,
-                                    children: <Widget>[
-                                      Flexible(
-                                        child: EditButton(
-                                          text: 'Confirm Shape',
-                                          foregroundColor: Colors.green,
-                                          backgroundColor: Colors.white,
-                                          icon: const Icon(Icons.check),
-                                          iconColor: Colors.green,
-                                          onPressed: (_polygonMode &&
-                                                  _polygonPoints.length >= 3 &&
-                                                  !_deleteMode)
-                                              ? () {
-                                                  _finalizePolygon();
-                                                  setState(() {
-                                                    _directions =
-                                                        'Choose a category. Or, click finish if done.';
-                                                  });
-                                                }
-                                              : null,
-                                        ),
-                                      ),
-                                      Flexible(
-                                        child: EditButton(
-                                          text: 'Cancel',
-                                          foregroundColor: Colors.red,
-                                          backgroundColor: Colors.white,
-                                          icon: const Icon(Icons.cancel),
-                                          iconColor: Colors.red,
-                                          onPressed:
-                                              ((_pointMode || _polygonMode) &&
-                                                      !_deleteMode)
-                                                  ? () {
-                                                      setState(() {
-                                                        _pointMode = false;
-                                                        _polygonMode = false;
-                                                        _polygonMarkers = {};
-                                                        _clearTypes();
-                                                      });
-                                                      _polygonPoints = [];
-                                                    }
-                                                  : null,
-                                        ),
-                                      ),
-                                    ],
-                                  ),
-                                ),
-                                Flexible(
-                                  flex: 0,
-                                  child: Align(
-                                    alignment: Alignment.centerRight,
-                                    child: EditButton(
-                                      text: 'Finish',
-                                      foregroundColor: Colors.black,
-                                      backgroundColor: Colors.white,
-                                      icon: const Icon(Icons.chevron_right,
-                                          color: Colors.black),
-                                      onPressed: (_pointMode ||
-                                              _polygonMode ||
-                                              _deleteMode ||
-                                              _isTestRunning)
-                                          ? null
-                                          : () {
-                                              showDialog(
-                                                  context: context,
-                                                  builder: (context) {
-                                                    return TestFinishDialog(
-                                                        onNext: () {
-                                                      Navigator.pop(context);
-                                                      _endTest();
-                                                    });
-                                                  });
-                                            },
-                                    ),
-                                  ),
-                                ),
-                              ],
-                            ),
-                          )
-                        ],
-                      ),
+                        ),
+                      ],
                     ),
                   ],
                 ),
               ),
+            ),
+            if (_outsidePoint || _deleteMode)
+              TestErrorText(
+                text: _errorText,
+                padding:
+                    EdgeInsets.fromLTRB(50, 0, 50, _bottomSheetHeight + 20),
+              ),
+          ],
+        ),
+        bottomSheet: SizedBox(
+          height: _bottomSheetHeight,
+          child: Stack(
+            children: [
+              Container(
+                padding: const EdgeInsets.symmetric(
+                    horizontal: 12.0, vertical: 10.0),
+                decoration: BoxDecoration(
+                  gradient: defaultGrad,
+                  borderRadius: const BorderRadius.only(
+                    topLeft: Radius.circular(24.0),
+                    topRight: Radius.circular(24.0),
+                  ),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black,
+                      offset: Offset(0.0, 1.0), //(x,y)
+                      blurRadius: 6.0,
+                    ),
+                  ],
+                ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    SizedBox(height: 5),
+                    Center(
+                      child: Text(
+                        'Nature Prevalence',
+                        style: TextStyle(
+                          fontSize: 20,
+                          fontWeight: FontWeight.bold,
+                          color: placeYellow,
+                        ),
+                      ),
+                    ),
+                    SizedBox(height: 10),
+                    Text(
+                      'Natural Boundaries',
+                      style: TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.bold,
+                        color: Colors.white,
+                      ),
+                    ),
+                    SizedBox(height: 5),
+                    Row(
+                      spacing: 10,
+                      children: [
+                        DisplayModalButton(
+                            onPressed: (_pointMode ||
+                                    _polygonMode ||
+                                    _deleteMode ||
+                                    !_isTestRunning)
+                                ? null
+                                : () {
+                                    showModalAnimal(context);
+                                  },
+                            text: 'Animal',
+                            icon: Icon(Icons.pets)),
+                        DisplayModalButton(
+                            onPressed: (_pointMode ||
+                                    _polygonMode ||
+                                    _deleteMode ||
+                                    !_isTestRunning)
+                                ? null
+                                : () {
+                                    showModalVegetation(context);
+                                  },
+                            text: 'Vegetation',
+                            icon: Icon(Icons.grass)),
+                      ],
+                    ),
+                    SizedBox(
+                      height: 10,
+                    ),
+                    Text(
+                      'Animals',
+                      style: TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.bold,
+                        color: Colors.white,
+                      ),
+                    ),
+                    SizedBox(height: 5),
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      spacing: 10,
+                      children: [
+                        DisplayModalButton(
+                            onPressed: (_pointMode ||
+                                    _polygonMode ||
+                                    _deleteMode ||
+                                    !_isTestRunning)
+                                ? null
+                                : () {
+                                    showModalWaterBody(context);
+                                  },
+                            text: 'Body of Water',
+                            icon: Icon(Icons.water)),
+                      ],
+                    ),
+                    SizedBox(height: 20),
+                    Expanded(
+                      child: Row(
+                        spacing: 10,
+                        children: <Widget>[
+                          Expanded(
+                            child: Row(
+                              spacing: 10,
+                              children: <Widget>[
+                                Flexible(
+                                  child: EditButton(
+                                    text: 'Confirm Shape',
+                                    foregroundColor: Colors.green,
+                                    backgroundColor: Colors.white,
+                                    icon: const Icon(Icons.check),
+                                    iconColor: Colors.green,
+                                    onPressed: (_polygonMode &&
+                                            _polygonPoints.length >= 3 &&
+                                            !_deleteMode)
+                                        ? () {
+                                            _finalizePolygon();
+                                            setState(() {
+                                              _directions =
+                                                  'Choose a category. Or, click finish if done.';
+                                            });
+                                          }
+                                        : null,
+                                  ),
+                                ),
+                                Flexible(
+                                  child: EditButton(
+                                    text: 'Cancel',
+                                    foregroundColor: Colors.red,
+                                    backgroundColor: Colors.white,
+                                    icon: const Icon(Icons.cancel),
+                                    iconColor: Colors.red,
+                                    onPressed: ((_pointMode || _polygonMode) &&
+                                            !_deleteMode)
+                                        ? () {
+                                            setState(() {
+                                              _pointMode = false;
+                                              _polygonMode = false;
+                                              _polygonMarkers = {};
+                                              _clearTypes();
+                                            });
+                                            _polygonPoints = [];
+                                          }
+                                        : null,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                          Flexible(
+                            flex: 0,
+                            child: Align(
+                              alignment: Alignment.centerRight,
+                              child: EditButton(
+                                text: 'Finish',
+                                foregroundColor: Colors.black,
+                                backgroundColor: Colors.white,
+                                icon: const Icon(Icons.chevron_right,
+                                    color: Colors.black),
+                                onPressed: (_pointMode ||
+                                        _polygonMode ||
+                                        _deleteMode ||
+                                        _isTestRunning)
+                                    ? null
+                                    : () {
+                                        showDialog(
+                                            context: context,
+                                            builder: (context) {
+                                              return TestFinishDialog(
+                                                  onNext: () {
+                                                Navigator.pop(context);
+                                                _endTest();
+                                              });
+                                            });
+                                      },
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                    )
+                  ],
+                ),
+              ),
+            ],
+          ),
+        ),
       ),
     );
   }
@@ -1204,6 +993,217 @@ class DisplayModalButton extends StatelessWidget {
         icon: icon,
         iconAlignment: IconAlignment.end,
       ),
+    );
+  }
+}
+
+class WeatherDialog extends StatefulWidget {
+  const WeatherDialog({super.key});
+
+  @override
+  State<WeatherDialog> createState() => _WeatherDialogState();
+}
+
+class _WeatherDialogState extends State<WeatherDialog> {
+  WeatherData? weatherData;
+  double? temperature;
+  bool erroredTemp = false;
+  bool erroredSelect = false;
+  Map<WeatherType, bool> selectedMap = {
+    for (final weather in WeatherType.values) weather: false
+  };
+
+  @override
+  Widget build(BuildContext context) {
+    return AlertDialog(
+      scrollable: true,
+      title: Column(
+        children: [
+          Text(
+            'Weather',
+            style: TextStyle(
+              fontWeight: FontWeight.bold,
+            ),
+          ),
+        ],
+      ),
+      content: Column(
+        spacing: 5,
+        children: [
+          Text(
+            'Temperature',
+            style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+          ),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            spacing: 10,
+            children: [
+              Flexible(
+                child: DialogTextBox(
+                  textAlign: TextAlign.center,
+                  inputFormatter: [
+                    FilteringTextInputFormatter.allow(RegExp('[1234567890.-]'))
+                  ],
+                  keyboardType: TextInputType.numberWithOptions(
+                      signed: true, decimal: true),
+                  maxLength: 6,
+                  labelText: 'Temp.',
+                  onChanged: (inputText) {
+                    setState(() {
+                      erroredTemp = false;
+                    });
+                    temperature = double.tryParse(inputText);
+                  },
+                ),
+              ),
+              Flexible(
+                  child: Text(
+                '°F',
+                style: TextStyle(fontSize: 14),
+              ))
+            ],
+          ),
+          erroredTemp
+              ? Text(
+                  "Please input a value!",
+                  style: TextStyle(color: Colors.red[900]),
+                )
+              : SizedBox(),
+          SizedBox(height: 30),
+          Center(
+            child: Text(
+              "Type",
+              style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+            ),
+          ),
+          Row(
+            spacing: 5,
+            children: <Widget>[
+              TestButton(
+                buttonText: "Sunny",
+                backgroundColor:
+                    selectedMap[WeatherType.sunny] == true ? Colors.blue : null,
+                onPressed: () {
+                  setState(() {
+                    erroredSelect = false;
+                    selectedMap[WeatherType.sunny] =
+                        !selectedMap[WeatherType.sunny]!;
+                  });
+                },
+              ),
+              TestButton(
+                buttonText: "Rainy",
+                backgroundColor:
+                    selectedMap[WeatherType.rainy] == true ? Colors.blue : null,
+                onPressed: () {
+                  setState(() {
+                    erroredSelect = false;
+                    selectedMap[WeatherType.rainy] =
+                        !selectedMap[WeatherType.rainy]!;
+                  });
+                },
+              )
+            ],
+          ),
+          Row(
+            spacing: 5,
+            children: <Widget>[
+              TestButton(
+                buttonText: "Windy",
+                backgroundColor:
+                    selectedMap[WeatherType.windy] == true ? Colors.blue : null,
+                onPressed: () {
+                  setState(() {
+                    erroredSelect = false;
+                    selectedMap[WeatherType.windy] =
+                        !selectedMap[WeatherType.windy]!;
+                  });
+                },
+              ),
+              TestButton(
+                buttonText: "Stormy",
+                backgroundColor: selectedMap[WeatherType.stormy] == true
+                    ? Colors.blue
+                    : null,
+                onPressed: () {
+                  setState(() {
+                    erroredSelect = false;
+                    selectedMap[WeatherType.stormy] =
+                        !selectedMap[WeatherType.stormy]!;
+                  });
+                },
+              )
+            ],
+          ),
+          Row(
+            spacing: 5,
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Spacer(),
+              TestButton(
+                flex: 2,
+                buttonText: "Cloudy",
+                backgroundColor: selectedMap[WeatherType.cloudy] == true
+                    ? Colors.blue
+                    : null,
+                onPressed: () {
+                  setState(() {
+                    erroredSelect = false;
+                    selectedMap[WeatherType.cloudy] =
+                        !selectedMap[WeatherType.cloudy]!;
+                  });
+                },
+              ),
+              Spacer(),
+            ],
+          ),
+          erroredSelect
+              ? Text(
+                  "Please select a type!",
+                  style: TextStyle(color: Colors.red[900]),
+                )
+              : SizedBox(),
+        ],
+      ),
+      actions: <Widget>[
+        TextButton(
+          onPressed: () {
+            Navigator.pop(context, null);
+          },
+          child: const Text('Cancel'),
+        ),
+        TextButton(
+          onPressed: () {
+            List<WeatherType> selectedWeather = [];
+            for (WeatherType weatherType in selectedMap.keys) {
+              if (selectedMap[weatherType] != null &&
+                  selectedMap[weatherType] == true) {
+                selectedWeather.add(weatherType);
+              }
+            }
+            if (temperature == null) {
+              setState(() {
+                erroredTemp = true;
+              });
+            }
+            print(erroredSelect);
+            if (selectedWeather.isEmpty) {
+              print("\n");
+              setState(() {
+                erroredSelect = true;
+              });
+            }
+            if (erroredSelect || erroredTemp) {
+              return;
+            }
+            weatherData =
+                WeatherData(weatherTypes: selectedWeather, temp: temperature!);
+            Navigator.pop(context, weatherData);
+            print('${weatherData!.weatherTypes} temp: $temperature');
+          },
+          child: const Text('Next'),
+        ),
+      ],
     );
   }
 }

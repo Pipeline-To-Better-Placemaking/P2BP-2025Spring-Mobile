@@ -1,5 +1,12 @@
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 
+import 'db_schema_classes.dart';
+
+final AssetMapBitmap tempMarkerIcon = AssetMapBitmap(
+  'assets/temp_point_marker.png',
+  width: 40,
+  height: 40,
+);
 final AssetMapBitmap standingPointDisabledIcon = AssetMapBitmap(
   'assets/standing_point_disabled.png',
   width: 48,
@@ -15,88 +22,17 @@ final AssetMapBitmap standingPointActiveIcon = AssetMapBitmap(
   width: 48,
   height: 48,
 );
-final AssetMapBitmap standingMaleMarker = AssetMapBitmap(
-  'assets/test_specific/people_in_place/standing_male_marker.png',
-  width: 36,
-  height: 36,
-);
-final AssetMapBitmap sittingMaleMarker = AssetMapBitmap(
-  'assets/test_specific/people_in_place/sitting_male_marker.png',
-  width: 36,
-  height: 36,
-);
-final AssetMapBitmap layingMaleMarker = AssetMapBitmap(
-  'assets/test_specific/people_in_place/laying_male_marker.png',
-  width: 36,
-  height: 36,
-);
-final AssetMapBitmap squattingMaleMarker = AssetMapBitmap(
-  'assets/test_specific/people_in_place/squatting_male_marker.png',
-  width: 36,
-  height: 36,
-);
-final AssetMapBitmap standingFemaleMarker = AssetMapBitmap(
-  'assets/test_specific/people_in_place/standing_female_marker.png',
-  width: 36,
-  height: 36,
-);
-final AssetMapBitmap sittingFemaleMarker = AssetMapBitmap(
-  'assets/test_specific/people_in_place/sitting_female_marker.png',
-  width: 36,
-  height: 36,
-);
-final AssetMapBitmap layingFemaleMarker = AssetMapBitmap(
-  'assets/test_specific/people_in_place/laying_female_marker.png',
-  width: 36,
-  height: 36,
-);
-final AssetMapBitmap squattingFemaleMarker = AssetMapBitmap(
-  'assets/test_specific/people_in_place/squatting_female_marker.png',
-  width: 36,
-  height: 36,
-);
-final AssetMapBitmap standingNAMarker = AssetMapBitmap(
-  'assets/test_specific/people_in_place/standing_na_marker.png',
-  width: 36,
-  height: 36,
-);
-final AssetMapBitmap sittingNAMarker = AssetMapBitmap(
-  'assets/test_specific/people_in_place/sitting_na_marker.png',
-  width: 36,
-  height: 36,
-);
-final AssetMapBitmap layingNAMarker = AssetMapBitmap(
-  'assets/test_specific/people_in_place/laying_na_marker.png',
-  width: 36,
-  height: 36,
-);
-final AssetMapBitmap squattingNAMarker = AssetMapBitmap(
-  'assets/test_specific/people_in_place/squatting_na_marker.png',
-  width: 36,
-  height: 36,
-);
-final AssetMapBitmap walkingConnector = AssetMapBitmap(
-  'assets/test_specific/people_in_motion/square_marker_teal.png',
-  width: 24,
-  height: 24,
-);
-final AssetMapBitmap runningConnector = AssetMapBitmap(
-  'assets/test_specific/people_in_motion/square_marker_red.png',
-  width: 24,
-  height: 24,
-);
-final AssetMapBitmap swimmingConnector = AssetMapBitmap(
-  'assets/test_specific/people_in_motion/square_marker_cyan.png',
-  width: 24,
-  height: 24,
-);
-final AssetMapBitmap wheelsConnector = AssetMapBitmap(
-  'assets/test_specific/people_in_motion/square_marker_orange.png',
-  width: 24,
-  height: 24,
-);
-final AssetMapBitmap handicapConnector = AssetMapBitmap(
-  'assets/test_specific/people_in_motion/square_marker_purple.png',
-  width: 24,
-  height: 24,
-);
+final Map<(PostureType, GenderType), AssetMapBitmap> peopleInPlaceIconMap = {
+  for (final posture in PostureType.values)
+    for (final gender in GenderType.values)
+      (posture, gender): AssetMapBitmap(
+        'assets/test_specific/people_in_place/'
+        '${posture.iconNameSegment}_${gender.iconNameSegment}_marker.png',
+        width: 36,
+        height: 36,
+      )
+};
+final Map<ActivityTypeInMotion, AssetMapBitmap> peopleInMotionIconMap = {
+  for (final value in ActivityTypeInMotion.values)
+    value: AssetMapBitmap(value.iconName, width: 24, height: 24)
+};
