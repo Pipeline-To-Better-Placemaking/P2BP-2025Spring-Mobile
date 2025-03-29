@@ -43,7 +43,7 @@ class _PeopleInPlaceTestPageState extends State<PeopleInPlaceTestPage> {
   final List<LatLng> _loggedPoints = [];
   final Set<Marker> _standingPointMarkers = {};
 
-  final PeopleInPlaceData _newData = PeopleInPlaceData();
+  final PeopleInPlaceData _newData = PeopleInPlaceData.empty();
 
   int _remainingSeconds = -1;
   Timer? _timer;

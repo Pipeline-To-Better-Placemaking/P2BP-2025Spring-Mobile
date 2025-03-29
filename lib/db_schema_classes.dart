@@ -2623,6 +2623,31 @@ enum AgeRangeType implements DisplayNameEnum {
   }
 }
 
+enum ActivityTypeInPlace implements DisplayNameEnum {
+  socializing(displayName: 'Socializing'),
+  waiting(displayName: 'Waiting'),
+  recreation(displayName: 'Recreation'),
+  eating(displayName: 'Eating'),
+  solitary(displayName: 'Solitary');
+
+  const ActivityTypeInPlace({required this.displayName});
+
+  @override
+  final String displayName;
+
+  /// Returns the enumerated type with the matching displayName.
+  factory ActivityTypeInPlace.byDisplayName(String displayName) {
+    try {
+      for (final type in ActivityTypeInPlace.values) {
+        if (type.displayName == displayName) return type;
+      }
+      throw Exception('Invalid ActivityTypeInPlace displayName');
+    } catch (e, s) {
+      throw Exception('Error: $e\nStacktrace: $s');
+    }
+  }
+}
+
 enum GenderType implements DisplayNameEnum {
   male(displayName: 'Male', iconNameSegment: 'male'),
   female(displayName: 'Female', iconNameSegment: 'female'),
@@ -2644,31 +2669,6 @@ enum GenderType implements DisplayNameEnum {
         if (type.displayName == displayName) return type;
       }
       throw Exception('Invalid GenderType displayName');
-    } catch (e, s) {
-      throw Exception('Error: $e\nStacktrace: $s');
-    }
-  }
-}
-
-enum ActivityTypeInPlace implements DisplayNameEnum {
-  socializing(displayName: 'Socializing'),
-  waiting(displayName: 'Waiting'),
-  recreation(displayName: 'Recreation'),
-  eating(displayName: 'Eating'),
-  solitary(displayName: 'Solitary');
-
-  const ActivityTypeInPlace({required this.displayName});
-
-  @override
-  final String displayName;
-
-  /// Returns the enumerated type with the matching displayName.
-  factory ActivityTypeInPlace.byDisplayName(String displayName) {
-    try {
-      for (final type in ActivityTypeInPlace.values) {
-        if (type.displayName == displayName) return type;
-      }
-      throw Exception('Invalid ActivityTypeInPlace displayName');
     } catch (e, s) {
       throw Exception('Error: $e\nStacktrace: $s');
     }
@@ -2722,11 +2722,11 @@ enum PostureType implements DisplayNameEnum {
 }
 
 class PersonInPlace with JsonToString {
-  late final LatLng location;
-  late final AgeRangeType ageRange;
-  late final GenderType gender;
-  late final Set<ActivityTypeInPlace> activities;
-  late final PostureType posture;
+  final LatLng location;
+  final AgeRangeType ageRange;
+  final Set<ActivityTypeInPlace> activities;
+  final GenderType gender;
+  final PostureType posture;
 
   PersonInPlace({
     required this.location,
@@ -2736,31 +2736,26 @@ class PersonInPlace with JsonToString {
     required this.posture,
   });
 
-  PersonInPlace.fromJson(Map<String, dynamic> data) {
-    if (data.containsKey('location') && data['location'] is GeoPoint) {
-      location = (data['location'] as GeoPoint).toLatLng();
+  factory PersonInPlace.fromJson(Map<String, dynamic> json) {
+    if (json
+        case {
+          'location': GeoPoint location,
+          'ageRange': String ageRange,
+          'activities': List activities,
+          'gender': String gender,
+          'posture': String posture,
+        }) {
+      return PersonInPlace(
+        location: location.toLatLng(),
+        ageRange: AgeRangeType.values.byName(ageRange),
+        activities: activities
+            .map((activity) => ActivityTypeInPlace.values.byName(activity))
+            .toSet(),
+        gender: GenderType.values.byName(gender),
+        posture: PostureType.values.byName(posture),
+      );
     }
-    if (data.containsKey('ageRange') && data['ageRange'] is String) {
-      String ageString = data['ageRange'] as String;
-      ageRange = AgeRangeType.values.byName(ageString);
-    }
-    if (data.containsKey('gender') && data['gender'] is String) {
-      String genderString = data['gender'] as String;
-      gender = GenderType.values.byName(genderString);
-    }
-    if (data.containsKey('activities') &&
-        data['activities'] is List &&
-        data['activities'].first is String) {
-      List activityStrings = data['activities'];
-      activities = {
-        for (final string in activityStrings)
-          ActivityTypeInPlace.values.byName(string)
-      };
-    }
-    if (data.containsKey('posture') && data['posture'] is String) {
-      String postureString = data['posture'] as String;
-      posture = PostureType.values.byName(postureString);
-    }
+    throw FormatException('Invalid JSON: $json', json);
   }
 
   @override
@@ -2768,28 +2763,30 @@ class PersonInPlace with JsonToString {
     return {
       'location': location.toGeoPoint(),
       'ageRange': ageRange.name,
-      'gender': gender.name,
       'activities': <String>[for (final activity in activities) activity.name],
+      'gender': gender.name,
       'posture': posture.name,
     };
   }
 }
 
 class PeopleInPlaceData with JsonToString {
-  final List<PersonInPlace> persons = [];
+  final List<PersonInPlace> persons;
 
-  PeopleInPlaceData();
+  PeopleInPlaceData(this.persons);
+  PeopleInPlaceData.empty() : persons = [];
 
-  PeopleInPlaceData.fromJson(Map<String, dynamic> data) {
-    if (data.containsKey('persons') &&
-        (data['persons'] as List).isNotEmpty &&
-        data['persons'].first is Map) {
-      final List personsJsonList = data['persons'];
-      for (final personJson in personsJsonList) {
-        persons.add(PersonInPlace.fromJson(personJson));
-      }
+  factory PeopleInPlaceData.fromJson(Map<String, dynamic> json) {
+    if (json
+        case {
+          'persons': List persons,
+        }) {
+      return PeopleInPlaceData([
+        if (persons.isNotEmpty)
+          for (final person in persons) PersonInPlace.fromJson(person)
+      ]);
     }
-    print(this);
+    throw FormatException('Invalid JSON: $json', json);
   }
 
   @override
@@ -2840,7 +2837,7 @@ class PeopleInPlaceTest extends Test<PeopleInPlaceData>
           scheduledTime: scheduledTime,
           projectRef: projectRef,
           collectionID: collectionID,
-          data: PeopleInPlaceData(),
+          data: PeopleInPlaceData.empty(),
           standingPoints: (standingPoints as List<StandingPoint>?) ?? [],
           testDuration: testDuration ?? -1,
         );
@@ -2863,8 +2860,8 @@ class PeopleInPlaceTest extends Test<PeopleInPlaceData>
           );
       await testRef.set(test as PeopleInPlaceTest, SetOptions(merge: true));
     };
-    Test._standingPointTestCollectionIDs.add(collectionIDStatic);
     Test._testInitialsMap[PeopleInPlaceTest] = 'PP';
+    Test._standingPointTestCollectionIDs.add(collectionIDStatic);
     Test._timerTestCollectionIDs.add(collectionIDStatic);
   }
 
@@ -2886,21 +2883,35 @@ class PeopleInPlaceTest extends Test<PeopleInPlaceData>
     }
   }
 
-  static PeopleInPlaceTest fromJson(Map<String, dynamic> doc) {
-    return PeopleInPlaceTest._(
-      title: doc['title'],
-      testID: doc['id'],
-      scheduledTime: doc['scheduledTime'],
-      projectRef: doc['project'],
-      collectionID: collectionIDStatic,
-      data: PeopleInPlaceData.fromJson(doc['data']),
-      creationTime: doc['creationTime'],
-      maxResearchers: doc['maxResearchers'],
-      isComplete: doc['isComplete'],
-      standingPoints: StandingPoint.fromJsonList(doc['standingPoints']),
-      testDuration:
-          doc.containsKey('testDuration') ? doc['testDuration'] ?? -1 : -1,
-    );
+  factory PeopleInPlaceTest.fromJson(Map<String, dynamic> json) {
+    if (json
+        case {
+          'title': String title,
+          'id': String id,
+          'scheduledTime': Timestamp scheduledTime,
+          'project': DocumentReference project,
+          'data': Map<String, dynamic> data,
+          'creationTime': Timestamp creationTime,
+          'maxResearchers': int maxResearchers,
+          'isComplete': bool isComplete,
+          'standingPoints': List standingPoints,
+          'testDuration': int testDuration,
+        }) {
+      return PeopleInPlaceTest._(
+        title: title,
+        testID: id,
+        scheduledTime: scheduledTime,
+        projectRef: project,
+        collectionID: collectionIDStatic,
+        data: PeopleInPlaceData.fromJson(data),
+        creationTime: creationTime,
+        maxResearchers: maxResearchers,
+        isComplete: isComplete,
+        standingPoints: StandingPoint.fromJsonList(standingPoints),
+        testDuration: testDuration,
+      );
+    }
+    throw FormatException('Invalid JSON: $json', json);
   }
 
   @override
