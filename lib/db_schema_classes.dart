@@ -1163,9 +1163,8 @@ enum ShelterBoundaryType {
 }
 
 class ConstructedBoundary {
-  static Color polylineColor = Colors.purpleAccent;
-  late final Polyline polyline;
-  late final double polylineLength;
+  final Polyline polyline;
+  final double polylineLength;
   final ConstructedBoundaryType constructedType;
 
   ConstructedBoundary({
@@ -1178,11 +1177,34 @@ class ConstructedBoundary {
     required this.polylineLength,
     required this.constructedType,
   });
+
+  factory ConstructedBoundary.fromJsonAndType(
+      Map<String, dynamic> json, ConstructedBoundaryType constructedType) {
+    if (json
+        case {
+          'polyline': List polylinePoints,
+          'polylineLength': double polylineLength,
+        }) {
+      final List<LatLng> points =
+          List<GeoPoint>.from(polylinePoints).toLatLngList();
+      return ConstructedBoundary.recreate(
+        polyline: Polyline(
+          polylineId: PolylineId(points.toString()),
+          points: points,
+          color: BoundaryType.constructed.color,
+          width: 4,
+        ),
+        polylineLength: polylineLength,
+        constructedType: constructedType,
+      );
+    }
+    throw FormatException('Invalid JSON: $json', json);
+  }
 }
 
 class MaterialBoundary {
-  late final Polygon polygon;
-  late final double polygonArea;
+  final Polygon polygon;
+  final double polygonArea;
   final MaterialBoundaryType materialType;
 
   MaterialBoundary({
@@ -1195,11 +1217,30 @@ class MaterialBoundary {
     required this.polygonArea,
     required this.materialType,
   });
+
+  factory MaterialBoundary.fromJsonAndType(
+      Map<String, dynamic> json, MaterialBoundaryType materialType) {
+    if (json
+        case {
+          'polygon': List polygonPoints,
+          'polygonArea': double polygonArea,
+        }) {
+      final List<LatLng> points =
+          List<GeoPoint>.from(polygonPoints).toLatLngList();
+      return MaterialBoundary.recreate(
+        polygon:
+            finalizePolygon(points, strokeColor: BoundaryType.material.color),
+        polygonArea: polygonArea,
+        materialType: materialType,
+      );
+    }
+    throw FormatException('Invalid JSON: $json', json);
+  }
 }
 
 class ShelterBoundary {
-  late final Polygon polygon;
-  late final double polygonArea;
+  final Polygon polygon;
+  final double polygonArea;
   final ShelterBoundaryType shelterType;
 
   ShelterBoundary({
@@ -1212,93 +1253,165 @@ class ShelterBoundary {
     required this.polygonArea,
     required this.shelterType,
   });
+
+  factory ShelterBoundary.fromJsonAndType(
+      Map<String, dynamic> json, ShelterBoundaryType shelterType) {
+    if (json
+        case {
+          'polygon': List polygonPoints,
+          'polygonArea': double polygonArea,
+        }) {
+      final List<LatLng> points =
+          List<GeoPoint>.from(polygonPoints).toLatLngList();
+      return ShelterBoundary.recreate(
+        polygon:
+            finalizePolygon(points, strokeColor: BoundaryType.shelter.color),
+        polygonArea: polygonArea,
+        shelterType: shelterType,
+      );
+    }
+    throw FormatException('Invalid JSON: $json', json);
+  }
 }
 
 class SpatialBoundariesData with JsonToString {
-  final List<ConstructedBoundary> constructed = [];
-  final List<MaterialBoundary> material = [];
-  final List<ShelterBoundary> shelter = [];
+  final List<ConstructedBoundary> constructed;
+  final List<MaterialBoundary> material;
+  final List<ShelterBoundary> shelter;
 
-  SpatialBoundariesData();
+  SpatialBoundariesData({
+    required this.constructed,
+    required this.material,
+    required this.shelter,
+  });
 
-  SpatialBoundariesData.fromJson(Map<String, dynamic> data) {
-    if (data.containsKey(BoundaryType.constructed.name) &&
-        (data[BoundaryType.constructed.name] as Map).isNotEmpty) {
-      final constructedData = data[BoundaryType.constructed.name];
-      List<ConstructedBoundaryType> types = ConstructedBoundaryType.values;
-      for (final type in types) {
-        if (constructedData.containsKey(type.name) &&
-            (constructedData[type.name] as List).isNotEmpty) {
-          for (final boundary in (constructedData[type.name] as List)) {
-            // Try to create polyline from existing and only add if successful
-            List points = boundary['polyline'];
-            Polyline? polyline = createPolyline(
-                points.toLatLngList(), ConstructedBoundary.polylineColor);
-            if (polyline != null) {
-              constructed.add(ConstructedBoundary.recreate(
-                polyline: polyline,
-                polylineLength: boundary['polylineLength'],
-                constructedType: type,
-              ));
-            }
-          }
-        }
+  SpatialBoundariesData.empty()
+      : constructed = [],
+        material = [],
+        shelter = [];
+
+  factory SpatialBoundariesData.fromJson(Map<String, dynamic> json) {
+    if (json
+        case {
+          'constructed': Map<String, dynamic> constructedBoundaries,
+          'material': Map<String, dynamic> materialBoundaries,
+          'shelter': Map<String, dynamic> shelterBoundaries,
+        }) {
+      List<ConstructedBoundary> constructedList = [];
+      if (constructedBoundaries
+          case {
+            'curb': List curb,
+            'buildingWall': List buildingWall,
+            'fence': List fence,
+            'planter': List planter,
+            'partialWall': List partialWall,
+          }) {
+        constructedList = [
+          if (curb.isNotEmpty)
+            for (final bound in curb)
+              ConstructedBoundary.fromJsonAndType(
+                  bound, ConstructedBoundaryType.curb),
+          if (buildingWall.isNotEmpty)
+            for (final bound in buildingWall)
+              ConstructedBoundary.fromJsonAndType(
+                  bound, ConstructedBoundaryType.buildingWall),
+          if (fence.isNotEmpty)
+            for (final bound in fence)
+              ConstructedBoundary.fromJsonAndType(
+                  bound, ConstructedBoundaryType.fence),
+          if (planter.isNotEmpty)
+            for (final bound in planter)
+              ConstructedBoundary.fromJsonAndType(
+                  bound, ConstructedBoundaryType.planter),
+          if (partialWall.isNotEmpty)
+            for (final bound in partialWall)
+              ConstructedBoundary.fromJsonAndType(
+                  bound, ConstructedBoundaryType.partialWall),
+          if (fence.isNotEmpty)
+            for (final bound in fence)
+              ConstructedBoundary.fromJsonAndType(
+                  bound, ConstructedBoundaryType.fence),
+        ];
       }
-    }
-    if (data.containsKey(BoundaryType.material.name) &&
-        (data[BoundaryType.material.name] as Map).isNotEmpty) {
-      final materialData = data[BoundaryType.material.name];
-      List<MaterialBoundaryType> types = MaterialBoundaryType.values;
-      for (final type in types) {
-        if (materialData.containsKey(type.name) &&
-            (materialData[type.name] as List).isNotEmpty) {
-          for (final boundary in (materialData[type.name] as List)) {
-            List points = boundary['polygon'];
-            Polygon polygon = Polygon(
-              polygonId:
-                  PolygonId(DateTime.now().millisecondsSinceEpoch.toString()),
-              points: points.toLatLngList(),
-            );
-            material.add(MaterialBoundary.recreate(
-              polygon: polygon,
-              polygonArea: boundary['polygonArea'],
-              materialType: type,
-            ));
-          }
-        }
+      List<MaterialBoundary> materialList = [];
+      if (materialBoundaries
+          case {
+            'pavers': List pavers,
+            'concrete': List concrete,
+            'tile': List tile,
+            'natural': List natural,
+            'decking': List decking,
+          }) {
+        materialList = [
+          if (pavers.isNotEmpty)
+            for (final bound in pavers)
+              MaterialBoundary.fromJsonAndType(
+                  bound, MaterialBoundaryType.pavers),
+          if (concrete.isNotEmpty)
+            for (final bound in concrete)
+              MaterialBoundary.fromJsonAndType(
+                  bound, MaterialBoundaryType.concrete),
+          if (tile.isNotEmpty)
+            for (final bound in tile)
+              MaterialBoundary.fromJsonAndType(
+                  bound, MaterialBoundaryType.tile),
+          if (natural.isNotEmpty)
+            for (final bound in natural)
+              MaterialBoundary.fromJsonAndType(
+                  bound, MaterialBoundaryType.natural),
+          if (decking.isNotEmpty)
+            for (final bound in decking)
+              MaterialBoundary.fromJsonAndType(
+                  bound, MaterialBoundaryType.decking),
+        ];
       }
-    }
-    if (data.containsKey(BoundaryType.shelter.name) &&
-        (data[BoundaryType.shelter.name] as Map).isNotEmpty) {
-      final shelterData = data[BoundaryType.shelter.name];
-      List<ShelterBoundaryType> types = ShelterBoundaryType.values;
-      for (final type in types) {
-        if (shelterData.containsKey(type.name) &&
-            (shelterData[type.name] as List).isNotEmpty) {
-          for (final boundary in (shelterData[type.name] as List)) {
-            List points = boundary['polygon'];
-            Polygon polygon = Polygon(
-              polygonId:
-                  PolygonId(DateTime.now().millisecondsSinceEpoch.toString()),
-              points: points.toLatLngList(),
-            );
-            shelter.add(ShelterBoundary.recreate(
-              polygon: polygon,
-              polygonArea: boundary['polygonArea'],
-              shelterType: type,
-            ));
-          }
-        }
+      List<ShelterBoundary> shelterList = [];
+      if (shelterBoundaries
+          case {
+            'canopy': List canopy,
+            'tree': List tree,
+            'furniture': List furniture,
+            'temporary': List temporary,
+            'constructed': List constructed,
+          }) {
+        shelterList = [
+          if (canopy.isNotEmpty)
+            for (final bound in canopy)
+              ShelterBoundary.fromJsonAndType(
+                  bound, ShelterBoundaryType.canopy),
+          if (tree.isNotEmpty)
+            for (final bound in tree)
+              ShelterBoundary.fromJsonAndType(bound, ShelterBoundaryType.tree),
+          if (furniture.isNotEmpty)
+            for (final bound in furniture)
+              ShelterBoundary.fromJsonAndType(
+                  bound, ShelterBoundaryType.furniture),
+          if (temporary.isNotEmpty)
+            for (final bound in temporary)
+              ShelterBoundary.fromJsonAndType(
+                  bound, ShelterBoundaryType.temporary),
+          if (constructed.isNotEmpty)
+            for (final bound in constructed)
+              ShelterBoundary.fromJsonAndType(
+                  bound, ShelterBoundaryType.constructed),
+        ];
       }
+      return SpatialBoundariesData(
+          constructed: constructedList,
+          material: materialList,
+          shelter: shelterList);
     }
+    throw FormatException('Invalid JSON: $json', json);
   }
 
   @override
   Map<String, Object> toJson() {
-    List<ConstructedBoundaryType> constructedTypes =
+    final List<ConstructedBoundaryType> constructedTypes =
         ConstructedBoundaryType.values;
-    List<MaterialBoundaryType> materialTypes = MaterialBoundaryType.values;
-    List<ShelterBoundaryType> shelterTypes = ShelterBoundaryType.values;
+    final List<MaterialBoundaryType> materialTypes =
+        MaterialBoundaryType.values;
+    final List<ShelterBoundaryType> shelterTypes = ShelterBoundaryType.values;
+
     Map<String, Map<String, List>> json = {
       BoundaryType.constructed.name: {
         for (final type in constructedTypes) type.name: []
@@ -1375,7 +1488,7 @@ class SpatialBoundariesTest extends Test<SpatialBoundariesData>
           scheduledTime: scheduledTime,
           projectRef: projectRef,
           collectionID: collectionID,
-          data: SpatialBoundariesData(),
+          data: SpatialBoundariesData.empty(),
           testDuration: testDuration ?? -1,
         );
     // Register for recreating a Spatial Boundaries Test from Firestore
@@ -1422,20 +1535,33 @@ class SpatialBoundariesTest extends Test<SpatialBoundariesData>
     }
   }
 
-  static SpatialBoundariesTest fromJson(Map<String, dynamic> doc) {
-    return SpatialBoundariesTest._(
-      title: doc['title'],
-      testID: doc['id'],
-      scheduledTime: doc['scheduledTime'],
-      projectRef: doc['project'],
-      collectionID: collectionIDStatic,
-      data: SpatialBoundariesData.fromJson(doc['data']),
-      creationTime: doc['creationTime'],
-      maxResearchers: doc['maxResearchers'],
-      isComplete: doc['isComplete'],
-      testDuration:
-          doc.containsKey('testDuration') ? doc['testDuration'] ?? -1 : -1,
-    );
+  factory SpatialBoundariesTest.fromJson(Map<String, dynamic> json) {
+    if (json
+        case {
+          'title': String title,
+          'id': String id,
+          'scheduledTime': Timestamp scheduledTime,
+          'project': DocumentReference project,
+          'data': Map<String, dynamic> data,
+          'creationTime': Timestamp creationTime,
+          'maxResearchers': int maxResearchers,
+          'isComplete': bool isComplete,
+          'testDuration': int testDuration,
+        }) {
+      return SpatialBoundariesTest._(
+        title: title,
+        testID: id,
+        scheduledTime: scheduledTime,
+        projectRef: project,
+        collectionID: collectionIDStatic,
+        data: SpatialBoundariesData.fromJson(data),
+        creationTime: creationTime,
+        maxResearchers: maxResearchers,
+        isComplete: isComplete,
+        testDuration: testDuration,
+      );
+    }
+    throw FormatException('Invalid JSON: $json', json);
   }
 
   @override

@@ -56,7 +56,7 @@ class _SpatialBoundariesTestPageState extends State<SpatialBoundariesTestPage> {
   final List<LatLng> _polylinePoints = [];
   final Set<Marker> _polylineMarkers = {};
 
-  final SpatialBoundariesData _newData = SpatialBoundariesData();
+  final SpatialBoundariesData _newData = SpatialBoundariesData.empty();
   BoundaryType? _boundaryType;
   ConstructedBoundaryType? _constructedType;
   MaterialBoundaryType? _materialType;
