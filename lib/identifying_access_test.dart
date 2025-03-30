@@ -44,7 +44,7 @@ class _IdentifyingAccessState extends State<IdentifyingAccess> {
   LatLng _location = defaultLocation;
   double _zoom = 18;
 
-  final AccessData _accessData = AccessData();
+  final IdentifyingAccessData _accessData = IdentifyingAccessData.empty();
 
   late final Polygon _projectPolygon;
   Polyline? _currentPolyline;
