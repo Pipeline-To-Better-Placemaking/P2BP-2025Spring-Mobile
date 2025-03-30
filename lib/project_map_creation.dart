@@ -19,8 +19,6 @@ class ProjectMapCreation extends StatefulWidget {
   State<ProjectMapCreation> createState() => _ProjectMapCreationState();
 }
 
-final User? loggedInUser = FirebaseAuth.instance.currentUser;
-
 class _ProjectMapCreationState extends State<ProjectMapCreation> {
   late DocumentReference teamRef;
   late GoogleMapController mapController;
@@ -368,11 +366,9 @@ class _ProjectMapCreationState extends State<ProjectMapCreation> {
                                               widget.partialProjectData.title,
                                           description: widget
                                               .partialProjectData.description,
-                                          teamRef: await getCurrentTeam(),
+                                          address:
+                                              widget.partialProjectData.address,
                                           polygonPoints: _polygons.first.points,
-                                          // Polygon area is square feet, returned in
-                                          // (meters)^2, multiplied by (feet/meter)^2
-                                          // TODO: move to constructor
                                           polygonArea: _polygons.first
                                               .getAreaInSquareFeet(),
                                           standingPoints: _standingPoints,

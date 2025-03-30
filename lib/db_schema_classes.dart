@@ -63,9 +63,11 @@ class Team {
 class Project {
   Timestamp? creationTime;
   DocumentReference? teamRef;
+  DocumentReference? projectAdmin;
   String projectID = '';
   String title = '';
   String description = '';
+  String address = '';
   List<LatLng> polygonPoints = [];
   num polygonArea = 0;
   List<DocumentReference> testRefs = [];
@@ -75,9 +77,11 @@ class Project {
   Project({
     this.creationTime,
     required this.teamRef,
+    required this.projectAdmin,
     required this.projectID,
     required this.title,
     required this.description,
+    required this.address,
     required this.polygonPoints,
     required this.polygonArea,
     required this.standingPoints,
@@ -86,7 +90,8 @@ class Project {
   });
 
   // TODO: Eventually add Team Photo and Team Color
-  Project.partialProject({required this.title, required this.description});
+  Project.partialProject(
+      {required this.title, required this.description, required this.address});
 
   // TODO: Probably want to delete test if test reference is not found; however, functionality may be unnecessary if the implementation of deleting a test deletes it from the project also (which is ideal).
   /// Gets all fields for each [Test] in this [Project] and loads them

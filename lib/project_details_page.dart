@@ -31,7 +31,6 @@ User? loggedInUser = FirebaseAuth.instance.currentUser;
 class _ProjectDetailsPageState extends State<ProjectDetailsPage> {
   late int _testCount;
   bool _isLoading = true;
-  Project? project;
   late Widget _testListView;
   late GoogleMapController mapController;
 
@@ -213,21 +212,22 @@ class _ProjectDetailsPageState extends State<ProjectDetailsPage> {
                       fontWeight: FontWeight.bold,
                     ),
                   ),
-                  FilledButton.icon(
-                    style: FilledButton.styleFrom(
-                      padding: const EdgeInsets.only(left: 15, right: 15),
-                      backgroundColor: Color(0xFF62B6FF),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(10.0),
+                  if (widget.projectData.projectAdmin!.id == loggedInUser!.uid)
+                    FilledButton.icon(
+                      style: FilledButton.styleFrom(
+                        padding: const EdgeInsets.only(left: 15, right: 15),
+                        backgroundColor: Color(0xFF62B6FF),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(10.0),
+                        ),
+                        // foregroundColor: foregroundColor,
+                        // backgroundColor: backgroundColor,
                       ),
-                      // foregroundColor: foregroundColor,
-                      // backgroundColor: backgroundColor,
-                    ),
-                    onPressed: _showCreateTestModal,
-                    label: Text('Create'),
-                    icon: Icon(Icons.add),
-                    iconAlignment: IconAlignment.end,
-                  )
+                      onPressed: _showCreateTestModal,
+                      label: Text('Create'),
+                      icon: Icon(Icons.add),
+                      iconAlignment: IconAlignment.end,
+                    )
                 ],
               ),
             ),
@@ -244,7 +244,10 @@ class _ProjectDetailsPageState extends State<ProjectDetailsPage> {
                       ? _testListView
                       : const Center(
                           child: Text(
-                              'No research activities. Create one first!')),
+                            'No research activities. Create one first!',
+                            style: TextStyle(color: Colors.white),
+                          ),
+                        ),
             ),
           ],
         ),

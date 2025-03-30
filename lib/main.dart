@@ -76,7 +76,8 @@ class MyApp extends StatelessWidget {
         '/create_project_details': (context) => ProjectDetailsPage(
               projectData: Project.partialProject(
                   title: 'No data sent',
-                  description: 'Accessed without project data'),
+                  description: 'Accessed without project data',
+                  address: 'No address set'),
             ),
         '/login': (context) => const LoginScreen(),
         '/signup': (context) => const SignUpScreen(),

@@ -1,4 +1,3 @@
-import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:p2bp_2025spring_mobile/project_map_creation.dart';
 import 'package:p2bp_2025spring_mobile/teams_and_invites_page.dart';
@@ -18,8 +17,6 @@ class CreateProjectAndTeamsPage extends StatefulWidget {
   State<CreateProjectAndTeamsPage> createState() =>
       _CreateProjectAndTeamsPageState();
 }
-
-User? loggedInUser = FirebaseAuth.instance.currentUser;
 
 class _CreateProjectAndTeamsPageState extends State<CreateProjectAndTeamsPage> {
   PageView page = PageView.project;
@@ -109,6 +106,7 @@ class _CreateProjectWidgetState extends State<CreateProjectWidget> {
   // TODO: add cover photo?
   String projectDescription = '';
   String projectTitle = '';
+  String projectAddress = '';
   final _formKey = GlobalKey<FormState>();
 
   @override
@@ -125,6 +123,7 @@ class _CreateProjectWidgetState extends State<CreateProjectWidget> {
           child: Padding(
             padding: const EdgeInsets.symmetric(horizontal: 15, vertical: 25),
             child: Column(
+              spacing: 5,
               children: <Widget>[
                 Align(
                   alignment: Alignment.centerLeft,
@@ -138,7 +137,6 @@ class _CreateProjectWidgetState extends State<CreateProjectWidget> {
                     ),
                   ),
                 ),
-                const SizedBox(height: 5),
                 PhotoUpload(
                   width: 380,
                   height: 130,
@@ -150,7 +148,7 @@ class _CreateProjectWidgetState extends State<CreateProjectWidget> {
                     return;
                   },
                 ),
-                const SizedBox(height: 15.0),
+                const SizedBox(height: 10.0),
                 Align(
                   alignment: Alignment.centerLeft,
                   child: Text(
@@ -163,7 +161,6 @@ class _CreateProjectWidgetState extends State<CreateProjectWidget> {
                     ),
                   ),
                 ),
-                const SizedBox(height: 5),
                 CreationTextBox(
                   maxLength: 60,
                   labelText: 'Project Name',
@@ -178,7 +175,6 @@ class _CreateProjectWidgetState extends State<CreateProjectWidget> {
                     });
                   },
                 ),
-                const SizedBox(height: 10.0),
                 Align(
                   alignment: Alignment.centerLeft,
                   child: Text(
@@ -191,7 +187,6 @@ class _CreateProjectWidgetState extends State<CreateProjectWidget> {
                     ),
                   ),
                 ),
-                const SizedBox(height: 5),
                 CreationTextBox(
                   maxLength: 240,
                   labelText: 'Project Description',
@@ -206,6 +201,47 @@ class _CreateProjectWidgetState extends State<CreateProjectWidget> {
                     });
                   },
                 ),
+                Align(
+                  alignment: Alignment.centerLeft,
+                  child: Row(
+                    spacing: 5,
+                    mainAxisAlignment: MainAxisAlignment.start,
+                    children: [
+                      Text(
+                        'Project Address',
+                        textAlign: TextAlign.left,
+                        style: TextStyle(
+                          fontWeight: FontWeight.bold,
+                          fontSize: 16.0,
+                          color: Colors.blue[900],
+                        ),
+                      ),
+                      Tooltip(
+                        triggerMode: TooltipTriggerMode.tap,
+                        enableTapToDismiss: true,
+                        showDuration: Duration(seconds: 3),
+                        preferBelow: false,
+                        message:
+                            'Enter a central address for the designated project location. \nIf no such address exists, give an approximate location.',
+                        child:
+                            Icon(Icons.help, size: 18, color: Colors.blue[900]),
+                      ),
+                    ],
+                  ),
+                ),
+                CreationTextBox(
+                  maxLength: 120,
+                  labelText: 'Project Address',
+                  maxLines: 2,
+                  minLines: 2,
+                  errorMessage:
+                      'Project address must be at least 3 characters long.',
+                  onChanged: (addressText) {
+                    setState(() {
+                      projectAddress = addressText;
+                    });
+                  },
+                ),
                 const SizedBox(height: 10.0),
                 Align(
                   alignment: Alignment.bottomRight,
@@ -216,7 +252,6 @@ class _CreateProjectWidgetState extends State<CreateProjectWidget> {
                     icon: const Icon(Icons.chevron_right),
                     onPressed: () async {
                       if (await getCurrentTeam() == null) {
-                        // TODO: Display error for creating project before team
                         if (!context.mounted) return;
                         ScaffoldMessenger.of(context).showSnackBar(
                           const SnackBar(
@@ -225,8 +260,10 @@ class _CreateProjectWidgetState extends State<CreateProjectWidget> {
                         );
                       } else if (_formKey.currentState!.validate()) {
                         Project partialProject = Project.partialProject(
-                            title: projectTitle,
-                            description: projectDescription);
+                          title: projectTitle,
+                          description: projectDescription,
+                          address: projectAddress,
+                        );
                         if (!context.mounted) return;
                         Navigator.push(
                             context,
