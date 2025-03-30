@@ -581,7 +581,7 @@ class _NaturePrevalenceState extends State<NaturePrevalence> {
   }
 
   void _finalizePolygon() {
-    Set<Polygon> tempPolygon;
+    Polygon tempPolygon;
     try {
       if (_natureType == NatureType.vegetation) {
         tempPolygon = finalizePolygon(
@@ -589,18 +589,18 @@ class _NaturePrevalenceState extends State<NaturePrevalence> {
           strokeColor: Vegetation.vegetationTypeToColor[_vegetationType],
         );
         // Create polygon.
-        _polygons.addAll(tempPolygon);
+        _polygons.add(tempPolygon);
         _vegetationData.add(Vegetation(
             vegetationType: _vegetationType!,
-            polygon: tempPolygon.first,
+            polygon: tempPolygon,
             otherType: _otherType));
       } else if (_natureType == NatureType.waterBody) {
         tempPolygon = finalizePolygon(_polygonPoints,
             strokeColor: WaterBody.waterBodyTypeToColor[_waterBodyType]);
         // Create polygon.
-        _polygons.addAll(tempPolygon);
-        _waterBodyData.add(WaterBody(
-            waterBodyType: _waterBodyType!, polygon: tempPolygon.first));
+        _polygons.add(tempPolygon);
+        _waterBodyData.add(
+            WaterBody(waterBodyType: _waterBodyType!, polygon: tempPolygon));
       } else {
         throw Exception("Invalid nature type in _finalizePolygon(), "
             "_natureType = $_natureType");

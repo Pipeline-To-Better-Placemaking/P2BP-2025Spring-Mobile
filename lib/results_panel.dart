@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+
 import 'theme.dart';
 import 'widgets.dart';
 
@@ -33,7 +34,7 @@ void showResultsModalSheet(BuildContext context) {
     builder: (context) {
       return Padding(
         padding: EdgeInsets.only(
-          bottom: MediaQuery.of(context).viewInsets.bottom,
+          bottom: MediaQuery.viewInsetsOf(context).bottom,
         ),
         child: SingleChildScrollView(
           child: Container(

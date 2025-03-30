@@ -75,13 +75,11 @@ class _ProjectMapCreationState extends State<ProjectMapCreation> {
   }
 
   void _moveToCurrentLocation() {
-    if (mapController != null) {
-      mapController.animateCamera(
-        CameraUpdate.newCameraPosition(
-          CameraPosition(target: _currentLocation, zoom: 14.0),
-        ),
-      );
-    }
+    mapController.animateCamera(
+      CameraUpdate.newCameraPosition(
+        CameraPosition(target: _currentLocation, zoom: 14.0),
+      ),
+    );
   }
 
   void _togglePoint(LatLng point) {
@@ -160,7 +158,7 @@ class _ProjectMapCreationState extends State<ProjectMapCreation> {
   void _finalizePolygon() {
     try {
       // Create polygon.
-      _polygons = finalizePolygon(_polygonPoints);
+      _polygons.add(finalizePolygon(_polygonPoints));
 
       // Creates Maps Toolkit representation of Polygon for checking if point
       // is inside area.
