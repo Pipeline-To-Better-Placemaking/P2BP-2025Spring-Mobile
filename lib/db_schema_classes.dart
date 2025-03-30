@@ -1592,13 +1592,14 @@ class Section with JsonToString {
   Section.empty()
       : sectionLink = 'Empty sectionLink. SectionLink has not been set yet.';
 
-  static Section fromJson(Map<String, dynamic> data) {
-    Section? output;
-    if (data.containsKey('sectionLink') && data['sectionLink'] is String) {
-      output = Section(sectionLink: data['sectionLink']);
+  factory Section.fromJson(Map<String, dynamic> json) {
+    if (json case {'sectionLink': String sectionLink}) {
+      if (sectionLink.isNotEmpty) {
+        return Section(sectionLink: sectionLink);
+      }
     }
-    return output ??
-        Section(sectionLink: 'Error retrieving file. File not retrieved.');
+    return Section(sectionLink: 'Error retrieving file. File not retrieved.');
+    throw FormatException('Invalid JSON: $json', json);
   }
 
   @override
@@ -1702,19 +1703,33 @@ class SectionCutterTest extends Test<Section> with JsonToString {
     }
   }
 
-  static SectionCutterTest fromJson(Map<String, dynamic> doc) {
-    return SectionCutterTest._(
-      title: doc['title'],
-      testID: doc['id'],
-      scheduledTime: doc['scheduledTime'],
-      projectRef: doc['project'],
-      collectionID: collectionIDStatic,
-      data: Section.fromJson(doc['data']),
-      creationTime: doc['creationTime'],
-      maxResearchers: doc['maxResearchers'],
-      isComplete: doc['isComplete'],
-      linePoints: (doc['linePoints'] as List).toLatLngList(),
-    );
+  factory SectionCutterTest.fromJson(Map<String, dynamic> json) {
+    if (json
+        case {
+          'title': String title,
+          'id': String id,
+          'scheduledTime': Timestamp scheduledTime,
+          'project': DocumentReference project,
+          'data': Map<String, dynamic> data,
+          'creationTime': Timestamp creationTime,
+          'maxResearchers': int maxResearchers,
+          'isComplete': bool isComplete,
+          'linePoints': List linePoints,
+        }) {
+      return SectionCutterTest._(
+        title: title,
+        testID: id,
+        scheduledTime: scheduledTime,
+        projectRef: project,
+        collectionID: collectionIDStatic,
+        data: Section.fromJson(data),
+        creationTime: creationTime,
+        maxResearchers: maxResearchers,
+        isComplete: isComplete,
+        linePoints: List<GeoPoint>.from(linePoints).toLatLngList(),
+      );
+    }
+    throw FormatException('Invalid JSON: $json', json);
   }
 
   @override
