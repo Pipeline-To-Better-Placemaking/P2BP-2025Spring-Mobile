@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:maps_toolkit/maps_toolkit.dart' as mp;
+import 'package:p2bp_2025spring_mobile/assets.dart';
 import 'package:p2bp_2025spring_mobile/firestore_functions.dart';
 import 'package:p2bp_2025spring_mobile/theme.dart';
 import 'package:p2bp_2025spring_mobile/widgets.dart';
@@ -148,17 +149,17 @@ class _NaturePrevalenceState extends State<NaturePrevalence> {
     _directions = 'Choose a category. Or, click finish to submit.';
   }
 
-  String? _getCurrentTypeName() {
+  Object? _getCurrentTypeName() {
     switch (_natureType) {
       case null:
         throw Exception("Type not chosen! "
             "_natureType is null and _getCurrentType() has been invoked.");
       case NatureType.vegetation:
-        return _vegetationType?.name;
+        return _vegetationType;
       case NatureType.waterBody:
-        return _waterBodyType?.name;
+        return _waterBodyType;
       case NatureType.animal:
-        return _animalType?.name;
+        return _animalType;
     }
   }
 
@@ -326,12 +327,18 @@ class _NaturePrevalenceState extends State<NaturePrevalence> {
       {required String title,
       required String? subtitle,
       required List<Widget> contentList}) {
-    showTestModalGeneric(context, onCancel: () {
-      setState(() {
-        _clearTypes();
-      });
-      Navigator.pop(context);
-    }, title: title, subtitle: subtitle, contentList: contentList);
+    showTestModalGeneric(
+      context,
+      onCancel: () {
+        setState(() {
+          _clearTypes();
+        });
+        Navigator.pop(context);
+      },
+      title: title,
+      subtitle: subtitle,
+      contentList: contentList,
+    );
   }
 
   void showModalAnimal(BuildContext context) {
@@ -420,7 +427,7 @@ class _NaturePrevalenceState extends State<NaturePrevalence> {
                 Navigator.pop(context);
               },
             ),
-            Flexible(flex: 1, child: SizedBox())
+            Flexible(flex: 1, child: SizedBox()),
           ],
         ),
         SizedBox(height: 20),
@@ -433,22 +440,23 @@ class _NaturePrevalenceState extends State<NaturePrevalence> {
           ),
         ),
         Row(
+          spacing: 10,
           children: <Widget>[
-            Flexible(
+            Expanded(
               flex: 3,
               child: TextField(
                 onChanged: (otherText) {
                   _otherType = otherText;
                 },
                 decoration: InputDecoration(
-                    filled: true,
-                    fillColor: Colors.white,
-                    border: OutlineInputBorder(),
-                    floatingLabelBehavior: FloatingLabelBehavior.never,
-                    labelText: 'Enter animal name'),
+                  filled: true,
+                  fillColor: Colors.white,
+                  border: OutlineInputBorder(),
+                  floatingLabelBehavior: FloatingLabelBehavior.never,
+                  labelText: 'Enter animal name',
+                ),
               ),
             ),
-            SizedBox(width: 10),
             Flexible(
               flex: 2,
               child: FilledButton(
@@ -465,13 +473,17 @@ class _NaturePrevalenceState extends State<NaturePrevalence> {
                   backgroundColor: Colors.white,
                   foregroundColor: Colors.black,
                   shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(2.0),
+                    borderRadius: BorderRadius.circular(10.0),
                   ),
                 ),
-                child: Text('Submit other'),
+                child: Center(
+                  child: Text(
+                    'Submit other',
+                    textAlign: TextAlign.center,
+                  ),
+                ),
               ),
             ),
-            Flexible(flex: 1, child: SizedBox())
           ],
         ),
       ],
@@ -514,9 +526,8 @@ class _NaturePrevalenceState extends State<NaturePrevalence> {
   }
 
   void _polygonTap(LatLng point) {
-    String? type = _getCurrentTypeName();
-    if (type == null) return;
-    final markerId = MarkerId('${type}_marker_${point.toString()}');
+    if (_getCurrentTypeName() == null) return;
+    final markerId = MarkerId(point.toString());
     setState(() {
       _polygonPoints.add(point);
       _polygonMarkers.add(
@@ -524,6 +535,7 @@ class _NaturePrevalenceState extends State<NaturePrevalence> {
           markerId: markerId,
           position: point,
           consumeTapEvents: _deleteMode,
+          icon: tempMarkerIcon,
           onTap: () {
             // If the marker is tapped again, it will be removed
             setState(() {
@@ -538,9 +550,9 @@ class _NaturePrevalenceState extends State<NaturePrevalence> {
   }
 
   void _pointTap(LatLng point) {
-    String? type = _getCurrentTypeName();
-    if (type != null) {
-      final markerId = MarkerId('${type}_marker_${point.toString()}');
+    Object? type = _getCurrentTypeName();
+    if (type != null && type is AnimalType) {
+      final markerId = MarkerId(point.toString());
       setState(() {
         _markers.add(
           Marker(
@@ -548,15 +560,10 @@ class _NaturePrevalenceState extends State<NaturePrevalence> {
             position: point,
             consumeTapEvents: _deleteMode,
             infoWindow: InfoWindow(
-                title:
-                    _otherType ?? (type[0].toUpperCase() + type.substring(1)),
+                title: _otherType ?? type.displayName,
                 snippet:
                     "(${point.latitude.toStringAsFixed(5)}, ${point.longitude.toStringAsFixed(5)})"),
-            icon: AssetMapBitmap(
-              'assets/test_markers/${type}_marker.png',
-              width: 25,
-              height: 25,
-            ),
+            icon: naturePrevalenceAnimalIconMap[type]!,
             onTap: () {
               if (_pointMode || _polygonMode) return;
               // If the marker is tapped again, it will be removed

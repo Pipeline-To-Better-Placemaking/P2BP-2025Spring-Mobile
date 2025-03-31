@@ -972,7 +972,7 @@ void showTestModalGeneric(BuildContext context,
       builder: (BuildContext context) {
         return SingleChildScrollView(
           child: Padding(
-            padding: MediaQuery.of(context).viewInsets,
+            padding: MediaQuery.viewInsetsOf(context),
             child: Container(
               // Container decoration- rounded corners and gradient
               decoration: BoxDecoration(

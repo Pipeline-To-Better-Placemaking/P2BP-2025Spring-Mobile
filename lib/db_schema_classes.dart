@@ -2271,19 +2271,58 @@ enum WaterBodyType {
 /// [cat], [dog], [squirrel], [bird], [rabbit], [turtle], [duck], and [other].
 /// </br> [cat] and [dog] are domestic, [other] is its own type, and all other
 /// defined types are wild.
-enum AnimalType {
-  cat(AnimalDesignation.domesticated),
-  dog(AnimalDesignation.domesticated),
-  squirrel(AnimalDesignation.wild),
-  bird(AnimalDesignation.wild),
-  rabbit(AnimalDesignation.wild),
-  turtle(AnimalDesignation.wild),
-  duck(AnimalDesignation.wild),
-  other(AnimalDesignation.other);
+enum AnimalType implements DisplayNameEnum {
+  cat(
+    designation: AnimalDesignation.domesticated,
+    displayName: 'Cat',
+    iconName: 'cat_marker.png',
+  ),
+  dog(
+    designation: AnimalDesignation.domesticated,
+    displayName: 'Dog',
+    iconName: 'dog_marker.png',
+  ),
+  squirrel(
+    designation: AnimalDesignation.wild,
+    displayName: 'Squirrel',
+    iconName: 'squirrel_marker.png',
+  ),
+  bird(
+    designation: AnimalDesignation.wild,
+    displayName: 'Bird',
+    iconName: 'bird_marker.png',
+  ),
+  rabbit(
+    designation: AnimalDesignation.wild,
+    displayName: 'Rabbit',
+    iconName: 'rabbit_marker.png',
+  ),
+  turtle(
+    designation: AnimalDesignation.wild,
+    displayName: 'Turtle',
+    iconName: 'turtle_marker.png',
+  ),
+  duck(
+    designation: AnimalDesignation.wild,
+    displayName: 'Duck',
+    iconName: 'duck_marker.png',
+  ),
+  other(
+    designation: AnimalDesignation.other,
+    displayName: 'Other',
+    iconName: 'other_marker.png',
+  );
 
-  const AnimalType(this.designation);
+  const AnimalType({
+    required this.designation,
+    required this.displayName,
+    required this.iconName,
+  });
 
   final AnimalDesignation designation;
+  @override
+  final String displayName;
+  final String iconName;
 }
 
 /// The following designations are used to differentiate types of animals. They
@@ -2773,6 +2812,9 @@ class NaturePrevalenceTest extends Test<NaturePrevalenceData>
     implements TimerTest {
   /// Static constant definition of collection ID for this test type.
   static const String collectionIDStatic = 'nature_prevalence_tests';
+
+  static const String assetDirectoryPath =
+      'assets/test_specific/nature_prevalence/';
 
   /// User defined test timer duration in seconds.
   @override

@@ -80,6 +80,7 @@ flutter:
     - assets/test_specific/people_in_motion/
     - assets/test_specific/lighting_profile/
     - assets/test_specific/absence_of_order_locator/
+    - assets/test_specific/nature_prevalence/
 
   # An image asset can refer to one or more resolution-specific "variants", see
   # https://flutter.dev/to/resolution-aware-images

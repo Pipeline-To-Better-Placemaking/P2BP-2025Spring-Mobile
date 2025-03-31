@@ -38,6 +38,14 @@ final Map<MisconductType, AssetMapBitmap> absenceOfOrderIconMap = {
       height: 36,
     )
 };
+final Map<AnimalType, AssetMapBitmap> naturePrevalenceAnimalIconMap = {
+  for (final animal in AnimalType.values)
+    animal: AssetMapBitmap(
+      NaturePrevalenceTest.assetDirectoryPath + animal.iconName,
+      width: 25,
+      height: 25,
+    )
+};
 final Map<(PostureType, GenderType), AssetMapBitmap> peopleInPlaceIconMap = {
   for (final posture in PostureType.values)
     for (final gender in GenderType.values)
