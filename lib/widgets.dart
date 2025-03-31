@@ -276,6 +276,7 @@ class PasswordTextFormField extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return TextFormField(
+      style: TextStyle(color: Colors.white),
       obscureText: _obscureText,
       enableSuggestions: false,
       autocorrect: false,

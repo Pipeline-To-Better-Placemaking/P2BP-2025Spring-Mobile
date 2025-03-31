@@ -814,16 +814,17 @@ class _NaturePrevalenceState extends State<NaturePrevalence> {
                       spacing: 10,
                       children: [
                         DisplayModalButton(
-                            onPressed: (_pointMode ||
-                                    _polygonMode ||
-                                    _deleteMode ||
-                                    !_isTestRunning)
-                                ? null
-                                : () {
-                                    showModalAnimal(context);
-                                  },
-                            text: 'Animal',
-                            icon: Icon(Icons.pets)),
+                          onPressed: (_pointMode ||
+                                  _polygonMode ||
+                                  _deleteMode ||
+                                  !_isTestRunning)
+                              ? null
+                              : () {
+                                  showModalWaterBody(context);
+                                },
+                          text: 'Body of Water',
+                          icon: Icon(Icons.water),
+                        ),
                         DisplayModalButton(
                             onPressed: (_pointMode ||
                                     _polygonMode ||
@@ -854,16 +855,17 @@ class _NaturePrevalenceState extends State<NaturePrevalence> {
                       spacing: 10,
                       children: [
                         DisplayModalButton(
-                            onPressed: (_pointMode ||
-                                    _polygonMode ||
-                                    _deleteMode ||
-                                    !_isTestRunning)
-                                ? null
-                                : () {
-                                    showModalWaterBody(context);
-                                  },
-                            text: 'Body of Water',
-                            icon: Icon(Icons.water)),
+                          onPressed: (_pointMode ||
+                                  _polygonMode ||
+                                  _deleteMode ||
+                                  !_isTestRunning)
+                              ? null
+                              : () {
+                                  showModalAnimal(context);
+                                },
+                          text: 'Animal',
+                          icon: Icon(Icons.pets),
+                        ),
                       ],
                     ),
                     SizedBox(height: 20),

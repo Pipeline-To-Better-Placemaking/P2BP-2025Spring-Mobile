@@ -53,8 +53,10 @@ class _TeamSettingsScreenState extends State<TeamSettingsScreen> {
       MaterialPageRoute(
         builder: (context) => ProjectDetailsPage(
           projectData: Project.partialProject(
-              title: 'No data sent',
-              description: 'Accessed without project data'),
+            title: 'No data sent',
+            description: 'Accessed without project data',
+            address: 'Accessed w/out project data',
+          ),
         ),
       ),
     );
