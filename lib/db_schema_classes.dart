@@ -1,12 +1,10 @@
 import 'dart:io';
-import 'dart:math';
 
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:file_selector/file_selector.dart';
 import 'package:firebase_storage/firebase_storage.dart';
 import 'package:flutter/material.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
-import 'package:maps_toolkit/maps_toolkit.dart' as mp;
 import 'package:p2bp_2025spring_mobile/absence_of_order_test.dart';
 import 'package:p2bp_2025spring_mobile/acoustic_profile_test.dart';
 import 'package:p2bp_2025spring_mobile/assets.dart';
@@ -16,7 +14,6 @@ import 'package:p2bp_2025spring_mobile/people_in_motion_test.dart';
 import 'package:p2bp_2025spring_mobile/people_in_place_test.dart';
 import 'package:p2bp_2025spring_mobile/section_cutter_test.dart';
 import 'package:p2bp_2025spring_mobile/spatial_boundaries_test.dart';
-import 'package:p2bp_2025spring_mobile/theme.dart';
 
 import 'firestore_functions.dart';
 import 'identifying_access_test.dart';
@@ -1183,11 +1180,10 @@ class ConstructedBoundary {
       Map<String, dynamic> json, ConstructedBoundaryType constructedType) {
     if (json
         case {
-          'polyline': List polylinePoints,
+          'polyline': List polyline,
           'polylineLength': double polylineLength,
         }) {
-      final List<LatLng> points =
-          List<GeoPoint>.from(polylinePoints).toLatLngList();
+      final List<LatLng> points = List<GeoPoint>.from(polyline).toLatLngList();
       return ConstructedBoundary.recreate(
         polyline: Polyline(
           polylineId: PolylineId(points.toString()),
@@ -1224,11 +1220,10 @@ class MaterialBoundary {
       Map<String, dynamic> json, MaterialBoundaryType materialType) {
     if (json
         case {
-          'polygon': List polygonPoints,
+          'polygon': List polygon,
           'polygonArea': double polygonArea,
         }) {
-      final List<LatLng> points =
-          List<GeoPoint>.from(polygonPoints).toLatLngList();
+      final List<LatLng> points = List<GeoPoint>.from(polygon).toLatLngList();
       return MaterialBoundary.recreate(
         polygon: finalizePolygon(points, strokeColor: type.color),
         polygonArea: polygonArea,
@@ -1260,11 +1255,10 @@ class ShelterBoundary {
       Map<String, dynamic> json, ShelterBoundaryType shelterType) {
     if (json
         case {
-          'polygon': List polygonPoints,
+          'polygon': List polygon,
           'polygonArea': double polygonArea,
         }) {
-      final List<LatLng> points =
-          List<GeoPoint>.from(polygonPoints).toLatLngList();
+      final List<LatLng> points = List<GeoPoint>.from(polygon).toLatLngList();
       return ShelterBoundary.recreate(
         polygon: finalizePolygon(points, strokeColor: type.color),
         polygonArea: polygonArea,
@@ -1413,7 +1407,7 @@ class SpatialBoundariesData with JsonToString {
         MaterialBoundaryType.values;
     final List<ShelterBoundaryType> shelterTypes = ShelterBoundaryType.values;
 
-    Map<String, Map<String, List>> json = {
+    final Map<String, Map<String, List>> json = {
       BoundaryType.constructed.name: {
         for (final type in constructedTypes) type.name: []
       },
@@ -1600,7 +1594,6 @@ class Section with JsonToString {
       }
     }
     return Section(sectionLink: 'Error retrieving file. File not retrieved.');
-    throw FormatException('Invalid JSON: $json', json);
   }
 
   @override
@@ -2097,7 +2090,7 @@ class IdentifyingAccessData with JsonToString {
   /// Json format specifically tailored to be stored in Firestore.
   @override
   Map<String, Object> toJson() {
-    Map<String, List<Map>> json = {
+    final Map<String, List<Map>> json = {
       for (final accessType in AccessType.values) accessType.name: <Map>[]
     };
 
@@ -2250,40 +2243,316 @@ enum NatureType { vegetation, waterBody, animal }
 
 /// Enum for types of vegetation. Used in Nature Prevalence test. Types include
 /// [native], [design], [openField], and [other].
-enum VegetationType { native, design, openField, other }
+enum VegetationType {
+  native(Color(0x6508AC12)),
+  design(Color(0x656DFD75)),
+  openField(Color(0x65C7FF80)),
+  other(Color(0x6C00FF3C));
+
+  const VegetationType(this.color);
+
+  final Color color;
+}
 
 /// Enum for types of bodies of water. Used in Nature Prevalence test. Types
 /// include [ocean], [lake], [river], and [swamp].
-enum WaterBodyType { ocean, lake, river, swamp }
+enum WaterBodyType {
+  ocean(Color(0x651020FF)),
+  lake(Color(0x652FB3DD)),
+  river(Color(0x656253EA)),
+  swamp(Color(0x65009595));
+
+  const WaterBodyType(this.color);
+
+  final Color color;
+}
 
 /// Enum for types of animals. Used in Nature Prevalence test. Types include
 /// [cat], [dog], [squirrel], [bird], [rabbit], [turtle], [duck], and [other].
 /// </br> [cat] and [dog] are domestic, [other] is its own type, and all other
 /// defined types are wild.
-enum AnimalType { cat, dog, squirrel, bird, rabbit, turtle, duck, other }
+enum AnimalType {
+  cat(AnimalDesignation.domesticated),
+  dog(AnimalDesignation.domesticated),
+  squirrel(AnimalDesignation.wild),
+  bird(AnimalDesignation.wild),
+  rabbit(AnimalDesignation.wild),
+  turtle(AnimalDesignation.wild),
+  duck(AnimalDesignation.wild),
+  other(AnimalDesignation.other);
+
+  const AnimalType(this.designation);
+
+  final AnimalDesignation designation;
+}
 
 /// The following designations are used to differentiate types of animals. They
 /// include [domesticated], [wild], and [other]
 enum AnimalDesignation { domesticated, wild, other }
 
-/// Map used to match animal type with their respective designation.
-Map<AnimalType, AnimalDesignation> animalToDesignation = {
-  AnimalType.cat: AnimalDesignation.domesticated,
-  AnimalType.dog: AnimalDesignation.domesticated,
-  AnimalType.squirrel: AnimalDesignation.wild,
-  AnimalType.bird: AnimalDesignation.wild,
-  AnimalType.rabbit: AnimalDesignation.wild,
-  AnimalType.turtle: AnimalDesignation.wild,
-  AnimalType.duck: AnimalDesignation.wild,
-  AnimalType.other: AnimalDesignation.other
-};
+/// Types of weather for Nature Prevalence. Types include [sunny], [cloudy],
+/// [rainy], [windy], and [stormy].
+enum WeatherType {
+  sunny,
+  cloudy,
+  rainy,
+  windy,
+  stormy;
 
-/// Interface for Nature Types. All Nature Types must implement this interface
-/// and its functions.
-abstract class NatureTypes {
-  /// Uses the class fields to create a [Map] that is able to be stored in
-  /// Firestore easily.
-  Map<String, dynamic> convertToFirestoreData();
+  const WeatherType();
+
+  static Set<WeatherType> setFromJson(Map<String, dynamic> json) {
+    if (json
+        case {
+          'cloudy': bool cloudy,
+          'rainy': bool rainy,
+          'stormy': bool stormy,
+          'sunny': bool sunny,
+          'windy': bool windy,
+        }) {
+      return <WeatherType>{
+        if (cloudy) WeatherType.cloudy,
+        if (rainy) WeatherType.rainy,
+        if (stormy) WeatherType.stormy,
+        if (sunny) WeatherType.sunny,
+        if (windy) WeatherType.windy,
+      };
+    }
+    throw FormatException('Invalid JSON: $json', json);
+  }
+
+  static Map<String, bool> setToJson(Set<WeatherType> set) {
+    return {
+      for (final type in WeatherType.values) type.name: set.contains(type)
+    };
+  }
+}
+
+/// Class for weather in Nature Prevalence Test. Implements enum type
+/// [weather].
+class WeatherData with JsonToString {
+  final Set<WeatherType> weatherTypes;
+  final double temp;
+
+  WeatherData({required this.weatherTypes, required this.temp});
+
+  factory WeatherData.fromJson(Map<String, dynamic> json) {
+    if (json
+        case {
+          'temperature': double temperature,
+          'weatherTypes': Map<String, dynamic> weatherTypes,
+        }) {
+      return WeatherData(
+        temp: temperature,
+        weatherTypes: WeatherType.setFromJson(weatherTypes),
+      );
+    }
+    throw FormatException('Invalid JSON: $json', json);
+  }
+
+  @override
+  Map<String, Object> toJson() {
+    return {
+      'temperature': temp,
+      'weatherTypes': WeatherType.setToJson(weatherTypes),
+    };
+  }
+}
+
+/// Class for vegetation in Nature Prevalence Test. Implements enum type
+/// [vegetation].
+class Vegetation with JsonToString {
+  static const NatureType natureType = NatureType.vegetation;
+
+  final VegetationType vegetationType;
+  final String? otherName;
+  final Polygon polygon;
+  final double polygonArea;
+
+  /// For all vegetation, other or not, otherType is required. If the
+  /// vegetation is of a defined type (i.e. not other) then set otherType equal
+  /// to [null].
+  /// </br> A [null] otherType will be ignored in convertToFirestoreData().
+  Vegetation({
+    required this.vegetationType,
+    required this.otherName,
+    required this.polygon,
+  }) : polygonArea = polygon.getAreaInSquareFeet();
+
+  Vegetation.recreate({
+    required this.vegetationType,
+    required this.otherName,
+    required this.polygon,
+    required this.polygonArea,
+  });
+
+  factory Vegetation.fromJsonAndType(
+      Map<String, dynamic> json, VegetationType vegetationType) {
+    if (vegetationType == VegetationType.other) {
+      if (json
+          case {
+            'polygon': List polygon,
+            'polygonArea': double polygonArea,
+            'name': String name,
+          }) {
+        final List<LatLng> points = List<GeoPoint>.from(polygon).toLatLngList();
+        return Vegetation.recreate(
+          vegetationType: vegetationType,
+          otherName: name,
+          polygon: Polygon(
+            polygonId: PolygonId(points.toString()),
+            points: points,
+            fillColor: vegetationType.color,
+          ),
+          polygonArea: polygonArea,
+        );
+      }
+    } else {
+      if (json
+          case {
+            'polygon': List polygon,
+            'polygonArea': double polygonArea,
+          }) {
+        final List<LatLng> points = List<GeoPoint>.from(polygon).toLatLngList();
+        return Vegetation.recreate(
+          vegetationType: vegetationType,
+          otherName: null,
+          polygon: Polygon(
+            polygonId: PolygonId(points.toString()),
+            points: points,
+            fillColor: vegetationType.color,
+          ),
+          polygonArea: polygonArea,
+        );
+      }
+    }
+    throw FormatException('Invalid JSON: $json', json);
+  }
+
+  @override
+  Map<String, Object> toJson() {
+    if (vegetationType == VegetationType.other && otherName != null) {
+      return {
+        'name': otherName!,
+        'polygon': polygon.toGeoPointList(),
+        'polygonArea': polygonArea,
+      };
+    } else {
+      return {
+        'polygon': polygon.toGeoPointList(),
+        'polygonArea': polygonArea,
+      };
+    }
+  }
+}
+
+/// Class for bodies of water in Nature Prevalence Test. Implements enum type
+/// [waterBody].
+class WaterBody with JsonToString {
+  static const NatureType natureType = NatureType.waterBody;
+
+  final WaterBodyType waterBodyType;
+  final Polygon polygon;
+  final double polygonArea;
+
+  WaterBody({required this.waterBodyType, required this.polygon})
+      : polygonArea = polygon.getAreaInSquareFeet();
+
+  WaterBody.recreate({
+    required this.waterBodyType,
+    required this.polygon,
+    required this.polygonArea,
+  });
+
+  factory WaterBody.fromJsonAndType(
+      Map<String, dynamic> json, WaterBodyType waterBodyType) {
+    if (json
+        case {
+          'polygon': List polygon,
+          'polygonArea': double polygonArea,
+        }) {
+      final List<LatLng> points = List<GeoPoint>.from(polygon).toLatLngList();
+      return WaterBody.recreate(
+        waterBodyType: waterBodyType,
+        polygon: Polygon(
+          polygonId: PolygonId(points.toString()),
+          points: points,
+          fillColor: waterBodyType.color,
+        ),
+        polygonArea: polygonArea,
+      );
+    }
+    throw FormatException('Invalid JSON: $json', json);
+  }
+
+  @override
+  Map<String, Object> toJson() {
+    return {
+      'polygon': polygon.toGeoPointList(),
+      'polygonArea': polygonArea,
+    };
+  }
+}
+
+/// Class for animals in Nature Prevalence Test. Implements enum type [animal].
+class Animal {
+  static const NatureType natureType = NatureType.animal;
+
+  final AnimalType animalType;
+  final String? otherName;
+  final LatLng location;
+
+  /// For all animals, other or not, otherType is required. If the animal is
+  /// of a defined type (i.e. not other) then set otherType equal to [null].
+  /// </br> A [null] otherType will be ignored in convertToFirestoreData().
+  Animal({
+    required this.animalType,
+    required this.otherName,
+    required this.location,
+  });
+
+  factory Animal.fromJsonAndType(Object json, AnimalType animalType) {
+    if (animalType == AnimalType.other && json is Map<String, dynamic>) {
+      if (json
+          case {
+            'name': String name,
+            'point': GeoPoint point,
+          }) {
+        final LatLng location = point.toLatLng();
+        return Animal(
+          animalType: animalType,
+          otherName: name,
+          location: location,
+        );
+      }
+    } else {
+      if (json is GeoPoint) {
+        final LatLng location = json.toLatLng();
+        return Animal(
+          animalType: animalType,
+          otherName: null,
+          location: location,
+        );
+      }
+    }
+    throw FormatException('Invalid JSON: $json', json);
+  }
+
+  Object toJsonOrGeoPoint() {
+    if (animalType == AnimalType.other && otherName != null) {
+      return {
+        'name': otherName!,
+        'point': location.toGeoPoint(),
+      };
+    } else {
+      return location.toGeoPoint();
+    }
+  }
+
+  @override
+  String toString() {
+    return toJsonOrGeoPoint().toString();
+  }
 }
 
 /// Containing class for Nature Prevalence Test.
@@ -2292,271 +2561,216 @@ abstract class NatureTypes {
 /// types ([Animal], [WaterBody], [Vegetation]). Also implements the
 /// [convertToFirestoreData()], which returns a map that is able to be inputted
 /// directly into Firestore.
-class NatureData implements NatureTypes {
-  List<Animal> animals = [];
-  List<WaterBody> waterBodies = [];
-  List<Vegetation> vegetation = [];
+class NaturePrevalenceData with JsonToString {
+  final List<Animal> animals;
+  final List<WaterBody> waterBodies;
+  final List<Vegetation> vegetation;
   WeatherData? weather;
 
+  NaturePrevalenceData({
+    required this.animals,
+    required this.waterBodies,
+    required this.vegetation,
+    this.weather,
+  });
+
+  NaturePrevalenceData.empty()
+      : animals = [],
+        waterBodies = [],
+        vegetation = [];
+
+  factory NaturePrevalenceData.fromJson(Map<String, dynamic> json) {
+    final List<Animal> animalList = [];
+    final List<Vegetation> vegetationList = [];
+    final List<WaterBody> waterBodyList = [];
+    WeatherData? weatherData;
+
+    if (json
+        case {
+          'animal': Map<String, dynamic> animal,
+          'vegetation': Map<String, dynamic> vegetation,
+          'waterBody': Map<String, dynamic> waterBody,
+          'weather': Map<String, dynamic> weather,
+        }) {
+      if (animal
+          case {
+            'domesticated': Map<String, dynamic> domesticated,
+            'wild': Map<String, dynamic> wild,
+            'other': List other,
+          }) {
+        if (domesticated
+            case {
+              'cat': List cats,
+              'dog': List dogs,
+            }) {
+          for (final cat in cats) {
+            animalList.add(Animal.fromJsonAndType(cat, AnimalType.cat));
+          }
+          for (final dog in dogs) {
+            animalList.add(Animal.fromJsonAndType(dog, AnimalType.dog));
+          }
+        }
+
+        if (wild
+            case {
+              'bird': List birds,
+              'duck': List ducks,
+              'rabbit': List rabbits,
+              'squirrel': List squirrels,
+              'turtle': List turtles,
+            }) {
+          for (final bird in birds) {
+            animalList.add(Animal.fromJsonAndType(bird, AnimalType.bird));
+          }
+          for (final duck in ducks) {
+            animalList.add(Animal.fromJsonAndType(duck, AnimalType.duck));
+          }
+          for (final rabbit in rabbits) {
+            animalList.add(Animal.fromJsonAndType(rabbit, AnimalType.rabbit));
+          }
+          for (final squirrel in squirrels) {
+            animalList
+                .add(Animal.fromJsonAndType(squirrel, AnimalType.squirrel));
+          }
+          for (final turtle in turtles) {
+            animalList.add(Animal.fromJsonAndType(turtle, AnimalType.turtle));
+          }
+        }
+
+        for (final animal in other) {
+          animalList.add(Animal.fromJsonAndType(animal, AnimalType.other));
+        }
+      }
+
+      if (vegetation
+          case {
+            'design': List design,
+            'native': List native,
+            'openField': List openField,
+            'other': List other,
+          }) {
+        if (design.isNotEmpty) {
+          for (final veg in design) {
+            vegetationList
+                .add(Vegetation.fromJsonAndType(veg, VegetationType.design));
+          }
+        }
+        if (native.isNotEmpty) {
+          for (final veg in native) {
+            vegetationList
+                .add(Vegetation.fromJsonAndType(veg, VegetationType.native));
+          }
+        }
+        if (openField.isNotEmpty) {
+          for (final veg in openField) {
+            vegetationList
+                .add(Vegetation.fromJsonAndType(veg, VegetationType.openField));
+          }
+        }
+        if (other.isNotEmpty) {
+          for (final veg in other) {
+            vegetationList
+                .add(Vegetation.fromJsonAndType(veg, VegetationType.other));
+          }
+        }
+      }
+
+      if (waterBody
+          case {
+            'lake': List lakes,
+            'ocean': List oceans,
+            'river': List rivers,
+            'swamp': List swamps,
+          }) {
+        if (lakes.isNotEmpty) {
+          for (final lake in lakes) {
+            waterBodyList
+                .add(WaterBody.fromJsonAndType(lake, WaterBodyType.lake));
+          }
+        }
+        if (oceans.isNotEmpty) {
+          for (final ocean in oceans) {
+            waterBodyList
+                .add(WaterBody.fromJsonAndType(ocean, WaterBodyType.ocean));
+          }
+        }
+        if (rivers.isNotEmpty) {
+          for (final river in rivers) {
+            waterBodyList
+                .add(WaterBody.fromJsonAndType(river, WaterBodyType.river));
+          }
+        }
+        if (swamps.isNotEmpty) {
+          for (final swamp in swamps) {
+            waterBodyList
+                .add(WaterBody.fromJsonAndType(swamp, WaterBodyType.swamp));
+          }
+        }
+      }
+
+      if (weather.isNotEmpty) {
+        weatherData = WeatherData.fromJson(weather);
+      }
+
+      return NaturePrevalenceData(
+        animals: animalList,
+        waterBodies: waterBodyList,
+        vegetation: vegetationList,
+        weather: weatherData,
+      );
+    }
+    throw FormatException('Invalid JSON: $json', json);
+  }
+
   @override
-  Map<String, Map> convertToFirestoreData() {
-    Map<String, Map> firestoreData = {};
-    Map<String, dynamic> animalData = {
-      AnimalDesignation.wild.name: {
-        AnimalType.squirrel.name: [],
-        AnimalType.bird.name: [],
-        AnimalType.rabbit.name: [],
-        AnimalType.turtle.name: [],
-        AnimalType.duck.name: [],
+  Map<String, Object> toJson() {
+    final List<AnimalDesignation> animalDesignations = AnimalDesignation.values;
+    final List<AnimalType> animalTypes = AnimalType.values;
+    final List<WaterBodyType> waterBodyTypes = WaterBodyType.values;
+    final List<VegetationType> vegetationTypes = VegetationType.values;
+
+    final Map<String, Map<String, dynamic>> json = {
+      NatureType.animal.name: {
+        for (final designation in animalDesignations)
+          designation.name: {
+            for (final type in animalTypes)
+              if (type.designation == designation) type.name: []
+          }
       },
-      AnimalDesignation.domesticated.name: {
-        AnimalType.cat.name: [],
-        AnimalType.dog.name: [],
+      NatureType.waterBody.name: {
+        for (final type in waterBodyTypes) type.name: <Map>[]
       },
-      AnimalDesignation.other.name: [],
+      NatureType.vegetation.name: {
+        for (final type in vegetationTypes) type.name: <Map>[]
+      },
+      'weather': {},
     };
-    Map<String, List> vegetationData = {
-      VegetationType.native.name: [],
-      VegetationType.design.name: [],
-      VegetationType.openField.name: [],
-      VegetationType.other.name: [],
-    };
-    Map<String, List> waterBodyData = {
-      WaterBodyType.ocean.name: [],
-      WaterBodyType.lake.name: [],
-      WaterBodyType.river.name: [],
-      WaterBodyType.swamp.name: [],
-    };
-    Map<String, dynamic> weatherData = {};
-    try {
-      if (weather == null) {
-        throw Exception(
-            "Weather not set in NatureType.convertToFirestoreData()!");
-      } else {
-        weatherData = weather!.convertToFirestoreData();
-      }
-      for (Animal animal in animals) {
-        // Checks that the set contains the correct fields as needed, included
-        // domestication designation and name, then adds the data accordingly.
-        if (animal.animalType == AnimalType.other &&
-            animalData.containsKey(animal.designation.name)) {
-          animalData[animal.designation.name]
-              ?.add(animal.convertToFirestoreData());
-        } else if (animalData.containsKey(animal.designation.name) &&
-            animalData[animal.designation.name]!
-                .containsKey(animal.animalType.name)) {
-          animalData[animal.designation.name]![animal.animalType.name]
-              ?.add(animal.convertToFirestoreData()['point']);
-        }
-      }
-      for (WaterBody waterBody in waterBodies) {
-        waterBodyData[waterBody.waterBodyType.name]
-            ?.add(waterBody.convertToFirestoreData());
-      }
-      for (Vegetation vegetation in vegetation) {
-        vegetationData[vegetation.vegetationType.name]
-            ?.add(vegetation.convertToFirestoreData());
-      }
-      firestoreData = {
-        'weather': weatherData,
-        NatureType.animal.name: animalData,
-        NatureType.vegetation.name: vegetationData,
-        NatureType.waterBody.name: waterBodyData,
-      };
-    } catch (e, stacktrace) {
-      print("Error in NatureType.convertToFirestoreData(): $e");
-      print("Stacktrace $stacktrace");
+
+    for (final animal in animals) {
+      json[NatureType.animal.name]![animal.animalType.designation.name]
+              [animal.animalType.name]
+          .add(animal.toJsonOrGeoPoint());
+    }
+    for (final waterBody in waterBodies) {
+      json[NatureType.waterBody.name]![waterBody.waterBodyType.name]
+          .add(waterBody.toJson());
+    }
+    for (final veg in vegetation) {
+      json[NatureType.vegetation.name]![veg.vegetationType.name]
+          .add(veg.toJson());
+    }
+    if (weather != null) {
+      json['weather'] = weather!.toJson();
     }
 
-    return firestoreData;
-  }
-}
-
-/// Types of weather for Nature Prevalence. Types include [sunny], [cloudy],
-/// [rainy], [windy], and [stormy].
-enum WeatherType { sunny, cloudy, rainy, windy, stormy }
-
-/// Class for weather in Nature Prevalence Test. Implements enum type
-/// [weather].
-class WeatherData implements NatureTypes {
-  final List<WeatherType> weatherTypes; // TODO make this a set?
-  final double temp;
-
-  WeatherData({required this.weatherTypes, required this.temp});
-
-  @override
-  Map<String, dynamic> convertToFirestoreData() {
-    Map<String, dynamic> firestoreData = {};
-    Map<String, bool> weatherMap = {};
-    try {
-      // Initialize a map for Firestore with true or false depending on weather.
-      for (WeatherType weatherType in WeatherType.values) {
-        weatherTypes.contains(weatherType)
-            ? weatherMap[weatherType.name] = true
-            : weatherMap[weatherType.name] = false;
-      }
-      firestoreData = {
-        'weatherTypes': weatherMap,
-        'temperature': temp,
-      };
-    } catch (e, stacktrace) {
-      print("Error in Vegetation.convertToFirestoreData(): $e");
-      print("Stacktrace: $stacktrace");
-    }
-    return firestoreData;
-  }
-}
-
-/// Class for vegetation in Nature Prevalence Test. Implements enum type
-/// [vegetation].
-class Vegetation implements NatureTypes {
-  static const NatureType natureType = NatureType.vegetation;
-  static const Map<VegetationType, Color> vegetationTypeToColor = {
-    VegetationType.native: VegetationColors.nativeGreen,
-    VegetationType.design: VegetationColors.designGreen,
-    VegetationType.openField: VegetationColors.openFieldGreen,
-    VegetationType.other: VegetationColors.otherGreen,
-  };
-  final Color polygonColor;
-  final VegetationType vegetationType;
-  final String? otherType;
-  final Polygon polygon;
-  final double polygonArea;
-
-  /// For all vegetation, other or not, otherType is required. If the
-  /// vegetation is of a defined type (i.e. not other) then set otherType equal
-  /// to [null].
-  /// </br> A [null] otherType will be ignored in convertToFirestoreData().
-  Vegetation(
-      {required this.vegetationType,
-      required this.polygon,
-      required this.otherType})
-      : polygonArea = (mp.SphericalUtil.computeArea(polygon.toMPLatLngList()) *
-                pow(feetPerMeter, 2))
-            .toDouble(),
-        polygonColor = vegetationTypeToColor[vegetationType] ??
-            VegetationColors.otherGreen;
-
-  @override
-  Map<String, dynamic> convertToFirestoreData() {
-    Map<String, dynamic> firestoreData = {};
-    try {
-      if (vegetationType == VegetationType.other) {
-        if (otherType == null) {
-          throw Exception(
-              "It seems that the selected type is other, however no otherType "
-              "was specified or was specified as null. Please make sure "
-              "to specify otherType.");
-        }
-        firestoreData = {
-          'name': otherType,
-          'polygon': polygon.points.toGeoPointList(),
-          'polygonArea': polygonArea
-        };
-      } else {
-        firestoreData = {
-          'polygon': polygon.points.toGeoPointList(),
-          'polygonArea': polygonArea
-        };
-      }
-    } catch (e, stacktrace) {
-      print("Error in Vegetation.convertToFirestoreData(): $e");
-      print("Stacktrace: $stacktrace");
-    }
-    return firestoreData;
-  }
-}
-
-/// Class for bodies of water in Nature Prevalence Test. Implements enum type
-/// [waterBody].
-class WaterBody implements NatureTypes {
-  static const NatureType natureType = NatureType.waterBody;
-  static const Map<WaterBodyType, Color> waterBodyTypeToColor = {
-    WaterBodyType.ocean: WaterBodyColors.oceanBlue,
-    WaterBodyType.river: WaterBodyColors.riverBlue,
-    WaterBodyType.lake: WaterBodyColors.lakeBlue,
-    WaterBodyType.swamp: WaterBodyColors.swampBlue,
-  };
-  final Color polygonColor;
-  final WaterBodyType waterBodyType;
-  final Polygon polygon;
-  final double polygonArea;
-
-  WaterBody({required this.waterBodyType, required this.polygon})
-      : polygonArea = (mp.SphericalUtil.computeArea(polygon.toMPLatLngList()) *
-                pow(feetPerMeter, 2))
-            .toDouble(),
-        polygonColor = waterBodyTypeToColor[waterBodyType] ?? Colors.blue;
-
-  @override
-  Map<String, dynamic> convertToFirestoreData() {
-    Map<String, dynamic> firestoreData = {};
-    try {
-      firestoreData = {
-        'polygon': polygon.points.toGeoPointList(),
-        'polygonArea': polygonArea
-      };
-    } catch (e, stacktrace) {
-      print("Error in WaterBody.convertToFirestoreData(): $e");
-      print("Stacktrace: $stacktrace");
-    }
-    return firestoreData;
-  }
-}
-
-/// Class for animals in Nature Prevalence Test. Implements enum type [animal].
-class Animal implements NatureTypes {
-  static const NatureType natureType = NatureType.animal;
-  final AnimalType animalType;
-  final AnimalDesignation designation;
-  final String? otherType;
-  final LatLng point;
-
-  /// For all animals, other or not, otherType is required. If the animal is
-  /// of a defined type (i.e. not other) then set otherType equal to [null].
-  /// </br> A [null] otherType will be ignored in convertToFirestoreData().
-  Animal(
-      {required this.animalType, required this.point, required this.otherType})
-      // Map should never return [null]. Will produce a runtime error if that
-      // happens.
-      : designation = animalToDesignation[animalType]!;
-
-  @override
-  Map<String, dynamic> convertToFirestoreData() {
-    Map<String, dynamic> firestoreData = {};
-    try {
-      if (animalType == AnimalType.other) {
-        if (otherType == null) {
-          throw Exception(
-              "It seems that the selected type is other, however no otherType "
-              "was specified or was specified as null. Please make sure "
-              "to specify otherType.");
-        }
-        firestoreData = {
-          'name': otherType,
-          'point': point.toGeoPoint(),
-        };
-      } else {
-        firestoreData = {
-          'point': point.toGeoPoint(),
-        };
-      }
-    } catch (e, stacktrace) {
-      print("Error in Animal.convertToFirestoreData(): $e");
-      print("Stacktrace: $stacktrace");
-    }
-    return firestoreData;
+    return json;
   }
 }
 
 /// Class for Nature Prevalence test info and methods.
-class NaturePrevalenceTest extends Test<NatureData> implements TimerTest {
-  /// Returns a new instance of the initial data structure used for
-  /// Nature Prevalence Test.
-  static NatureData newInitialDataDeepCopy() {
-    return NatureData();
-  }
-
+class NaturePrevalenceTest extends Test<NaturePrevalenceData>
+    with JsonToString
+    implements TimerTest {
   /// Static constant definition of collection ID for this test type.
   static const String collectionIDStatic = 'nature_prevalence_tests';
 
@@ -2598,26 +2812,12 @@ class NaturePrevalenceTest extends Test<NatureData> implements TimerTest {
           scheduledTime: scheduledTime,
           projectRef: projectRef,
           collectionID: collectionID,
-          data: newInitialDataDeepCopy(),
+          data: NaturePrevalenceData.empty(),
           testDuration: testDuration ?? -1,
         );
     // Register for recreating a Nature Prevalence Test from Firestore
     Test._recreateTestConstructors[collectionIDStatic] = (testDoc) {
-      return NaturePrevalenceTest._(
-        title: testDoc['title'],
-        testID: testDoc['id'],
-        scheduledTime: testDoc['scheduledTime'],
-        projectRef: testDoc['project'],
-        collectionID: testDoc.reference.parent.id,
-        data: convertDataFromFirestore(testDoc['data']),
-        creationTime: testDoc['creationTime'],
-        maxResearchers: testDoc['maxResearchers'],
-        isComplete: testDoc['isComplete'],
-        // TODO: delete after database purged. Temporary for existing tests.
-        testDuration: testDoc.data()!.containsKey('testDuration')
-            ? (testDoc['testDuration'] ?? -1)
-            : -1,
-      );
+      return NaturePrevalenceTest.fromJson(testDoc.data()!);
     };
     // Register for building a Nature Prevalence Test page
     Test._pageBuilders[NaturePrevalenceTest] =
@@ -2627,17 +2827,15 @@ class NaturePrevalenceTest extends Test<NatureData> implements TimerTest {
             );
     // Register a function for saving to Firestore
     Test._saveToFirestoreFunctions[NaturePrevalenceTest] = (test) async {
-      await _firestore.collection(test.collectionID).doc(test.testID).set({
-        'title': test.title,
-        'id': test.testID,
-        'scheduledTime': test.scheduledTime,
-        'project': test.projectRef,
-        'data': convertDataToFirestore(test.data),
-        'creationTime': test.creationTime,
-        'maxResearchers': test.maxResearchers,
-        'isComplete': false,
-        'testDuration': (test as NaturePrevalenceTest).testDuration,
-      }, SetOptions(merge: true));
+      final testRef = _firestore
+          .collection(test.collectionID)
+          .doc(test.testID)
+          .withConverter<NaturePrevalenceTest>(
+            fromFirestore: (snapshot, _) =>
+                NaturePrevalenceTest.fromJson(snapshot.data()!),
+            toFirestore: (test, _) => test.toJson(),
+          );
+      await testRef.set(test as NaturePrevalenceTest, SetOptions(merge: true));
     };
     Test._testInitialsMap[NaturePrevalenceTest] = 'NP';
     Test._timerTestCollectionIDs.add(collectionIDStatic);
@@ -2646,178 +2844,67 @@ class NaturePrevalenceTest extends Test<NatureData> implements TimerTest {
   /// Submits data to Firestore for Nature Prevalence Test.
   ///
   /// Unlike other tests, this [submitData()] function (for
-  /// [NaturePrevalenceTest]) takes in a [NatureData] type.
+  /// [NaturePrevalenceTest]) takes in a [NaturePrevalenceData] type.
   @override
-  void submitData(NatureData data) async {
-    // Adds all points of each type from submitted data to overall data
-    Map firestoreData = data.convertToFirestoreData();
-
-    // Updates data in Firestore
-    await _firestore.collection(collectionID).doc(testID).update({
-      'data': firestoreData,
-      'isComplete': true,
-    });
-
-    this.data = data;
-    isComplete = true;
-
-    print(
-        'Success! In NaturePrevalenceTest.submitData. firestoreData = $firestoreData');
-  }
-
-  /// Transforms data retrieved from Firestore test instance to
-  /// a list of AccessType objects, with data accessed through the fields of
-  /// the respective objects.
-  static NatureData convertDataFromFirestore(Map<String, dynamic> data) {
-    NatureData output = NatureData();
-    List<Animal> animalList = [];
-    List<WaterBody> waterBodyList = [];
-    List<Vegetation> vegetationList = [];
-    WeatherData? weatherData;
-    List<WeatherType> weatherTypes = [];
-
+  void submitData(NaturePrevalenceData data) async {
     try {
-      if (data.containsKey('weather')) {
-        for (WeatherType weatherType in WeatherType.values) {
-          if (data['weather'].containsKey(weatherType) &&
-              data['weather'][weatherType] == true) {
-            weatherTypes.add(weatherType);
-          }
-        }
-        if (data['weather'].containsKey('temperature')) {
-          weatherData = WeatherData(
-              weatherTypes: weatherTypes, temp: data['weather']['temperature']);
-        }
-      }
-      // Getting data from animal in Firestore
-      if (data.containsKey(NatureType.animal.name)) {
-        // For every animal type
-        for (AnimalType animal in animalToDesignation.keys) {
-          // If contains key corresponding to designation (domestic,
-          // wild, other) and animal type.
-          if (data[NatureType.animal.name]
-              .containsKey(animalToDesignation[animal]?.name)) {
-            if (animal == AnimalType.other) {
-              // For every 'other' type of animal
-              for (Map map in data[NatureType.animal.name]
-                  [animalToDesignation[animal]?.name]) {
-                animalList.add(
-                  Animal(
-                    animalType: animal,
-                    point: (map['point'] as GeoPoint).toLatLng(),
-                    otherType: map['name'],
-                  ),
-                );
-              }
-            } else if (data[NatureType.animal.name]
-                    [animalToDesignation[animal]?.name]
-                .containsKey(animal.name)) {
-              // For every specified (non-other) type of animal
-              for (GeoPoint coordinate in data[NatureType.animal.name]
-                  [animalToDesignation[animal]?.name][animal.name]) {
-                animalList.add(
-                  Animal(
-                    animalType: animal,
-                    point: coordinate.toLatLng(),
-                    otherType: null,
-                  ),
-                );
-              }
-            }
-          }
-        }
-      }
-      // Getting data from vegetation in Firestore
-      if (data.containsKey(NatureType.vegetation.name)) {
-        // For every kind of vegetation
-        for (VegetationType vegetation in VegetationType.values) {
-          if (data[NatureType.vegetation.name].containsKey(vegetation)) {
-            if (vegetation == VegetationType.other) {
-              // For every 'other' type of vegetation
-              for (Map map in data[NatureType.vegetation.name]
-                  [vegetation.name]) {
-                vegetationList.add(
-                  Vegetation(
-                    otherType: map['name'],
-                    vegetationType: vegetation,
-                    polygon: Polygon(
-                      polygonId: PolygonId(
-                          DateTime.now().millisecondsSinceEpoch.toString()),
-                      points: map['polygon'].toLatLngList(),
-                      fillColor: Vegetation.vegetationTypeToColor[vegetation] ??
-                          VegetationColors.otherGreen,
-                    ),
-                  ),
-                );
-              }
-            } else {
-              // For every defined (non-other) type of vegetation
-              for (Map map in data[NatureType.vegetation.name]
-                  [vegetation.name]) {
-                vegetationList.add(
-                  Vegetation(
-                    otherType: null,
-                    vegetationType: vegetation,
-                    polygon: Polygon(
-                      polygonId: PolygonId(
-                          DateTime.now().millisecondsSinceEpoch.toString()),
-                      points: map['polygon'].toLatLngList(),
-                      fillColor: Vegetation.vegetationTypeToColor[vegetation] ??
-                          VegetationColors.otherGreen,
-                    ),
-                  ),
-                );
-              }
-            }
-          }
-        }
-      }
-      // Getting data from waterBody in Firestore
-      if (data.containsKey(NatureType.waterBody.name)) {
-        // For every kind of body of water
-        for (WaterBodyType waterBody in WaterBodyType.values) {
-          if (data[NatureType.waterBody.name].containsKey(waterBody)) {
-            // For every type of body of water (no 'other' type)
-            for (Map map in data[NatureType.waterBody.name][waterBody.name]) {
-              waterBodyList.add(
-                WaterBody(
-                  waterBodyType: waterBody,
-                  polygon: Polygon(
-                    polygonId: PolygonId(
-                        DateTime.now().millisecondsSinceEpoch.toString()),
-                    points: map['polygon'].toLatLngList(),
-                    fillColor: WaterBody.waterBodyTypeToColor[waterBody] ??
-                        WaterBodyColors.nullBlue,
-                  ),
-                ),
-              );
-            }
-          }
-        }
-      }
-      output.animals = animalList;
-      output.vegetation = vegetationList;
-      output.waterBodies = waterBodyList;
-      if (data.containsKey('data') &&
-          data['data'].containsKey('weather') &&
-          weatherData == null) {
-        throw Exception(
-            "Weather is not defined in Firestore in Nature Prevalence test.");
-      } else {
-        output.weather = weatherData;
-      }
+      await _firestore.collection(collectionID).doc(testID).update({
+        'data': data.toJson(),
+        'isComplete': true,
+      });
+
+      this.data = data;
+      isComplete = true;
+
+      print('Success! In NaturePrevalenceTest.submitData. data = $data');
     } catch (e, stacktrace) {
-      print("Warning in NaturePrevalenceTest.convertDataFromFirestore(): $e");
+      print("Exception in NaturePrevalenceTest.submitData(): $e");
       print("Stacktrace: $stacktrace");
     }
-
-    return output;
   }
 
-  /// Simply invokes the class method for [NatureData] to convert the data to
-  /// the appropriate Firestore representation.
-  static Map<String, Map> convertDataToFirestore(NatureData data) {
-    return data.convertToFirestoreData();
+  factory NaturePrevalenceTest.fromJson(Map<String, dynamic> json) {
+    if (json
+        case {
+          'title': String title,
+          'id': String id,
+          'scheduledTime': Timestamp scheduledTime,
+          'project': DocumentReference project,
+          'data': Map<String, dynamic> data,
+          'creationTime': Timestamp creationTime,
+          'maxResearchers': int maxResearchers,
+          'isComplete': bool isComplete,
+          'testDuration': int testDuration,
+        }) {
+      return NaturePrevalenceTest._(
+        title: title,
+        testID: id,
+        scheduledTime: scheduledTime,
+        projectRef: project,
+        collectionID: collectionIDStatic,
+        data: NaturePrevalenceData.fromJson(data),
+        creationTime: creationTime,
+        maxResearchers: maxResearchers,
+        isComplete: isComplete,
+        testDuration: testDuration,
+      );
+    }
+    throw FormatException('Invalid JSON: $json', json);
+  }
+
+  @override
+  Map<String, Object> toJson() {
+    return {
+      'title': title,
+      'id': testID,
+      'scheduledTime': scheduledTime,
+      'project': projectRef,
+      'data': data.toJson(),
+      'creationTime': creationTime,
+      'maxResearchers': maxResearchers,
+      'isComplete': isComplete,
+      'testDuration': testDuration,
+    };
   }
 }
 

@@ -1,5 +1,4 @@
 import 'dart:async';
-import 'dart:io';
 
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
@@ -54,8 +53,6 @@ class _NaturePrevalenceState extends State<NaturePrevalence> {
   Timer? _timer;
   Timer? _outsidePointTimer;
   int _remainingSeconds = -1;
-
-  final NatureData _natureData = NatureData();
 
   final List<Animal> _animalData = [];
   final List<Vegetation> _vegetationData = [];
@@ -127,11 +124,13 @@ class _NaturePrevalenceState extends State<NaturePrevalence> {
   void _endTest() {
     _timer?.cancel();
     _outsidePointTimer?.cancel();
-    _natureData.animals = _animalData;
-    _natureData.vegetation = _vegetationData;
-    _natureData.waterBodies = _waterBodyData;
-    _natureData.weather = _weatherData;
-    widget.activeTest.submitData(_natureData);
+    final NaturePrevalenceData natureData = NaturePrevalenceData(
+      animals: _animalData,
+      waterBodies: _waterBodyData,
+      vegetation: _vegetationData,
+      weather: _weatherData,
+    );
+    widget.activeTest.submitData(natureData);
     Navigator.pop(context);
   }
 
@@ -562,7 +561,7 @@ class _NaturePrevalenceState extends State<NaturePrevalence> {
               if (_pointMode || _polygonMode) return;
               // If the marker is tapped again, it will be removed
               if (_deleteMode) {
-                _animalData.removeWhere((animal) => animal.point == point);
+                _animalData.removeWhere((animal) => animal.location == point);
                 setState(() {
                   _markers.removeWhere((marker) => marker.markerId == markerId);
                   _deleteMode = false;
@@ -574,7 +573,7 @@ class _NaturePrevalenceState extends State<NaturePrevalence> {
         _directions = 'Choose a category. Or, click finish to submit.';
       });
       _animalData.add(Animal(
-          animalType: _animalType!, point: point, otherType: _otherType));
+          animalType: _animalType!, location: point, otherName: _otherType));
       _pointMode = false;
       _clearTypes();
     }
@@ -586,17 +585,17 @@ class _NaturePrevalenceState extends State<NaturePrevalence> {
       if (_natureType == NatureType.vegetation) {
         tempPolygon = finalizePolygon(
           _polygonPoints,
-          strokeColor: Vegetation.vegetationTypeToColor[_vegetationType],
+          strokeColor: _vegetationType!.color,
         );
         // Create polygon.
         _polygons.add(tempPolygon);
         _vegetationData.add(Vegetation(
             vegetationType: _vegetationType!,
             polygon: tempPolygon,
-            otherType: _otherType));
+            otherName: _otherType));
       } else if (_natureType == NatureType.waterBody) {
-        tempPolygon = finalizePolygon(_polygonPoints,
-            strokeColor: WaterBody.waterBodyTypeToColor[_waterBodyType]);
+        tempPolygon =
+            finalizePolygon(_polygonPoints, strokeColor: _waterBodyType!.color);
         // Create polygon.
         _polygons.add(tempPolygon);
         _waterBodyData.add(
@@ -1196,8 +1195,8 @@ class _WeatherDialogState extends State<WeatherDialog> {
             if (erroredSelect || erroredTemp) {
               return;
             }
-            weatherData =
-                WeatherData(weatherTypes: selectedWeather, temp: temperature!);
+            weatherData = WeatherData(
+                weatherTypes: selectedWeather.toSet(), temp: temperature!);
             Navigator.pop(context, weatherData);
             print('${weatherData!.weatherTypes} temp: $temperature');
           },
