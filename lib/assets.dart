@@ -22,6 +22,30 @@ final AssetMapBitmap standingPointActiveIcon = AssetMapBitmap(
   width: 48,
   height: 48,
 );
+final Map<LightType, AssetMapBitmap> lightingProfileIconMap = {
+  for (final light in LightType.values)
+    light: AssetMapBitmap(
+      light.iconName,
+      width: 36,
+      height: 36,
+    )
+};
+final Map<MisconductType, AssetMapBitmap> absenceOfOrderIconMap = {
+  for (final misconduct in MisconductType.values)
+    misconduct: AssetMapBitmap(
+      misconduct.iconName,
+      width: 36,
+      height: 36,
+    )
+};
+final Map<AnimalType, AssetMapBitmap> naturePrevalenceAnimalIconMap = {
+  for (final animal in AnimalType.values)
+    animal: AssetMapBitmap(
+      NaturePrevalenceTest.assetDirectoryPath + animal.iconName,
+      width: 25,
+      height: 25,
+    )
+};
 final Map<(PostureType, GenderType), AssetMapBitmap> peopleInPlaceIconMap = {
   for (final posture in PostureType.values)
     for (final gender in GenderType.values)
