@@ -352,23 +352,24 @@ class _SectionCutterState extends State<SectionCutter> {
                               ? null
                               : () async {
                                   final bool finishSuccess = await showDialog(
-                                      context: context,
-                                      builder: (context) {
-                                        return TestFinishDialog(
-                                            onNext: () async {
-                                          if (sectionCutterFile == null) {
-                                            Navigator.pop(context, false);
-                                            setState(() {
-                                              _failedToUpload = true;
-                                              _errorText =
-                                                  'No file uploaded. Please upload an image first.';
+                                          context: context,
+                                          builder: (context) {
+                                            return TestFinishDialog(
+                                                onNext: () async {
+                                              if (sectionCutterFile == null) {
+                                                Navigator.pop(context, false);
+                                                setState(() {
+                                                  _failedToUpload = true;
+                                                  _errorText =
+                                                      'No file uploaded. Please upload an image first.';
+                                                });
+                                                print("No file uploaded.");
+                                                return;
+                                              }
+                                              Navigator.pop(context, true);
                                             });
-                                            print("No file uploaded.");
-                                            return;
-                                          }
-                                          Navigator.pop(context, true);
-                                        });
-                                      });
+                                          }) ??
+                                      false;
                                   if (finishSuccess) {
                                     setState(() {
                                       _isLoadingUpload = true;
