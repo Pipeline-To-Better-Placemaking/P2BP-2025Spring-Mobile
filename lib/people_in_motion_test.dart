@@ -192,6 +192,7 @@ class _PeopleInMotionTestPageState extends State<PeopleInMotionTestPage> {
     final Marker marker = Marker(
       markerId: markerId,
       position: point,
+      consumeTapEvents: true,
       icon: tempMarkerIcon,
       anchor: const Offset(0.5, 0.9),
     );

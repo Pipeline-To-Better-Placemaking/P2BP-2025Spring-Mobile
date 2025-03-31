@@ -181,6 +181,8 @@ class _AbsenceOfOrderTestPageState extends State<AbsenceOfOrderTestPage> {
         if (_remainingSeconds <= 0) {
           _isTestRunning = false;
           timer.cancel();
+          _tempDataType = null;
+          _setTempData(null);
           showDialog(
             context: context,
             barrierDismissible: false,
@@ -906,12 +908,15 @@ class _MaintenanceDescriptionFormState
                           selected: _selectedMaintenances
                               .contains(MaintenanceType.other),
                           onSelected: (selected) {
-                            if (selected) {
-                              _selectedMaintenances.add(MaintenanceType.other);
-                            } else {
-                              _selectedMaintenances
-                                  .remove(MaintenanceType.other);
-                            }
+                            setState(() {
+                              if (selected) {
+                                _selectedMaintenances
+                                    .add(MaintenanceType.other);
+                              } else {
+                                _selectedMaintenances
+                                    .remove(MaintenanceType.other);
+                              }
+                            });
                           },
                         ),
                       )

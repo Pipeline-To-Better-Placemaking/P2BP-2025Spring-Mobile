@@ -33,7 +33,7 @@ class _NaturePrevalenceState extends State<NaturePrevalence> {
   bool _pointMode = false;
   bool _outsidePoint = false;
   bool _deleteMode = false;
-  String _errorText = '';
+  String _errorText = 'You tried to place a point outside of the project area!';
 
   double _zoom = 18;
   late final Polygon _projectPolygon;

@@ -111,7 +111,7 @@ class _LightingProfileTestPageState extends State<LightingProfileTestPage> {
       setState(() {
         _markers.add(_newData.lights.last.marker.copyWith(onTapParam: () {
           _newData.lights
-              .removeWhere((light) => light.marker.position == point);
+              .removeWhere((light) => light.marker.markerId == markerId);
           setState(() {
             _markers.removeWhere((marker) => marker.markerId == markerId);
           });
@@ -133,6 +133,7 @@ class _LightingProfileTestPageState extends State<LightingProfileTestPage> {
         if (_remainingSeconds <= 0) {
           _isTestRunning = false;
           timer.cancel();
+          _setLightType(null);
           showDialog(
             context: context,
             barrierDismissible: false,
