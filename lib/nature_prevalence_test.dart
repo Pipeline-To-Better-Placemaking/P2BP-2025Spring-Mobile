@@ -552,35 +552,32 @@ class _NaturePrevalenceState extends State<NaturePrevalence> {
   void _pointTap(LatLng point) {
     Object? type = _getCurrentTypeName();
     if (type != null && type is AnimalType) {
-      final markerId = MarkerId(point.toString());
+      final Marker dataMarker = Animal.newMarker(point, type, _otherType);
+      final Marker displayMarker = dataMarker.copyWith(
+        consumeTapEventsParam: _deleteMode,
+        onTapParam: () {
+          if (_pointMode || _polygonMode) return;
+          // If the marker is tapped again, it will be removed
+          if (_deleteMode) {
+            _animalData.removeWhere(
+                (animal) => animal.marker.markerId == dataMarker.markerId);
+            setState(() {
+              _markers.removeWhere(
+                  (marker) => marker.markerId == dataMarker.markerId);
+              _deleteMode = false;
+            });
+          }
+        },
+      );
       setState(() {
-        _markers.add(
-          Marker(
-            markerId: markerId,
-            position: point,
-            consumeTapEvents: _deleteMode,
-            infoWindow: InfoWindow(
-                title: _otherType ?? type.displayName,
-                snippet:
-                    "(${point.latitude.toStringAsFixed(5)}, ${point.longitude.toStringAsFixed(5)})"),
-            icon: naturePrevalenceAnimalIconMap[type]!,
-            onTap: () {
-              if (_pointMode || _polygonMode) return;
-              // If the marker is tapped again, it will be removed
-              if (_deleteMode) {
-                _animalData.removeWhere((animal) => animal.location == point);
-                setState(() {
-                  _markers.removeWhere((marker) => marker.markerId == markerId);
-                  _deleteMode = false;
-                });
-              }
-            },
-          ),
-        );
+        _markers.add(displayMarker);
         _directions = 'Choose a category. Or, click finish to submit.';
       });
       _animalData.add(Animal(
-          animalType: _animalType!, location: point, otherName: _otherType));
+        animalType: _animalType!,
+        marker: dataMarker,
+        otherName: _otherType,
+      ));
       _pointMode = false;
       _clearTypes();
     }

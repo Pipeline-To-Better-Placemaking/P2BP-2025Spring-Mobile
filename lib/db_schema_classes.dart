@@ -2539,7 +2539,7 @@ class Animal {
 
   final AnimalType animalType;
   final String? otherName;
-  final LatLng location;
+  final Marker marker;
 
   /// For all animals, other or not, otherType is required. If the animal is
   /// of a defined type (i.e. not other) then set otherType equal to [null].
@@ -2547,8 +2547,28 @@ class Animal {
   Animal({
     required this.animalType,
     required this.otherName,
-    required this.location,
+    required this.marker,
   });
+
+  /// Creates a marker in the standard way intended for an instance of [Animal]
+  /// from given arguments.
+  static Marker newMarker(LatLng location, AnimalType animalType,
+      [String? name]) {
+    if (animalType == AnimalType.other && name == null) {
+      throw Exception(
+          'Animal.newMarker was used with incompatible name and animalType.');
+    }
+    return Marker(
+      markerId: MarkerId(location.toString()),
+      position: location,
+      consumeTapEvents: false,
+      infoWindow: InfoWindow(
+          title: name ?? animalType.displayName,
+          snippet: '(${location.latitude.toStringAsFixed(5)}, '
+              '${location.longitude.toStringAsFixed(5)})'),
+      icon: naturePrevalenceAnimalIconMap[animalType]!,
+    );
+  }
 
   factory Animal.fromJsonAndType(Object json, AnimalType animalType) {
     if (animalType == AnimalType.other && json is Map<String, dynamic>) {
@@ -2561,7 +2581,7 @@ class Animal {
         return Animal(
           animalType: animalType,
           otherName: name,
-          location: location,
+          marker: newMarker(location, animalType, name),
         );
       }
     } else {
@@ -2570,7 +2590,7 @@ class Animal {
         return Animal(
           animalType: animalType,
           otherName: null,
-          location: location,
+          marker: newMarker(location, animalType),
         );
       }
     }
@@ -2581,10 +2601,10 @@ class Animal {
     if (animalType == AnimalType.other && otherName != null) {
       return {
         'name': otherName!,
-        'point': location.toGeoPoint(),
+        'point': marker.position.toGeoPoint(),
       };
     } else {
-      return location.toGeoPoint();
+      return marker.position.toGeoPoint();
     }
   }
 
