@@ -15,7 +15,7 @@ class BarIndicator extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Padding(
-      padding: const EdgeInsets.only(top: 20, bottom: 10),
+      padding: const EdgeInsets.only(top: 10, bottom: 10),
       child: Center(
         child: Container(
           width: 40,
@@ -37,17 +37,20 @@ class EditProjectTextBox extends StatelessWidget {
   final int maxLines;
   final int minLines;
   final String labelText;
+  final TextEditingController controller;
 
   const EditProjectTextBox(
       {super.key,
       required this.maxLength,
       required this.labelText,
       required this.maxLines,
-      required this.minLines});
+      required this.minLines,
+      required this.controller});
   @override
   Widget build(BuildContext context) {
     return SizedBox(
       child: TextField(
+        controller: controller,
         style: const TextStyle(color: Colors.white),
         maxLength: maxLength,
         maxLines: maxLines,

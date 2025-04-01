@@ -4,7 +4,6 @@ import 'package:p2bp_2025spring_mobile/project_details_page.dart';
 import 'db_schema_classes.dart';
 import 'theme.dart';
 import 'create_project_and_teams.dart';
-import 'project_comparison_page.dart';
 import 'settings_page.dart';
 import 'teams_and_invites_page.dart';
 import 'results_panel.dart';
@@ -227,9 +226,16 @@ class _HomeScreenState extends State<HomeScreen> {
                   children: [
                     // Edit Info button
                     OutlinedButton(
-                      onPressed: () {
+                      onPressed: () async {
                         // Handle navigation to Edit menu
-                        showEditProjectModalSheet(context);
+                        bool updated =
+                            await showEditProjectModalSheet(context, project);
+
+                        if (updated) {
+                          setState(() {
+                            project.title;
+                          });
+                        }
                       },
                       style: OutlinedButton.styleFrom(
                         side: const BorderSide(
