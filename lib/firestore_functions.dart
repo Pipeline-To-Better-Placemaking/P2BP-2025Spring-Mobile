@@ -4,6 +4,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:maps_toolkit/maps_toolkit.dart' as mp;
+
 import 'db_schema_classes.dart';
 import 'google_maps_functions.dart';
 
@@ -326,6 +327,46 @@ Future<List<Team>> getTeamsIDs() async {
   return teams;
 }
 
+/// Retrieves a list of the members on team with the given ID and returns it.
+Future<List<Member>> getTeamMembers(String teamID) async {
+  final List<Member> members = [];
+
+  try {
+    final teamDoc = await _firestore.collection('teams').doc(teamID).get();
+    if (teamDoc.exists && teamDoc.data()!.containsKey('projects')) {
+      final List teamMembers =
+          List<Map<String, dynamic>>.from(teamDoc['teamMembers']);
+      if (teamMembers.isNotEmpty) {
+        for (final Map map in teamMembers) {
+          if (map.containsKey('user')) {
+            final DocumentReference userRef = map['user'];
+            final DocumentSnapshot userDoc = await userRef.get();
+            if (userDoc.exists) {
+              String? fullName = userDoc['fullName'];
+              if (fullName != null && fullName.isNotEmpty) {
+                members.add(Member(userID: userDoc.id, fullName: fullName));
+              }
+            }
+          }
+        }
+      }
+    }
+  } catch (e, stacktrace) {
+    print('Exception: $e');
+    print('Stacktrace: $stacktrace');
+  }
+
+  return members;
+}
+
+/// Sends an invite to the given already existing team to the given user.
+Future<void> sendInviteToUser(String userID, String teamID) async {
+  await _firestore.collection('users').doc(userID).update({
+    'invites': FieldValue.arrayUnion([_firestore.doc('/teams/$teamID')])
+  });
+  print('Success in sendInviteToUser!');
+}
+
 /// Removes the invite from the user. Checks if the user exists and has invites
 /// field (*always* should). Makes sure that the invites field contains the
 /// invite being deleted. If so removes it from database.
@@ -431,6 +472,16 @@ Future<List<Member>> getMembersList() async {
     print('Stacktrace: $stacktrace');
   }
   return membersList;
+}
+
+/// Searches member list for given String and returns the members matched.
+List<Member> searchMembers(List<Member> membersList, String text) {
+  membersList = membersList
+      .where((member) =>
+          member.fullName.toLowerCase().startsWith(text.toLowerCase()))
+      .toList();
+
+  return membersList.isNotEmpty ? membersList : [];
 }
 
 /// Creates a new [Test] from scratch and inserts it into Firestore.

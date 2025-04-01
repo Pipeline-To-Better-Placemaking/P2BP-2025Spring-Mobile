@@ -6,6 +6,7 @@ import 'package:flutter/services.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:p2bp_2025spring_mobile/change_team_name_bottom_sheet.dart';
+import 'package:p2bp_2025spring_mobile/invite_user_form.dart';
 import 'package:p2bp_2025spring_mobile/manage_team_bottom_sheet.dart';
 import 'package:p2bp_2025spring_mobile/project_list_widget.dart';
 
@@ -75,7 +76,7 @@ class _TeamSettingsPageState extends State<TeamSettingsPage> {
               email = value;
             },
             decoration: InputDecoration(
-              labelText: "Email Address",
+              labelText: 'Search Users by Name',
               hintText: "example@domain.com",
             ),
           ),
@@ -98,122 +99,6 @@ class _TeamSettingsPageState extends State<TeamSettingsPage> {
           ],
         );
       },
-    );
-  }
-
-  Widget _buildTeamNameAndMembers() {
-    return SizedBox(
-      // Height is 72 to match profile avatar on left of row
-      height: 72,
-      // Width of 206 is exactly the width used by all the Positioned stuff
-      width: 206,
-      child: Column(
-        children: [
-          Text(
-            widget.activeTeam.title,
-            style: TextStyle(
-              color: Colors.white,
-              fontSize: 18,
-              fontWeight: FontWeight.bold,
-            ),
-            overflow: TextOverflow.ellipsis,
-          ),
-          SizedBox(height: 8),
-          SizedBox(
-            height: 36,
-            child: Stack(
-              clipBehavior:
-                  Clip.none, // Allows the edit button to overflow slightly
-              children: [
-                // Overlapping team members
-                for (int index = 0; index < 6; index++)
-                  Positioned(
-                    left: index * 24.0, // Overlap amount
-                    child: CircleAvatar(
-                      radius: 16,
-                      // TODO: Add team member photos
-                    ),
-                  ),
-                // Edit button overlapping the last avatar
-                Positioned(
-                  // Overlap position for the last avatar
-                  left: 5 * 24.0 + 20,
-                  // Adjust for proper vertical alignment
-                  top: 12,
-                  child: GestureDetector(
-                    onTap: () {
-                      // Open team edit functionality
-                      showModalBottomSheet(
-                        context: context,
-                        isScrollControlled:
-                            true, // allows the sheet to be fully draggable
-                        backgroundColor: Colors
-                            .transparent, // makes the sheet's corners rounded if desired
-                        builder: (BuildContext context) {
-                          return DraggableScrollableSheet(
-                            // initial height as 50% of screen height
-                            initialChildSize: 0.7,
-                            // minimum height when dragged down
-                            minChildSize: 0.3,
-                            // maximum height when dragged up
-                            maxChildSize: 0.9,
-                            builder: (BuildContext context,
-                                ScrollController scrollController) {
-                              return Container(
-                                decoration: BoxDecoration(
-                                  gradient: defaultGrad,
-                                  borderRadius: BorderRadius.only(
-                                    topLeft: Radius.circular(16.0),
-                                    topRight: Radius.circular(16.0),
-                                  ),
-                                ),
-                                child: ManageTeamBottomSheet(),
-                              );
-                            },
-                          );
-                        },
-                      );
-                    },
-                    child: CircleAvatar(
-                      radius: 12,
-                      backgroundColor: Colors.blue,
-                      child: Icon(
-                        Icons.edit,
-                        size: 12,
-                        color: Colors.white,
-                      ),
-                    ),
-                  ),
-                ),
-                // Invite button to the right of the Team Members Profile Avatars
-                Positioned(
-                  // Place the invite button to the right of the team avatars
-                  left: 6 * 24.0 + 20,
-                  // Align with the team avatars vertically
-                  top: -6,
-                  child: ElevatedButton(
-                    onPressed: () {
-                      _showInviteDialog(context);
-                    },
-                    style: ElevatedButton.styleFrom(
-                      shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(8)),
-                      padding: EdgeInsets.zero,
-                      minimumSize: Size(30, 25),
-                      backgroundColor: Colors.blue,
-                    ),
-                    child: Icon(
-                      Icons.person_add, // Invite icon
-                      color: Colors.white,
-                      size: 20,
-                    ),
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ],
-      ),
     );
   }
 
@@ -558,48 +443,17 @@ class _TeamSettingsPageState extends State<TeamSettingsPage> {
                 // Profile Avatar and Header Row
                 Padding(
                   padding: const EdgeInsets.symmetric(horizontal: 16.0),
-                  child: Row(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      // Profile Avatar on the left
-                      Flexible(
-                        child: Stack(
-                          alignment: Alignment.bottomRight,
-                          children: [
-                            CircleAvatar(
-                              radius: 36,
-                              // TODO: Add actual image
-                            ),
-                            GestureDetector(
-                              onTap: () async {
-                                // Open image edit functionality
-                                final XFile? pickedFile = await ImagePicker()
-                                    .pickImage(source: ImageSource.gallery);
-                                if (pickedFile != null) {
-                                  final File imageFile = File(pickedFile.path);
-                                  // TODO: Submit image or something.
-                                  print("Image selected: ${imageFile.path}");
-                                } else {
-                                  print("No image selected.");
-                                }
-                              },
-                              child: CircleAvatar(
-                                radius: 16,
-                                backgroundColor: Colors.blue,
-                                child: Icon(
-                                  Icons.edit,
-                                  size: 16,
-                                  color: Colors.white,
-                                ),
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                      // Column with Team Name and Team Members Row
-                      _buildTeamNameAndMembers(),
-                    ],
+                  child: _AvatarAndTitleRow(
+                    title: widget.activeTeam.title,
+                    inviteCallback: () {
+                      showModalBottomSheet(
+                        isScrollControlled: true,
+                        context: context,
+                        builder: (context) =>
+                            InviteUserForm(activeTeam: widget.activeTeam),
+                      );
+                      // _showInviteDialog(context);
+                    },
                   ),
                 ),
                 SizedBox(height: 48),
@@ -726,6 +580,10 @@ class _TeamSettingsPageState extends State<TeamSettingsPage> {
 class _SettingsMenuButton extends StatelessWidget {
   const _SettingsMenuButton();
 
+  static const ButtonStyle paddingButtonStyle = ButtonStyle(
+      padding: WidgetStatePropertyAll(EdgeInsets.symmetric(horizontal: 16)));
+  static const TextStyle whiteText = TextStyle(color: Colors.white);
+
   @override
   Widget build(BuildContext context) {
     return MenuBar(
@@ -757,83 +615,232 @@ class _SettingsMenuButton extends StatelessWidget {
           ),
           menuChildren: [
             MenuItemButton(
-              style: ButtonStyle(
-                padding: WidgetStatePropertyAll(
-                    EdgeInsets.symmetric(horizontal: 16)),
-              ),
+              style: paddingButtonStyle,
               trailingIcon: Icon(
                 Icons.edit_outlined,
                 color: Colors.white,
               ),
               child: Text(
                 'Edit Team Name',
-                style: TextStyle(color: Colors.white),
+                style: whiteText,
               ),
             ),
             Divider(color: Colors.white54, height: 1),
             MenuItemButton(
-              style: ButtonStyle(
-                padding: WidgetStatePropertyAll(
-                    EdgeInsets.symmetric(horizontal: 16)),
-              ),
+              style: paddingButtonStyle,
               trailingIcon: Icon(
                 Icons.palette_outlined,
                 color: Colors.white,
               ),
               child: Text(
                 'Change Team Color',
-                style: TextStyle(color: Colors.white),
+                style: whiteText,
               ),
             ),
             Divider(color: Colors.white54, height: 1),
             MenuItemButton(
-              style: ButtonStyle(
-                padding: WidgetStatePropertyAll(
-                    EdgeInsets.symmetric(horizontal: 16)),
-              ),
+              style: paddingButtonStyle,
               trailingIcon: Icon(
                 Icons.check_circle_outlined,
                 color: Colors.white,
               ),
               child: Text(
                 'Select Projects',
-                style: TextStyle(color: Colors.white),
+                style: whiteText,
               ),
             ),
             Divider(color: Colors.white54, height: 1),
             MenuItemButton(
-              style: ButtonStyle(
-                padding: WidgetStatePropertyAll(
-                    EdgeInsets.symmetric(horizontal: 16)),
-              ),
+              style: paddingButtonStyle,
               trailingIcon: Icon(
                 Icons.inventory_2_outlined,
                 color: Colors.white,
               ),
               child: Text(
                 'Archive Team',
-                style: TextStyle(color: Colors.white),
+                style: whiteText,
               ),
             ),
             Divider(color: Colors.white54, height: 1),
             MenuItemButton(
-              style: ButtonStyle(
-                padding: WidgetStatePropertyAll(
-                    EdgeInsets.symmetric(horizontal: 16)),
-              ),
+              style: paddingButtonStyle,
               trailingIcon: Icon(
                 Icons.delete_outlined,
                 color: Colors.white,
               ),
               child: Text(
                 'Delete Team',
-                style: TextStyle(color: Colors.white),
+                style: whiteText,
               ),
             ),
           ],
           child: Icon(
             Icons.tune_rounded,
             color: Colors.white,
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+class _AvatarAndTitleRow extends StatelessWidget {
+  final String title;
+  final VoidCallback inviteCallback;
+
+  const _AvatarAndTitleRow({required this.title, required this.inviteCallback});
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+      children: [
+        // Profile Avatar on the left
+        Flexible(
+          child: Stack(
+            alignment: Alignment.bottomRight,
+            children: [
+              CircleAvatar(
+                radius: 36,
+                // TODO: Add actual image
+              ),
+              GestureDetector(
+                onTap: () async {
+                  // Open image edit functionality
+                  final XFile? pickedFile = await ImagePicker()
+                      .pickImage(source: ImageSource.gallery);
+                  if (pickedFile != null) {
+                    final File imageFile = File(pickedFile.path);
+                    // TODO: Submit image or something.
+                    print("Image selected: ${imageFile.path}");
+                  } else {
+                    print("No image selected.");
+                  }
+                },
+                child: CircleAvatar(
+                  radius: 16,
+                  backgroundColor: Colors.blue,
+                  child: Icon(
+                    Icons.edit,
+                    size: 16,
+                    color: Colors.white,
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
+        // Column with Team Name and Team Members Row
+        SizedBox(
+          // Height is 72 to match profile avatar on left of row
+          height: 72,
+          // Width of 206 is exactly the width used by all the Positioned stuff
+          width: 206,
+          child: Column(
+            children: [
+              Text(
+                title,
+                style: TextStyle(
+                  color: Colors.white,
+                  fontSize: 18,
+                  fontWeight: FontWeight.bold,
+                ),
+                overflow: TextOverflow.ellipsis,
+              ),
+              SizedBox(height: 8),
+              SizedBox(
+                height: 36,
+                child: Stack(
+                  clipBehavior:
+                      Clip.none, // Allows the edit button to overflow slightly
+                  children: [
+                    // Overlapping team members
+                    for (int index = 0; index < 6; index++)
+                      Positioned(
+                        left: index * 24.0, // Overlap amount
+                        child: CircleAvatar(
+                          radius: 16,
+                          // TODO: Add team member photos
+                        ),
+                      ),
+                    // Edit button overlapping the last avatar
+                    Positioned(
+                      // Overlap position for the last avatar
+                      left: 5 * 24.0 + 20,
+                      // Adjust for proper vertical alignment
+                      top: 12,
+                      child: GestureDetector(
+                        onTap: () {
+                          // Open team edit functionality
+                          showModalBottomSheet(
+                            context: context,
+                            isScrollControlled:
+                                true, // allows the sheet to be fully draggable
+                            backgroundColor: Colors
+                                .transparent, // makes the sheet's corners rounded if desired
+                            builder: (BuildContext context) {
+                              return DraggableScrollableSheet(
+                                // initial height as 50% of screen height
+                                initialChildSize: 0.7,
+                                // minimum height when dragged down
+                                minChildSize: 0.3,
+                                // maximum height when dragged up
+                                maxChildSize: 0.9,
+                                builder: (BuildContext context,
+                                    ScrollController scrollController) {
+                                  return Container(
+                                    decoration: BoxDecoration(
+                                      gradient: defaultGrad,
+                                      borderRadius: BorderRadius.only(
+                                        topLeft: Radius.circular(16.0),
+                                        topRight: Radius.circular(16.0),
+                                      ),
+                                    ),
+                                    child: ManageTeamBottomSheet(),
+                                  );
+                                },
+                              );
+                            },
+                          );
+                        },
+                        child: CircleAvatar(
+                          radius: 12,
+                          backgroundColor: Colors.blue,
+                          child: Icon(
+                            Icons.edit,
+                            size: 12,
+                            color: Colors.white,
+                          ),
+                        ),
+                      ),
+                    ),
+                    // Invite button to the right of the Team Members Profile Avatars
+                    Positioned(
+                      // Place the invite button to the right of the team avatars
+                      left: 6 * 24.0 + 20,
+                      // Align with the team avatars vertically
+                      top: -6,
+                      child: ElevatedButton(
+                        onPressed: inviteCallback,
+                        style: ElevatedButton.styleFrom(
+                          shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(8)),
+                          padding: EdgeInsets.zero,
+                          minimumSize: Size(30, 25),
+                          backgroundColor: Colors.blue,
+                        ),
+                        child: Icon(
+                          Icons.person_add, // Invite icon
+                          color: Colors.white,
+                          size: 20,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
           ),
         ),
       ],
