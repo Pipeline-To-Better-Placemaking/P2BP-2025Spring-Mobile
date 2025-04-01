@@ -774,6 +774,61 @@ class TestFinishDialog extends StatelessWidget {
   }
 }
 
+class GenericConfirmationDialog extends StatelessWidget {
+  final VoidCallback? onConfirm;
+  final String titleText;
+  final String contentText;
+  final String declineText;
+  final String confirmText;
+  final TextStyle? declineTextStyle;
+  final TextStyle? confirmTextStyle;
+
+  const GenericConfirmationDialog({
+    super.key,
+    this.onConfirm,
+    required this.titleText,
+    required this.contentText,
+    required this.declineText,
+    required this.confirmText,
+    this.declineTextStyle,
+    this.confirmTextStyle,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return AlertDialog(
+      scrollable: true,
+      title: Center(
+        child: Text(
+          titleText,
+          style: TextStyle(
+            fontWeight: FontWeight.bold,
+          ),
+        ),
+      ),
+      content: Text(
+        contentText,
+        style: TextStyle(fontWeight: FontWeight.bold),
+        overflow: TextOverflow.clip,
+      ),
+      actions: <Widget>[
+        TextButton(
+          onPressed: () {
+            Navigator.pop(context);
+          },
+          child: Text(declineText),
+        ),
+        TextButton(
+            onPressed: onConfirm,
+            child: Text(
+              confirmText,
+              style: confirmTextStyle,
+            )),
+      ],
+    );
+  }
+}
+
 class DirectionsButton extends StatelessWidget {
   /// Directions widget used for tests.
   ///

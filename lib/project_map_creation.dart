@@ -1,8 +1,8 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:maps_toolkit/maps_toolkit.dart' as mp;
+import 'package:p2bp_2025spring_mobile/assets.dart';
 import 'package:p2bp_2025spring_mobile/home_screen.dart';
 import 'package:p2bp_2025spring_mobile/theme.dart';
 import 'package:p2bp_2025spring_mobile/widgets.dart';
@@ -116,7 +116,7 @@ class _ProjectMapCreationState extends State<ProjectMapCreation> {
               snippet:
                   '${point.latitude.toStringAsFixed(5)}, ${point.latitude.toStringAsFixed(5)}',
               onTap: () {}),
-          icon: BitmapDescriptor.defaultMarkerWithHue(100),
+          icon: standingPointEnabledIcon,
           onTap: () {
             if (_deleteMode) {
               setState(() {
@@ -140,6 +140,7 @@ class _ProjectMapCreationState extends State<ProjectMapCreation> {
         Marker(
           markerId: markerId,
           position: point,
+          icon: tempMarkerIcon,
           consumeTapEvents: true,
           onTap: () {
             // If the marker is tapped again, it will be removed

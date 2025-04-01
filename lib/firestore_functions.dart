@@ -201,6 +201,53 @@ Future<Project> getProjectInfo(String projectID) async {
   return project;
 }
 
+Future<bool> deleteProject(Project project) async {
+  try {
+    final DocumentReference<Map<String, dynamic>> projectRef =
+        _firestore.collection('projects').doc(project.projectID);
+
+    // Delete tests residing in this project
+    if (project.testRefs.isNotEmpty) {
+      for (final testRef in project.testRefs) {
+        await testRef.delete();
+        print('deleted test ${testRef.id}');
+      }
+    }
+    // Delete reference to this project from the team it resides in
+    await project.teamRef?.update({
+      'projects': FieldValue.arrayRemove([projectRef])
+    });
+    // Delete project
+    await projectRef.delete();
+    print('Success in deleteProject! Deleted project: ${project.title} '
+        'with ID ${project.projectID}');
+  } catch (e, stacktrace) {
+    print('Exception deleting test: $e');
+    print('Stacktrace: $stacktrace');
+    return false;
+  }
+  return true;
+}
+
+Future<bool> deleteTest(Test test) async {
+  try {
+    final DocumentReference<Map<String, dynamic>> testRef =
+        _firestore.collection(test.collectionID).doc(test.testID);
+    // Delete reference to this test from the project it resides in
+    await test.projectRef.update({
+      'tests': FieldValue.arrayRemove([testRef])
+    });
+    // Delete test
+    await testRef.delete();
+    print('Success in deleteTest! Deleted test: $test');
+  } catch (e, stacktrace) {
+    print('Exception deleting test: $e');
+    print('Stacktrace: $stacktrace');
+    return false;
+  }
+  return true;
+}
+
 /// Calling this function returns a future reference to the currently selected
 /// team. If retrieval throws an exception, then returns `null`. When
 /// implementing this function, check for `null` before using value.
