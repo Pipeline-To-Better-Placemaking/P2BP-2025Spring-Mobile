@@ -351,26 +351,25 @@ class _SectionCutterState extends State<SectionCutter> {
                           onPressed: _isLoadingUpload
                               ? null
                               : () async {
-                                  final bool finishSuccess = await showDialog(
-                                          context: context,
-                                          builder: (context) {
-                                            return TestFinishDialog(
-                                                onNext: () async {
-                                              if (sectionCutterFile == null) {
-                                                Navigator.pop(context, false);
-                                                setState(() {
-                                                  _failedToUpload = true;
-                                                  _errorText =
-                                                      'No file uploaded. Please upload an image first.';
-                                                });
-                                                print("No file uploaded.");
-                                                return;
-                                              }
-                                              Navigator.pop(context, true);
+                                  final bool? finishSuccess = await showDialog(
+                                      context: context,
+                                      builder: (context) {
+                                        return TestFinishDialog(
+                                            onNext: () async {
+                                          if (sectionCutterFile == null) {
+                                            Navigator.pop(context, false);
+                                            setState(() {
+                                              _failedToUpload = true;
+                                              _errorText =
+                                                  'No file uploaded. Please upload an image first.';
                                             });
-                                          }) ??
-                                      false;
-                                  if (finishSuccess) {
+                                            print("No file uploaded.");
+                                            return;
+                                          }
+                                          Navigator.pop(context, true);
+                                        });
+                                      });
+                                  if (finishSuccess == true) {
                                     setState(() {
                                       _isLoadingUpload = true;
                                     });
@@ -378,19 +377,7 @@ class _SectionCutterState extends State<SectionCutter> {
                                         .saveXFile(sectionCutterFile!);
                                     widget.activeTest.submitData(data);
                                     if (!context.mounted) return;
-                                    Navigator.pushReplacement(
-                                        context,
-                                        MaterialPageRoute(
-                                          builder: (context) => HomeScreen(),
-                                        ));
-                                    Navigator.push(
-                                        context,
-                                        MaterialPageRoute(
-                                          builder: (context) =>
-                                              ProjectDetailsPage(
-                                                  projectData:
-                                                      widget.activeProject),
-                                        ));
+                                    Navigator.pop(context);
                                   }
                                 },
                         ),

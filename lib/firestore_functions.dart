@@ -312,7 +312,7 @@ Future<List<Team>> getTeamsIDs() async {
             teamID: teamDoc['id'],
             title: teamDoc['title'],
             adminName: 'Temp',
-            projects: teamDoc['projects'],
+            projects: List<DocumentReference>.from(teamDoc['projects']),
             numProjects: teamDoc['projects'].length,
           );
           teams.add(tempTeam);

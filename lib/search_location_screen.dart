@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:p2bp_2025spring_mobile/db_schema_classes.dart';
-import 'theme.dart';
+
 import 'project_details_page.dart';
 import 'theme.dart';
 
@@ -346,7 +346,7 @@ class _SearchScreenState extends State<SearchScreen> {
                             context,
                             MaterialPageRoute(
                               builder: (context) => ProjectDetailsPage(
-                                projectData: Project.partialProject(
+                                activeProject: Project.partialProject(
                                     title: 'No data sent',
                                     description:
                                         'Accessed without project data',

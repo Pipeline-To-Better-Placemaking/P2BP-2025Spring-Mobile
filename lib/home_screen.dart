@@ -1,6 +1,7 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:p2bp_2025spring_mobile/project_details_page.dart';
 
 import 'create_project_and_teams.dart';
@@ -114,22 +115,27 @@ class _HomeScreenState extends State<HomeScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      body: Stack(
-        children: [
-          IndexedStack(
-            index: selectedIndex,
-            children: [
-              // Screens for each tab
-              CreateProjectAndTeamsPage(),
-              _buildHomeContent(),
-              SettingsPage(),
-            ],
-          ),
-        ],
+    return AnnotatedRegion<SystemUiOverlayStyle>(
+      value: SystemUiOverlayStyle.dark.copyWith(
+        statusBarColor: Colors.transparent,
       ),
-      extendBody: true,
-      bottomNavigationBar: _navBar(),
+      child: Scaffold(
+        body: Stack(
+          children: [
+            IndexedStack(
+              index: selectedIndex,
+              children: [
+                // Screens for each tab
+                CreateProjectAndTeamsPage(),
+                _buildHomeContent(),
+                SettingsPage(),
+              ],
+            ),
+          ],
+        ),
+        extendBody: true,
+        bottomNavigationBar: _navBar(),
+      ),
     );
   }
 
@@ -147,16 +153,11 @@ class _HomeScreenState extends State<HomeScreen> {
               BorderRadius.circular(12) // Match the container's corner radius
           ),
       child: InkWell(
-        // TODO: Add a loading indicator for loading project detail page
-        onTap: () async {
-          if (project.tests == null) {
-            await project.loadAllTestData();
-          }
-          if (!context.mounted) return;
+        onTap: () {
           Navigator.push(
             context,
             MaterialPageRoute(
-              builder: (context) => ProjectDetailsPage(projectData: project),
+              builder: (context) => ProjectDetailsPage(activeProject: project),
             ),
           );
         },

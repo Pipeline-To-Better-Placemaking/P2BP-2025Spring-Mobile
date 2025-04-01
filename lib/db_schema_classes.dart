@@ -37,7 +37,7 @@ class Team {
   String teamID = '';
   String title = '';
   List teamMembers = [];
-  List projects = [];
+  List<DocumentReference> projects = [];
   int numProjects = 0;
 
   Team({

@@ -13,13 +13,13 @@ import 'firestore_functions.dart';
 import 'mini_map.dart';
 
 class ProjectDetailsPage extends StatefulWidget {
-  final Project projectData;
+  final Project activeProject;
 
   /// IMPORTANT: When navigating to this page, pass in project details. Use
   /// `getProjectInfo()` from firestore_functions.dart to retrieve project
   /// object w/ data.
   /// <br/>Note: project is returned as future, await return before passing.
-  const ProjectDetailsPage({super.key, required this.projectData});
+  const ProjectDetailsPage({super.key, required this.activeProject});
 
   @override
   State<ProjectDetailsPage> createState() => _ProjectDetailsPageState();
@@ -29,15 +29,32 @@ final FirebaseFirestore _firestore = FirebaseFirestore.instance;
 User? loggedInUser = FirebaseAuth.instance.currentUser;
 
 class _ProjectDetailsPageState extends State<ProjectDetailsPage> {
-  late int _testCount;
+  int _testCount = 0;
   bool _isLoading = true;
-  late Widget _testListView;
   late GoogleMapController mapController;
 
   @override
+  void initState() {
+    super.initState();
+    if (widget.activeProject.tests == null) {
+      _loadTests();
+    } else {
+      _isLoading = false;
+    }
+  }
+
+  void _loadTests() async {
+    await widget.activeProject.loadAllTestData();
+    setState(() {
+      _isLoading = false;
+    });
+  }
+
+  @override
   Widget build(BuildContext context) {
-    _testCount = widget.projectData.tests!.length;
-    _testListView = _buildTestListView();
+    if (widget.activeProject.tests != null) {
+      _testCount = widget.activeProject.tests!.length;
+    }
     return Scaffold(
       extendBodyBehindAppBar: true,
       body: CustomScrollView(
@@ -137,7 +154,7 @@ class _ProjectDetailsPageState extends State<ProjectDetailsPage> {
             Padding(
               padding: const EdgeInsets.only(left: 10.0),
               child: Text(
-                widget.projectData.title,
+                widget.activeProject.title,
                 style: TextStyle(
                   color: Colors.white,
                   fontSize: 24,
@@ -177,7 +194,7 @@ class _ProjectDetailsPageState extends State<ProjectDetailsPage> {
                 child: Text.rich(
                   maxLines: 7,
                   overflow: TextOverflow.ellipsis,
-                  TextSpan(text: "${widget.projectData.description}\n\n\n"),
+                  TextSpan(text: "${widget.activeProject.description}\n\n\n"),
                   style: TextStyle(fontSize: 15, color: Colors.white),
                 ),
               ),
@@ -192,7 +209,7 @@ class _ProjectDetailsPageState extends State<ProjectDetailsPage> {
                 child: ClipRRect(
                   borderRadius: BorderRadius.circular(16.0),
                   child: MiniMap(
-                    activeProject: widget.projectData,
+                    activeProject: widget.activeProject,
                   ),
                 ),
               ),
@@ -212,7 +229,8 @@ class _ProjectDetailsPageState extends State<ProjectDetailsPage> {
                       fontWeight: FontWeight.bold,
                     ),
                   ),
-                  if (widget.projectData.projectAdmin!.id == loggedInUser!.uid)
+                  if (widget.activeProject.projectAdmin!.id ==
+                      loggedInUser!.uid)
                     FilledButton.icon(
                       style: FilledButton.styleFrom(
                         padding: const EdgeInsets.only(left: 15, right: 15),
@@ -228,6 +246,8 @@ class _ProjectDetailsPageState extends State<ProjectDetailsPage> {
                       icon: Icon(Icons.add),
                       iconAlignment: IconAlignment.end,
                     )
+                  else
+                    SizedBox(),
                 ],
               ),
             ),
@@ -238,10 +258,10 @@ class _ProjectDetailsPageState extends State<ProjectDetailsPage> {
                   top: BorderSide(color: Colors.white, width: .5),
                 ),
               ),
-              child: _isLoading == true
+              child: _isLoading
                   ? const Center(child: CircularProgressIndicator())
                   : _testCount > 0
-                      ? _testListView
+                      ? _buildTestListView()
                       : const Center(
                           child: Text(
                             'No research activities. Create one first!',
@@ -275,7 +295,7 @@ class _ProjectDetailsPageState extends State<ProjectDetailsPage> {
                 ),
               ),
               child: CreateTestForm(
-                activeProject: widget.projectData,
+                activeProject: widget.activeProject,
               ),
             );
           },
@@ -287,7 +307,7 @@ class _ProjectDetailsPageState extends State<ProjectDetailsPage> {
       title: newTestInfo['title'],
       scheduledTime: newTestInfo['scheduledTime'],
       projectRef:
-          _firestore.collection('projects').doc(widget.projectData.projectID),
+          _firestore.collection('projects').doc(widget.activeProject.projectID),
       collectionID: newTestInfo['collectionID'],
       standingPoints: newTestInfo.containsKey('standingPoints')
           ? newTestInfo['standingPoints']
@@ -303,12 +323,13 @@ class _ProjectDetailsPageState extends State<ProjectDetailsPage> {
           : null,
     );
     setState(() {
-      widget.projectData.tests?.add(test);
+      widget.activeProject.tests?.add(test);
     });
   }
 
   Widget _buildTestListView() {
-    widget.projectData.tests?.sort((a, b) => testTimeComparison(a, b));
+    widget.activeProject.tests!.sort((a, b) => testTimeComparison(a, b));
+
     Widget list = ListView.separated(
       physics: ClampingScrollPhysics(),
       shrinkWrap: true,
@@ -321,16 +342,14 @@ class _ProjectDetailsPageState extends State<ProjectDetailsPage> {
       ),
       itemBuilder: (BuildContext context, int index) {
         return TestCard(
-          test: widget.projectData.tests![index],
-          project: widget.projectData,
+          test: widget.activeProject.tests![index],
+          project: widget.activeProject,
         );
       },
       separatorBuilder: (BuildContext context, int index) =>
           const SizedBox(height: 10),
     );
-    setState(() {
-      _isLoading = false;
-    });
+
     return list;
   }
 }
