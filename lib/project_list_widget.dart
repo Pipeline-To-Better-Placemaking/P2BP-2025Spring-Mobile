@@ -1,6 +1,4 @@
 import 'package:flutter/material.dart';
-import 'db_schema_classes.dart';
-import 'package:p2bp_2025spring_mobile/project_details_page.dart';
 
 class ProjectListWidget extends StatelessWidget {
   final bool isMultiSelectMode;
@@ -9,12 +7,12 @@ class ProjectListWidget extends StatelessWidget {
   final Function(int) onProjectTap;
 
   const ProjectListWidget({
-    Key? key,
+    super.key,
     required this.isMultiSelectMode,
     required this.selectedProjects,
     required this.onToggleSelection,
     required this.onProjectTap,
-  }) : super(key: key);
+  });
 
   @override
   Widget build(BuildContext context) {

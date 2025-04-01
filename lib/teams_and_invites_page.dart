@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'teams_settings_screen.dart';
+import 'team_settings_page.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'firestore_functions.dart';
@@ -411,8 +411,7 @@ class _TeamsAndInvitesPageState extends State<TeamsAndInvitesPage> {
                 Navigator.push(
                   context,
                   MaterialPageRoute(
-                      builder: (context) =>
-                          TeamSettingsScreen(activeTeam: team)),
+                      builder: (context) => TeamSettingsPage(activeTeam: team)),
                 );
               },
             ),

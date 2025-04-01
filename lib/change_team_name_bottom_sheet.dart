@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:dropdown_button2/dropdown_button2.dart';
 
 class ChangeTeamNameBottomSheet extends StatefulWidget {
   const ChangeTeamNameBottomSheet({super.key});
@@ -10,13 +9,11 @@ class ChangeTeamNameBottomSheet extends StatefulWidget {
 }
 
 class _ChangeTeamNameBottomSheetState extends State<ChangeTeamNameBottomSheet> {
-  TimeOfDay? _selectedTime;
-  final TextEditingController _timeController = TextEditingController();
   final TextEditingController _teamNameController = TextEditingController();
 
   @override
   void dispose() {
-    _timeController.dispose();
+    _teamNameController.dispose();
     super.dispose();
   }
 

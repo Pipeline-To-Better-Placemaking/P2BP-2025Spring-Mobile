@@ -1,28 +1,28 @@
+import 'dart:io';
+import 'dart:ui';
+
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:font_awesome_flutter/font_awesome_flutter.dart';
+import 'package:image_picker/image_picker.dart';
+import 'package:p2bp_2025spring_mobile/change_team_name_bottom_sheet.dart';
 import 'package:p2bp_2025spring_mobile/manage_team_bottom_sheet.dart';
 import 'package:p2bp_2025spring_mobile/project_list_widget.dart';
-import 'dart:ui';
-import 'project_details_page.dart';
-import 'db_schema_classes.dart';
-import 'package:image_picker/image_picker.dart';
-import 'dart:io';
-import 'theme.dart';
-import 'package:p2bp_2025spring_mobile/change_team_name_bottom_sheet.dart';
-import 'package:font_awesome_flutter/font_awesome_flutter.dart';
-import 'package:p2bp_2025spring_mobile/project_list_widget.dart';
-import 'package:p2bp_2025spring_mobile/teams_create_projects.dart';
 
-class TeamSettingsScreen extends StatefulWidget {
+import 'db_schema_classes.dart';
+import 'project_details_page.dart';
+import 'theme.dart';
+
+class TeamSettingsPage extends StatefulWidget {
   final Team activeTeam;
 
-  const TeamSettingsScreen({super.key, required this.activeTeam});
+  const TeamSettingsPage({super.key, required this.activeTeam});
 
   @override
-  State<TeamSettingsScreen> createState() => _TeamSettingsScreenState();
+  State<TeamSettingsPage> createState() => _TeamSettingsPageState();
 }
 
-class _TeamSettingsScreenState extends State<TeamSettingsScreen> {
+class _TeamSettingsPageState extends State<TeamSettingsPage> {
   bool isMultiSelectMode = false;
   Set<int> selectedProjects = {};
 
@@ -228,7 +228,7 @@ class _TeamSettingsScreenState extends State<TeamSettingsScreen> {
     const double menuWidth = 250;
 
     // Get the screen width.
-    final double screenWidth = MediaQuery.of(context).size.width;
+    final double screenWidth = MediaQuery.sizeOf(context).width;
 
     // Calculate left offset so the menu is centered below the button.
     double left = buttonPosition.dx + (buttonWidth / 2) - (menuWidth / 2);
@@ -536,226 +536,307 @@ class _TeamSettingsScreenState extends State<TeamSettingsScreen> {
   @override
   Widget build(BuildContext context) {
     return AnnotatedRegion<SystemUiOverlayStyle>(
-      value: SystemUiOverlayStyle(
-        statusBarColor: Colors.transparent,
-        // Changes Android status bar to white
-        statusBarIconBrightness: Brightness.dark,
-        // Changes iOS status bar to white
-        statusBarBrightness: Brightness.dark,
-      ),
+      value: SystemUiOverlayStyle.light
+          .copyWith(statusBarColor: Colors.transparent),
       child: Scaffold(
-        body: Stack(
-          children: [
-            // Gradient background
-            Container(
-              decoration: BoxDecoration(
-                gradient: LinearGradient(
-                  begin: Alignment.topLeft,
-                  end: Alignment.bottomRight,
-                  colors: [
-                    Color(0xFF0A2A88),
-                    Color(0xFF62B6FF),
-                  ],
+        extendBodyBehindAppBar: true,
+        appBar: AppBar(
+          backgroundColor: Colors.transparent,
+          foregroundColor: Colors.white,
+          forceMaterialTransparency: true,
+          actionsPadding: EdgeInsets.symmetric(horizontal: 4),
+          actions: [
+            _SettingsMenuButton(),
+          ],
+        ),
+        body: Container(
+          decoration: BoxDecoration(gradient: defaultGrad),
+          child: SafeArea(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                // Profile Avatar and Header Row
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 16.0),
+                  child: Row(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      // Profile Avatar on the left
+                      Flexible(
+                        child: Stack(
+                          alignment: Alignment.bottomRight,
+                          children: [
+                            CircleAvatar(
+                              radius: 36,
+                              // TODO: Add actual image
+                            ),
+                            GestureDetector(
+                              onTap: () async {
+                                // Open image edit functionality
+                                final XFile? pickedFile = await ImagePicker()
+                                    .pickImage(source: ImageSource.gallery);
+                                if (pickedFile != null) {
+                                  final File imageFile = File(pickedFile.path);
+                                  // TODO: Submit image or something.
+                                  print("Image selected: ${imageFile.path}");
+                                } else {
+                                  print("No image selected.");
+                                }
+                              },
+                              child: CircleAvatar(
+                                radius: 16,
+                                backgroundColor: Colors.blue,
+                                child: Icon(
+                                  Icons.edit,
+                                  size: 16,
+                                  color: Colors.white,
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                      // Column with Team Name and Team Members Row
+                      _buildTeamNameAndMembers(),
+                    ],
+                  ),
                 ),
+                SizedBox(height: 48),
+                // Project Title and Create New Button
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 16.0),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Text(
+                        'Projects',
+                        style: TextStyle(
+                            color: Colors.white,
+                            fontSize: 18,
+                            fontWeight: FontWeight.bold),
+                      ),
+                      isMultiSelectMode
+                          ? Row(
+                              children: [
+                                TextButton(
+                                  child: Text(
+                                    'Done',
+                                    style: TextStyle(
+                                        color: Color(0xFF62B6FF),
+                                        fontSize: 16,
+                                        fontWeight: FontWeight.bold),
+                                  ),
+                                  onPressed: () {
+                                    // Cancel multi-select mode
+                                    toggleMultiSelect();
+                                  },
+                                ),
+                                SizedBox(width: 5),
+                                ElevatedButton(
+                                  // Creates new project. If Multi-Select Mode active, changes to a delete button
+                                  onPressed: isMultiSelectMode
+                                      ? (selectedProjects.isEmpty
+                                          ? null
+                                          : () {
+                                              // Deletion logic here.
+                                            })
+                                      : () {
+                                          // Create new project logic here.
+                                        },
+                                  style: ElevatedButton.styleFrom(
+                                    padding: EdgeInsets.zero,
+                                    backgroundColor: isMultiSelectMode
+                                        ? Colors.red
+                                        : Colors.blue,
+                                    minimumSize: Size(0, 32),
+                                    shape: RoundedRectangleBorder(
+                                      borderRadius: BorderRadius.circular(8),
+                                    ),
+                                  ),
+                                  child: Padding(
+                                    padding: const EdgeInsets.symmetric(
+                                        horizontal: 12),
+                                    child: isMultiSelectMode
+                                        ? Text('Delete',
+                                            style: TextStyle(
+                                                fontSize: 12,
+                                                color: Colors.white))
+                                        : Text(
+                                            'Create New',
+                                            style: TextStyle(
+                                                fontSize: 12,
+                                                color: Colors.white),
+                                          ),
+                                  ),
+                                ),
+                              ],
+                            )
+                          : ElevatedButton(
+                              // Creates new project. If Multi-Select Mode active, changes to a delete button
+                              onPressed: () {
+                                // Create new project logic here.
+                                // Navigator.push(
+                                //   context,
+                                //   MaterialPageRoute(
+                                //       builder: (context) =>
+                                //           CreateNewProjectsOnlyScreen()),
+                                // );
+                              },
+                              style: ElevatedButton.styleFrom(
+                                padding: EdgeInsets.zero,
+                                backgroundColor: Colors.blue,
+                                minimumSize: Size(0, 32),
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(8),
+                                ),
+                              ),
+                              child: Padding(
+                                padding:
+                                    const EdgeInsets.symmetric(horizontal: 12),
+                                child: Text(
+                                  'Create New',
+                                  style: TextStyle(
+                                      fontSize: 12, color: Colors.white),
+                                ),
+                              ),
+                            ),
+                    ],
+                  ),
+                ),
+                SizedBox(height: 16),
+                // Project List
+                Expanded(
+                  child: ProjectListWidget(
+                    isMultiSelectMode: isMultiSelectMode,
+                    selectedProjects: selectedProjects,
+                    onToggleSelection: toggleProjectSelection,
+                    onProjectTap: handleProjectTap,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _SettingsMenuButton extends StatelessWidget {
+  const _SettingsMenuButton();
+
+  @override
+  Widget build(BuildContext context) {
+    return MenuBar(
+      style: MenuStyle(
+        shape: WidgetStatePropertyAll(RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(100),
+        )),
+        backgroundColor: WidgetStatePropertyAll(Colors.transparent),
+        shadowColor: WidgetStatePropertyAll(Colors.transparent),
+      ),
+      children: <Widget>[
+        SubmenuButton(
+          style: ButtonStyle(
+            shape: WidgetStatePropertyAll(RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(100),
+            )),
+            visualDensity:
+                VisualDensity(horizontal: VisualDensity.minimumDensity),
+          ),
+          menuStyle: MenuStyle(
+            backgroundColor:
+                WidgetStatePropertyAll(p2bpBlue.withValues(alpha: 0.85)),
+            padding: WidgetStatePropertyAll(EdgeInsets.zero),
+            shape: WidgetStatePropertyAll(
+              RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(15),
               ),
             ),
-            // Content
-            SafeArea(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  // Top Row with Back Arrow and Settings buttons
-                  Padding(
-                    padding: const EdgeInsets.symmetric(
-                        horizontal: 16.0, vertical: 8.0),
-                    child: Row(
-                      children: [
-                        IconButton(
-                          icon: Icon(Icons.arrow_back, color: Colors.white),
-                          onPressed: () {
-                            // Add back navigation
-                            Navigator.pop(context);
-                          },
-                        ),
-                        // Push settings icon to the right edge of the screen
-                        Spacer(),
-                        // Settings button with quick action menu
-                        Builder(builder: (context) {
-                          return IconButton(
-                            icon: Image.asset('assets/Filter_Icon.png'),
-                            onPressed: () => _settingsButtonPressed(context),
-                          );
-                        }),
-                      ],
-                    ),
-                  ),
-                  SizedBox(height: 12),
-                  // Profile Avatar and Header Row
-                  Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 16.0),
-                    child: Row(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        // Profile Avatar on the left
-                        Flexible(
-                          child: Stack(
-                            alignment: Alignment.bottomRight,
-                            children: [
-                              CircleAvatar(
-                                radius: 36,
-                                // TODO: Add actual image
-                              ),
-                              GestureDetector(
-                                onTap: () async {
-                                  // Open image edit functionality
-                                  final XFile? pickedFile = await ImagePicker()
-                                      .pickImage(source: ImageSource.gallery);
-                                  if (pickedFile != null) {
-                                    final File imageFile =
-                                        File(pickedFile.path);
-                                    // Now you have the image file, and you can submit or process it.
-                                    print("Image selected: ${imageFile.path}");
-                                  } else {
-                                    print("No image selected.");
-                                  }
-                                },
-                                child: CircleAvatar(
-                                  radius: 16,
-                                  backgroundColor: Colors.blue,
-                                  child: Icon(
-                                    Icons.edit,
-                                    size: 16,
-                                    color: Colors.white,
-                                  ),
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-                        // Column with Team Name and Team Members Row
-                        _buildTeamNameAndMembers(),
-                      ],
-                    ),
-                  ),
-                  SizedBox(height: 48),
-                  // Project Title and Create New Button
-                  Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 16.0),
-                    child: Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        Text(
-                          'Projects',
-                          style: TextStyle(
-                              color: Colors.white,
-                              fontSize: 18,
-                              fontWeight: FontWeight.bold),
-                        ),
-                        isMultiSelectMode
-                            ? Row(
-                                children: [
-                                  TextButton(
-                                    child: Text(
-                                      'Done',
-                                      style: TextStyle(
-                                          color: Color(0xFF62B6FF),
-                                          fontSize: 16,
-                                          fontWeight: FontWeight.bold),
-                                    ),
-                                    onPressed: () {
-                                      // Cancel multi-select mode
-                                      toggleMultiSelect();
-                                    },
-                                  ),
-                                  SizedBox(width: 5),
-                                  ElevatedButton(
-                                    // Creates new project. If Multi-Select Mode active, changes to a delete button
-                                    onPressed: isMultiSelectMode
-                                        ? (selectedProjects.isEmpty
-                                            ? null
-                                            : () {
-                                                // Deletion logic here.
-                                              })
-                                        : () {
-                                            // Create new project logic here.
-                                          },
-                                    style: ElevatedButton.styleFrom(
-                                      padding: EdgeInsets.zero,
-                                      backgroundColor: isMultiSelectMode
-                                          ? Colors.red
-                                          : Colors.blue,
-                                      minimumSize: Size(0, 32),
-                                      shape: RoundedRectangleBorder(
-                                        borderRadius: BorderRadius.circular(8),
-                                      ),
-                                    ),
-                                    child: Padding(
-                                      padding: const EdgeInsets.symmetric(
-                                          horizontal: 12),
-                                      child: isMultiSelectMode
-                                          ? Text('Delete',
-                                              style: TextStyle(
-                                                  fontSize: 12,
-                                                  color: Colors.white))
-                                          : Text(
-                                              'Create New',
-                                              style: TextStyle(
-                                                  fontSize: 12,
-                                                  color: Colors.white),
-                                            ),
-                                    ),
-                                  ),
-                                ],
-                              )
-                            : ElevatedButton(
-                                // Creates new project. If Multi-Select Mode active, changes to a delete button
-                                onPressed: () {
-                                  // Create new project logic here.
-                                  // Navigator.push(
-                                  //   context,
-                                  //   MaterialPageRoute(
-                                  //       builder: (context) =>
-                                  //           CreateNewProjectsOnlyScreen()),
-                                  // );
-                                },
-                                style: ElevatedButton.styleFrom(
-                                  padding: EdgeInsets.zero,
-                                  backgroundColor: Colors.blue,
-                                  minimumSize: Size(0, 32),
-                                  shape: RoundedRectangleBorder(
-                                    borderRadius: BorderRadius.circular(8),
-                                  ),
-                                ),
-                                child: Padding(
-                                  padding: const EdgeInsets.symmetric(
-                                      horizontal: 12),
-                                  child: Text(
-                                    'Create New',
-                                    style: TextStyle(
-                                        fontSize: 12, color: Colors.white),
-                                  ),
-                                ),
-                              ),
-                      ],
-                    ),
-                  ),
-                  SizedBox(height: 16),
-                  // Project List
-                  Expanded(
-                    child: ProjectListWidget(
-                      isMultiSelectMode: isMultiSelectMode,
-                      selectedProjects: selectedProjects,
-                      onToggleSelection: toggleProjectSelection,
-                      onProjectTap: handleProjectTap,
-                    ),
-                  ),
-                ],
+          ),
+          menuChildren: [
+            MenuItemButton(
+              style: ButtonStyle(
+                padding: WidgetStatePropertyAll(
+                    EdgeInsets.symmetric(horizontal: 16)),
+              ),
+              trailingIcon: Icon(
+                Icons.edit_outlined,
+                color: Colors.white,
+              ),
+              child: Text(
+                'Edit Team Name',
+                style: TextStyle(color: Colors.white),
+              ),
+            ),
+            Divider(color: Colors.white54, height: 1),
+            MenuItemButton(
+              style: ButtonStyle(
+                padding: WidgetStatePropertyAll(
+                    EdgeInsets.symmetric(horizontal: 16)),
+              ),
+              trailingIcon: Icon(
+                Icons.palette_outlined,
+                color: Colors.white,
+              ),
+              child: Text(
+                'Change Team Color',
+                style: TextStyle(color: Colors.white),
+              ),
+            ),
+            Divider(color: Colors.white54, height: 1),
+            MenuItemButton(
+              style: ButtonStyle(
+                padding: WidgetStatePropertyAll(
+                    EdgeInsets.symmetric(horizontal: 16)),
+              ),
+              trailingIcon: Icon(
+                Icons.check_circle_outlined,
+                color: Colors.white,
+              ),
+              child: Text(
+                'Select Projects',
+                style: TextStyle(color: Colors.white),
+              ),
+            ),
+            Divider(color: Colors.white54, height: 1),
+            MenuItemButton(
+              style: ButtonStyle(
+                padding: WidgetStatePropertyAll(
+                    EdgeInsets.symmetric(horizontal: 16)),
+              ),
+              trailingIcon: Icon(
+                Icons.inventory_2_outlined,
+                color: Colors.white,
+              ),
+              child: Text(
+                'Archive Team',
+                style: TextStyle(color: Colors.white),
+              ),
+            ),
+            Divider(color: Colors.white54, height: 1),
+            MenuItemButton(
+              style: ButtonStyle(
+                padding: WidgetStatePropertyAll(
+                    EdgeInsets.symmetric(horizontal: 16)),
+              ),
+              trailingIcon: Icon(
+                Icons.delete_outlined,
+                color: Colors.white,
+              ),
+              child: Text(
+                'Delete Team',
+                style: TextStyle(color: Colors.white),
               ),
             ),
           ],
+          child: Icon(
+            Icons.tune_rounded,
+            color: Colors.white,
+          ),
         ),
-      ),
+      ],
     );
   }
 }
