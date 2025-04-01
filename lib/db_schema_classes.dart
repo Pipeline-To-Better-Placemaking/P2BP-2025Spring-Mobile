@@ -579,6 +579,7 @@ class LightingProfileTest extends Test<LightingProfileData>
     implements TimerTest {
   /// Static constant definition of collection ID for this test type.
   static const String collectionIDStatic = 'lighting_profile_tests';
+  static const String displayName = 'Lighting Profile';
 
   @override
   final int testDuration;
@@ -969,6 +970,7 @@ class AbsenceOfOrderTest extends Test<AbsenceOfOrderData>
     with JsonToString
     implements TimerTest {
   static const String collectionIDStatic = 'absence_of_order_tests';
+  static const String displayName = 'Absence of Order Locator';
 
   @override
   final int testDuration;
@@ -1451,6 +1453,7 @@ class SpatialBoundariesTest extends Test<SpatialBoundariesData>
     with JsonToString
     implements TimerTest {
   static const String collectionIDStatic = 'spatial_boundaries_tests';
+  static const String displayName = 'Spatial Boundaries';
 
   @override
   final int testDuration;
@@ -1611,6 +1614,7 @@ class Section with JsonToString {
 class SectionCutterTest extends Test<Section> with JsonToString {
   /// Static constant definition of collection ID for this test type.
   static const String collectionIDStatic = 'section_cutter_tests';
+  static const String displayName = 'Section Cutter';
 
   /// Line used for taking section. Standing point equivalent for this test.
   List<LatLng> linePoints;
@@ -2121,6 +2125,7 @@ class IdentifyingAccessTest extends Test<IdentifyingAccessData>
     with JsonToString {
   /// Static constant definition of collection ID for this test type.
   static const String collectionIDStatic = 'identifying_access_tests';
+  static const String displayName = 'Identifying Access';
 
   /// Creates a new [IdentifyingAccessTest] instance from the given arguments.
   IdentifyingAccessTest._({
@@ -2844,6 +2849,7 @@ class NaturePrevalenceTest extends Test<NaturePrevalenceData>
     implements TimerTest {
   /// Static constant definition of collection ID for this test type.
   static const String collectionIDStatic = 'nature_prevalence_tests';
+  static const String displayName = 'Nature Prevalence';
 
   static const String assetDirectoryPath =
       'assets/test_specific/nature_prevalence/';
@@ -3223,6 +3229,7 @@ class PeopleInPlaceTest extends Test<PeopleInPlaceData>
     with JsonToString
     implements StandingPointTest, TimerTest {
   static const String collectionIDStatic = 'people_in_place_tests';
+  static const String displayName = 'People in Place';
 
   @override
   final List<StandingPoint> standingPoints;
@@ -3519,6 +3526,7 @@ class PeopleInMotionTest extends Test<PeopleInMotionData>
     implements StandingPointTest, TimerTest {
   /// Static constant definition of collection ID for this test type.
   static const String collectionIDStatic = 'people_in_motion_tests';
+  static const String displayName = 'People in Motion';
 
   @override
   final List<StandingPoint> standingPoints;
@@ -3788,6 +3796,7 @@ class AcousticProfileTest extends Test<AcousticProfileData>
     implements StandingPointTest, IntervalTimerTest {
   /// Static constant definition of collection ID for this test type.
   static const String collectionIDStatic = 'acoustic_profile_tests';
+  static const String displayName = 'Acoustic Profile';
 
   @override
   final List<StandingPoint> standingPoints;

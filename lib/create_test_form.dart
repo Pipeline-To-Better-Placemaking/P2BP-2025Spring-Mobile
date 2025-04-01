@@ -39,39 +39,39 @@ class _CreateTestFormState extends State<CreateTestForm> {
   final List<({String value, String text})> _testStringPairs = [
     (
       value: AbsenceOfOrderTest.collectionIDStatic,
-      text: 'Absence of Order Locator',
+      text: AbsenceOfOrderTest.displayName,
     ),
     (
       value: LightingProfileTest.collectionIDStatic,
-      text: 'Lighting Profile',
+      text: LightingProfileTest.displayName,
     ),
     (
       value: SpatialBoundariesTest.collectionIDStatic,
-      text: 'Spatial Boundaries',
+      text: SpatialBoundariesTest.displayName,
     ),
     (
       value: SectionCutterTest.collectionIDStatic,
-      text: 'Section Cutter',
+      text: SectionCutterTest.displayName,
     ),
     (
       value: IdentifyingAccessTest.collectionIDStatic,
-      text: 'Identifying Access',
+      text: IdentifyingAccessTest.displayName,
     ),
     (
       value: PeopleInPlaceTest.collectionIDStatic,
-      text: 'People in Place',
+      text: PeopleInPlaceTest.displayName,
     ),
     (
       value: PeopleInMotionTest.collectionIDStatic,
-      text: 'People in Motion',
+      text: PeopleInMotionTest.displayName,
     ),
     (
       value: NaturePrevalenceTest.collectionIDStatic,
-      text: 'Nature Prevalence',
+      text: NaturePrevalenceTest.displayName,
     ),
     (
       value: AcousticProfileTest.collectionIDStatic,
-      text: 'Acoustic Profile',
+      text: AcousticProfileTest.displayName,
     ),
   ];
 
