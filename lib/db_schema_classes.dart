@@ -2796,10 +2796,12 @@ class NaturePrevalenceData with JsonToString {
     final Map<String, Map<String, dynamic>> json = {
       NatureType.animal.name: {
         for (final designation in animalDesignations)
-          designation.name: {
-            for (final type in animalTypes)
-              if (type.designation == designation) type.name: []
-          }
+          designation.name: (designation == AnimalDesignation.other)
+              ? []
+              : {
+                  for (final type in animalTypes)
+                    if (type.designation == designation) type.name: []
+                }
       },
       NatureType.waterBody.name: {
         for (final type in waterBodyTypes) type.name: <Map>[]
@@ -2811,9 +2813,14 @@ class NaturePrevalenceData with JsonToString {
     };
 
     for (final animal in animals) {
-      json[NatureType.animal.name]![animal.animalType.designation.name]
-              [animal.animalType.name]
-          .add(animal.toJsonOrGeoPoint());
+      if (animal.animalType == AnimalType.other) {
+        json[NatureType.animal.name]![animal.animalType.designation.name]
+            .add(animal.toJsonOrGeoPoint());
+      } else {
+        json[NatureType.animal.name]![animal.animalType.designation.name]
+                [animal.animalType.name]
+            .add(animal.toJsonOrGeoPoint());
+      }
     }
     for (final waterBody in waterBodies) {
       json[NatureType.waterBody.name]![waterBody.waterBodyType.name]
