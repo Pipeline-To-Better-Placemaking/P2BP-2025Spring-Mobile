@@ -47,92 +47,90 @@ class _InviteUserFormState extends State<InviteUserForm> {
 
   @override
   Widget build(BuildContext context) {
-    return Form(
-      child: SingleChildScrollView(
-        child: Padding(
-          padding: MediaQuery.viewInsetsOf(context),
-          child: Container(
-            decoration: BoxDecoration(
-              gradient: defaultGrad,
-              borderRadius: const BorderRadius.only(
-                topLeft: Radius.circular(24.0),
-                topRight: Radius.circular(24.0),
+    return SingleChildScrollView(
+      child: Padding(
+        padding: MediaQuery.viewInsetsOf(context),
+        child: Container(
+          decoration: BoxDecoration(
+            gradient: defaultGrad,
+            borderRadius: const BorderRadius.only(
+              topLeft: Radius.circular(24.0),
+              topRight: Radius.circular(24.0),
+            ),
+          ),
+          padding: const EdgeInsets.symmetric(horizontal: 25),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: <Widget>[
+              const BarIndicator(),
+              Center(
+                child: Text(
+                  'Invite Users to this Team',
+                  textAlign: TextAlign.center,
+                  style: TextStyle(
+                    fontSize: 20,
+                    color: Colors.white,
+                  ),
+                ),
               ),
-            ),
-            padding: const EdgeInsets.symmetric(horizontal: 25),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: <Widget>[
-                const BarIndicator(),
-                Center(
+              SizedBox(height: 12),
+              Text(
+                'Search Members',
+                style: TextStyle(color: Colors.white),
+              ),
+              SizedBox(height: 8),
+              TextFormField(
+                keyboardType: TextInputType.name,
+                decoration: InputDecoration(
+                  prefixIcon: const Icon(Icons.search),
+                  filled: true,
+                  fillColor: Colors.white,
+                  border: OutlineInputBorder(),
+                  labelText: 'Members',
+                  floatingLabelBehavior: FloatingLabelBehavior.never,
+                ),
+                onChanged: (memberText) {
+                  setState(() {
+                    if (memberText.length > 2) {
+                      membersSearch = searchMembers(membersList, memberText);
+                      itemCount = membersSearch.length;
+                    } else {
+                      itemCount = 0;
+                    }
+                  });
+                },
+              ),
+              SizedBox(height: 10),
+              SizedBox(
+                height: 250,
+                child: itemCount > 0
+                    ? ListView.separated(
+                        itemBuilder: (context, index) => buildInviteCard(
+                            member: membersSearch[index], index: index),
+                        separatorBuilder: (context, index) =>
+                            const SizedBox(height: 10),
+                        itemCount: itemCount)
+                    : _isLoading
+                        ? const Center(child: CircularProgressIndicator())
+                        : const Text(
+                            'No users matching criteria. '
+                            'Enter at least 3 characters to search.',
+                            style: TextStyle(color: Colors.white),
+                          ),
+              ),
+              SizedBox(height: 20),
+              InkWell(
+                child: Padding(
+                  padding: const EdgeInsets.all(10),
                   child: Text(
-                    'Invite Users to this Team',
-                    textAlign: TextAlign.center,
-                    style: TextStyle(
-                      fontSize: 20,
-                      color: Colors.white,
-                    ),
+                    'Cancel',
+                    style: TextStyle(fontSize: 16, color: placeYellow),
                   ),
                 ),
-                SizedBox(height: 12),
-                Text(
-                  'Search Members',
-                  style: TextStyle(color: Colors.white),
-                ),
-                SizedBox(height: 8),
-                TextFormField(
-                  keyboardType: TextInputType.name,
-                  decoration: InputDecoration(
-                    prefixIcon: const Icon(Icons.search),
-                    filled: true,
-                    fillColor: Colors.white,
-                    border: OutlineInputBorder(),
-                    labelText: 'Members',
-                    floatingLabelBehavior: FloatingLabelBehavior.never,
-                  ),
-                  onChanged: (memberText) {
-                    setState(() {
-                      if (memberText.length > 2) {
-                        membersSearch = searchMembers(membersList, memberText);
-                        itemCount = membersSearch.length;
-                      } else {
-                        itemCount = 0;
-                      }
-                    });
-                  },
-                ),
-                SizedBox(height: 10),
-                SizedBox(
-                  height: 250,
-                  child: itemCount > 0
-                      ? ListView.separated(
-                          itemBuilder: (context, index) => buildInviteCard(
-                              member: membersSearch[index], index: index),
-                          separatorBuilder: (context, index) =>
-                              const SizedBox(height: 10),
-                          itemCount: itemCount)
-                      : _isLoading
-                          ? const Center(child: CircularProgressIndicator())
-                          : const Text(
-                              'No users matching criteria. '
-                              'Enter at least 3 characters to search.',
-                              style: TextStyle(color: Colors.white),
-                            ),
-                ),
-                SizedBox(height: 20),
-                InkWell(
-                  child: Padding(
-                    padding: const EdgeInsets.all(10),
-                    child: Text(
-                      'Cancel',
-                      style: TextStyle(fontSize: 16, color: placeYellow),
-                    ),
-                  ),
-                  onTap: () => Navigator.pop(context),
-                ),
-                SizedBox(height: 30),
-              ],
-            ),
+                onTap: () => Navigator.pop(context),
+              ),
+              SizedBox(height: 30),
+            ],
           ),
         ),
       ),

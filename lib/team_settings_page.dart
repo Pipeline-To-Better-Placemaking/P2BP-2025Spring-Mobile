@@ -4,6 +4,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:image_picker/image_picker.dart';
+import 'package:p2bp_2025spring_mobile/change_team_name_form.dart';
 import 'package:p2bp_2025spring_mobile/firestore_functions.dart';
 import 'package:p2bp_2025spring_mobile/invite_user_form.dart';
 import 'package:p2bp_2025spring_mobile/manage_team_bottom_sheet.dart';
@@ -126,6 +127,21 @@ class _TeamSettingsPageState extends State<TeamSettingsPage> {
           actionsPadding: EdgeInsets.symmetric(horizontal: 4),
           actions: [
             _SettingsMenuButton(
+              editNameCallback: () async {
+                final String? newName = await showModalBottomSheet<String>(
+                  isScrollControlled: true,
+                  context: context,
+                  builder: (context) => ChangeTeamNameForm(),
+                );
+                if (newName == null) return;
+                _firestore
+                    .collection('teams')
+                    .doc(widget.activeTeam.teamID)
+                    .update({'title': newName});
+                setState(() {
+                  widget.activeTeam.title = newName;
+                });
+              },
               selectProjectsCallback: toggleMultiSelect,
               deleteTeamCallback: () {
                 showDialog(
