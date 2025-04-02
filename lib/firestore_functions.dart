@@ -549,7 +549,44 @@ Future<void> addUserToTeam(String teamID) async {
   }
 }
 
-Future<void> removeUserFromTeam(String teamID, String memberID) async {}
+/// Remove user from team they are currently in.
+Future<void> removeUserFromTeam(String userID, String teamID) async {
+  final DocumentReference<Map<String, dynamic>> userRef;
+  final DocumentReference<Map<String, dynamic>> teamRef;
+  final DocumentSnapshot<Map<String, dynamic>> userDoc;
+  final DocumentSnapshot<Map<String, dynamic>> teamDoc;
+
+  try {
+    userRef = _firestore.collection('users').doc(userID);
+    teamRef = _firestore.collection('teams').doc(teamID);
+    userDoc = await userRef.get();
+    teamDoc = await teamRef.get();
+
+    if (userDoc.exists && userDoc.data()!.containsKey('teams')) {
+      if (userDoc.data()!['teams'].contains(teamRef)) {
+        userRef.update({
+          'teams': FieldValue.arrayRemove([teamRef]),
+        });
+
+        if (teamDoc.exists && teamDoc.data()!.containsKey('teamMembers')) {
+          for (final member in teamDoc.data()!['teamMembers']) {
+            if (member is Map<String, dynamic> && member.containsKey('user')) {
+              if (member['user'] == userRef) {
+                teamRef.update({
+                  'teamMembers': FieldValue.arrayRemove([member]),
+                });
+                print('success deleting member $member from team');
+              }
+            }
+          }
+        }
+      }
+    }
+  } catch (e, stacktrace) {
+    print('Exception removing user from team: $e');
+    print('Stacktrace: $stacktrace');
+  }
+}
 
 /// Fetches the list of all users in database. Used for inviting members to
 /// to teams. Extracts the name and ID from them and puts them into a list of

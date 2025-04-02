@@ -183,7 +183,9 @@ class _TeamSettingsPageState extends State<TeamSettingsPage> {
                             context: context,
                             builder: (BuildContext context) =>
                                 ManageTeamMembersForm(
-                                    teamMembers: _teamMembers),
+                              teamMembers: _teamMembers,
+                              activeTeam: widget.activeTeam,
+                            ),
                           );
                         },
                   inviteCallback: _isLoadingTeamMembers

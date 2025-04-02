@@ -2,28 +2,32 @@ import 'dart:ui';
 
 import 'package:flutter/material.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
+import 'package:p2bp_2025spring_mobile/firestore_functions.dart';
 import 'package:p2bp_2025spring_mobile/widgets.dart';
 
 import 'db_schema_classes.dart';
 import 'theme.dart';
 
 class ManageTeamMembersForm extends StatefulWidget {
+  final Team activeTeam;
   final List<Member> teamMembers;
 
-  const ManageTeamMembersForm({super.key, required this.teamMembers});
+  const ManageTeamMembersForm({
+    super.key,
+    required this.teamMembers,
+    required this.activeTeam,
+  });
 
   @override
   State<ManageTeamMembersForm> createState() => _ManageTeamMembersFormState();
 }
 
 class _ManageTeamMembersFormState extends State<ManageTeamMembersForm> {
-  void _showRemoveMemberDialog() async {
-    showDialog(
+  Future<bool> _showRemoveMemberDialog(Member member) async {
+    return await showDialog(
       context: context,
       barrierColor: Colors.black.withValues(alpha: 0.5),
-      builder: (BuildContext context) {
-        return _RemoveMemberDialog();
-      },
+      builder: (BuildContext context) => _RemoveMemberDialog(member: member),
     );
   }
 
@@ -84,6 +88,7 @@ class _ManageTeamMembersFormState extends State<ManageTeamMembersForm> {
                   child: ListView.separated(
                     itemCount: widget.teamMembers.length - 1,
                     itemBuilder: (context, index) {
+                      final thisMember = widget.teamMembers[index + 1];
                       return ListTile(
                         contentPadding: EdgeInsets.zero,
                         leading: Row(
@@ -91,7 +96,19 @@ class _ManageTeamMembersFormState extends State<ManageTeamMembersForm> {
                           children: [
                             // Delete Icon
                             GestureDetector(
-                              onTap: _showRemoveMemberDialog,
+                              onTap: () async {
+                                final didRemove =
+                                    await _showRemoveMemberDialog(thisMember);
+
+                                if (didRemove != true) return;
+                                await removeUserFromTeam(
+                                  thisMember.userID,
+                                  widget.activeTeam.teamID,
+                                );
+                                setState(() {
+                                  widget.teamMembers.remove(thisMember);
+                                });
+                              },
                               child: Container(
                                 width: 30,
                                 height: 30,
@@ -112,7 +129,7 @@ class _ManageTeamMembersFormState extends State<ManageTeamMembersForm> {
                           ],
                         ),
                         title: Text(
-                          widget.teamMembers[index + 1].fullName,
+                          thisMember.fullName,
                           style: TextStyle(color: Colors.white),
                         ),
                       );
@@ -137,7 +154,9 @@ class _ManageTeamMembersFormState extends State<ManageTeamMembersForm> {
 }
 
 class _RemoveMemberDialog extends StatelessWidget {
-  const _RemoveMemberDialog();
+  final Member member;
+
+  const _RemoveMemberDialog({required this.member});
 
   @override
   Widget build(BuildContext context) {
@@ -160,7 +179,7 @@ class _RemoveMemberDialog extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  "Remove Team Member",
+                  'Remove Team Member',
                   style: Theme.of(context)
                       .textTheme
                       .headlineSmall
@@ -174,12 +193,12 @@ class _RemoveMemberDialog extends StatelessWidget {
                         .bodyMedium
                         ?.copyWith(color: Colors.white70),
                     children: [
-                      TextSpan(text: "Are you sure you want to remove "),
+                      TextSpan(text: 'Are you sure you want to remove '),
                       TextSpan(
-                        text: "[insert team member here]",
+                        text: member.fullName,
                         style: TextStyle(fontWeight: FontWeight.bold),
                       ),
-                      TextSpan(text: "?"),
+                      TextSpan(text: ' from the team?'),
                     ],
                   ),
                 ),
@@ -194,8 +213,7 @@ class _RemoveMemberDialog extends StatelessWidget {
                     ),
                     TextButton(
                       onPressed: () {
-                        // Execute deletion logic here
-                        Navigator.pop(context);
+                        Navigator.pop(context, true);
                       },
                       child:
                           Text("Remove", style: TextStyle(color: Colors.red)),
