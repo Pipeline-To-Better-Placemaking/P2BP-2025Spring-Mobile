@@ -201,28 +201,82 @@ Future<Project> getProjectInfo(String projectID) async {
   return project;
 }
 
+Future<bool> deleteTeam(Team team) async {
+  try {
+    final DocumentReference<Map<String, dynamic>> teamRef =
+        _firestore.collection('teams').doc(team.teamID);
+
+    // Iterate through projects and delete tests within them, then the project.
+    if (team.projects.isNotEmpty) {
+      for (final projectRef in team.projects) {
+        final DocumentSnapshot projectDoc = await projectRef.get();
+        if (projectDoc.exists && projectDoc.data()! is Map<String, dynamic>) {
+          final Map<String, dynamic> projectData =
+              projectDoc.data()! as Map<String, dynamic>;
+          if (projectData.containsKey('tests') &&
+              projectData['tests'] is List) {
+            final List<DocumentReference> testRefs =
+                List<DocumentReference>.from(projectData['tests']);
+            for (final testRef in testRefs) {
+              await testRef.delete();
+              print('deleted test ${testRef.id}');
+            }
+          }
+        }
+        await projectRef.delete();
+        print('deleted project ${projectRef.id}');
+      }
+    }
+
+    // Iterate through members of this team, deleting refs to this team.
+    final teamMemberList = await getTeamMembers(team.teamID);
+    if (teamMemberList.isNotEmpty) {
+      for (final member in teamMemberList) {
+        final DocumentReference userRef =
+            _firestore.collection('users').doc(member.userID);
+        await userRef.update({
+          'teams': FieldValue.arrayRemove([teamRef])
+        });
+        print('deleted ref from user ${userRef.id}');
+      }
+    }
+
+    // Delete team.
+    await teamRef.delete();
+    print('Success in deleteTeam! Deleted team: ${team.title} '
+        'with ID ${team.teamID}');
+  } catch (e, stacktrace) {
+    print('Exception deleting team: $e');
+    print('Stacktrace: $stacktrace');
+    return false;
+  }
+  return true;
+}
+
 Future<bool> deleteProject(Project project) async {
   try {
     final DocumentReference<Map<String, dynamic>> projectRef =
         _firestore.collection('projects').doc(project.projectID);
 
-    // Delete tests residing in this project
+    // Delete tests residing in this project.
     if (project.testRefs.isNotEmpty) {
       for (final testRef in project.testRefs) {
         await testRef.delete();
         print('deleted test ${testRef.id}');
       }
     }
-    // Delete reference to this project from the team it resides in
+
+    // Delete reference to this project from the team it resides in.
     await project.teamRef?.update({
       'projects': FieldValue.arrayRemove([projectRef])
     });
-    // Delete project
+
+    // Delete project.
     await projectRef.delete();
     print('Success in deleteProject! Deleted project: ${project.title} '
         'with ID ${project.projectID}');
   } catch (e, stacktrace) {
-    print('Exception deleting test: $e');
+    print('Exception deleting project: $e');
     print('Stacktrace: $stacktrace');
     return false;
   }
@@ -233,10 +287,12 @@ Future<bool> deleteTest(Test test) async {
   try {
     final DocumentReference<Map<String, dynamic>> testRef =
         _firestore.collection(test.collectionID).doc(test.testID);
+
     // Delete reference to this test from the project it resides in
     await test.projectRef.update({
       'tests': FieldValue.arrayRemove([testRef])
     });
+
     // Delete test
     await testRef.delete();
     print('Success in deleteTest! Deleted test: $test');

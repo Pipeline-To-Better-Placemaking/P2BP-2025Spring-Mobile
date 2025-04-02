@@ -822,7 +822,7 @@ class GenericConfirmationDialog extends StatelessWidget {
             onPressed: onConfirm,
             child: Text(
               confirmText,
-              style: confirmTextStyle,
+              style: confirmTextStyle ?? TextStyle(color: Colors.red[700]),
             )),
       ],
     );

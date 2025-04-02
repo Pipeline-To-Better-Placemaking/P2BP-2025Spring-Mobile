@@ -406,13 +406,13 @@ class _TeamsAndInvitesPageState extends State<TeamsAndInvitesPage> {
                 color: Colors.white,
               ),
               tooltip: 'Open team settings',
-              onPressed: () {
-                // TODO: Actual function (chevron right, team settings)
-                Navigator.push(
+              onPressed: () async {
+                final bool? doRefresh = await Navigator.push(
                   context,
                   MaterialPageRoute(
                       builder: (context) => TeamSettingsPage(activeTeam: team)),
                 );
+                if (doRefresh == true) _getTeams();
               },
             ),
           ),

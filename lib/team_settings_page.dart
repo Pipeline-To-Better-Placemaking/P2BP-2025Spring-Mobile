@@ -69,11 +69,11 @@ class _TeamSettingsPageState extends State<TeamSettingsPage> {
     return GenericConfirmationDialog(
       titleText: 'Delete Projects?',
       contentText:
-          'This will delete all selected projects. This action is irreversible,'
-          ' are you absolutely certain you want to delete all these projects?',
+          'This will delete all selected projects and the tests within them. '
+          'This cannot be undone. '
+          'Are you absolutely certain you want to delete all these projects?',
       declineText: 'No, go back',
       confirmText: 'Yes, delete them',
-      confirmTextStyle: TextStyle(color: Colors.red[700]),
       onConfirm: () async {
         for (final project in selectedProjects) {
           await deleteProject(project);
@@ -85,6 +85,29 @@ class _TeamSettingsPageState extends State<TeamSettingsPage> {
         setState(() {
           // Rebuild projects list after changes
         });
+      },
+    );
+  }
+
+  Widget _deleteTeamDialog() {
+    return GenericConfirmationDialog(
+      titleText: 'Delete This Team?',
+      contentText: 'This will delete the currently selected team as well as '
+          'well as all projects within it, and the tests within those '
+          'projects. This cannot be undone. '
+          'Are you absolutely certain you want to delete this team?',
+      declineText: 'No, go back',
+      confirmText: 'Yes, delete this team',
+      onConfirm: () async {
+        final success = await deleteTeam(widget.activeTeam);
+        if (success == true) {
+          if (!mounted) return;
+          Navigator.pop(context);
+          Navigator.pop(context, true);
+        } else {
+          if (!mounted) return;
+          Navigator.pop(context);
+        }
       },
     );
   }
@@ -104,6 +127,12 @@ class _TeamSettingsPageState extends State<TeamSettingsPage> {
           actions: [
             _SettingsMenuButton(
               selectProjectsCallback: toggleMultiSelect,
+              deleteTeamCallback: () {
+                showDialog(
+                  context: context,
+                  builder: (context) => _deleteTeamDialog(),
+                );
+              },
             ),
           ],
         ),
@@ -162,10 +191,10 @@ class _TeamSettingsPageState extends State<TeamSettingsPage> {
                                   ? null
                                   : () {
                                       showDialog(
-                                          context: context,
-                                          builder: (context) {
-                                            return _deleteProjectsDialog();
-                                          });
+                                        context: context,
+                                        builder: (context) =>
+                                            _deleteProjectsDialog(),
+                                      );
                                     },
                               style: ElevatedButton.styleFrom(
                                 padding: EdgeInsets.zero,
@@ -355,16 +384,16 @@ class _ProjectListTile extends StatelessWidget {
 
 class _SettingsMenuButton extends StatelessWidget {
   final VoidCallback? editNameCallback;
-  final VoidCallback? changeColorCallback;
+  // final VoidCallback? changeColorCallback;
   final VoidCallback? selectProjectsCallback;
-  final VoidCallback? archiveTeamCallback;
+  // final VoidCallback? archiveTeamCallback;
   final VoidCallback? deleteTeamCallback;
 
   const _SettingsMenuButton({
     this.editNameCallback,
-    this.changeColorCallback,
+    // this.changeColorCallback,
     this.selectProjectsCallback,
-    this.archiveTeamCallback,
+    // this.archiveTeamCallback,
     this.deleteTeamCallback,
   });
 
@@ -456,14 +485,12 @@ class _SettingsMenuButton extends StatelessWidget {
             // Divider(color: Colors.white54, height: 1),
             MenuItemButton(
               style: paddingButtonStyle,
-              trailingIcon: Icon(
-                Icons.delete_outlined,
-                color: Colors.white,
-              ),
+              trailingIcon:
+                  Icon(Icons.delete_outlined, color: Color(0xFFFD6265)),
               onPressed: deleteTeamCallback,
               child: Text(
                 'Delete Team',
-                style: whiteText,
+                style: TextStyle(color: Color(0xFFFD6265)),
               ),
             ),
           ],
