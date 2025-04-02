@@ -4,9 +4,11 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:intl/intl.dart';
+import 'package:p2bp_2025spring_mobile/change_project_description_form.dart';
+import 'package:p2bp_2025spring_mobile/change_project_name_form.dart';
 import 'package:p2bp_2025spring_mobile/create_test_form.dart';
-import 'package:p2bp_2025spring_mobile/show_project_options_dialog.dart';
 import 'package:p2bp_2025spring_mobile/theme.dart';
+import 'package:p2bp_2025spring_mobile/widgets.dart';
 
 import 'db_schema_classes.dart';
 import 'firestore_functions.dart';
@@ -50,6 +52,24 @@ class _ProjectDetailsPageState extends State<ProjectDetailsPage> {
     });
   }
 
+  Widget _deleteProjectDialog() {
+    return GenericConfirmationDialog(
+      titleText: 'Delete Project?',
+      contentText:
+          'This will delete the selected project and all the tests within it. '
+          'This cannot be undone. '
+          'Are you absolutely certain you want to delete this project?',
+      declineText: 'No, go back',
+      confirmText: 'Yes, delete it',
+      onConfirm: () async {
+        await deleteProject(widget.activeProject);
+
+        if (!mounted) return;
+        Navigator.pop(context, true);
+      },
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     if (widget.activeProject.tests != null) {
@@ -63,17 +83,17 @@ class _ProjectDetailsPageState extends State<ProjectDetailsPage> {
             expandedHeight: 100,
             pinned: true,
             automaticallyImplyLeading: false, // Disable default back arrow
-            leadingWidth: 48,
+            leadingWidth: 60,
             systemOverlayStyle: SystemUiOverlayStyle.dark
                 .copyWith(statusBarColor: Colors.transparent),
             // Custom back arrow button
             leading: Padding(
-              padding: const EdgeInsets.only(left: 16),
+              padding: const EdgeInsets.only(left: 12),
               child: Container(
                 // Opaque circle container for visibility
                 alignment: Alignment.center,
                 decoration: BoxDecoration(
-                  color: Colors.transparent,
+                  color: Colors.white.withValues(alpha: 0.3),
                   shape: BoxShape.circle,
                 ),
                 child: IconButton(
@@ -86,9 +106,58 @@ class _ProjectDetailsPageState extends State<ProjectDetailsPage> {
                 ),
               ),
             ),
+            actionsPadding: EdgeInsets.only(right: 12),
             // 'Edit Options' button overlaid on right side of cover photo
             actions: [
-              _SettingsMenuButton(),
+              _SettingsMenuButton(
+                editNameCallback: () async {
+                  final newName = await showModalBottomSheet<String>(
+                    useSafeArea: true,
+                    backgroundColor: Colors.transparent,
+                    isScrollControlled: true,
+                    context: context,
+                    builder: (context) => ChangeProjectNameForm(),
+                  );
+
+                  if (newName == null) return;
+                  _firestore
+                      .collection('projects')
+                      .doc(widget.activeProject.projectID)
+                      .update({'title': newName});
+                  setState(() {
+                    widget.activeProject.title = newName;
+                  });
+                },
+                editDescriptionCallback: () async {
+                  final newDescription = await showModalBottomSheet(
+                    useSafeArea: true,
+                    backgroundColor: Colors.transparent,
+                    isScrollControlled: true,
+                    context: context,
+                    builder: (context) => ChangeProjectDescriptionForm(),
+                  );
+
+                  if (newDescription == null) return;
+                  _firestore
+                      .collection('projects')
+                      .doc(widget.activeProject.projectID)
+                      .update({'description': newDescription});
+                  setState(() {
+                    widget.activeProject.description = newDescription;
+                  });
+                },
+                deleteCallback: () async {
+                  final didDelete = await showDialog<bool>(
+                    context: context,
+                    builder: (context) => _deleteProjectDialog(),
+                  );
+
+                  if (!context.mounted) return;
+                  if (didDelete == true) {
+                    Navigator.pop(context, 'deleted');
+                  }
+                },
+              ),
             ],
             flexibleSpace: FlexibleSpaceBar(
               background: Stack(children: <Widget>[
@@ -350,10 +419,12 @@ class _SettingsMenuButton extends StatelessWidget {
   Widget build(BuildContext context) {
     return MenuBar(
       style: MenuStyle(
+        padding: WidgetStatePropertyAll(EdgeInsets.zero),
         shape: WidgetStatePropertyAll(RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(100),
         )),
-        backgroundColor: WidgetStatePropertyAll(Colors.transparent),
+        backgroundColor:
+            WidgetStatePropertyAll(Colors.white.withValues(alpha: 0.3)),
         shadowColor: WidgetStatePropertyAll(Colors.transparent),
       ),
       children: <Widget>[
@@ -405,7 +476,7 @@ class _SettingsMenuButton extends StatelessWidget {
             MenuItemButton(
               style: paddingButtonStyle,
               trailingIcon: Icon(
-                Icons.check_circle_outlined,
+                Icons.description,
                 color: Colors.white,
               ),
               onPressed: editDescriptionCallback,

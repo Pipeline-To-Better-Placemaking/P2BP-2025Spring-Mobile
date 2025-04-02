@@ -125,7 +125,6 @@ class _EditProjectPanel extends State<EditProjectPanel> {
                             ),
                           ),
                         ),
-
                         // Add photo button
                         Expanded(
                           flex: 1,
@@ -153,7 +152,6 @@ class _EditProjectPanel extends State<EditProjectPanel> {
                         ),
                       ],
                     ),
-
                     // Project description text field
                     Container(
                       padding: const EdgeInsets.only(bottom: 20),
@@ -196,7 +194,6 @@ class _EditProjectPanel extends State<EditProjectPanel> {
                             ),
                           ),
                         ),
-
                         // Delete project button
                         Expanded(
                           flex: 4,

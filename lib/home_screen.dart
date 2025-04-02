@@ -153,13 +153,17 @@ class _HomeScreenState extends State<HomeScreen> {
               BorderRadius.circular(12) // Match the container's corner radius
           ),
       child: InkWell(
-        onTap: () {
-          Navigator.push(
+        onTap: () async {
+          await Navigator.push(
             context,
             MaterialPageRoute(
               builder: (context) => ProjectDetailsPage(activeProject: project),
             ),
           );
+
+          // This might be really costly to do every time but not sure how else
+          // to guarantee projects update after renaming or otherwise.
+          _populateProjects();
         },
         child: Container(
           decoration: BoxDecoration(

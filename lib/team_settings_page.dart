@@ -128,6 +128,8 @@ class _TeamSettingsPageState extends State<TeamSettingsPage> {
           _SettingsMenuButton(
             editNameCallback: () async {
               final String? newName = await showModalBottomSheet<String>(
+                useSafeArea: true,
+                backgroundColor: Colors.transparent,
                 isScrollControlled: true,
                 context: context,
                 builder: (context) => ChangeTeamNameForm(),
@@ -138,7 +140,6 @@ class _TeamSettingsPageState extends State<TeamSettingsPage> {
                   .collection('teams')
                   .doc(widget.activeTeam.teamID)
                   .update({'title': newName});
-
               setState(() {
                 widget.activeTeam.title = newName;
               });
@@ -424,6 +425,7 @@ class _SettingsMenuButton extends StatelessWidget {
         )),
         backgroundColor: WidgetStatePropertyAll(Colors.transparent),
         shadowColor: WidgetStatePropertyAll(Colors.transparent),
+        padding: WidgetStatePropertyAll(EdgeInsets.zero),
       ),
       children: <Widget>[
         SubmenuButton(
