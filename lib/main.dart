@@ -1,20 +1,20 @@
-import 'package:flutter/material.dart';
 import 'package:firebase_core/firebase_core.dart';
+import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:p2bp_2025spring_mobile/db_schema_classes.dart';
-import 'project_details_page.dart';
-import 'results_panel.dart';
-import 'edit_project_panel.dart';
-import 'forgot_password_page.dart';
-import 'reset_password_page.dart';
+
 import 'create_project_and_teams.dart';
-import 'settings_page.dart';
-import 'teams_and_invites_page.dart';
-import 'login_screen.dart';
-import 'signup_screen.dart';
+import 'forgot_password_page.dart';
 import 'home_screen.dart';
+import 'login_screen.dart';
 import 'new_home_page.dart';
 import 'project_comparison_page.dart';
+import 'project_details_page.dart';
+import 'reset_password_page.dart';
+import 'results_panel.dart';
+import 'settings_page.dart';
+import 'signup_screen.dart';
+import 'teams_and_invites_page.dart';
 
 /// All [Test] subclass's register methods should be called here.
 void registerTestTypes() {

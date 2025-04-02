@@ -549,6 +549,8 @@ Future<void> addUserToTeam(String teamID) async {
   }
 }
 
+Future<void> removeUserFromTeam(String teamID, String memberID) async {}
+
 /// Fetches the list of all users in database. Used for inviting members to
 /// to teams. Extracts the name and ID from them and puts them into a list of
 /// `Member` objects. Returns them as a future of a list of Member objects.

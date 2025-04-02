@@ -7,8 +7,13 @@ import 'firestore_functions.dart';
 
 class InviteUserForm extends StatefulWidget {
   final Team activeTeam;
+  final List<Member> teamMembers;
 
-  const InviteUserForm({super.key, required this.activeTeam});
+  const InviteUserForm({
+    super.key,
+    required this.activeTeam,
+    required this.teamMembers,
+  });
 
   @override
   State<InviteUserForm> createState() => _InviteUserFormState();
@@ -31,7 +36,7 @@ class _InviteUserFormState extends State<InviteUserForm> {
   Future<void> _getMembersList() async {
     try {
       final allMemberList = await getMembersList();
-      final teamMemberList = await getTeamMembers(widget.activeTeam.teamID);
+      final teamMemberList = widget.teamMembers;
       membersList = allMemberList
           .where((member) => !(teamMemberList
               .any((teamMember) => teamMember.userID == member.userID)))

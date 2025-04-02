@@ -7,7 +7,7 @@ import 'package:image_picker/image_picker.dart';
 import 'package:p2bp_2025spring_mobile/change_team_name_form.dart';
 import 'package:p2bp_2025spring_mobile/firestore_functions.dart';
 import 'package:p2bp_2025spring_mobile/invite_user_form.dart';
-import 'package:p2bp_2025spring_mobile/manage_team_bottom_sheet.dart';
+import 'package:p2bp_2025spring_mobile/manage_team_members_form.dart';
 import 'package:p2bp_2025spring_mobile/widgets.dart';
 
 import 'db_schema_classes.dart';
@@ -26,42 +26,51 @@ class TeamSettingsPage extends StatefulWidget {
 }
 
 class _TeamSettingsPageState extends State<TeamSettingsPage> {
-  bool _isLoading = true;
-  bool isMultiSelectMode = false;
-  Set<Project> selectedProjects = {};
-
-  late final List<Project> projects;
+  bool _isLoadingProjects = true;
+  bool _isLoadingTeamMembers = true;
+  bool _isMultiSelectMode = false;
+  final Set<Project> _selectedProjects = {};
+  late final List<Project> _projects;
+  late final List<Member> _teamMembers;
 
   @override
   void initState() {
     super.initState();
     _getProjects();
+    _getTeamMembers();
   }
 
   Future<void> _getProjects() async {
-    projects = await getTeamProjects(
+    _projects = await getTeamProjects(
         _firestore.collection('teams').doc(widget.activeTeam.teamID));
     setState(() {
-      _isLoading = false;
+      _isLoadingProjects = false;
+    });
+  }
+
+  void _getTeamMembers() async {
+    _teamMembers = await getTeamMembers(widget.activeTeam.teamID);
+    setState(() {
+      _isLoadingTeamMembers = false;
     });
   }
 
   /// Call this method to toggle multi-select mode
   void toggleMultiSelect() {
     setState(() {
-      isMultiSelectMode = !isMultiSelectMode;
-      if (!isMultiSelectMode) {
-        selectedProjects.clear();
+      _isMultiSelectMode = !_isMultiSelectMode;
+      if (!_isMultiSelectMode) {
+        _selectedProjects.clear();
       }
     });
   }
 
   void toggleProjectSelection(Project project) {
     setState(() {
-      if (selectedProjects.contains(project)) {
-        selectedProjects.remove(project);
+      if (_selectedProjects.contains(project)) {
+        _selectedProjects.remove(project);
       } else {
-        selectedProjects.add(project);
+        _selectedProjects.add(project);
       }
     });
   }
@@ -76,9 +85,9 @@ class _TeamSettingsPageState extends State<TeamSettingsPage> {
       declineText: 'No, go back',
       confirmText: 'Yes, delete them',
       onConfirm: () async {
-        for (final project in selectedProjects) {
+        for (final project in _selectedProjects) {
           await deleteProject(project);
-          projects.remove(project);
+          _projects.remove(project);
         }
 
         if (!mounted) return;
@@ -160,24 +169,41 @@ class _TeamSettingsPageState extends State<TeamSettingsPage> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              // Profile Avatar and Header Row
               Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 16.0),
                 child: _AvatarAndTitleRow(
                   title: widget.activeTeam.title,
-                  inviteCallback: () {
-                    showModalBottomSheet(
-                      isScrollControlled: true,
-                      context: context,
-                      builder: (context) =>
-                          InviteUserForm(activeTeam: widget.activeTeam),
-                    );
-                    // _showInviteDialog(context);
-                  },
+                  manageMembersCallback: _isLoadingTeamMembers
+                      ? null
+                      : () {
+                          showModalBottomSheet(
+                            useSafeArea: true,
+                            backgroundColor: Colors.transparent,
+                            isScrollControlled: true,
+                            context: context,
+                            builder: (BuildContext context) =>
+                                ManageTeamMembersForm(
+                                    teamMembers: _teamMembers),
+                          );
+                        },
+                  inviteCallback: _isLoadingTeamMembers
+                      ? null
+                      : () {
+                          showModalBottomSheet(
+                            useSafeArea: true,
+                            backgroundColor: Colors.transparent,
+                            isScrollControlled: true,
+                            context: context,
+                            builder: (context) => InviteUserForm(
+                              activeTeam: widget.activeTeam,
+                              teamMembers: _teamMembers,
+                            ),
+                          );
+                          // _showInviteDialog(context);
+                        },
                 ),
               ),
               SizedBox(height: 48),
-              // Project Title and Create New Button
               Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 16.0),
                 child: Row(
@@ -190,7 +216,7 @@ class _TeamSettingsPageState extends State<TeamSettingsPage> {
                           fontSize: 18,
                           fontWeight: FontWeight.bold),
                     ),
-                    if (isMultiSelectMode)
+                    if (_isMultiSelectMode)
                       Row(
                         children: [
                           TextButton(
@@ -205,7 +231,7 @@ class _TeamSettingsPageState extends State<TeamSettingsPage> {
                           ),
                           SizedBox(width: 5),
                           ElevatedButton(
-                            onPressed: selectedProjects.isEmpty
+                            onPressed: _selectedProjects.isEmpty
                                 ? null
                                 : () {
                                     showDialog(
@@ -217,7 +243,7 @@ class _TeamSettingsPageState extends State<TeamSettingsPage> {
                             style: ElevatedButton.styleFrom(
                               padding: EdgeInsets.zero,
                               backgroundColor:
-                                  isMultiSelectMode ? Colors.red : Colors.blue,
+                                  _isMultiSelectMode ? Colors.red : Colors.blue,
                               minimumSize: Size(0, 32),
                               shape: RoundedRectangleBorder(
                                 borderRadius: BorderRadius.circular(8),
@@ -268,39 +294,36 @@ class _TeamSettingsPageState extends State<TeamSettingsPage> {
                 ),
               ),
               SizedBox(height: 16),
-              if (_isLoading)
+              if (_isLoadingProjects)
                 const CircularProgressIndicator()
               else
                 Expanded(
-                  child: ListView.builder(
-                    itemCount: projects.length,
+                  child: ListView.separated(
+                    itemCount: _projects.length,
                     itemBuilder: (context, index) {
                       bool isSelected =
-                          selectedProjects.contains(projects[index]);
-                      return Column(
-                        children: [
-                          _ProjectListTile(
-                            isMultiSelectMode: isMultiSelectMode,
-                            isSelected: isSelected,
-                            project: projects[index],
-                            toggleProjectSelection: toggleProjectSelection,
-                          ),
-                          if (isMultiSelectMode)
-                            Divider(
+                          _selectedProjects.contains(_projects[index]);
+                      return _ProjectListTile(
+                        isMultiSelectMode: _isMultiSelectMode,
+                        isSelected: isSelected,
+                        project: _projects[index],
+                        toggleProjectSelection: toggleProjectSelection,
+                      );
+                    },
+                    separatorBuilder: (BuildContext context, int index) {
+                      return _isMultiSelectMode
+                          ? Divider(
                               color: Colors.white.withValues(alpha: 0.3),
                               thickness: 1,
                               indent: 50,
                               endIndent: 16,
                             )
-                          else
-                            Divider(
+                          : Divider(
                               color: Colors.white.withValues(alpha: 0.3),
                               thickness: 1,
                               indent: 16,
                               endIndent: 16,
-                            ),
-                        ],
-                      );
+                            );
                     },
                   ),
                 ),
@@ -522,9 +545,14 @@ class _SettingsMenuButton extends StatelessWidget {
 
 class _AvatarAndTitleRow extends StatelessWidget {
   final String title;
-  final VoidCallback inviteCallback;
+  final VoidCallback? manageMembersCallback;
+  final VoidCallback? inviteCallback;
 
-  const _AvatarAndTitleRow({required this.title, required this.inviteCallback});
+  const _AvatarAndTitleRow({
+    required this.title,
+    required this.inviteCallback,
+    this.manageMembersCallback,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -606,39 +634,7 @@ class _AvatarAndTitleRow extends StatelessWidget {
                       // Adjust for proper vertical alignment
                       top: 12,
                       child: GestureDetector(
-                        onTap: () {
-                          // Open team edit functionality
-                          showModalBottomSheet(
-                            context: context,
-                            isScrollControlled:
-                                true, // allows the sheet to be fully draggable
-                            backgroundColor: Colors
-                                .transparent, // makes the sheet's corners rounded if desired
-                            builder: (BuildContext context) {
-                              return DraggableScrollableSheet(
-                                // initial height as 50% of screen height
-                                initialChildSize: 0.7,
-                                // minimum height when dragged down
-                                minChildSize: 0.3,
-                                // maximum height when dragged up
-                                maxChildSize: 0.9,
-                                builder: (BuildContext context,
-                                    ScrollController scrollController) {
-                                  return Container(
-                                    decoration: BoxDecoration(
-                                      gradient: defaultGrad,
-                                      borderRadius: BorderRadius.only(
-                                        topLeft: Radius.circular(16.0),
-                                        topRight: Radius.circular(16.0),
-                                      ),
-                                    ),
-                                    child: ManageTeamBottomSheet(),
-                                  );
-                                },
-                              );
-                            },
-                          );
-                        },
+                        onTap: manageMembersCallback,
                         child: CircleAvatar(
                           radius: 12,
                           backgroundColor: Colors.blue,

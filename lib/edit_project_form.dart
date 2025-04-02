@@ -7,15 +7,15 @@ import 'firestore_functions.dart';
 import 'theme.dart';
 import 'widgets.dart';
 
-class EditProjectPanel extends StatefulWidget {
+class EditProjectForm extends StatefulWidget {
   final Project activeProject;
-  const EditProjectPanel({super.key, required this.activeProject});
+  const EditProjectForm({super.key, required this.activeProject});
 
   @override
-  State<EditProjectPanel> createState() => _EditProjectPanel();
+  State<EditProjectForm> createState() => _EditProjectFormState();
 }
 
-class _EditProjectPanel extends State<EditProjectPanel> {
+class _EditProjectFormState extends State<EditProjectForm> {
   final GlobalKey<FormState> _formKey = GlobalKey<FormState>();
   late final TextEditingController nameController;
   late final TextEditingController descriptionController;

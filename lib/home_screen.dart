@@ -6,7 +6,7 @@ import 'package:p2bp_2025spring_mobile/project_details_page.dart';
 
 import 'create_project_and_teams.dart';
 import 'db_schema_classes.dart';
-import 'edit_project_panel.dart';
+import 'edit_project_form.dart';
 import 'firestore_functions.dart';
 import 'main.dart';
 import 'results_panel.dart';
@@ -237,7 +237,7 @@ class _HomeScreenState extends State<HomeScreen> {
                           isScrollControlled: true,
                           useSafeArea: true,
                           builder: (context) =>
-                              EditProjectPanel(activeProject: project),
+                              EditProjectForm(activeProject: project),
                         );
 
                         if (updated != null) {
