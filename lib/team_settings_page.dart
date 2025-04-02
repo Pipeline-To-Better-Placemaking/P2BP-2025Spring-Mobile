@@ -115,198 +115,196 @@ class _TeamSettingsPageState extends State<TeamSettingsPage> {
 
   @override
   Widget build(BuildContext context) {
-    return AnnotatedRegion<SystemUiOverlayStyle>(
-      value: SystemUiOverlayStyle.light
-          .copyWith(statusBarColor: Colors.transparent),
-      child: Scaffold(
-        extendBodyBehindAppBar: true,
-        appBar: AppBar(
-          backgroundColor: Colors.transparent,
-          foregroundColor: Colors.white,
-          forceMaterialTransparency: true,
-          actionsPadding: EdgeInsets.symmetric(horizontal: 4),
-          actions: [
-            _SettingsMenuButton(
-              editNameCallback: () async {
-                final String? newName = await showModalBottomSheet<String>(
-                  isScrollControlled: true,
-                  context: context,
-                  builder: (context) => ChangeTeamNameForm(),
-                );
-                if (newName == null) return;
-                _firestore
-                    .collection('teams')
-                    .doc(widget.activeTeam.teamID)
-                    .update({'title': newName});
-                setState(() {
-                  widget.activeTeam.title = newName;
-                });
-              },
-              selectProjectsCallback: toggleMultiSelect,
-              deleteTeamCallback: () {
-                showDialog(
-                  context: context,
-                  builder: (context) => _deleteTeamDialog(),
-                );
-              },
-            ),
-          ],
-        ),
-        body: Container(
-          decoration: BoxDecoration(gradient: defaultGrad),
-          child: SafeArea(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                // Profile Avatar and Header Row
-                Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 16.0),
-                  child: _AvatarAndTitleRow(
-                    title: widget.activeTeam.title,
-                    inviteCallback: () {
-                      showModalBottomSheet(
-                        isScrollControlled: true,
-                        context: context,
-                        builder: (context) =>
-                            InviteUserForm(activeTeam: widget.activeTeam),
+    return Scaffold(
+      extendBodyBehindAppBar: true,
+      appBar: AppBar(
+        systemOverlayStyle: SystemUiOverlayStyle.light
+            .copyWith(statusBarColor: Colors.transparent),
+        backgroundColor: Colors.transparent,
+        foregroundColor: Colors.white,
+        forceMaterialTransparency: true,
+        actionsPadding: EdgeInsets.symmetric(horizontal: 4),
+        actions: [
+          _SettingsMenuButton(
+            editNameCallback: () async {
+              final String? newName = await showModalBottomSheet<String>(
+                isScrollControlled: true,
+                context: context,
+                builder: (context) => ChangeTeamNameForm(),
+              );
+
+              if (newName == null) return;
+              _firestore
+                  .collection('teams')
+                  .doc(widget.activeTeam.teamID)
+                  .update({'title': newName});
+
+              setState(() {
+                widget.activeTeam.title = newName;
+              });
+            },
+            selectProjectsCallback: toggleMultiSelect,
+            deleteTeamCallback: () {
+              showDialog(
+                context: context,
+                builder: (context) => _deleteTeamDialog(),
+              );
+            },
+          ),
+        ],
+      ),
+      body: Container(
+        decoration: BoxDecoration(gradient: defaultGrad),
+        child: SafeArea(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              // Profile Avatar and Header Row
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 16.0),
+                child: _AvatarAndTitleRow(
+                  title: widget.activeTeam.title,
+                  inviteCallback: () {
+                    showModalBottomSheet(
+                      isScrollControlled: true,
+                      context: context,
+                      builder: (context) =>
+                          InviteUserForm(activeTeam: widget.activeTeam),
+                    );
+                    // _showInviteDialog(context);
+                  },
+                ),
+              ),
+              SizedBox(height: 48),
+              // Project Title and Create New Button
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 16.0),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Text(
+                      'Projects',
+                      style: TextStyle(
+                          color: Colors.white,
+                          fontSize: 18,
+                          fontWeight: FontWeight.bold),
+                    ),
+                    if (isMultiSelectMode)
+                      Row(
+                        children: [
+                          TextButton(
+                            onPressed: toggleMultiSelect,
+                            child: Text(
+                              'Done',
+                              style: TextStyle(
+                                  color: Color(0xFF62B6FF),
+                                  fontSize: 16,
+                                  fontWeight: FontWeight.bold),
+                            ),
+                          ),
+                          SizedBox(width: 5),
+                          ElevatedButton(
+                            onPressed: selectedProjects.isEmpty
+                                ? null
+                                : () {
+                                    showDialog(
+                                      context: context,
+                                      builder: (context) =>
+                                          _deleteProjectsDialog(),
+                                    );
+                                  },
+                            style: ElevatedButton.styleFrom(
+                              padding: EdgeInsets.zero,
+                              backgroundColor:
+                                  isMultiSelectMode ? Colors.red : Colors.blue,
+                              minimumSize: Size(0, 32),
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(8),
+                              ),
+                            ),
+                            child: Padding(
+                              padding:
+                                  const EdgeInsets.symmetric(horizontal: 12),
+                              child: Text(
+                                'Delete',
+                                style: TextStyle(
+                                  fontSize: 12,
+                                  color: Colors.white,
+                                ),
+                              ),
+                            ),
+                          ),
+                        ],
+                      )
+                    else
+                      ElevatedButton(
+                        onPressed: () {
+                          // Create new project logic here.
+                          // Navigator.push(
+                          //   context,
+                          //   MaterialPageRoute(
+                          //       builder: (context) =>
+                          //           CreateNewProjectsOnlyScreen()),
+                          // );
+                        },
+                        style: ElevatedButton.styleFrom(
+                          padding: EdgeInsets.zero,
+                          backgroundColor: Colors.blue,
+                          minimumSize: Size(0, 32),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(8),
+                          ),
+                        ),
+                        child: Padding(
+                          padding: const EdgeInsets.symmetric(horizontal: 12),
+                          child: Text(
+                            'Create New',
+                            style: TextStyle(fontSize: 12, color: Colors.white),
+                          ),
+                        ),
+                      ),
+                  ],
+                ),
+              ),
+              SizedBox(height: 16),
+              if (_isLoading)
+                const CircularProgressIndicator()
+              else
+                Expanded(
+                  child: ListView.builder(
+                    itemCount: projects.length,
+                    itemBuilder: (context, index) {
+                      bool isSelected =
+                          selectedProjects.contains(projects[index]);
+                      return Column(
+                        children: [
+                          _ProjectListTile(
+                            isMultiSelectMode: isMultiSelectMode,
+                            isSelected: isSelected,
+                            project: projects[index],
+                            toggleProjectSelection: toggleProjectSelection,
+                          ),
+                          if (isMultiSelectMode)
+                            Divider(
+                              color: Colors.white.withValues(alpha: 0.3),
+                              thickness: 1,
+                              indent: 50,
+                              endIndent: 16,
+                            )
+                          else
+                            Divider(
+                              color: Colors.white.withValues(alpha: 0.3),
+                              thickness: 1,
+                              indent: 16,
+                              endIndent: 16,
+                            ),
+                        ],
                       );
-                      // _showInviteDialog(context);
                     },
                   ),
                 ),
-                SizedBox(height: 48),
-                // Project Title and Create New Button
-                Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 16.0),
-                  child: Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      Text(
-                        'Projects',
-                        style: TextStyle(
-                            color: Colors.white,
-                            fontSize: 18,
-                            fontWeight: FontWeight.bold),
-                      ),
-                      if (isMultiSelectMode)
-                        Row(
-                          children: [
-                            TextButton(
-                              onPressed: toggleMultiSelect,
-                              child: Text(
-                                'Done',
-                                style: TextStyle(
-                                    color: Color(0xFF62B6FF),
-                                    fontSize: 16,
-                                    fontWeight: FontWeight.bold),
-                              ),
-                            ),
-                            SizedBox(width: 5),
-                            ElevatedButton(
-                              onPressed: selectedProjects.isEmpty
-                                  ? null
-                                  : () {
-                                      showDialog(
-                                        context: context,
-                                        builder: (context) =>
-                                            _deleteProjectsDialog(),
-                                      );
-                                    },
-                              style: ElevatedButton.styleFrom(
-                                padding: EdgeInsets.zero,
-                                backgroundColor: isMultiSelectMode
-                                    ? Colors.red
-                                    : Colors.blue,
-                                minimumSize: Size(0, 32),
-                                shape: RoundedRectangleBorder(
-                                  borderRadius: BorderRadius.circular(8),
-                                ),
-                              ),
-                              child: Padding(
-                                padding:
-                                    const EdgeInsets.symmetric(horizontal: 12),
-                                child: Text(
-                                  'Delete',
-                                  style: TextStyle(
-                                    fontSize: 12,
-                                    color: Colors.white,
-                                  ),
-                                ),
-                              ),
-                            ),
-                          ],
-                        )
-                      else
-                        ElevatedButton(
-                          onPressed: () {
-                            // Create new project logic here.
-                            // Navigator.push(
-                            //   context,
-                            //   MaterialPageRoute(
-                            //       builder: (context) =>
-                            //           CreateNewProjectsOnlyScreen()),
-                            // );
-                          },
-                          style: ElevatedButton.styleFrom(
-                            padding: EdgeInsets.zero,
-                            backgroundColor: Colors.blue,
-                            minimumSize: Size(0, 32),
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(8),
-                            ),
-                          ),
-                          child: Padding(
-                            padding: const EdgeInsets.symmetric(horizontal: 12),
-                            child: Text(
-                              'Create New',
-                              style:
-                                  TextStyle(fontSize: 12, color: Colors.white),
-                            ),
-                          ),
-                        ),
-                    ],
-                  ),
-                ),
-                SizedBox(height: 16),
-                if (_isLoading)
-                  const CircularProgressIndicator()
-                else
-                  Expanded(
-                    child: ListView.builder(
-                      itemCount: projects.length,
-                      itemBuilder: (context, index) {
-                        bool isSelected =
-                            selectedProjects.contains(projects[index]);
-                        return Column(
-                          children: [
-                            _ProjectListTile(
-                              isMultiSelectMode: isMultiSelectMode,
-                              isSelected: isSelected,
-                              project: projects[index],
-                              toggleProjectSelection: toggleProjectSelection,
-                            ),
-                            if (isMultiSelectMode)
-                              Divider(
-                                color: Colors.white.withValues(alpha: 0.3),
-                                thickness: 1,
-                                indent: 50,
-                                endIndent: 16,
-                              )
-                            else
-                              Divider(
-                                color: Colors.white.withValues(alpha: 0.3),
-                                thickness: 1,
-                                indent: 16,
-                                endIndent: 16,
-                              ),
-                          ],
-                        );
-                      },
-                    ),
-                  ),
-                SizedBox(height: 30),
-              ],
-            ),
+              SizedBox(height: 30),
+            ],
           ),
         ),
       ),

@@ -38,18 +38,22 @@ class EditProjectTextBox extends StatelessWidget {
   final int minLines;
   final String labelText;
   final TextEditingController controller;
+  final String? Function(String?)? validator;
 
-  const EditProjectTextBox(
-      {super.key,
-      required this.maxLength,
-      required this.labelText,
-      required this.maxLines,
-      required this.minLines,
-      required this.controller});
+  const EditProjectTextBox({
+    super.key,
+    required this.maxLength,
+    required this.labelText,
+    required this.maxLines,
+    required this.minLines,
+    required this.controller,
+    this.validator,
+  });
   @override
   Widget build(BuildContext context) {
     return SizedBox(
-      child: TextField(
+      child: TextFormField(
+        validator: validator,
         controller: controller,
         style: const TextStyle(color: Colors.white),
         maxLength: maxLength,

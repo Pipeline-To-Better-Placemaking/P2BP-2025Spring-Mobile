@@ -3,84 +3,94 @@ import 'package:flutter/material.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:p2bp_2025spring_mobile/db_schema_classes.dart';
 
+import 'firestore_functions.dart';
 import 'theme.dart';
 import 'widgets.dart';
 
 class EditProjectPanel extends StatefulWidget {
-  final Project projectData;
-  const EditProjectPanel({super.key, required this.projectData});
+  final Project activeProject;
+  const EditProjectPanel({super.key, required this.activeProject});
 
   @override
   State<EditProjectPanel> createState() => _EditProjectPanel();
 }
 
 class _EditProjectPanel extends State<EditProjectPanel> {
+  final GlobalKey<FormState> _formKey = GlobalKey<FormState>();
+  late final TextEditingController nameController;
+  late final TextEditingController descriptionController;
+
   @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      body: Center(
-        child: FilledButton(
-          onPressed: () {
-            showEditProjectModalSheet(context, widget.projectData);
-          },
-          child: const Text('Open bottom sheet'),
-        ),
-      ),
+  void initState() {
+    super.initState();
+    nameController = TextEditingController(text: widget.activeProject.title);
+    descriptionController =
+        TextEditingController(text: widget.activeProject.description);
+  }
+
+  Widget _deleteProjectDialog() {
+    return GenericConfirmationDialog(
+      titleText: 'Delete Project?',
+      contentText:
+          'This will delete the selected project and all the tests within it. '
+          'This cannot be undone. '
+          'Are you absolutely certain you want to delete this project?',
+      declineText: 'No, go back',
+      confirmText: 'Yes, delete it',
+      onConfirm: () async {
+        await deleteProject(widget.activeProject);
+
+        if (!mounted) return;
+        Navigator.pop(context, true);
+      },
     );
   }
-}
 
-Future<bool> showEditProjectModalSheet(
-    BuildContext context, Project projectData) async {
-  return await showModalBottomSheet<bool>(
-        context: context,
-        isScrollControlled: true,
-        useSafeArea: true,
-        builder: (context) {
-          return buildEditSheet(context, projectData);
-        },
-      ) ??
-      false;
-}
+  void _saveChanges() {
+    try {
+      widget.activeProject.title = nameController.text;
+      widget.activeProject.description = descriptionController.text;
 
-// Function to return the content of the modal sheet for the Edit Button.
-// Button should: propagate fields with relevant information then, on save,
-// send that information to database. On cancel, clear fields and close.
-Padding buildEditSheet(BuildContext context, Project projectData) {
-  print(
-      "Project data received: ${projectData.title}, ${projectData.description}");
-  final TextEditingController projectNameController =
-      TextEditingController(text: projectData.title);
+      FirebaseFirestore.instance
+          .collection('projects')
+          .doc(widget.activeProject.projectID)
+          .update({
+        'title': widget.activeProject.title,
+        'description': widget.activeProject.description,
+      });
 
-  final TextEditingController projectDescController =
-      TextEditingController(text: projectData.description);
-  return Padding(
-    // Padding for keyboard opening
-    padding: EdgeInsets.only(bottom: MediaQuery.of(context).viewInsets.bottom),
-    child: SingleChildScrollView(
-      child: Container(
-        // Container decoration- rounded corners and gradient
-        decoration: BoxDecoration(
-          gradient: defaultGrad,
-          borderRadius: const BorderRadius.only(
-            topLeft: Radius.circular(24.0),
-            topRight: Radius.circular(24.0),
-          ),
-        ),
-        child: Column(
-          children: [
-            // Creates little indicator on top of sheet
-            const BarIndicator(),
-            Column(
+      if (!mounted) return;
+      Navigator.pop(context, 'altered');
+    } catch (e, s) {
+      print('Error updating project: $e');
+      print('Stacktrace: $s');
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Form(
+      key: _formKey,
+      child: SingleChildScrollView(
+        child: Padding(
+          // Padding for keyboard opening
+          padding: MediaQuery.viewInsetsOf(context),
+          child: Container(
+            // Container decoration- rounded corners and gradient
+            decoration: BoxDecoration(
+              gradient: defaultGrad,
+              borderRadius: const BorderRadius.only(
+                topLeft: Radius.circular(24.0),
+                topRight: Radius.circular(24.0),
+              ),
+            ),
+            child: Column(
               children: [
-                ListView(
-                  shrinkWrap: true,
-                  physics: const ClampingScrollPhysics(),
-                  children: <Widget>[
-                    // Text for title of sheet
-                    Container(
-                      alignment: Alignment.center,
-                      margin: const EdgeInsets.only(bottom: 20),
+                // Creates little indicator on top of sheet
+                const BarIndicator(),
+                Column(
+                  children: [
+                    Center(
                       child: Text(
                         "Edit Project",
                         style: TextStyle(
@@ -89,6 +99,7 @@ Padding buildEditSheet(BuildContext context, Project projectData) {
                             fontWeight: FontWeight.bold),
                       ),
                     ),
+                    SizedBox(height: 20),
                     Row(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
@@ -104,7 +115,13 @@ Padding buildEditSheet(BuildContext context, Project projectData) {
                               maxLines: 2,
                               minLines: 1,
                               labelText: 'Project Name',
-                              controller: projectNameController,
+                              controller: nameController,
+                              validator: (value) {
+                                if (value == null || value.length < 3) {
+                                  return 'Name must have at least 3 characters';
+                                }
+                                return null;
+                              },
                             ),
                           ),
                         ),
@@ -146,7 +163,13 @@ Padding buildEditSheet(BuildContext context, Project projectData) {
                         maxLines: 4,
                         minLines: 3,
                         labelText: 'Project Description',
-                        controller: projectDescController,
+                        controller: descriptionController,
+                        validator: (value) {
+                          if (value == null || value.length < 3) {
+                            return 'Description must have at least 3 characters';
+                          }
+                          return null;
+                        },
                       ),
                     ),
                     Row(
@@ -165,35 +188,9 @@ Padding buildEditSheet(BuildContext context, Project projectData) {
                               iconColor: Colors.black,
                               shape: RoundedRectangleBorder(
                                   borderRadius: BorderRadius.circular(8)),
-                              onPressed: () async {
-                                try {
-                                  print(
-                                      "Saving changes - Project title: ${projectNameController.text}");
-                                  print(
-                                      "Saving changes - Project description: ${projectDescController.text}");
-
-                                  if (projectNameController.text.length >= 3) {
-                                    projectData.title =
-                                        projectNameController.text;
-                                  }
-                                  if (projectDescController.text.length >= 3) {
-                                    projectData.description =
-                                        projectDescController.text;
-                                  }
-
-                                  await FirebaseFirestore.instance
-                                      .collection('projects')
-                                      .doc(projectData.projectID)
-                                      .update({
-                                    'title': projectData.title,
-                                    'description': projectData.description,
-                                  });
-
-                                  if (context.mounted) {
-                                    Navigator.pop(context, true);
-                                  }
-                                } catch (e) {
-                                  print("Error updating project: $e");
+                              onPressed: () {
+                                if (_formKey.currentState!.validate()) {
+                                  _saveChanges();
                                 }
                               },
                             ),
@@ -213,57 +210,15 @@ Padding buildEditSheet(BuildContext context, Project projectData) {
                               icon: Icon(FontAwesomeIcons.trashCan),
                               shape: RoundedRectangleBorder(
                                   borderRadius: BorderRadius.circular(8)),
-                              // TODO: edit w/ actual function (delete project)
                               onPressed: () async {
-                                bool confirmDelete = await showDialog(
-                                      context: context,
-                                      builder: (BuildContext context) {
-                                        return AlertDialog(
-                                          title: Text('Delete Project?'),
-                                          content: Text(
-                                              'Are you sure you want to delete "${projectData.title}"? This cannot be undone.'),
-                                          actions: [
-                                            TextButton(
-                                              onPressed: () =>
-                                                  Navigator.of(context)
-                                                      .pop(false),
-                                              child: Text('Cancel'),
-                                            ),
-                                            TextButton(
-                                              onPressed: () =>
-                                                  Navigator.of(context)
-                                                      .pop(true),
-                                              child: Text('Delete',
-                                                  style: TextStyle(
-                                                      color: Colors.red)),
-                                            ),
-                                          ],
-                                        );
-                                      },
-                                    ) ??
-                                    false;
+                                final didDelete = await showDialog<bool>(
+                                  context: context,
+                                  builder: (context) => _deleteProjectDialog(),
+                                );
 
-                                if (confirmDelete) {
-                                  try {
-                                    await FirebaseFirestore.instance
-                                        .collection('projects')
-                                        .doc(projectData.projectID)
-                                        .delete();
-
-                                    if (projectData.teamRef != null) {
-                                      await projectData.teamRef!.update({
-                                        'projects': FieldValue.arrayRemove([
-                                          FirebaseFirestore.instance
-                                              .collection('projects')
-                                              .doc(projectData.projectID)
-                                        ])
-                                      });
-                                    }
-
-                                    Navigator.pop(context, true);
-                                  } catch (e) {
-                                    print("Error deleting project: $e");
-                                  }
+                                if (!context.mounted) return;
+                                if (didDelete == true) {
+                                  Navigator.pop(context, 'deleted');
                                 }
                               },
                             ),
@@ -273,28 +228,29 @@ Padding buildEditSheet(BuildContext context, Project projectData) {
                     ),
                   ],
                 ),
-              ],
-            ),
-            // Cancel button to close bottom sheet
-            Container(
-              alignment: Alignment.center,
-              margin: const EdgeInsets.only(bottom: 10),
-              child: InkWell(
-                child: const Padding(
-                  padding: EdgeInsets.all(20),
-                  child: Text(
-                    'Cancel',
-                    style: TextStyle(fontSize: 16, color: Color(0xFFFFD700)),
+                // Cancel button to close bottom sheet
+                Container(
+                  alignment: Alignment.center,
+                  margin: const EdgeInsets.only(bottom: 10),
+                  child: InkWell(
+                    child: const Padding(
+                      padding: EdgeInsets.all(20),
+                      child: Text(
+                        'Cancel',
+                        style:
+                            TextStyle(fontSize: 16, color: Color(0xFFFFD700)),
+                      ),
+                    ),
+                    onTap: () {
+                      Navigator.pop(context);
+                    },
                   ),
                 ),
-                onTap: () {
-                  Navigator.pop(context);
-                },
-              ),
+              ],
             ),
-          ],
+          ),
         ),
       ),
-    ),
-  );
+    );
+  }
 }

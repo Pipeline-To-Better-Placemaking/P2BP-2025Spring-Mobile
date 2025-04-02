@@ -9,12 +9,8 @@ import 'db_schema_classes.dart';
 import 'edit_project_panel.dart';
 import 'firestore_functions.dart';
 import 'main.dart';
-import 'project_comparison_page.dart';
-import 'results_panel.dart';
 import 'results_panel.dart';
 import 'settings_page.dart';
-import 'settings_page.dart';
-import 'teams_and_invites_page.dart';
 import 'theme.dart';
 
 List<String> navIcons2 = [
@@ -232,13 +228,22 @@ class _HomeScreenState extends State<HomeScreen> {
                     OutlinedButton(
                       onPressed: () async {
                         // Handle navigation to Edit menu
-                        bool updated =
-                            await showEditProjectModalSheet(context, project);
+                        final updated = await showModalBottomSheet<String>(
+                          context: context,
+                          isScrollControlled: true,
+                          useSafeArea: true,
+                          builder: (context) =>
+                              EditProjectPanel(activeProject: project),
+                        );
 
-                        if (updated) {
-                          setState(() {
-                            project.title;
-                          });
+                        if (updated != null) {
+                          if (updated == 'deleted') {
+                            await _populateProjects();
+                          } else if (updated == 'altered') {
+                            setState(() {
+                              // Update if something was changed in EditProject
+                            });
+                          }
                         }
                       },
                       style: OutlinedButton.styleFrom(
@@ -442,11 +447,10 @@ class _HomeScreenState extends State<HomeScreen> {
                           child: SingleChildScrollView(
                             physics: AlwaysScrollableScrollPhysics(),
                             child: SizedBox(
-                              height:
-                                  MediaQuery.of(context).size.height * 2 / 3,
+                              height: MediaQuery.sizeOf(context).height * 2 / 3,
                               child: Center(
-                                child: Text(
-                                    "You have no projects! Join a team or create a project first."),
+                                child: Text('You have no projects! Join a team '
+                                    'or create a project first.'),
                               ),
                             ),
                           ),

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'team_settings_page.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
@@ -87,6 +88,8 @@ class _TeamsAndInvitesPageState extends State<TeamsAndInvitesPage> {
         length: 2,
         child: Scaffold(
           appBar: AppBar(
+            systemOverlayStyle: SystemUiOverlayStyle.dark
+                .copyWith(statusBarColor: Colors.transparent),
             bottom: const TabBar(
               labelColor: Colors.blue,
               indicatorColor: Colors.blue,

@@ -64,13 +64,8 @@ class _ProjectDetailsPageState extends State<ProjectDetailsPage> {
             pinned: true,
             automaticallyImplyLeading: false, // Disable default back arrow
             leadingWidth: 48,
-            systemOverlayStyle: SystemUiOverlayStyle(
-              statusBarColor: Colors.white,
-              // Changes Android status bar to white
-              statusBarIconBrightness: Brightness.dark,
-              // Changes iOS status bar to white
-              statusBarBrightness: Brightness.dark,
-            ),
+            systemOverlayStyle: SystemUiOverlayStyle.dark
+                .copyWith(statusBarColor: Colors.transparent),
             // Custom back arrow button
             leading: Padding(
               padding: const EdgeInsets.only(left: 16),
@@ -78,13 +73,13 @@ class _ProjectDetailsPageState extends State<ProjectDetailsPage> {
                 // Opaque circle container for visibility
                 alignment: Alignment.center,
                 decoration: BoxDecoration(
-                  color: Color.fromRGBO(255, 255, 255, 0.5),
+                  color: Colors.transparent,
                   shape: BoxShape.circle,
                 ),
                 child: IconButton(
                   padding: EdgeInsets.zero,
                   constraints: BoxConstraints(),
-                  icon: Icon(Icons.arrow_back, color: p2bpBlue, size: 20),
+                  icon: Icon(Icons.arrow_back, color: p2bpBlue),
                   onPressed: () {
                     Navigator.pop(context);
                   },
@@ -93,32 +88,7 @@ class _ProjectDetailsPageState extends State<ProjectDetailsPage> {
             ),
             // 'Edit Options' button overlaid on right side of cover photo
             actions: [
-              Padding(
-                padding: const EdgeInsets.only(right: 16),
-                child: Builder(
-                  builder: (context) {
-                    return Container(
-                      // Opaque circle container for visibility
-                      width: 32,
-                      height: 32,
-                      alignment: Alignment.center,
-                      decoration: BoxDecoration(
-                        color: Color.fromRGBO(255, 255, 255, 0.5),
-                        shape: BoxShape.circle,
-                      ),
-                      child: IconButton(
-                        padding: EdgeInsets.zero,
-                        constraints: BoxConstraints(),
-                        icon: Icon(
-                          Icons.more_vert,
-                          color: p2bpBlue,
-                        ),
-                        onPressed: () => showProjectOptionsDialog(context),
-                      ),
-                    );
-                  },
-                ),
-              ),
+              _SettingsMenuButton(),
             ],
             flexibleSpace: FlexibleSpaceBar(
               background: Stack(children: <Widget>[
@@ -129,7 +99,7 @@ class _ProjectDetailsPageState extends State<ProjectDetailsPage> {
                     border: Border(
                       bottom: BorderSide(color: Colors.white, width: .5),
                     ),
-                    color: Color(0xFF999999),
+                    color: Color(0xFFAAAAAA),
                   ),
                 ),
               ]),
@@ -351,6 +321,131 @@ class _ProjectDetailsPageState extends State<ProjectDetailsPage> {
     );
 
     return list;
+  }
+}
+
+// TODO make this a much more customizable widget for making menus of this
+//  style with different label names and callbacks and whatnot, probably
+//  copy MenuBar flutter.dev example somewhat
+class _SettingsMenuButton extends StatelessWidget {
+  // final VoidCallback? changePhotoCallback;
+  final VoidCallback? editNameCallback;
+  final VoidCallback? editDescriptionCallback;
+  // final VoidCallback? archiveCallback;
+  final VoidCallback? deleteCallback;
+
+  const _SettingsMenuButton({
+    // this.changePhotoCallback,
+    this.editNameCallback,
+    this.editDescriptionCallback,
+    // this.archiveCallback,
+    this.deleteCallback,
+  });
+
+  static const ButtonStyle paddingButtonStyle = ButtonStyle(
+      padding: WidgetStatePropertyAll(EdgeInsets.symmetric(horizontal: 16)));
+  static const TextStyle whiteText = TextStyle(color: Colors.white);
+
+  @override
+  Widget build(BuildContext context) {
+    return MenuBar(
+      style: MenuStyle(
+        shape: WidgetStatePropertyAll(RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(100),
+        )),
+        backgroundColor: WidgetStatePropertyAll(Colors.transparent),
+        shadowColor: WidgetStatePropertyAll(Colors.transparent),
+      ),
+      children: <Widget>[
+        SubmenuButton(
+          style: ButtonStyle(
+            shape: WidgetStatePropertyAll(RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(100),
+            )),
+            visualDensity:
+                VisualDensity(horizontal: VisualDensity.minimumDensity),
+          ),
+          menuStyle: MenuStyle(
+            backgroundColor:
+                WidgetStatePropertyAll(p2bpBlue.withValues(alpha: 0.85)),
+            padding: WidgetStatePropertyAll(EdgeInsets.zero),
+            shape: WidgetStatePropertyAll(
+              RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(15),
+              ),
+            ),
+          ),
+          menuChildren: [
+            // MenuItemButton(
+            //   style: paddingButtonStyle,
+            //   trailingIcon: Icon(
+            //     Icons.palette_outlined,
+            //     color: Colors.white,
+            //   ),
+            //   onPressed: changePhotoCallback,
+            //   child: Text(
+            //     'Change Project Photo',
+            //     style: whiteText,
+            //   ),
+            // ),
+            // Divider(color: Colors.white54, height: 1),
+            MenuItemButton(
+              style: paddingButtonStyle,
+              trailingIcon: Icon(
+                Icons.edit_outlined,
+                color: Colors.white,
+              ),
+              onPressed: editNameCallback,
+              child: Text(
+                'Edit Project Name',
+                style: whiteText,
+              ),
+            ),
+            Divider(color: Colors.white54, height: 1),
+            MenuItemButton(
+              style: paddingButtonStyle,
+              trailingIcon: Icon(
+                Icons.check_circle_outlined,
+                color: Colors.white,
+              ),
+              onPressed: editDescriptionCallback,
+              child: Text(
+                'Edit Project Description',
+                style: whiteText,
+              ),
+            ),
+            Divider(color: Colors.white54, height: 1),
+            // MenuItemButton(
+            //   style: paddingButtonStyle,
+            //   trailingIcon: Icon(
+            //     Icons.inventory_2_outlined,
+            //     color: Colors.white,
+            //   ),
+            //   onPressed: archiveCallback,
+            //   child: Text(
+            //     'Archive Team',
+            //     style: whiteText,
+            //   ),
+            // ),
+            // Divider(color: Colors.white54, height: 1),
+            MenuItemButton(
+              style: paddingButtonStyle,
+              trailingIcon:
+                  Icon(Icons.delete_outlined, color: Color(0xFFFD6265)),
+              onPressed: deleteCallback,
+              child: Text(
+                'Delete Project',
+                style: TextStyle(color: Color(0xFFFD6265)),
+              ),
+            ),
+          ],
+          child: Icon(
+            Icons.tune_rounded,
+            color: p2bpBlue,
+          ),
+        ),
+      ],
+    );
   }
 }
 
