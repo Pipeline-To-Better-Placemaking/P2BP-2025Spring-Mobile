@@ -66,7 +66,7 @@ class MyApp extends StatelessWidget {
       home: LoginScreen(), // const HomePage(title: 'Home Page'),
       routes: {
         '/results': (context) => const ResultsPanel(),
-        '/edit_project': (context) => const EditProjectPanel(),
+        // '/edit_project': (context) => const EditProjectPanel(),
         '/forgot_password': (context) => const ForgotPasswordPage(),
         '/reset_password': (context) => const ResetPasswordPage(),
         '/create_project_and_teams': (context) =>

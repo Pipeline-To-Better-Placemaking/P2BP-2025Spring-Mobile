@@ -1,5 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:p2bp_2025spring_mobile/change_email_page.dart';
+import 'package:p2bp_2025spring_mobile/change_name_page.dart';
+import 'package:p2bp_2025spring_mobile/theme.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'change_password_page.dart';
 import 'submit_bug_report_page.dart';
@@ -132,16 +135,19 @@ class _SettingsPageState extends State<SettingsPage> {
     return SafeArea(
       child: Scaffold(
         appBar: AppBar(
-          title: const Text('Settings'),
+          title: Text(
+            'Settings',
+            style: TextStyle(color: p2bpBlue, fontWeight: FontWeight.bold),
+          ),
         ),
         body: ListTileTheme(
-          tileColor: Colors.blue,
+          tileColor: p2bpBlue,
           contentPadding: const EdgeInsets.symmetric(horizontal: 8),
           iconColor: Colors.white,
           textColor: Colors.white,
           child: DefaultTextStyle(
-            style: const TextStyle(
-              color: Colors.blue,
+            style: TextStyle(
+              color: p2bpBlue,
               fontSize: 20,
               fontWeight: FontWeight.bold,
             ),
@@ -152,65 +158,63 @@ class _SettingsPageState extends State<SettingsPage> {
                   children: <Widget>[
                     ProfileIconEditStack(),
                     const SizedBox(height: 8),
-                    ElevatedButton(
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: Colors.blue,
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(10),
-                        ),
-                      ),
-                      onPressed: () {
-                        Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                            builder: (context) => EditProfilePage(),
-                          ),
-                        );
-                      },
-                      child: const Text(
-                        'Edit Profile',
-                        style: TextStyle(
-                          color: Colors.white,
-                          fontSize: 16,
-                        ),
-                      ),
-                    ),
                   ],
                 ),
                 const SizedBox(height: 18),
-                const Text('Appearance'),
+
+                // TODO: Implement Dark Mode after Committee
+                // const Text('Appearance'),
+                // const SizedBox(height: 10),
+                // DarkModeSwitchListTile(
+                //   shape: RoundedRectangleBorder(
+                //     borderRadius: BorderRadius.circular(12),
+                //   ),
+                // ),
+                // const SizedBox(height: 20),
+
+                const Text('Account'),
                 const SizedBox(height: 10),
-                const DarkModeSwitchListTile(
+                ListTile(
+                  leading: Icon(Icons.badge_outlined),
+                  title: Text('Change Name'),
+                  trailing: Icon(Icons.chevron_right),
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.only(
                       topLeft: Radius.circular(10),
                       topRight: Radius.circular(10),
                     ),
                   ),
+                  onTap: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => ChangeNamePage(),
+                      ),
+                    );
+                  },
                 ),
-                const ListTile(
-                  leading: Icon(Icons.format_size),
-                  title: Text('Font Size'),
+                ListTile(
+                  leading: Icon(Icons.alternate_email),
+                  title: Text('Change Email Address'),
                   trailing: Icon(Icons.chevron_right),
                   shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.only(
-                      bottomLeft: Radius.circular(10),
-                      bottomRight: Radius.circular(10),
-                    ),
+                    borderRadius: BorderRadius.zero,
                   ),
+                  onTap: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => ChangeEmailPage(),
+                      ),
+                    );
+                  },
                 ),
-                const SizedBox(height: 20),
-                const Text('Account'),
-                const SizedBox(height: 10),
                 ListTile(
                   leading: Icon(Icons.gpp_maybe),
                   title: Text('Change Password'),
                   trailing: Icon(Icons.chevron_right),
                   shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.only(
-                      topLeft: Radius.circular(10),
-                      topRight: Radius.circular(10),
-                    ),
+                    borderRadius: BorderRadius.zero,
                   ),
                   onTap: () {
                     Navigator.push(
@@ -234,8 +238,8 @@ class _SettingsPageState extends State<SettingsPage> {
                 ListTile(
                   leading: Icon(Icons.lock_outline),
                   title: Text('Delete Account'),
-                  iconColor: Colors.redAccent[700],
-                  textColor: Colors.redAccent[700],
+                  iconColor: criticalRed,
+                  textColor: criticalRed,
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.only(
                       bottomLeft: Radius.circular(10),
@@ -284,8 +288,8 @@ class _SettingsPageState extends State<SettingsPage> {
                 ListTile(
                   leading: const Icon(Icons.logout),
                   title: const Text('Log Out'),
-                  iconColor: Colors.redAccent[700],
-                  textColor: Colors.redAccent[700],
+                  iconColor: criticalRed,
+                  textColor: criticalRed,
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(10),
                   ),
@@ -321,7 +325,7 @@ class _DarkModeSwitchListTileState extends State<DarkModeSwitchListTile> {
   Widget build(BuildContext context) {
     return SwitchListTile(
       shape: widget.shape,
-      activeTrackColor: Colors.yellow[600],
+      activeTrackColor: p2bpYellowAccent,
       secondary: const Icon(Icons.dark_mode_outlined),
       title: const Text('Dark Mode'),
       value: _isDarkMode,
@@ -424,7 +428,7 @@ class _ProfileIconEditStackState extends State<ProfileIconEditStack> {
                 borderRadius: BorderRadius.all(
                   Radius.circular(50),
                 ),
-                color: Colors.yellow[600],
+                color: p2bpYellowAccent,
               ),
               child: Icon(
                 Icons.edit_outlined,

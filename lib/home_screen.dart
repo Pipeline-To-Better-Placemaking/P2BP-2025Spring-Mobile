@@ -9,8 +9,12 @@ import 'db_schema_classes.dart';
 import 'edit_project_panel.dart';
 import 'firestore_functions.dart';
 import 'main.dart';
+import 'project_comparison_page.dart';
+import 'results_panel.dart';
 import 'results_panel.dart';
 import 'settings_page.dart';
+import 'settings_page.dart';
+import 'teams_and_invites_page.dart';
 import 'theme.dart';
 
 List<String> navIcons2 = [
@@ -226,9 +230,16 @@ class _HomeScreenState extends State<HomeScreen> {
                   children: [
                     // Edit Info button
                     OutlinedButton(
-                      onPressed: () {
+                      onPressed: () async {
                         // Handle navigation to Edit menu
-                        showEditProjectModalSheet(context);
+                        bool updated =
+                            await showEditProjectModalSheet(context, project);
+
+                        if (updated) {
+                          setState(() {
+                            project.title;
+                          });
+                        }
                       },
                       style: OutlinedButton.styleFrom(
                         side: const BorderSide(
