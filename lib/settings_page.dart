@@ -1,14 +1,15 @@
-import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:flutter/material.dart';
 import 'package:p2bp_2025spring_mobile/change_email_page.dart';
 import 'package:p2bp_2025spring_mobile/change_name_page.dart';
+import 'package:p2bp_2025spring_mobile/login_screen.dart';
 import 'package:p2bp_2025spring_mobile/theme.dart';
 import 'package:url_launcher/url_launcher.dart';
+
 import 'change_password_page.dart';
-import 'submit_bug_report_page.dart';
-import 'edit_profile_page.dart';
 import 'firestore_functions.dart';
 import 'strings.dart';
+import 'submit_bug_report_page.dart';
 
 class SettingsPage extends StatefulWidget {
   const SettingsPage({super.key});
@@ -24,8 +25,10 @@ class _SettingsPageState extends State<SettingsPage> {
       await FirebaseAuth.instance.signOut();
       if (context.mounted) {
         // Sends to login screen and removes everything else from nav stack
-        Navigator.pushNamedAndRemoveUntil(
-            context, '/login', (Route route) => false);
+        Navigator.pushAndRemoveUntil(
+            context,
+            MaterialPageRoute(builder: (context) => LoginScreen()),
+            (Route route) => false);
       } else {
         throw Exception('context-unmounted');
       }
@@ -76,59 +79,59 @@ class _SettingsPageState extends State<SettingsPage> {
   /// Deletes the account being used along with all references to it from DB.
   ///
   /// Sends user back to login screen after deletion.
-  void _deleteAccount(BuildContext context) async {
-    try {
-      // TODO: actually delete account and all references to it.
-      await FirebaseAuth.instance.signOut();
-      if (context.mounted) {
-        // Sends to login screen and removes everything else from nav stack
-        Navigator.pushNamedAndRemoveUntil(
-            context, '/login', (Route route) => false);
-      } else {
-        throw Exception('context-unmounted');
-      }
-    } catch (e) {
-      print('Error signing out: $e');
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Log out failed. Try again.')),
-      );
-    }
-  }
+  // void _deleteAccount(BuildContext context) async {
+  //   try {
+  //     // TODO: actually delete account and all references to it.
+  //     await FirebaseAuth.instance.signOut();
+  //     if (context.mounted) {
+  //       // Sends to login screen and removes everything else from nav stack
+  //       Navigator.pushNamedAndRemoveUntil(
+  //           context, '/login', (Route route) => false);
+  //     } else {
+  //       throw Exception('context-unmounted');
+  //     }
+  //   } catch (e) {
+  //     print('Error signing out: $e');
+  //     ScaffoldMessenger.of(context).showSnackBar(
+  //       SnackBar(content: Text('Log out failed. Try again.')),
+  //     );
+  //   }
+  // }
 
   /// Builds and displays confirmation dialog for deleting account.
-  Future<void> _deleteAccountConfirmDialogBuilder(BuildContext context) async {
-    // TODO: better confirmation like user has to type their email or something
-    return showDialog<void>(
-      context: context,
-      builder: (BuildContext context) => AlertDialog(
-        title: const Text('Are you sure?'),
-        titlePadding: EdgeInsets.only(
-          left: 20,
-          right: 20,
-          top: 20,
-        ),
-        content: const Text(Strings.deleteAccountConfirmText),
-        contentPadding: EdgeInsets.only(
-          left: 20,
-          right: 20,
-          top: 16,
-          bottom: 10,
-        ),
-        actions: <Widget>[
-          TextButton(
-            onPressed: () => Navigator.of(context).pop(),
-            child: const Text('No, go back'),
-          ),
-          TextButton(
-            onPressed: () => _deleteAccount(context),
-            child: const Text('Yes, delete my account'),
-          ),
-        ],
-        actionsPadding: EdgeInsets.only(left: 20, right: 20, bottom: 20),
-        actionsAlignment: MainAxisAlignment.end,
-      ),
-    );
-  }
+  // Future<void> _deleteAccountConfirmDialogBuilder(BuildContext context) async {
+  //   // TODO: better confirmation like user has to type their email or something
+  //   return showDialog<void>(
+  //     context: context,
+  //     builder: (BuildContext context) => AlertDialog(
+  //       title: const Text('Are you sure?'),
+  //       titlePadding: EdgeInsets.only(
+  //         left: 20,
+  //         right: 20,
+  //         top: 20,
+  //       ),
+  //       content: const Text(Strings.deleteAccountConfirmText),
+  //       contentPadding: EdgeInsets.only(
+  //         left: 20,
+  //         right: 20,
+  //         top: 16,
+  //         bottom: 10,
+  //       ),
+  //       actions: <Widget>[
+  //         TextButton(
+  //           onPressed: () => Navigator.of(context).pop(),
+  //           child: const Text('No, go back'),
+  //         ),
+  //         TextButton(
+  //           onPressed: () => _deleteAccount(context),
+  //           child: const Text('Yes, delete my account'),
+  //         ),
+  //       ],
+  //       actionsPadding: EdgeInsets.only(left: 20, right: 20, bottom: 20),
+  //       actionsAlignment: MainAxisAlignment.end,
+  //     ),
+  //   );
+  // }
 
   @override
   Widget build(BuildContext context) {

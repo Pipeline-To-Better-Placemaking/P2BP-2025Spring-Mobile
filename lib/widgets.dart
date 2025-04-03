@@ -1,5 +1,3 @@
-import 'dart:io';
-
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:p2bp_2025spring_mobile/theme.dart';
@@ -42,6 +40,7 @@ class EditProjectTextBox extends StatelessWidget {
   final String labelText;
   final TextEditingController controller;
   final String? Function(String?)? validator;
+  final FloatingLabelBehavior? floatingLabelBehavior;
 
   const EditProjectTextBox({
     super.key,
@@ -51,6 +50,7 @@ class EditProjectTextBox extends StatelessWidget {
     required this.minLines,
     required this.controller,
     this.validator,
+    this.floatingLabelBehavior,
   });
   @override
   Widget build(BuildContext context) {
@@ -73,6 +73,7 @@ class EditProjectTextBox extends StatelessWidget {
             borderSide: BorderSide(color: Colors.white),
           ),
           labelText: labelText,
+          floatingLabelBehavior: floatingLabelBehavior,
           floatingLabelAlignment: FloatingLabelAlignment.start,
           floatingLabelStyle: const TextStyle(
             color: Colors.white,
@@ -137,6 +138,8 @@ class CreationTextBox extends StatelessWidget {
   final ValueChanged? onChanged;
   final Icon? icon;
   final String? errorMessage;
+  final Color? textThemeColor;
+  final String? Function(String?)? validator;
 
   const CreationTextBox({
     super.key,
@@ -147,14 +150,18 @@ class CreationTextBox extends StatelessWidget {
     this.onChanged,
     this.icon,
     this.errorMessage,
+    this.textThemeColor,
+    this.validator,
   });
   @override
   Widget build(BuildContext context) {
     return SizedBox(
       child: Theme(
         data: Theme.of(context).copyWith(
-          textSelectionTheme: const TextSelectionThemeData(
-              selectionColor: Colors.blue, selectionHandleColor: Colors.blue),
+          textSelectionTheme: TextSelectionThemeData(
+            selectionColor: textThemeColor ?? Colors.blue,
+            selectionHandleColor: textThemeColor ?? Colors.blue,
+          ),
         ),
         child: TextFormField(
           onChanged: onChanged,
@@ -163,15 +170,16 @@ class CreationTextBox extends StatelessWidget {
           maxLines: maxLines,
           minLines: minLines,
           cursorColor: const Color(0xFF585A6A),
-          validator: (value) {
-            // TODO: custom error check parameter?
-            if (errorMessage != null && (value == null || value.length < 3)) {
-              // TODO: eventually require error message?
-              return errorMessage ??
-                  'Error, insufficient input (validator error message not set)';
-            }
-            return null;
-          },
+          validator: validator ??
+              (value) {
+                if (errorMessage != null &&
+                    (value == null || value.length < 3)) {
+                  // TODO: eventually require error message?
+                  return errorMessage ??
+                      'Error, insufficient input (validator error message not set)';
+                }
+                return null;
+              },
           decoration: InputDecoration(
             prefixIcon: icon,
             alignLabelWithHint: true,
@@ -882,7 +890,7 @@ class DirectionsButton extends StatelessWidget {
 class DirectionsText extends StatelessWidget {
   const DirectionsText({
     super.key,
-    required this.onTap,
+    this.onTap,
     required this.text,
   });
 
@@ -1154,29 +1162,5 @@ class TestErrorText extends StatelessWidget {
         ),
       ),
     );
-  }
-}
-
-/// Conditionally wraps its child in a SafeArea depending on the platform.
-///
-/// On Android, it wraps its child widget in a SafeArea to prevent system UI elements
-/// (like the status bar or navigation buttons) from overlapping your content.
-/// On iOS, it simply returns the child without extra padding, so you don't get unwanted
-/// blank spaces at the top or bottom.
-///
-/// Example:
-/// ```dart
-/// AdaptiveSafeArea(
-///   child: YourWidget(),
-/// );
-/// ```
-class AdaptiveSafeArea extends StatelessWidget {
-  final Widget child;
-  const AdaptiveSafeArea({super.key, required this.child});
-
-  @override
-  Widget build(BuildContext context) {
-    // Wrap with SafeArea only on Android
-    return Platform.isAndroid ? SafeArea(child: child) : child;
   }
 }

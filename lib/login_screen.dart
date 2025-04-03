@@ -26,6 +26,7 @@ class LoginScreen extends StatelessWidget {
           child: SafeArea(
             child: ListView(
               children: <Widget>[
+                const SizedBox(height: 20),
                 // Logo
                 Center(
                   child: Image.asset(
@@ -231,9 +232,7 @@ class _LoginFormState extends State<LoginForm> {
 
         Navigator.pushReplacement(
           context,
-          MaterialPageRoute(
-              builder: (context) =>
-                  HomeScreen()), // Replace with your home page
+          MaterialPageRoute(builder: (context) => HomeScreen()),
         );
       } else {
         // Handle case where user data does not exist in Firestore (shouldn't happen if user data is properly saved)

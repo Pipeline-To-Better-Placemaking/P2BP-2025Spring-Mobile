@@ -9,8 +9,6 @@ import 'package:p2bp_2025spring_mobile/widgets.dart';
 
 import 'db_schema_classes.dart';
 import 'google_maps_functions.dart';
-import 'home_screen.dart';
-import 'project_details_page.dart';
 
 class SectionCutter extends StatefulWidget {
   final Project activeProject;

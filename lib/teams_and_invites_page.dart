@@ -1,10 +1,11 @@
-import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
-import 'team_settings_page.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
-import 'firestore_functions.dart';
+import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
+
 import 'db_schema_classes.dart';
+import 'firestore_functions.dart';
+import 'team_settings_page.dart';
 
 class TeamsAndInvitesPage extends StatefulWidget {
   const TeamsAndInvitesPage({super.key});

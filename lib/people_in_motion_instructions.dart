@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
-import 'package:p2bp_2025spring_mobile/db_schema_classes.dart';
 
 Widget peopleInMotionInstructions() {
   return RichText(

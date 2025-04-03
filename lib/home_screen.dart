@@ -9,7 +9,6 @@ import 'create_project_and_teams.dart';
 import 'db_schema_classes.dart';
 import 'edit_project_form.dart';
 import 'firestore_functions.dart';
-import 'results_panel.dart';
 import 'settings_page.dart';
 import 'theme.dart';
 
@@ -223,11 +222,7 @@ class _HomeScreenState extends State<HomeScreen> {
               ),
               // Row with Edit and Results buttons in the bottom right corner
               Padding(
-                padding: const EdgeInsets.only(
-                  top: 10,
-                  bottom: 10,
-                  right: 10,
-                ),
+                padding: const EdgeInsets.all(10),
                 child: Row(
                   mainAxisAlignment: MainAxisAlignment.end,
                   children: [
@@ -268,27 +263,27 @@ class _HomeScreenState extends State<HomeScreen> {
                         style: TextStyle(fontSize: 12),
                       ),
                     ),
-                    const SizedBox(width: 10),
+                    // const SizedBox(width: 10),
                     // Results button
-                    ElevatedButton(
-                      onPressed: () {
-                        // Handle navigation to Results menu
-                        showResultsModalSheet(context);
-                      },
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: const Color(0xFFFFCC00),
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(8),
-                        ),
-                      ),
-                      child: const Text(
-                        'Results',
-                        style: TextStyle(
-                          fontSize: 12,
-                          color: Color(0xFF1D4076),
-                        ),
-                      ),
-                    ),
+                    // ElevatedButton(
+                    //   onPressed: () {
+                    //     // Handle navigation to Results menu
+                    //     // showResultsModalSheet(context);
+                    //   },
+                    //   style: ElevatedButton.styleFrom(
+                    //     backgroundColor: const Color(0xFFFFCC00),
+                    //     shape: RoundedRectangleBorder(
+                    //       borderRadius: BorderRadius.circular(8),
+                    //     ),
+                    //   ),
+                    //   child: const Text(
+                    //     'Results',
+                    //     style: TextStyle(
+                    //       fontSize: 12,
+                    //       color: Color(0xFF1D4076),
+                    //     ),
+                    //   ),
+                    // ),
                   ],
                 ),
               ),
