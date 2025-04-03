@@ -3,7 +3,9 @@ import 'package:p2bp_2025spring_mobile/theme.dart';
 import 'package:p2bp_2025spring_mobile/widgets.dart';
 
 class ChangeTeamNameForm extends StatefulWidget {
-  const ChangeTeamNameForm({super.key});
+  final String currentName;
+
+  const ChangeTeamNameForm({super.key, required this.currentName});
 
   @override
   State<ChangeTeamNameForm> createState() => _ChangeTeamNameFormState();
@@ -11,11 +13,17 @@ class ChangeTeamNameForm extends StatefulWidget {
 
 class _ChangeTeamNameFormState extends State<ChangeTeamNameForm> {
   final GlobalKey<FormState> _formKey = GlobalKey<FormState>();
-  final TextEditingController _teamNameController = TextEditingController();
+  final TextEditingController _nameController = TextEditingController();
+
+  @override
+  void initState() {
+    super.initState();
+    _nameController.text = widget.currentName;
+  }
 
   @override
   void dispose() {
-    _teamNameController.dispose();
+    _nameController.dispose();
     super.dispose();
   }
 
@@ -54,7 +62,7 @@ class _ChangeTeamNameFormState extends State<ChangeTeamNameForm> {
                       child: TextButton(
                         onPressed: () {
                           if (!_formKey.currentState!.validate()) return;
-                          Navigator.pop(context, _teamNameController.text);
+                          Navigator.pop(context, _nameController.text);
                         },
                         child: Text(
                           "Done",
@@ -77,7 +85,7 @@ class _ChangeTeamNameFormState extends State<ChangeTeamNameForm> {
                   child: Align(
                     alignment: Alignment.centerLeft,
                     child: TextFormField(
-                      controller: _teamNameController,
+                      controller: _nameController,
                       cursorColor: Colors.white,
                       style: TextStyle(
                           color: Colors.white, fontWeight: FontWeight.bold),

@@ -129,10 +129,11 @@ class _TeamsAndInvitesPageState extends State<TeamsAndInvitesPage> {
                         itemCount: teamsCount,
                         itemBuilder: (BuildContext context, int index) {
                           return buildContainer(
-                              index: index,
-                              color: Colors.blue,
-                              numProjects: teams[index].numProjects,
-                              team: teams[index]);
+                            index: index,
+                            color: Colors.blue,
+                            numProjects: teams[index].numProjects,
+                            team: teams[index],
+                          );
                         },
                         separatorBuilder: (BuildContext context, int index) =>
                             const SizedBox(
@@ -417,6 +418,9 @@ class _TeamsAndInvitesPageState extends State<TeamsAndInvitesPage> {
                       builder: (context) => TeamSettingsPage(activeTeam: team)),
                 );
                 if (doRefresh == true) _getTeams();
+                setState(() {
+                  // Just in case something changed.
+                });
               },
             ),
           ),

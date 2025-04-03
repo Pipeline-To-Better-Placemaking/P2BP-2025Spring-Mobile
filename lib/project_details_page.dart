@@ -116,10 +116,15 @@ class _ProjectDetailsPageState extends State<ProjectDetailsPage> {
                     backgroundColor: Colors.transparent,
                     isScrollControlled: true,
                     context: context,
-                    builder: (context) => ChangeProjectNameForm(),
+                    builder: (context) => ChangeProjectNameForm(
+                      currentName: widget.activeProject.title,
+                    ),
                   );
 
-                  if (newName == null) return;
+                  if (newName == null ||
+                      newName == widget.activeProject.title) {
+                    return;
+                  }
                   _firestore
                       .collection('projects')
                       .doc(widget.activeProject.projectID)
@@ -134,10 +139,15 @@ class _ProjectDetailsPageState extends State<ProjectDetailsPage> {
                     backgroundColor: Colors.transparent,
                     isScrollControlled: true,
                     context: context,
-                    builder: (context) => ChangeProjectDescriptionForm(),
+                    builder: (context) => ChangeProjectDescriptionForm(
+                      currentDescription: widget.activeProject.description,
+                    ),
                   );
 
-                  if (newDescription == null) return;
+                  if (newDescription == null ||
+                      newDescription == widget.activeProject.description) {
+                    return;
+                  }
                   _firestore
                       .collection('projects')
                       .doc(widget.activeProject.projectID)

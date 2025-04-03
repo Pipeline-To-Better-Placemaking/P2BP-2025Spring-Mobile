@@ -5,8 +5,9 @@ import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:p2bp_2025spring_mobile/firestore_functions.dart';
 import 'package:p2bp_2025spring_mobile/theme.dart';
 import 'package:p2bp_2025spring_mobile/widgets.dart';
-import 'google_maps_functions.dart';
+
 import 'db_schema_classes.dart';
+import 'google_maps_functions.dart';
 
 class StandingPointsPage extends StatefulWidget {
   final Project activeProject;

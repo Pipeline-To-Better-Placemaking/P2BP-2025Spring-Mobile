@@ -89,6 +89,13 @@ class _TeamSettingsPageState extends State<TeamSettingsPage> {
         for (final project in _selectedProjects) {
           await deleteProject(project);
           _projects.remove(project);
+          widget.activeTeam.projects.removeWhere((projectRef) {
+            final bool test = projectRef.id == project.projectID;
+            if (test) {
+              widget.activeTeam.numProjects--; // dumb that I had to do this
+            }
+            return test;
+          });
         }
 
         if (!mounted) return;
@@ -142,10 +149,12 @@ class _TeamSettingsPageState extends State<TeamSettingsPage> {
                 backgroundColor: Colors.transparent,
                 isScrollControlled: true,
                 context: context,
-                builder: (context) => ChangeTeamNameForm(),
+                builder: (context) => ChangeTeamNameForm(
+                  currentName: widget.activeTeam.title,
+                ),
               );
 
-              if (newName == null) return;
+              if (newName == null || newName == widget.activeTeam.title) return;
               _firestore
                   .collection('teams')
                   .doc(widget.activeTeam.teamID)
@@ -313,6 +322,21 @@ class _TeamSettingsPageState extends State<TeamSettingsPage> {
                         isSelected: isSelected,
                         project: _projects[index],
                         toggleProjectSelection: toggleProjectSelection,
+                        projectDeletedCallback: () {
+                          setState(() {
+                            _projects.removeAt(index);
+                            widget.activeTeam.projects
+                                .removeWhere((projectRef) {
+                              final bool test =
+                                  projectRef.id == _projects[index].projectID;
+                              if (test) {
+                                widget.activeTeam
+                                    .numProjects--; // dumb that I had to do this
+                              }
+                              return test;
+                            });
+                          });
+                        },
                       );
                     },
                     separatorBuilder: (BuildContext context, int index) {
@@ -346,12 +370,14 @@ class _ProjectListTile extends StatelessWidget {
   final bool isSelected;
   final Project project;
   final void Function(Project) toggleProjectSelection;
+  final VoidCallback projectDeletedCallback;
 
   const _ProjectListTile({
     required this.isMultiSelectMode,
     required this.isSelected,
     required this.project,
     required this.toggleProjectSelection,
+    required this.projectDeletedCallback,
   });
 
   @override
@@ -407,11 +433,11 @@ class _ProjectListTile extends StatelessWidget {
       trailing: isMultiSelectMode
           ? null
           : Icon(Icons.chevron_right, color: Colors.white),
-      onTap: () {
+      onTap: () async {
         if (isMultiSelectMode) {
           toggleProjectSelection(project);
         } else {
-          Navigator.push(
+          final status = await Navigator.push<String>(
             context,
             MaterialPageRoute(
               builder: (context) => ProjectDetailsPage(
@@ -419,6 +445,9 @@ class _ProjectListTile extends StatelessWidget {
               ),
             ),
           );
+          if (status == 'deleted') {
+            projectDeletedCallback();
+          }
         }
       },
     );

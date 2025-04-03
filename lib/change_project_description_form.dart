@@ -3,7 +3,10 @@ import 'package:p2bp_2025spring_mobile/theme.dart';
 import 'package:p2bp_2025spring_mobile/widgets.dart';
 
 class ChangeProjectDescriptionForm extends StatefulWidget {
-  const ChangeProjectDescriptionForm({super.key});
+  final String currentDescription;
+
+  const ChangeProjectDescriptionForm(
+      {super.key, required this.currentDescription});
 
   @override
   State<ChangeProjectDescriptionForm> createState() =>
@@ -14,6 +17,12 @@ class _ChangeProjectDescriptionFormState
     extends State<ChangeProjectDescriptionForm> {
   final GlobalKey<FormState> _formKey = GlobalKey<FormState>();
   final TextEditingController _descriptionController = TextEditingController();
+
+  @override
+  void initState() {
+    super.initState();
+    _descriptionController.text = widget.currentDescription;
+  }
 
   @override
   void dispose() {
