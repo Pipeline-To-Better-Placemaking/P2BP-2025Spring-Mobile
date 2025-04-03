@@ -43,7 +43,7 @@ class _SectionCreationPageState extends State<SectionCreationPage> {
     _polygons.add(getProjectPolygon(widget.activeProject.polygonPoints));
     _location = getPolygonCentroid(_polygons.first);
     _projectArea = _polygons.first.toMPLatLngList();
-    _zoom = getIdealZoom(_projectArea, _location.toMPLatLng());
+    _zoom = getIdealZoom(_projectArea, _location.toMPLatLng()) - 0.2;
 
     if (widget.currentSection != null) {
       final List currentSection = widget.currentSection!;
@@ -124,28 +124,28 @@ class _SectionCreationPageState extends State<SectionCreationPage> {
 
   @override
   Widget build(BuildContext context) {
-    return SafeArea(
-      child: Scaffold(
-        body: _isLoading
-            ? const Center(child: CircularProgressIndicator())
-            : Stack(
-                children: [
-                  SizedBox(
-                    height: MediaQuery.sizeOf(context).height,
-                    child: GoogleMap(
-                      onMapCreated: _onMapCreated,
-                      initialCameraPosition:
-                          CameraPosition(target: _location, zoom: _zoom),
-                      polygons: _polygons,
-                      polylines: {if (_polyline != null) _polyline!},
-                      markers: (_markers.isNotEmpty)
-                          ? {_markers.first, _markers.last}
-                          : {},
-                      mapType: _currentMapType, // Use current map type
-                      onTap: _polylineTap,
-                    ),
+    return Scaffold(
+      body: _isLoading
+          ? const Center(child: CircularProgressIndicator())
+          : Stack(
+              children: [
+                SizedBox(
+                  height: MediaQuery.sizeOf(context).height,
+                  child: GoogleMap(
+                    onMapCreated: _onMapCreated,
+                    initialCameraPosition:
+                        CameraPosition(target: _location, zoom: _zoom),
+                    polygons: _polygons,
+                    polylines: {if (_polyline != null) _polyline!},
+                    markers: (_markers.isNotEmpty)
+                        ? {_markers.first, _markers.last}
+                        : {},
+                    mapType: _currentMapType, // Use current map type
+                    onTap: _polylineTap,
                   ),
-                  Row(
+                ),
+                SafeArea(
+                  child: Row(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
@@ -206,7 +206,9 @@ class _SectionCreationPageState extends State<SectionCreationPage> {
                       ),
                     ],
                   ),
-                  Padding(
+                ),
+                SafeArea(
+                  child: Padding(
                     padding: EdgeInsets.only(bottom: 5),
                     child: Align(
                       alignment: Alignment.bottomCenter,
@@ -243,10 +245,10 @@ class _SectionCreationPageState extends State<SectionCreationPage> {
                       ),
                     ),
                   ),
-                  _outsidePoint ? TestErrorText() : SizedBox(),
-                ],
-              ),
-      ),
+                ),
+                SafeArea(child: _outsidePoint ? TestErrorText() : SizedBox()),
+              ],
+            ),
     );
   }
 }

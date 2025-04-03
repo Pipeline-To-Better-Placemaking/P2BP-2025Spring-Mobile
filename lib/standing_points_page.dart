@@ -60,9 +60,10 @@ class _StandingPointsPageState extends State<StandingPointsPage> {
     _polygons.add(getProjectPolygon(widget.activeProject.polygonPoints));
     _location = getPolygonCentroid(_polygons.first);
     _zoom = getIdealZoom(
-      _polygons.first.toMPLatLngList(),
-      _location.toMPLatLng(),
-    );
+          _polygons.first.toMPLatLngList(),
+          _location.toMPLatLng(),
+        ) -
+        0.2;
 
     _standingPoints = widget.activeProject.standingPoints.toList();
     _markers = _setMarkersFromStandingPoints(_standingPoints);
