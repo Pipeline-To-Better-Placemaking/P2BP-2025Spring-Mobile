@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:p2bp_2025spring_mobile/project_map_creation.dart';
 import 'package:p2bp_2025spring_mobile/teams_and_invites_page.dart';
 import 'firestore_functions.dart';
@@ -28,65 +29,61 @@ class _CreateProjectAndTeamsPageState extends State<CreateProjectAndTeamsPage> {
 
   @override
   Widget build(BuildContext context) {
-    return SafeArea(
-      maintainBottomViewPadding: true,
-      child: Scaffold(
-        // Top switch between Projects/Teams
-        appBar: AppBar(),
-        // Creation screens
-        body: SingleChildScrollView(
-          child: Center(
-            child: Column(
-              children: <Widget>[
-                // Switch at top to switch between create project and team pages.
-                SegmentedButton(
-                  selectedIcon: const Icon(Icons.check_circle),
-                  style: SegmentedButton.styleFrom(
-                    iconColor: Colors.white,
-                    backgroundColor: const Color(0xFF4871AE),
-                    foregroundColor: Colors.white70,
-                    selectedForegroundColor: Colors.white,
-                    selectedBackgroundColor: const Color(0xFF2E5598),
-                    side: const BorderSide(
-                      width: 0,
-                      color: Color(0xFF2180EA),
-                    ),
-                    elevation: 100,
-                    visualDensity:
-                        const VisualDensity(vertical: 1, horizontal: 1),
+    return SingleChildScrollView(
+      child: Center(
+        child: Column(
+          children: <Widget>[
+            // Switch at top to switch between create project and team pages.
+            Padding(
+              padding: const EdgeInsets.symmetric(vertical: 16),
+              child: SegmentedButton(
+                selectedIcon: const Icon(Icons.check_circle),
+                style: SegmentedButton.styleFrom(
+                  iconColor: Colors.white,
+                  backgroundColor: const Color(0xFF4871AE),
+                  foregroundColor: Colors.white70,
+                  selectedForegroundColor: Colors.white,
+                  selectedBackgroundColor: const Color(0xFF2E5598),
+                  side: const BorderSide(
+                    width: 0,
+                    color: Color(0xFF2180EA),
                   ),
-                  segments: const <ButtonSegment>[
-                    ButtonSegment(
-                        value: PageView.project,
-                        label: Text('Project'),
-                        icon: Icon(Icons.developer_board)),
-                    ButtonSegment(
-                        value: PageView.team,
-                        label: Text('Team'),
-                        icon: Icon(Icons.people)),
-                  ],
-                  selected: {pageSelection},
-                  onSelectionChanged: (Set newSelection) {
-                    setState(() {
-                      // By default there is only a single segment that can be
-                      // selected at one time, so its value is always the first
-                      // item in the selected set.
-                      pageSelection = newSelection.first;
-                    });
-                  },
+                  elevation: 100,
+                  visualDensity:
+                      const VisualDensity(vertical: 1, horizontal: 1),
                 ),
-
-                // Spacing between button and container w/ pages.
-                SizedBox(height: MediaQuery.of(context).size.height * .025),
-
-                // Changes page between two widgets: The CreateProjectWidget and CreateTeamWidget.
-                // These widgets display their respective screens to create either a project or team.
-                pages[pageSelection.index],
-
-                SizedBox(height: 100),
-              ],
+                segments: const <ButtonSegment>[
+                  ButtonSegment(
+                      value: PageView.project,
+                      label: Text('Project'),
+                      icon: Icon(Icons.developer_board)),
+                  ButtonSegment(
+                      value: PageView.team,
+                      label: Text('Team'),
+                      icon: Icon(Icons.people)),
+                ],
+                selected: {pageSelection},
+                onSelectionChanged: (Set newSelection) {
+                  setState(() {
+                    // By default there is only a single segment that can be
+                    // selected at one time, so its value is always the first
+                    // item in the selected set.
+                    pageSelection = newSelection.first;
+                  });
+                },
+              ),
             ),
-          ),
+
+            // Spacing between button and container w/ pages.
+            SizedBox(height: 10),
+
+            // Changes page between two widgets: The CreateProjectWidget and
+            // CreateTeamWidget. These widgets display their respective
+            // screens to create either a project or team.
+            pages[pageSelection.index],
+
+            SizedBox(height: 100),
+          ],
         ),
       ),
     );

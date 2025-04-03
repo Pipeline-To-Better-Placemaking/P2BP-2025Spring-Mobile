@@ -1,14 +1,14 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:p2bp_2025spring_mobile/project_details_page.dart';
+import 'package:p2bp_2025spring_mobile/teams_and_invites_page.dart';
 
 import 'create_project_and_teams.dart';
 import 'db_schema_classes.dart';
-import 'edit_project_panel.dart';
+import 'edit_project_form.dart';
 import 'firestore_functions.dart';
-import 'main.dart';
-import 'results_panel.dart';
 import 'settings_page.dart';
 import 'theme.dart';
 
@@ -114,22 +114,30 @@ class _HomeScreenState extends State<HomeScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      body: Stack(
-        children: [
-          IndexedStack(
-            index: selectedIndex,
+    return AnnotatedRegion<SystemUiOverlayStyle>(
+      value: SystemUiOverlayStyle.dark.copyWith(
+        statusBarColor: Colors.transparent,
+      ),
+      child: Scaffold(
+        body: SafeArea(
+          maintainBottomViewPadding: true,
+          child: Stack(
             children: [
-              // Screens for each tab
-              CreateProjectAndTeamsPage(),
-              _buildHomeContent(),
-              SettingsPage(),
+              IndexedStack(
+                index: selectedIndex,
+                children: [
+                  // Screens for each tab
+                  CreateProjectAndTeamsPage(),
+                  _buildHomeContent(),
+                  SettingsPage(),
+                ],
+              ),
             ],
           ),
-        ],
+        ),
+        extendBody: true,
+        bottomNavigationBar: _navBar(),
       ),
-      extendBody: true,
-      bottomNavigationBar: _navBar(),
     );
   }
 
@@ -147,18 +155,17 @@ class _HomeScreenState extends State<HomeScreen> {
               BorderRadius.circular(12) // Match the container's corner radius
           ),
       child: InkWell(
-        // TODO: Add a loading indicator for loading project detail page
         onTap: () async {
-          if (project.tests == null) {
-            await project.loadAllTestData();
-          }
-          if (!context.mounted) return;
-          Navigator.push(
+          await Navigator.push(
             context,
             MaterialPageRoute(
-              builder: (context) => ProjectDetailsPage(projectData: project),
+              builder: (context) => ProjectDetailsPage(activeProject: project),
             ),
           );
+
+          // This might be really costly to do every time but not sure how else
+          // to guarantee projects update after renaming or otherwise.
+          _populateProjects();
         },
         child: Container(
           decoration: BoxDecoration(
@@ -215,19 +222,31 @@ class _HomeScreenState extends State<HomeScreen> {
               ),
               // Row with Edit and Results buttons in the bottom right corner
               Padding(
-                padding: const EdgeInsets.only(
-                  top: 10,
-                  bottom: 10,
-                  right: 10,
-                ),
+                padding: const EdgeInsets.all(10),
                 child: Row(
                   mainAxisAlignment: MainAxisAlignment.end,
                   children: [
                     // Edit Info button
                     OutlinedButton(
-                      onPressed: () {
+                      onPressed: () async {
                         // Handle navigation to Edit menu
-                        showEditProjectModalSheet(context);
+                        final updated = await showModalBottomSheet<String>(
+                          context: context,
+                          isScrollControlled: true,
+                          useSafeArea: true,
+                          builder: (context) =>
+                              EditProjectForm(activeProject: project),
+                        );
+
+                        if (updated != null) {
+                          if (updated == 'deleted') {
+                            await _populateProjects();
+                          } else if (updated == 'altered') {
+                            setState(() {
+                              // Update if something was changed in EditProject
+                            });
+                          }
+                        }
                       },
                       style: OutlinedButton.styleFrom(
                         side: const BorderSide(
@@ -244,27 +263,27 @@ class _HomeScreenState extends State<HomeScreen> {
                         style: TextStyle(fontSize: 12),
                       ),
                     ),
-                    const SizedBox(width: 10),
+                    // const SizedBox(width: 10),
                     // Results button
-                    ElevatedButton(
-                      onPressed: () {
-                        // Handle navigation to Results menu
-                        showResultsModalSheet(context);
-                      },
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: const Color(0xFFFFCC00),
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(8),
-                        ),
-                      ),
-                      child: const Text(
-                        'Results',
-                        style: TextStyle(
-                          fontSize: 12,
-                          color: Color(0xFF1D4076),
-                        ),
-                      ),
-                    ),
+                    // ElevatedButton(
+                    //   onPressed: () {
+                    //     // Handle navigation to Results menu
+                    //     // showResultsModalSheet(context);
+                    //   },
+                    //   style: ElevatedButton.styleFrom(
+                    //     backgroundColor: const Color(0xFFFFCC00),
+                    //     shape: RoundedRectangleBorder(
+                    //       borderRadius: BorderRadius.circular(8),
+                    //     ),
+                    //   ),
+                    //   child: const Text(
+                    //     'Results',
+                    //     style: TextStyle(
+                    //       fontSize: 12,
+                    //       color: Color(0xFF1D4076),
+                    //     ),
+                    //   ),
+                    // ),
                   ],
                 ),
               ),
@@ -283,85 +302,72 @@ class _HomeScreenState extends State<HomeScreen> {
       child: SingleChildScrollView(
         physics: AlwaysScrollableScrollPhysics(),
         child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 20),
+          padding: const EdgeInsets.symmetric(
+            horizontal: 20,
+            vertical: 10,
+          ),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             mainAxisSize: MainAxisSize.min,
             children: <Widget>[
               // P2BP Logo centered at the top
-              Padding(
-                padding: const EdgeInsets.only(top: 50),
-                child: Stack(
-                  children: [
-                    Align(
-                      alignment: Alignment.topCenter,
-                      child: Image.asset(
-                        'assets/P2BP_Logo.png',
-                        width: 40,
-                        height: 40,
-                      ),
+              Stack(
+                children: [
+                  Align(
+                    alignment: Alignment.topCenter,
+                    child: Image.asset(
+                      'assets/P2BP_Logo.png',
+                      width: 40,
+                      height: 40,
                     ),
-                    Align(
-                      alignment: Alignment.topRight,
-                      child: Row(
-                        mainAxisAlignment: MainAxisAlignment.end,
-                        children: [
-                          // Notification button
-                          IconButton(
-                            icon: Image.asset('assets/bell-03.png'),
-                            onPressed: () {
-                              // Handle notification button action
-                              Navigator.push(
-                                context,
-                                MaterialPageRoute(
-                                  builder: (context) => const HomePage(
-                                    title: '/home',
-                                  ),
-                                ),
-                              );
-                            },
-                            iconSize: 24,
-                          ),
-                          // Teams Button
-                          IconButton(
-                            icon: const Icon(Icons.group),
-                            color: const Color(0xFF0A2A88),
-                            onPressed: () async {
-                              // Navigate to Teams/Invites screen
-                              await Navigator.pushNamed(
-                                  context, '/teams_and_invites');
-                              _populateProjects();
-                            },
-                            iconSize: 24,
-                          ),
-                        ],
-                      ),
+                  ),
+                  Align(
+                    alignment: Alignment.topRight,
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.end,
+                      children: [
+                        // Teams Button
+                        IconButton(
+                          icon: const Icon(Icons.group),
+                          color: const Color(0xFF0A2A88),
+                          onPressed: () async {
+                            // Navigate to Teams/Invites screen
+                            await Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                  builder: (context) => TeamsAndInvitesPage()),
+                            );
+                            _populateProjects();
+                          },
+                          iconSize: 24,
+                        ),
+                      ],
                     ),
-                    // "Hello, [user]" greeting, aligned to the left below the logo
-                    Padding(
-                      padding: const EdgeInsets.only(top: 40),
-                      child: Row(
-                        mainAxisAlignment: MainAxisAlignment.start,
-                        children: [
-                          ShaderMask(
-                            shaderCallback: (bounds) {
-                              return defaultGrad.createShader(bounds);
-                            },
-                            child: Text(
-                              'Hello, $_firstName',
-                              style: TextStyle(
-                                fontSize: 36,
-                                fontWeight: FontWeight.bold,
-                                color: Colors.white,
-                                height: 1.2, // Masked text with gradient
-                              ),
+                  ),
+                  // "Hello, [user]" greeting, aligned to the left below the logo
+                  Padding(
+                    padding: const EdgeInsets.only(top: 40),
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.start,
+                      children: [
+                        ShaderMask(
+                          shaderCallback: (bounds) {
+                            return defaultGrad.createShader(bounds);
+                          },
+                          child: Text(
+                            'Hello, $_firstName',
+                            style: TextStyle(
+                              fontSize: 36,
+                              fontWeight: FontWeight.bold,
+                              color: Colors.white,
+                              height: 1.2, // Masked text with gradient
                             ),
                           ),
-                        ],
-                      ),
+                        ),
+                      ],
                     ),
-                  ],
-                ),
+                  ),
+                ],
               ),
               // "Your Projects" label, aligned to the right of the screen"
               Padding(
@@ -430,11 +436,10 @@ class _HomeScreenState extends State<HomeScreen> {
                           child: SingleChildScrollView(
                             physics: AlwaysScrollableScrollPhysics(),
                             child: SizedBox(
-                              height:
-                                  MediaQuery.of(context).size.height * 2 / 3,
+                              height: MediaQuery.sizeOf(context).height * 2 / 3,
                               child: Center(
-                                child: Text(
-                                    "You have no projects! Join a team or create a project first."),
+                                child: Text('You have no projects! Join a team '
+                                    'or create a project first.'),
                               ),
                             ),
                           ),

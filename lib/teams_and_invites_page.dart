@@ -1,9 +1,11 @@
-import 'package:flutter/material.dart';
-import 'teams_settings_screen.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
-import 'firestore_functions.dart';
+import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
+
 import 'db_schema_classes.dart';
+import 'firestore_functions.dart';
+import 'team_settings_page.dart';
 
 class TeamsAndInvitesPage extends StatefulWidget {
   const TeamsAndInvitesPage({super.key});
@@ -44,29 +46,29 @@ class _TeamsAndInvitesPageState extends State<TeamsAndInvitesPage> {
       teams = await getTeamsIDs();
       currentTeam = await getCurrentTeam();
 
-      setState(() {
-        if (currentTeam == null) {
-          // No selected team:
-          print("No team selected. Defaulting to first if available.");
-          // TODO: Case if teams is not empty and not selected
-          // await _firestore
-          //     .collection('users')
-          //     .doc(loggedInUser?.uid)
-          //     .update({
-          //   'selectedTeam': _firestore.doc('/teams/$teamID'),
-          // });
-          selectedIndex = -1;
-        } else if (teams.isNotEmpty) {
-          // A list of teams with a selected team:
+      if (currentTeam == null && teams.isNotEmpty) {
+        // No selected team:
+        print("No team selected. Defaulting to first if available.");
+        await _firestore.collection('users').doc(loggedInUser?.uid).update({
+          'selectedTeam': _firestore.doc('/teams/${teams.first.teamID}'),
+        });
+        setState(() {
+          selectedIndex = 0;
+        });
+      } else if (teams.isNotEmpty) {
+        // A list of teams with a selected team:
+        setState(() {
           selectedIndex = teams.indexWhere(
               (team) => team.teamID.compareTo(currentTeam!.id) == 0);
-        } else {
-          // No teams but a selected team:
+        });
+      } else {
+        // No teams but a selected team:
+        setState(() {
           selectedIndex = -1;
-        }
-        _isLoadingTeams = false;
-        teamsCount = teams.length;
-      });
+        });
+      }
+      _isLoadingTeams = false;
+      teamsCount = teams.length;
     } catch (e, stacktrace) {
       print('Exception retrieving teams: $e');
       print('Stacktrace: $stacktrace');
@@ -87,6 +89,8 @@ class _TeamsAndInvitesPageState extends State<TeamsAndInvitesPage> {
         length: 2,
         child: Scaffold(
           appBar: AppBar(
+            systemOverlayStyle: SystemUiOverlayStyle.dark
+                .copyWith(statusBarColor: Colors.transparent),
             bottom: const TabBar(
               labelColor: Colors.blue,
               indicatorColor: Colors.blue,
@@ -125,10 +129,11 @@ class _TeamsAndInvitesPageState extends State<TeamsAndInvitesPage> {
                         itemCount: teamsCount,
                         itemBuilder: (BuildContext context, int index) {
                           return buildContainer(
-                              index: index,
-                              color: Colors.blue,
-                              numProjects: teams[index].numProjects,
-                              team: teams[index]);
+                            index: index,
+                            color: Colors.blue,
+                            numProjects: teams[index].numProjects,
+                            team: teams[index],
+                          );
                         },
                         separatorBuilder: (BuildContext context, int index) =>
                             const SizedBox(
@@ -406,14 +411,16 @@ class _TeamsAndInvitesPageState extends State<TeamsAndInvitesPage> {
                 color: Colors.white,
               ),
               tooltip: 'Open team settings',
-              onPressed: () {
-                // TODO: Actual function (chevron right, team settings)
-                Navigator.push(
+              onPressed: () async {
+                final bool? doRefresh = await Navigator.push(
                   context,
                   MaterialPageRoute(
-                      builder: (context) =>
-                          TeamSettingsScreen(activeTeam: team)),
+                      builder: (context) => TeamSettingsPage(activeTeam: team)),
                 );
+                if (doRefresh == true) _getTeams();
+                setState(() {
+                  // Just in case something changed.
+                });
               },
             ),
           ),

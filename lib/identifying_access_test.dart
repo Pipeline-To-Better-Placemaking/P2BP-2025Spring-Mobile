@@ -8,8 +8,6 @@ import 'package:p2bp_2025spring_mobile/widgets.dart';
 
 import 'db_schema_classes.dart';
 import 'google_maps_functions.dart';
-import 'home_screen.dart';
-import 'project_details_page.dart';
 
 class IdentifyingAccess extends StatefulWidget {
   final Project activeProject;
@@ -279,6 +277,11 @@ class _IdentifyingAccessState extends State<IdentifyingAccess> {
           ? MapType.satellite
           : MapType.normal);
     });
+  }
+
+  void _endTest() {
+    widget.activeTest.submitData(_accessData);
+    Navigator.pop(context);
   }
 
   @override
@@ -633,22 +636,8 @@ class _IdentifyingAccessState extends State<IdentifyingAccess> {
                                             builder: (context) {
                                               return TestFinishDialog(
                                                 onNext: () {
-                                                  widget.activeTest
-                                                      .submitData(_accessData);
-                                                  Navigator.pushReplacement(
-                                                      context,
-                                                      MaterialPageRoute(
-                                                        builder: (context) =>
-                                                            HomeScreen(),
-                                                      ));
-                                                  Navigator.push(
-                                                      context,
-                                                      MaterialPageRoute(
-                                                        builder: (context) =>
-                                                            ProjectDetailsPage(
-                                                                projectData: widget
-                                                                    .activeProject),
-                                                      ));
+                                                  Navigator.pop(context);
+                                                  _endTest();
                                                 },
                                               );
                                             });

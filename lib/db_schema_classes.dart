@@ -37,8 +37,8 @@ class Team {
   String teamID = '';
   String title = '';
   List teamMembers = [];
-  List projects = [];
-  int numProjects = 0;
+  List<DocumentReference> projects = [];
+  int numProjects = 0; // this has no reason to exist imo
 
   Team({
     required this.teamID,
