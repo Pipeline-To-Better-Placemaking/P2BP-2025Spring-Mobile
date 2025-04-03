@@ -45,29 +45,29 @@ class _TeamsAndInvitesPageState extends State<TeamsAndInvitesPage> {
       teams = await getTeamsIDs();
       currentTeam = await getCurrentTeam();
 
-      setState(() {
-        if (currentTeam == null) {
-          // No selected team:
-          print("No team selected. Defaulting to first if available.");
-          // TODO: Case if teams is not empty and not selected
-          // await _firestore
-          //     .collection('users')
-          //     .doc(loggedInUser?.uid)
-          //     .update({
-          //   'selectedTeam': _firestore.doc('/teams/$teamID'),
-          // });
-          selectedIndex = -1;
-        } else if (teams.isNotEmpty) {
-          // A list of teams with a selected team:
+      if (currentTeam == null && teams.isNotEmpty) {
+        // No selected team:
+        print("No team selected. Defaulting to first if available.");
+        await _firestore.collection('users').doc(loggedInUser?.uid).update({
+          'selectedTeam': _firestore.doc('/teams/${teams.first.teamID}'),
+        });
+        setState(() {
+          selectedIndex = 0;
+        });
+      } else if (teams.isNotEmpty) {
+        // A list of teams with a selected team:
+        setState(() {
           selectedIndex = teams.indexWhere(
               (team) => team.teamID.compareTo(currentTeam!.id) == 0);
-        } else {
-          // No teams but a selected team:
+        });
+      } else {
+        // No teams but a selected team:
+        setState(() {
           selectedIndex = -1;
-        }
-        _isLoadingTeams = false;
-        teamsCount = teams.length;
-      });
+        });
+      }
+      _isLoadingTeams = false;
+      teamsCount = teams.length;
     } catch (e, stacktrace) {
       print('Exception retrieving teams: $e');
       print('Stacktrace: $stacktrace');

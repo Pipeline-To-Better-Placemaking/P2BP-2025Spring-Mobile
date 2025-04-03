@@ -23,111 +23,115 @@ class LoginScreen extends StatelessWidget {
             gradient: defaultGrad,
           ),
           padding: const EdgeInsets.symmetric(horizontal: 20.0),
-          child: ListView(
-            children: <Widget>[
-              // Logo
-              Center(
-                child: Image.asset(
-                  'assets/logo_coin.png',
-                  height: 198.07,
-                ),
-              ),
-              const SizedBox(height: 30),
-              const Text(
-                'Login',
-                style: TextStyle(
-                  fontSize: 32,
-                  fontWeight: FontWeight.bold,
-                  color: Colors.white,
-                ),
-                textAlign: TextAlign.left,
-              ),
-              const SizedBox(height: 20),
-              const LoginForm(),
-              const SizedBox(height: 20),
-              // OR Divider
-              const Row(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  Expanded(child: Divider(color: Colors.white)),
-                  Padding(
-                    padding: EdgeInsets.symmetric(horizontal: 10.0),
-                    child: Text(
-                      'OR',
-                      style: TextStyle(
-                        color: Colors.white,
-                        fontWeight: FontWeight.bold,
-                        fontSize: 17,
-                      ),
-                    ),
+          child: SafeArea(
+            child: ListView(
+              children: <Widget>[
+                // Logo
+                Center(
+                  child: Image.asset(
+                    'assets/logo_coin.png',
+                    height: 198.07,
                   ),
-                  Expanded(child: Divider(color: Colors.white)),
-                ],
-              ),
-              const SizedBox(height: 20),
-              // Google Login Button
-              ElevatedButton(
-                  onPressed: () {
-                    // Handle Google login logic
-                  },
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: const Color(0xFFF5F5F5),
-                    padding: const EdgeInsets.symmetric(vertical: 15),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(8.0),
-                    ),
+                ),
+                const SizedBox(height: 20),
+                const Text(
+                  'Login',
+                  style: TextStyle(
+                    fontSize: 32,
+                    fontWeight: FontWeight.bold,
+                    color: Colors.white,
                   ),
+                  textAlign: TextAlign.left,
+                ),
+                const SizedBox(height: 20),
+                const LoginForm(),
+                const SizedBox(height: 20),
+                // // OR Divider
+                // const Row(
+                //   mainAxisAlignment: MainAxisAlignment.center,
+                //   children: [
+                //     Expanded(child: Divider(color: Colors.white)),
+                //     Padding(
+                //       padding: EdgeInsets.symmetric(horizontal: 10.0),
+                //       child: Text(
+                //         'OR',
+                //         style: TextStyle(
+                //           color: Colors.white,
+                //           fontWeight: FontWeight.bold,
+                //           fontSize: 17,
+                //         ),
+                //       ),
+                //     ),
+                //     Expanded(child: Divider(color: Colors.white)),
+                //   ],
+                // ),
+                // const SizedBox(height: 20),
+                // // Google Login Button
+                // ElevatedButton(
+                //   onPressed: () {
+                //     // Handle Google login logic
+                //   },
+                //   style: ElevatedButton.styleFrom(
+                //     backgroundColor: const Color(0xFFF5F5F5),
+                //     padding: const EdgeInsets.symmetric(vertical: 15),
+                //     shape: RoundedRectangleBorder(
+                //       borderRadius: BorderRadius.circular(8.0),
+                //     ),
+                //   ),
+                //   child: Row(
+                //     mainAxisSize: MainAxisSize.min,
+                //     children: [
+                //       Image.asset(
+                //         'assets/google_icon.png',
+                //         height: 24,
+                //       ),
+                //       const SizedBox(width: 8),
+                //       const Text(
+                //         'Login with Google',
+                //         style: TextStyle(color: Color(0xFF5F6368)),
+                //       ),
+                //     ],
+                //   ),
+                // ),
+                // const SizedBox(height: 20),
+                // Register Redirect
+                Center(
                   child: Row(
                     mainAxisSize: MainAxisSize.min,
                     children: [
-                      Image.asset(
-                        'assets/google_icon.png',
-                        height: 24,
-                      ),
-                      const SizedBox(width: 8),
                       const Text(
-                        'Login with Google',
-                        style: TextStyle(color: Color(0xFF5F6368)),
+                        "Don't have an account? ",
+                        style: TextStyle(color: Colors.white),
                       ),
-                    ],
-                  )),
-              const SizedBox(height: 20),
-              // Register Redirect
-              Center(
-                child: Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    const Text(
-                      "Don't have an account? ",
-                      style: TextStyle(color: Colors.white),
-                    ),
-                    TextButton(
-                      onPressed: () {
-                        // Handle navigation to Register screen
-                        Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                              builder: (context) => SignUpScreen()),
-                        );
-                      },
-                      style: TextButton.styleFrom(
-                        padding: EdgeInsets.zero,
-                        minimumSize: const Size(50, 30),
-                        tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                        alignment: Alignment.centerLeft,
-                      ),
-                      child: const Text(
-                        "Register",
-                        style: TextStyle(
-                          fontWeight: FontWeight.bold,
-                          color: Color(0xFFFFCC00),
+                      TextButton(
+                        onPressed: () {
+                          // Handle navigation to Register screen
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                                builder: (context) => SignUpScreen()),
+                          );
+                        },
+                        style: TextButton.styleFrom(
+                          padding: EdgeInsets.zero,
+                          minimumSize: const Size(50, 30),
+                          tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                          alignment: Alignment.centerLeft,
+                        ),
+                        child: const Text(
+                          "Register",
+                          style: TextStyle(
+                            fontWeight: FontWeight.bold,
+                            color: Color(0xFFFFCC00),
+                          ),
                         ),
                       ),
-                    ),
-                  ],
+                    ],
+                  ),
                 ),
-              ),
-            ],
+                SizedBox(height: 20),
+              ],
+            ),
           ),
         ),
       ),

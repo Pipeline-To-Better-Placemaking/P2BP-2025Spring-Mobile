@@ -132,173 +132,173 @@ class _SettingsPageState extends State<SettingsPage> {
 
   @override
   Widget build(BuildContext context) {
-    return SafeArea(
-      child: Scaffold(
-        appBar: AppBar(
-          title: Text(
-            'Settings',
-            style: TextStyle(color: p2bpBlue, fontWeight: FontWeight.bold),
-          ),
+    return ListTileTheme(
+      tileColor: p2bpBlue,
+      contentPadding: const EdgeInsets.symmetric(horizontal: 8),
+      iconColor: Colors.white,
+      textColor: Colors.white,
+      child: DefaultTextStyle(
+        style: TextStyle(
+          color: p2bpBlue,
+          fontSize: 20,
+          fontWeight: FontWeight.bold,
         ),
-        body: ListTileTheme(
-          tileColor: p2bpBlue,
-          contentPadding: const EdgeInsets.symmetric(horizontal: 8),
-          iconColor: Colors.white,
-          textColor: Colors.white,
-          child: DefaultTextStyle(
-            style: TextStyle(
-              color: p2bpBlue,
-              fontSize: 20,
-              fontWeight: FontWeight.bold,
-            ),
-            child: ListView(
-              padding: const EdgeInsets.symmetric(horizontal: 30),
+        child: ListView(
+          padding: const EdgeInsets.symmetric(horizontal: 30, vertical: 10),
+          children: <Widget>[
+            Column(
               children: <Widget>[
-                Column(
-                  children: <Widget>[
-                    ProfileIconEditStack(),
-                    const SizedBox(height: 8),
-                  ],
-                ),
-                const SizedBox(height: 18),
-
-                // TODO: Implement Dark Mode after Committee
-                // const Text('Appearance'),
-                // const SizedBox(height: 10),
-                // DarkModeSwitchListTile(
-                //   shape: RoundedRectangleBorder(
-                //     borderRadius: BorderRadius.circular(12),
-                //   ),
-                // ),
-                // const SizedBox(height: 20),
-
-                const Text('Account'),
-                const SizedBox(height: 10),
-                ListTile(
-                  leading: Icon(Icons.badge_outlined),
-                  title: Text('Change Name'),
-                  trailing: Icon(Icons.chevron_right),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.only(
-                      topLeft: Radius.circular(10),
-                      topRight: Radius.circular(10),
-                    ),
-                  ),
-                  onTap: () {
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (context) => ChangeNamePage(),
-                      ),
-                    );
-                  },
-                ),
-                ListTile(
-                  leading: Icon(Icons.alternate_email),
-                  title: Text('Change Email Address'),
-                  trailing: Icon(Icons.chevron_right),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.zero,
-                  ),
-                  onTap: () {
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (context) => ChangeEmailPage(),
-                      ),
-                    );
-                  },
-                ),
-                ListTile(
-                  leading: Icon(Icons.gpp_maybe),
-                  title: Text('Change Password'),
-                  trailing: Icon(Icons.chevron_right),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.zero,
-                  ),
-                  onTap: () {
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (context) => const ChangePasswordPage(),
-                      ),
-                    );
-                  },
-                ),
-                ListTile(
-                  leading: Icon(Icons.lock_outline),
-                  title: Text('Account Privacy'),
-                  trailing: Icon(Icons.chevron_right),
-                  onTap: () {
-                    /* TODO: create privacy policy page/writeup in
-                        accordance with Google Play Store requirements.
-                     */
-                  },
-                ),
-                ListTile(
-                  leading: Icon(Icons.lock_outline),
-                  title: Text('Delete Account'),
-                  iconColor: criticalRed,
-                  textColor: criticalRed,
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.only(
-                      bottomLeft: Radius.circular(10),
-                      bottomRight: Radius.circular(10),
-                    ),
-                  ),
-                  onTap: () => _deleteAccountConfirmDialogBuilder(context),
-                ),
-                const SizedBox(height: 20),
-                const Text('Support'),
-                const SizedBox(height: 10),
-                ListTile(
-                  leading: Icon(Icons.help),
-                  title: Text('Help Center'),
-                  trailing: Icon(Icons.chevron_right),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.only(
-                      topLeft: Radius.circular(10),
-                      topRight: Radius.circular(10),
-                    ),
-                  ),
-                  onTap: () {
-                    _launchUrl(_faqURL);
-                  },
-                ),
-                ListTile(
-                  leading: Icon(Icons.bug_report),
-                  title: Text('Submit a bug report'),
-                  trailing: Icon(Icons.chevron_right),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.only(
-                      bottomLeft: Radius.circular(10),
-                      bottomRight: Radius.circular(10),
-                    ),
-                  ),
-                  onTap: () {
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (context) => const SubmitBugReportPage(),
-                      ),
-                    );
-                  },
-                ),
-                const SizedBox(height: 30),
-                ListTile(
-                  leading: const Icon(Icons.logout),
-                  title: const Text('Log Out'),
-                  iconColor: criticalRed,
-                  textColor: criticalRed,
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(10),
-                  ),
-                  onTap: () => _signOutConfirmDialogBuilder(context),
-                ),
-                const SizedBox(height: 150),
+                ProfileIconEditStack(),
+                const SizedBox(height: 8),
               ],
             ),
-          ),
+            const SizedBox(height: 18),
+
+            // TODO: Implement Dark Mode after Committee
+            // const Text('Appearance'),
+            // const SizedBox(height: 10),
+            // DarkModeSwitchListTile(
+            //   shape: RoundedRectangleBorder(
+            //     borderRadius: BorderRadius.circular(12),
+            //   ),
+            // ),
+            // const SizedBox(height: 20),
+
+            const Text('Account'),
+            const SizedBox(height: 10),
+            // TODO: make modular widget or set of widgets for groups of
+            //  ListTiles like this that automatically rounds the corners
+            //  of the top and bottom ones like is done here?
+            ListTile(
+              leading: Icon(Icons.badge_outlined),
+              title: Text('Change Name'),
+              trailing: Icon(Icons.chevron_right),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.only(
+                  topLeft: Radius.circular(10),
+                  topRight: Radius.circular(10),
+                ),
+              ),
+              onTap: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => const ChangeNamePage(),
+                  ),
+                );
+              },
+            ),
+            ListTile(
+              leading: Icon(Icons.alternate_email),
+              title: Text('Change Email Address'),
+              trailing: Icon(Icons.chevron_right),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.zero,
+              ),
+              onTap: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => const ChangeEmailPage(),
+                  ),
+                );
+              },
+            ),
+            ListTile(
+              leading: Icon(Icons.gpp_maybe),
+              title: Text('Change Password'),
+              trailing: Icon(Icons.chevron_right),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.only(
+                  bottomLeft: Radius.circular(10),
+                  bottomRight: Radius.circular(10),
+                ),
+              ),
+              onTap: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => const ChangePasswordPage(),
+                  ),
+                );
+              },
+            ),
+
+            // ListTile(
+            //   leading: Icon(Icons.lock_outline),
+            //   title: Text('Account Privacy'),
+            //   trailing: Icon(Icons.chevron_right),
+            //   onTap: () {
+            //     /* TODO: create privacy policy page/writeup in
+            //           accordance with Google Play Store requirements.
+            //        */
+            //   },
+            // ),
+
+            // TODO: Implement delete account after committee
+            // ListTile(
+            //   leading: Icon(Icons.lock_outline),
+            //   title: Text('Delete Account'),
+            //   iconColor: criticalRed,
+            //   textColor: criticalRed,
+            //   shape: RoundedRectangleBorder(
+            //     borderRadius: BorderRadius.only(
+            //       bottomLeft: Radius.circular(10),
+            //       bottomRight: Radius.circular(10),
+            //     ),
+            //   ),
+            //   onTap: () => _deleteAccountConfirmDialogBuilder(context),
+            // ),
+
+            const SizedBox(height: 20),
+            const Text('Support'),
+            const SizedBox(height: 10),
+            ListTile(
+              leading: Icon(Icons.help),
+              title: Text('Help Center'),
+              trailing: Icon(Icons.chevron_right),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.only(
+                  topLeft: Radius.circular(10),
+                  topRight: Radius.circular(10),
+                ),
+              ),
+              onTap: () {
+                _launchUrl(_faqURL);
+              },
+            ),
+            ListTile(
+              leading: Icon(Icons.bug_report),
+              title: Text('Submit a bug report'),
+              trailing: Icon(Icons.chevron_right),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.only(
+                  bottomLeft: Radius.circular(10),
+                  bottomRight: Radius.circular(10),
+                ),
+              ),
+              onTap: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => const SubmitBugReportPage(),
+                  ),
+                );
+              },
+            ),
+            const SizedBox(height: 30),
+            ListTile(
+              leading: const Icon(Icons.logout),
+              title: const Text('Log Out'),
+              iconColor: criticalRed,
+              textColor: criticalRed,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(10),
+              ),
+              onTap: () => _signOutConfirmDialogBuilder(context),
+            ),
+            const SizedBox(height: 150),
+          ],
         ),
       ),
     );

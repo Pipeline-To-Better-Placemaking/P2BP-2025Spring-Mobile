@@ -3,12 +3,12 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:p2bp_2025spring_mobile/project_details_page.dart';
+import 'package:p2bp_2025spring_mobile/teams_and_invites_page.dart';
 
 import 'create_project_and_teams.dart';
 import 'db_schema_classes.dart';
 import 'edit_project_form.dart';
 import 'firestore_functions.dart';
-import 'main.dart';
 import 'results_panel.dart';
 import 'settings_page.dart';
 import 'theme.dart';
@@ -120,18 +120,21 @@ class _HomeScreenState extends State<HomeScreen> {
         statusBarColor: Colors.transparent,
       ),
       child: Scaffold(
-        body: Stack(
-          children: [
-            IndexedStack(
-              index: selectedIndex,
-              children: [
-                // Screens for each tab
-                CreateProjectAndTeamsPage(),
-                _buildHomeContent(),
-                SettingsPage(),
-              ],
-            ),
-          ],
+        body: SafeArea(
+          maintainBottomViewPadding: true,
+          child: Stack(
+            children: [
+              IndexedStack(
+                index: selectedIndex,
+                children: [
+                  // Screens for each tab
+                  CreateProjectAndTeamsPage(),
+                  _buildHomeContent(),
+                  SettingsPage(),
+                ],
+              ),
+            ],
+          ),
         ),
         extendBody: true,
         bottomNavigationBar: _navBar(),
@@ -304,85 +307,72 @@ class _HomeScreenState extends State<HomeScreen> {
       child: SingleChildScrollView(
         physics: AlwaysScrollableScrollPhysics(),
         child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 20),
+          padding: const EdgeInsets.symmetric(
+            horizontal: 20,
+            vertical: 10,
+          ),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             mainAxisSize: MainAxisSize.min,
             children: <Widget>[
               // P2BP Logo centered at the top
-              Padding(
-                padding: const EdgeInsets.only(top: 50),
-                child: Stack(
-                  children: [
-                    Align(
-                      alignment: Alignment.topCenter,
-                      child: Image.asset(
-                        'assets/P2BP_Logo.png',
-                        width: 40,
-                        height: 40,
-                      ),
+              Stack(
+                children: [
+                  Align(
+                    alignment: Alignment.topCenter,
+                    child: Image.asset(
+                      'assets/P2BP_Logo.png',
+                      width: 40,
+                      height: 40,
                     ),
-                    Align(
-                      alignment: Alignment.topRight,
-                      child: Row(
-                        mainAxisAlignment: MainAxisAlignment.end,
-                        children: [
-                          // Notification button
-                          IconButton(
-                            icon: Image.asset('assets/bell-03.png'),
-                            onPressed: () {
-                              // Handle notification button action
-                              Navigator.push(
-                                context,
-                                MaterialPageRoute(
-                                  builder: (context) => const HomePage(
-                                    title: '/home',
-                                  ),
-                                ),
-                              );
-                            },
-                            iconSize: 24,
-                          ),
-                          // Teams Button
-                          IconButton(
-                            icon: const Icon(Icons.group),
-                            color: const Color(0xFF0A2A88),
-                            onPressed: () async {
-                              // Navigate to Teams/Invites screen
-                              await Navigator.pushNamed(
-                                  context, '/teams_and_invites');
-                              _populateProjects();
-                            },
-                            iconSize: 24,
-                          ),
-                        ],
-                      ),
+                  ),
+                  Align(
+                    alignment: Alignment.topRight,
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.end,
+                      children: [
+                        // Teams Button
+                        IconButton(
+                          icon: const Icon(Icons.group),
+                          color: const Color(0xFF0A2A88),
+                          onPressed: () async {
+                            // Navigate to Teams/Invites screen
+                            await Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                  builder: (context) => TeamsAndInvitesPage()),
+                            );
+                            _populateProjects();
+                          },
+                          iconSize: 24,
+                        ),
+                      ],
                     ),
-                    // "Hello, [user]" greeting, aligned to the left below the logo
-                    Padding(
-                      padding: const EdgeInsets.only(top: 40),
-                      child: Row(
-                        mainAxisAlignment: MainAxisAlignment.start,
-                        children: [
-                          ShaderMask(
-                            shaderCallback: (bounds) {
-                              return defaultGrad.createShader(bounds);
-                            },
-                            child: Text(
-                              'Hello, $_firstName',
-                              style: TextStyle(
-                                fontSize: 36,
-                                fontWeight: FontWeight.bold,
-                                color: Colors.white,
-                                height: 1.2, // Masked text with gradient
-                              ),
+                  ),
+                  // "Hello, [user]" greeting, aligned to the left below the logo
+                  Padding(
+                    padding: const EdgeInsets.only(top: 40),
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.start,
+                      children: [
+                        ShaderMask(
+                          shaderCallback: (bounds) {
+                            return defaultGrad.createShader(bounds);
+                          },
+                          child: Text(
+                            'Hello, $_firstName',
+                            style: TextStyle(
+                              fontSize: 36,
+                              fontWeight: FontWeight.bold,
+                              color: Colors.white,
+                              height: 1.2, // Masked text with gradient
                             ),
                           ),
-                        ],
-                      ),
+                        ),
+                      ],
                     ),
-                  ],
-                ),
+                  ),
+                ],
               ),
               // "Your Projects" label, aligned to the right of the screen"
               Padding(

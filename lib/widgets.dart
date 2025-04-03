@@ -8,21 +8,24 @@ import 'google_maps_functions.dart';
 
 /// Bar Indicator for the Sliding Up Panels (Edit Project, Results)
 class BarIndicator extends StatelessWidget {
+  final Color? color;
+
   const BarIndicator({
     super.key,
+    this.color,
   });
 
   @override
   Widget build(BuildContext context) {
     return Padding(
-      padding: const EdgeInsets.only(top: 10, bottom: 10),
+      padding: const EdgeInsets.symmetric(vertical: 8),
       child: Center(
         child: Container(
           width: 40,
           height: 5,
-          decoration: const BoxDecoration(
-            color: Colors.white60,
-            borderRadius: BorderRadius.all(Radius.circular(10)),
+          decoration: BoxDecoration(
+            color: color ?? Colors.white60,
+            borderRadius: const BorderRadius.all(Radius.circular(10)),
           ),
         ),
       ),

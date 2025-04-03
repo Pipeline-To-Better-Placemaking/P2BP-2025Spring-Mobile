@@ -47,7 +47,7 @@ Future<String> getUserFullName(String? uid) async {
 Future<String> saveTeam(
     {required membersList, required String teamName}) async {
   String teamID = _firestore.collection('teams').doc().id;
-  await _firestore.collection("teams").doc(teamID).set({
+  await _firestore.collection('teams').doc(teamID).set({
     'title': teamName,
     'creationTime': FieldValue.serverTimestamp(),
     // Saves document id as field _id
@@ -57,7 +57,7 @@ Future<String> saveTeam(
       {'role': 'owner', 'user': _firestore.doc('users/${_loggedInUser?.uid}')}
     ]),
   });
-  await _firestore.collection("users").doc(_loggedInUser?.uid).update({
+  await _firestore.collection('users').doc(_loggedInUser?.uid).update({
     'teams': FieldValue.arrayUnion([_firestore.doc('/teams/$teamID')])
   });
   // Currently: invites team members only once team is created.
@@ -315,7 +315,17 @@ Future<DocumentReference?> getCurrentTeam() async {
     userDoc =
         await _firestore.collection('users').doc(_loggedInUser?.uid).get();
     if (userDoc.exists && userDoc.data()!.containsKey('selectedTeam')) {
-      teamRef = await userDoc['selectedTeam'];
+      if (userDoc.data()!.containsKey('teams') &&
+          userDoc['teams'] is List &&
+          userDoc['teams'].contains(userDoc['selectedTeam'])) {
+        teamRef = userDoc['selectedTeam'];
+      } else {
+        _firestore
+            .collection('users')
+            .doc(_loggedInUser?.uid)
+            .update({'selectedTeam': userDoc['teams'].first});
+        teamRef = userDoc['teams'].first;
+      }
     }
   } catch (e) {
     print("Exception trying to getCurrentTeam(): $e");

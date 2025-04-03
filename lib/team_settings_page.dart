@@ -10,6 +10,7 @@ import 'package:p2bp_2025spring_mobile/invite_user_form.dart';
 import 'package:p2bp_2025spring_mobile/manage_team_members_form.dart';
 import 'package:p2bp_2025spring_mobile/widgets.dart';
 
+import 'create_project_form.dart';
 import 'db_schema_classes.dart';
 import 'project_details_page.dart';
 import 'theme.dart';
@@ -268,13 +269,15 @@ class _TeamSettingsPageState extends State<TeamSettingsPage> {
                     else
                       ElevatedButton(
                         onPressed: () {
-                          // Create new project logic here.
-                          // Navigator.push(
-                          //   context,
-                          //   MaterialPageRoute(
-                          //       builder: (context) =>
-                          //           CreateNewProjectsOnlyScreen()),
-                          // );
+                          showModalBottomSheet(
+                            useSafeArea: true,
+                            backgroundColor: Colors.transparent,
+                            isScrollControlled: true,
+                            context: context,
+                            builder: (context) => CreateProjectForm(
+                              activeTeam: widget.activeTeam,
+                            ),
+                          );
                         },
                         style: ElevatedButton.styleFrom(
                           padding: EdgeInsets.zero,
