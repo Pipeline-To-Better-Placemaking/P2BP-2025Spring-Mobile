@@ -235,7 +235,7 @@ Future<bool> deleteTeam(Team team) async {
         final DocumentReference userRef =
             _firestore.collection('users').doc(member.userID);
         await userRef.update({
-          'teams': FieldValue.arrayRemove([teamRef])
+          'teams': FieldValue.arrayRemove([teamRef]),
         });
         print('deleted ref from user ${userRef.id}');
       }
@@ -319,6 +319,12 @@ Future<DocumentReference?> getCurrentTeam() async {
           userDoc['teams'] is List &&
           userDoc['teams'].contains(userDoc['selectedTeam'])) {
         teamRef = userDoc['selectedTeam'];
+      }
+      if ((userDoc['teams'] as List).isEmpty) {
+        _firestore
+            .collection('users')
+            .doc(_loggedInUser?.uid)
+            .update({'selectedTeam': null});
       } else {
         _firestore
             .collection('users')

@@ -170,58 +170,48 @@ class _EditProjectFormState extends State<EditProjectForm> {
                         },
                       ),
                     ),
-                    Row(
-                      children: [
-                        // Save Changes button
-                        Expanded(
-                          flex: 4,
-                          child: Container(
-                            alignment: Alignment.topLeft,
-                            margin: const EdgeInsets.only(left: 20, right: 5),
-                            child: EditButton(
-                              text: 'Save Changes',
-                              foregroundColor: Colors.black,
-                              backgroundColor: p2bpYellow,
-                              icon: const Icon(Icons.save),
-                              iconColor: Colors.black,
-                              shape: RoundedRectangleBorder(
-                                  borderRadius: BorderRadius.circular(8)),
-                              onPressed: () {
-                                if (_formKey.currentState!.validate()) {
-                                  _saveChanges();
-                                }
-                              },
-                            ),
+                    Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 20),
+                      child: Row(
+                        spacing: 10,
+                        children: [
+                          // Save Changes button
+                          EditButton(
+                            text: 'Save Changes',
+                            foregroundColor: Colors.black,
+                            backgroundColor: p2bpYellow,
+                            icon: const Icon(Icons.save),
+                            iconColor: Colors.black,
+                            shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(8)),
+                            onPressed: () {
+                              if (_formKey.currentState!.validate()) {
+                                _saveChanges();
+                              }
+                            },
                           ),
-                        ),
-                        // Delete project button
-                        Expanded(
-                          flex: 4,
-                          child: Container(
-                            alignment: Alignment.topLeft,
-                            margin: const EdgeInsets.only(left: 5, right: 20),
-                            child: EditButton(
-                              text: 'Delete Project',
-                              foregroundColor: Colors.white,
-                              backgroundColor: Color(0xFFD32F2F),
-                              icon: Icon(FontAwesomeIcons.trashCan),
-                              shape: RoundedRectangleBorder(
-                                  borderRadius: BorderRadius.circular(8)),
-                              onPressed: () async {
-                                final didDelete = await showDialog<bool>(
-                                  context: context,
-                                  builder: (context) => _deleteProjectDialog(),
-                                );
+                          // Delete project button
+                          EditButton(
+                            text: 'Delete Project',
+                            foregroundColor: Colors.white,
+                            backgroundColor: Color(0xFFD32F2F),
+                            icon: Icon(FontAwesomeIcons.trashCan),
+                            shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(8)),
+                            onPressed: () async {
+                              final didDelete = await showDialog<bool>(
+                                context: context,
+                                builder: (context) => _deleteProjectDialog(),
+                              );
 
-                                if (!context.mounted) return;
-                                if (didDelete == true) {
-                                  Navigator.pop(context, 'deleted');
-                                }
-                              },
-                            ),
+                              if (!context.mounted) return;
+                              if (didDelete == true) {
+                                Navigator.pop(context, 'deleted');
+                              }
+                            },
                           ),
-                        ),
-                      ],
+                        ],
+                      ),
                     ),
                   ],
                 ),
