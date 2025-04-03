@@ -61,6 +61,15 @@ class _TeamsAndInvitesPageState extends State<TeamsAndInvitesPage> {
           selectedIndex = teams.indexWhere(
               (team) => team.teamID.compareTo(currentTeam!.id) == 0);
         });
+      } else if (teams.isEmpty && currentTeam != null) {
+        // No teams but a selected team:
+        _firestore
+            .collection('users')
+            .doc(loggedInUser?.uid)
+            .update({'selectedTeam': null});
+        setState(() {
+          selectedIndex = -1;
+        });
       } else {
         // No teams but a selected team:
         setState(() {
