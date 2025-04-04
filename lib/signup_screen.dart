@@ -41,58 +41,60 @@ class SignUpScreen extends StatelessWidget {
             ),
             const SizedBox(height: 20),
             // Google Sign Up Button
-            ElevatedButton(
-              onPressed: () {
-                // Handle Google login logic
-              },
-              style: ElevatedButton.styleFrom(
-                backgroundColor: const Color(0xFFF5F5F5),
-                padding: const EdgeInsets.symmetric(vertical: 15),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(8.0),
-                ),
-              ),
-              child: Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Image.asset(
-                    'assets/google_icon.png',
-                    width: 28,
-                    height: 28,
-                  ),
-                  const SizedBox(width: 8),
-                  const Text(
-                    'Sign Up with Google',
-                    style: TextStyle(
-                      color: Color(0xFF5F6368),
-                      fontSize: 17,
-                    ),
-                  ),
-                ],
-              ),
-            ),
-            const SizedBox(height: 20),
-            // OR Divider
-            const Row(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                Expanded(child: Divider(color: Colors.white)),
-                Padding(
-                  padding: EdgeInsets.symmetric(horizontal: 10.0),
-                  child: Text(
-                    'OR',
-                    style: TextStyle(
-                      color: Colors.white,
-                      fontWeight: FontWeight.bold,
-                      fontSize: 17,
-                    ),
-                  ),
-                ),
-                Expanded(child: Divider(color: Colors.white)),
-              ],
-            ),
-            const SizedBox(height: 20),
+            // ElevatedButton(
+            //   onPressed: () {
+            //     // Handle Google login logic
+            //   },
+            //   style: ElevatedButton.styleFrom(
+            //     backgroundColor: const Color(0xFFF5F5F5),
+            //     padding: const EdgeInsets.symmetric(vertical: 15),
+            //     shape: RoundedRectangleBorder(
+            //       borderRadius: BorderRadius.circular(8.0),
+            //     ),
+            //   ),
+            //   child: Row(
+            //     mainAxisSize: MainAxisSize.min,
+            //     children: [
+            //       Image.asset(
+            //         'assets/google_icon.png',
+            //         width: 28,
+            //         height: 28,
+            //       ),
+            //       const SizedBox(width: 8),
+            //       const Text(
+            //         'Sign Up with Google',
+            //         style: TextStyle(
+            //           color: Color(0xFF5F6368),
+            //           fontSize: 17,
+            //         ),
+            //       ),
+            //     ],
+            //   ),
+            // ),
+            // const SizedBox(height: 20),
+            // // OR Divider
+            // const Row(
+            //   mainAxisAlignment: MainAxisAlignment.center,
+            //   children: [
+            //     Expanded(child: Divider(color: Colors.white)),
+            //     Padding(
+            //       padding: EdgeInsets.symmetric(horizontal: 10.0),
+            //       child: Text(
+            //         'OR',
+            //         style: TextStyle(
+            //           color: Colors.white,
+            //           fontWeight: FontWeight.bold,
+            //           fontSize: 17,
+            //         ),
+            //       ),
+            //     ),
+            //     Expanded(child: Divider(color: Colors.white)),
+            //   ],
+            // ),
+            // const SizedBox(height: 20),
+
             SignUpForm(),
+
             const SizedBox(height: 20),
             // Already have an account redirect
             Center(
@@ -132,6 +134,7 @@ class SignUpScreen extends StatelessWidget {
                 ],
               ),
             ),
+            SizedBox(height: 30),
           ],
         ),
       ),
@@ -336,8 +339,8 @@ class _SignUpFormState extends State<SignUpForm> {
               ),
               filled: false,
               suffixIcon: IconButton(
-                icon: const Icon(
-                  Icons.visibility,
+                icon: Icon(
+                  !_obscureText ? Icons.visibility : Icons.visibility_off,
                   color: Colors.grey,
                 ),
                 onPressed: () {
@@ -378,7 +381,11 @@ class _SignUpFormState extends State<SignUpForm> {
               ),
               filled: false,
               suffixIcon: IconButton(
-                icon: const Icon(Icons.visibility, color: Colors.grey),
+                icon: Icon(
+                    !_obscureConfirmText
+                        ? Icons.visibility
+                        : Icons.visibility_off,
+                    color: Colors.grey),
                 onPressed: () {
                   // Toggle password visibility
                   setState(() {

@@ -34,7 +34,7 @@ class _SpatialBoundariesTestPageState extends State<SpatialBoundariesTestPage> {
   bool _polygonMode = false;
   bool _polylineMode = false;
   bool _outsidePoint = false;
-  bool _boundariesVisible = true;
+  bool _areBoundariesVisible = true;
   bool _isTestRunning = false;
   bool _directionsVisible = true;
 
@@ -435,9 +435,9 @@ class _SpatialBoundariesTestPageState extends State<SpatialBoundariesTestPage> {
                 markers: {..._polygonMarkers, ..._polylineMarkers},
                 polygons: {
                   _projectPolygon,
-                  if (_boundariesVisible) ..._polygons,
+                  if (_areBoundariesVisible) ..._polygons,
                 },
-                polylines: _boundariesVisible ? _polylines : <Polyline>{},
+                polylines: _areBoundariesVisible ? _polylines : <Polyline>{},
                 onTap: (_polygonMode || _polylineMode) ? _togglePoint : null,
                 mapType: _currentMapType,
                 myLocationButtonEnabled: false,
@@ -511,11 +511,11 @@ class _SpatialBoundariesTestPageState extends State<SpatialBoundariesTestPage> {
                           borderColor: Color(0xFF4A5D75),
                           onPressed: () {
                             setState(() {
-                              _boundariesVisible = !_boundariesVisible;
+                              _areBoundariesVisible = !_areBoundariesVisible;
                             });
                           },
                           icon: Icon(
-                            _boundariesVisible
+                            !_areBoundariesVisible
                                 ? Icons.visibility_off
                                 : Icons.visibility,
                             size: 30,

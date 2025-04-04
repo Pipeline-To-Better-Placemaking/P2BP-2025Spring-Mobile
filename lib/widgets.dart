@@ -253,38 +253,36 @@ class PhotoUpload extends StatelessWidget {
 }
 
 class PasswordTextFormField extends StatelessWidget {
-  final InputDecoration _decoration;
-  final TextEditingController? _controller;
-  final String? _forceErrorText;
-  final bool _obscureText;
-  final void Function(String)? _onChanged;
+  final InputDecoration? decoration;
+  final TextEditingController? controller;
+  final String? forceErrorText;
+  final bool? obscureText;
+  final void Function(String)? onChanged;
+  final Color? textColor;
 
   PasswordTextFormField({
     super.key,
-    decoration,
-    controller,
-    forceErrorText,
-    obscureText,
-    onChanged,
-  })  : _decoration = decoration ??
-            InputDecoration().applyDefaults(ThemeData().inputDecorationTheme),
-        _controller = controller,
-        _forceErrorText = forceErrorText,
-        _obscureText = obscureText ?? true,
-        _onChanged = onChanged;
+    this.decoration,
+    this.controller,
+    this.forceErrorText,
+    this.obscureText,
+    this.onChanged,
+    this.textColor,
+  });
 
   @override
   Widget build(BuildContext context) {
     return TextFormField(
-      style: TextStyle(color: Colors.white),
-      obscureText: _obscureText,
+      style: TextStyle(color: textColor ?? Colors.white),
+      obscureText: obscureText ?? true,
       enableSuggestions: false,
       autocorrect: false,
       autovalidateMode: AutovalidateMode.disabled,
-      decoration: _decoration,
-      controller: _controller,
-      forceErrorText: _forceErrorText,
-      onChanged: _onChanged,
+      decoration: decoration ??
+          InputDecoration().applyDefaults(ThemeData().inputDecorationTheme),
+      controller: controller,
+      forceErrorText: forceErrorText,
+      onChanged: onChanged,
     );
   }
 }

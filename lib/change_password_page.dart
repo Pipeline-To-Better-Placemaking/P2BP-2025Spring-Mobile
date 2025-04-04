@@ -8,25 +8,23 @@ class ChangePasswordPage extends StatelessWidget {
   const ChangePasswordPage({super.key});
   @override
   Widget build(BuildContext context) {
-    return AnnotatedRegion<SystemUiOverlayStyle>(
-      value: SystemUiOverlayStyle.dark
-          .copyWith(statusBarColor: Colors.transparent),
-      child: Scaffold(
-        extendBody: true,
-        resizeToAvoidBottomInset: false,
-        appBar: AppBar(
-          title: const Text('Change Password'),
-        ),
-        body: Padding(
-          padding: const EdgeInsets.all(20),
-          child: DefaultTextStyle(
-            style: TextStyle(
-              color: p2bpBlue,
-              fontSize: 16,
-              fontWeight: FontWeight.bold,
-            ),
-            child: ChangePasswordForm(),
+    return Scaffold(
+      extendBody: true,
+      resizeToAvoidBottomInset: false,
+      appBar: AppBar(
+        systemOverlayStyle: SystemUiOverlayStyle.dark
+            .copyWith(statusBarColor: Colors.transparent),
+        title: const Text('Change Password'),
+      ),
+      body: Padding(
+        padding: const EdgeInsets.all(20),
+        child: DefaultTextStyle(
+          style: TextStyle(
+            color: p2bpBlue,
+            fontSize: 16,
+            fontWeight: FontWeight.bold,
           ),
+          child: ChangePasswordForm(),
         ),
       ),
     );
@@ -135,6 +133,7 @@ class _ChangePasswordFormState extends State<ChangePasswordForm> {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(content: Text('Password changed successfully.')),
         );
+        Navigator.pop(context);
       } on FirebaseAuthException catch (e) {
         String errorMessage = e.code;
         _currentPassErrorText = 'An error occurred: $errorMessage';
@@ -152,14 +151,17 @@ class _ChangePasswordFormState extends State<ChangePasswordForm> {
         children: <Widget>[
           const Text('Current Password'),
           PasswordTextFormField(
+            textColor: Colors.black,
             controller: _currentPasswordController,
             obscureText: _currentPassObscureText,
             forceErrorText: _currentPassErrorText,
             decoration: InputDecoration(
               border: OutlineInputBorder(),
               suffixIcon: IconButton(
-                icon: const Icon(
-                  Icons.visibility,
+                icon: Icon(
+                  !_currentPassObscureText
+                      ? Icons.visibility
+                      : Icons.visibility_off,
                   color: Colors.grey,
                 ),
                 onPressed: () {
@@ -173,14 +175,17 @@ class _ChangePasswordFormState extends State<ChangePasswordForm> {
           SizedBox(height: 12),
           const Text('New Password'),
           PasswordTextFormField(
+            textColor: Colors.black,
             controller: _newPasswordController,
             obscureText: _newPassObscureText,
             forceErrorText: _newPassErrorText,
             decoration: InputDecoration(
               border: OutlineInputBorder(),
               suffixIcon: IconButton(
-                icon: const Icon(
-                  Icons.visibility,
+                icon: Icon(
+                  !_newPassObscureText
+                      ? Icons.visibility
+                      : Icons.visibility_off,
                   color: Colors.grey,
                 ),
                 onPressed: () {
@@ -193,14 +198,17 @@ class _ChangePasswordFormState extends State<ChangePasswordForm> {
           SizedBox(height: 12),
           const Text('Confirm New Password'),
           PasswordTextFormField(
+            textColor: Colors.black,
             controller: _confirmPasswordController,
             obscureText: _confirmPassObscureText,
             forceErrorText: _confirmPassErrorText,
             decoration: InputDecoration(
               border: OutlineInputBorder(),
               suffixIcon: IconButton(
-                icon: const Icon(
-                  Icons.visibility,
+                icon: Icon(
+                  !_confirmPassObscureText
+                      ? Icons.visibility
+                      : Icons.visibility_off,
                   color: Colors.grey,
                 ),
                 onPressed: () {

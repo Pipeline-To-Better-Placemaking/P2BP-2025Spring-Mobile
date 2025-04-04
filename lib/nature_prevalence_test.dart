@@ -49,7 +49,7 @@ class _NaturePrevalenceState extends State<NaturePrevalence> {
   final Set<Marker> _markers = {}; // Set of markers for points
   Set<Marker> _polygonMarkers = {}; // Set of markers for polygon creation
   MapType _currentMapType = MapType.satellite; // Default map type
-  bool _oldVisibility = true;
+  bool _isOldVisible = true;
 
   Timer? _timer;
   Timer? _outsidePointTimer;
@@ -653,10 +653,10 @@ class _NaturePrevalenceState extends State<NaturePrevalence> {
                 onMapCreated: _onMapCreated,
                 initialCameraPosition:
                     CameraPosition(target: _location, zoom: 14),
-                polygons: (_oldVisibility || _polygons.isEmpty)
+                polygons: (_isOldVisible || _polygons.isEmpty)
                     ? {..._polygons, _projectPolygon}
                     : {_polygons.last, _projectPolygon},
-                markers: (_oldVisibility || _markers.isEmpty)
+                markers: (_isOldVisible || _markers.isEmpty)
                     ? {..._markers, ..._polygonMarkers}
                     : {_markers.last, ..._polygonMarkers},
                 onTap: (_pointMode || _polygonMode) ? _togglePoint : null,
@@ -743,11 +743,11 @@ class _NaturePrevalenceState extends State<NaturePrevalence> {
                           borderColor: const Color(0xFF4A5D75),
                           onPressed: () {
                             setState(() {
-                              _oldVisibility = !_oldVisibility;
+                              _isOldVisible = !_isOldVisible;
                             });
                           },
                           icon: Icon(
-                            _oldVisibility
+                            !_isOldVisible
                                 ? Icons.visibility_off
                                 : Icons.visibility,
                             size: 30,

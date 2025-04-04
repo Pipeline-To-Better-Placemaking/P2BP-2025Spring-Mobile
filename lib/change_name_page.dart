@@ -13,31 +13,28 @@ class ChangeNamePage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return AnnotatedRegion<SystemUiOverlayStyle>(
-      value: SystemUiOverlayStyle.dark.copyWith(
-        statusBarColor: Colors.transparent,
+    return Scaffold(
+      extendBody: true,
+      resizeToAvoidBottomInset: false,
+      appBar: AppBar(
+        systemOverlayStyle: SystemUiOverlayStyle.dark
+            .copyWith(statusBarColor: Colors.transparent),
+        title: const Text('Change Name'),
       ),
-      child: Scaffold(
-        extendBody: true,
-        resizeToAvoidBottomInset: false,
-        appBar: AppBar(
-          title: const Text('Change Name'),
+      body: DefaultTextStyle(
+        style: TextStyle(
+          color: p2bpBlue,
+          fontSize: 16,
+          fontWeight: FontWeight.normal,
         ),
-        body: DefaultTextStyle(
-          style: TextStyle(
-            color: p2bpBlue,
-            fontSize: 16,
-            fontWeight: FontWeight.normal,
-          ),
-          child: ListView(
-            padding: const EdgeInsets.all(30),
-            children: <Widget>[
-              const Text(Strings.changeNameText),
-              const SizedBox(height: 16),
-              ChangeNameForm(),
-              const SizedBox(height: 40),
-            ],
-          ),
+        child: ListView(
+          padding: const EdgeInsets.all(30),
+          children: <Widget>[
+            const Text(Strings.changeNameText),
+            const SizedBox(height: 16),
+            ChangeNameForm(),
+            const SizedBox(height: 40),
+          ],
         ),
       ),
     );

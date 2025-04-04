@@ -11,31 +11,28 @@ class ChangeEmailPage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return AnnotatedRegion<SystemUiOverlayStyle>(
-      value: SystemUiOverlayStyle.dark.copyWith(
-        statusBarColor: Colors.transparent,
+    return Scaffold(
+      extendBody: true,
+      resizeToAvoidBottomInset: false,
+      appBar: AppBar(
+        systemOverlayStyle: SystemUiOverlayStyle.dark
+            .copyWith(statusBarColor: Colors.transparent),
+        title: const Text('Change Email Address'),
       ),
-      child: Scaffold(
-        extendBody: true,
-        resizeToAvoidBottomInset: false,
-        appBar: AppBar(
-          title: const Text('Change Email Address'),
+      body: DefaultTextStyle(
+        style: TextStyle(
+          color: p2bpBlue,
+          fontSize: 16,
+          fontWeight: FontWeight.normal,
         ),
-        body: DefaultTextStyle(
-          style: TextStyle(
-            color: p2bpBlue,
-            fontSize: 16,
-            fontWeight: FontWeight.normal,
-          ),
-          child: ListView(
-            padding: const EdgeInsets.all(20),
-            children: <Widget>[
-              const Text(Strings.changeEmailText1),
-              const SizedBox(height: 16),
-              ChangeEmailForm(),
-              const SizedBox(height: 40),
-            ],
-          ),
+        child: ListView(
+          padding: const EdgeInsets.all(20),
+          children: <Widget>[
+            const Text(Strings.changeEmailText1),
+            const SizedBox(height: 16),
+            ChangeEmailForm(),
+            const SizedBox(height: 40),
+          ],
         ),
       ),
     );
