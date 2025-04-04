@@ -1,15 +1,17 @@
 import 'dart:io';
+
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_storage/firebase_storage.dart';
 import 'package:flutter/material.dart';
-import 'package:firebase_auth/firebase_auth.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:url_launcher/url_launcher.dart';
+
 import 'change_password_page.dart';
-import 'submit_bug_report_page.dart';
 import 'edit_profile_page.dart';
 import 'firestore_functions.dart';
 import 'strings.dart';
+import 'submit_bug_report_page.dart';
 
 class SettingsPage extends StatefulWidget {
   const SettingsPage({super.key});
@@ -348,9 +350,16 @@ class ProfileIconEditStack extends StatefulWidget {
 class _ProfileIconEditStackState extends State<ProfileIconEditStack> {
   final User? _currentUser = FirebaseAuth.instance.currentUser;
   late Future<String> _initials;
-  String? _profileImageUrl;
-  File? _profileImage;
+  String _profileImageUrl = '';
 
+  @override
+  void initState() {
+    super.initState();
+    _initials = _getUserInitials();
+    _loadUserProfileImage();
+  }
+
+  // TODO save user info once after logging in instead having to db call everytime
   // Gets the user's initials via their full name from firebase
   Future<String> _getUserInitials() async {
     String result = '';
@@ -378,23 +387,18 @@ class _ProfileIconEditStackState extends State<ProfileIconEditStack> {
     }
   }
 
-  @override
-  void initState() {
-    super.initState();
-    _initials = _getUserInitials();
-    _loadUserProfileImage();
-  }
-
   Future<void> _loadUserProfileImage() async {
     try {
-      final userData = await FirebaseFirestore.instance
+      final userDoc = await FirebaseFirestore.instance
           .collection('users')
           .doc(_currentUser?.uid)
           .get();
 
-      setState(() {
-        _profileImageUrl = userData.data()?['profileImageUrl'];
-      });
+      if (userDoc.exists && userDoc.data()!.containsKey('profileImageUrl')) {
+        setState(() {
+          _profileImageUrl = userDoc.data()!['profileImageUrl'];
+        });
+      }
     } catch (e) {
       print('Error loading profile image: $e');
     }
@@ -402,27 +406,21 @@ class _ProfileIconEditStackState extends State<ProfileIconEditStack> {
 
   Future<void> _uploadProfileImage(File imageFile) async {
     try {
-      setState(() {
-        _profileImage = imageFile;
-      });
-
       final storageRef = FirebaseStorage.instance.ref();
-      final profileImageRef = storageRef.child(
-          'profile_images/${_currentUser?.uid}_${DateTime.now().millisecondsSinceEpoch}.jpg');
 
+      final profileImageRef =
+          storageRef.child('profile_images/${_currentUser?.uid}.jpg');
       await profileImageRef.putFile(imageFile);
-
       final downloadUrl = await profileImageRef.getDownloadURL();
 
       await FirebaseFirestore.instance
           .collection('users')
           .doc(_currentUser?.uid)
           .update({'profileImageUrl': downloadUrl});
-
       setState(() {
         _profileImageUrl = downloadUrl;
       });
-      print('Profile image uploaded succcessfully: $downloadUrl');
+      print('Profile image uploaded successfully: $downloadUrl');
     } catch (e) {
       print('Error uploading profile image: $e');
     }
@@ -438,7 +436,7 @@ class _ProfileIconEditStackState extends State<ProfileIconEditStack> {
         _uploadProfileImage(File(image.path));
       }
     } catch (e) {
-      print('Error selecting iamge $e');
+      print('Error selecting image $e');
     }
   }
 
@@ -450,11 +448,11 @@ class _ProfileIconEditStackState extends State<ProfileIconEditStack> {
         // Shows profile icon based on state of Future.
         // Gets user's initials and has fallback. Planned to get image
         // previously uploaded by user if there is one.
-        _profileImageUrl != null
+        _profileImageUrl.isNotEmpty
             ? CircleAvatar(
                 backgroundColor: Colors.black12,
                 radius: 32,
-                backgroundImage: NetworkImage(_profileImageUrl!),
+                backgroundImage: NetworkImage(_profileImageUrl),
               )
             : FutureBuilder<String>(
                 future: _initials,

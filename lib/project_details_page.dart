@@ -1,10 +1,11 @@
 import 'dart:io';
 import 'dart:ui';
+
+import 'package:background_app_bar/background_app_bar.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_storage/firebase_storage.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter/rendering.dart';
 import 'package:flutter/services.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:intl/intl.dart';
@@ -15,7 +16,6 @@ import 'package:p2bp_2025spring_mobile/theme.dart';
 import 'db_schema_classes.dart';
 import 'firestore_functions.dart';
 import 'mini_map.dart';
-import 'package:background_app_bar/background_app_bar.dart';
 
 class ProjectDetailsPage extends StatefulWidget {
   final Project activeProject;
@@ -43,15 +43,8 @@ class _ProjectDetailsPageState extends State<ProjectDetailsPage> {
   @override
   void initState() {
     super.initState();
-
     if (widget.activeProject.coverImageUrl != null) {
-      print('hi\n' * 4);
-    }
-    if (widget.activeProject.coverImageUrl != null &&
-        widget.activeProject.coverImageUrl!.isNotEmpty) {
       _coverImageUrl = widget.activeProject.coverImageUrl!;
-      print(
-          'the cover image is real?! ${'widget.activeProject.coverImageUrl!\n' * 10}');
     }
   }
 
