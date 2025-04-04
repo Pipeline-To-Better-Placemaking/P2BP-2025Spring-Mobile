@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:flutter/services.dart';
 import 'package:p2bp_2025spring_mobile/widgets.dart';
 import 'theme.dart';
 import 'login_screen.dart';
@@ -10,129 +11,137 @@ class SignUpScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      resizeToAvoidBottomInset: true,
-      body: Container(
-        decoration: const BoxDecoration(
-          gradient: defaultGrad,
-        ),
-        padding: const EdgeInsets.symmetric(horizontal: 20.0),
-        child: ListView(
-          children: <Widget>[
-            // Logo Illustration
-            Stack(
-              alignment: Alignment.topCenter,
+    return AnnotatedRegion<SystemUiOverlayStyle>(
+      value: SystemUiOverlayStyle.light
+          .copyWith(statusBarColor: Colors.transparent),
+      child: Scaffold(
+        resizeToAvoidBottomInset: true,
+        body: Container(
+          decoration: BoxDecoration(
+            gradient: defaultGrad,
+          ),
+          padding: const EdgeInsets.symmetric(horizontal: 20.0),
+          child: SafeArea(
+            child: ListView(
               children: <Widget>[
-                Image.asset('assets/landscape_weather.png', height: 301),
-                const Positioned(
-                  bottom: 0,
-                  left: 0,
-                  child: Text(
-                    'Sign Up',
-                    style: TextStyle(
-                      fontSize: 32,
-                      fontWeight: FontWeight.bold,
-                      color: Colors.white,
-                    ),
-                    textAlign: TextAlign.left,
-                  ),
-                ),
-              ],
-            ),
-            const SizedBox(height: 20),
-            // Google Sign Up Button
-            ElevatedButton(
-              onPressed: () {
-                // Handle Google login logic
-              },
-              style: ElevatedButton.styleFrom(
-                backgroundColor: const Color(0xFFF5F5F5),
-                padding: const EdgeInsets.symmetric(vertical: 15),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(8.0),
-                ),
-              ),
-              child: Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Image.asset(
-                    'assets/google_icon.png',
-                    width: 28,
-                    height: 28,
-                  ),
-                  const SizedBox(width: 8),
-                  const Text(
-                    'Sign Up with Google',
-                    style: TextStyle(
-                      color: Color(0xFF5F6368),
-                      fontSize: 17,
-                    ),
-                  ),
-                ],
-              ),
-            ),
-            const SizedBox(height: 20),
-            // OR Divider
-            const Row(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                Expanded(child: Divider(color: Colors.white)),
-                Padding(
-                  padding: EdgeInsets.symmetric(horizontal: 10.0),
-                  child: Text(
-                    'OR',
-                    style: TextStyle(
-                      color: Colors.white,
-                      fontWeight: FontWeight.bold,
-                      fontSize: 17,
-                    ),
-                  ),
-                ),
-                Expanded(child: Divider(color: Colors.white)),
-              ],
-            ),
-            const SizedBox(height: 20),
-            SignUpForm(),
-            const SizedBox(height: 20),
-            // Already have an account redirect
-            Center(
-              child: Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  const Text(
-                    "Already have an account? ",
-                    style: TextStyle(
-                      color: Colors.white,
-                    ),
-                  ),
-                  TextButton(
-                    onPressed: () {
-                      // Handle navigation to the Login screen
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                          builder: (context) => const LoginScreen(),
+                // Logo Illustration
+                Stack(
+                  alignment: Alignment.topCenter,
+                  children: <Widget>[
+                    Image.asset('assets/landscape_weather.png', height: 301),
+                    const Positioned(
+                      bottom: 0,
+                      left: 0,
+                      child: Text(
+                        'Sign Up',
+                        style: TextStyle(
+                          fontSize: 32,
+                          fontWeight: FontWeight.bold,
+                          color: Colors.white,
                         ),
-                      );
-                    },
-                    style: TextButton.styleFrom(
-                      padding: EdgeInsets.zero,
-                      minimumSize: const Size(50, 30),
-                      tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                      alignment: Alignment.centerLeft,
-                    ),
-                    child: const Text(
-                      "Login",
-                      style: TextStyle(
-                        fontWeight: FontWeight.bold,
-                        color: Color(0xFFFFCC00),
+                        textAlign: TextAlign.left,
                       ),
                     ),
+                  ],
+                ),
+                const SizedBox(height: 20),
+                // // Google Sign Up Button
+                // ElevatedButton(
+                //   onPressed: () {
+                //     // Handle Google login logic
+                //   },
+                //   style: ElevatedButton.styleFrom(
+                //     backgroundColor: const Color(0xFFF5F5F5),
+                //     padding: const EdgeInsets.symmetric(vertical: 15),
+                //     shape: RoundedRectangleBorder(
+                //       borderRadius: BorderRadius.circular(8.0),
+                //     ),
+                //   ),
+                //   child: Row(
+                //     mainAxisSize: MainAxisSize.min,
+                //     children: [
+                //       Image.asset(
+                //         'assets/google_icon.png',
+                //         width: 28,
+                //         height: 28,
+                //       ),
+                //       const SizedBox(width: 8),
+                //       const Text(
+                //         'Sign Up with Google',
+                //         style: TextStyle(
+                //           color: Color(0xFF5F6368),
+                //           fontSize: 17,
+                //         ),
+                //       ),
+                //     ],
+                //   ),
+                // ),
+                // const SizedBox(height: 20),
+                // // OR Divider
+                // const Row(
+                //   mainAxisAlignment: MainAxisAlignment.center,
+                //   children: [
+                //     Expanded(child: Divider(color: Colors.white)),
+                //     Padding(
+                //       padding: EdgeInsets.symmetric(horizontal: 10.0),
+                //       child: Text(
+                //         'OR',
+                //         style: TextStyle(
+                //           color: Colors.white,
+                //           fontWeight: FontWeight.bold,
+                //           fontSize: 17,
+                //         ),
+                //       ),
+                //     ),
+                //     Expanded(child: Divider(color: Colors.white)),
+                //   ],
+                // ),
+                // const SizedBox(height: 20),
+                SignUpForm(),
+                const SizedBox(height: 20),
+                // Already have an account redirect
+                Center(
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      const Text(
+                        "Already have an account? ",
+                        style: TextStyle(
+                          color: Colors.white,
+                        ),
+                      ),
+                      TextButton(
+                        onPressed: () {
+                          // Handle navigation to the Login screen
+                          FocusManager.instance.primaryFocus?.unfocus();
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (context) => const LoginScreen(),
+                            ),
+                          );
+                        },
+                        style: TextButton.styleFrom(
+                          padding: EdgeInsets.zero,
+                          minimumSize: const Size(50, 30),
+                          tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                          alignment: Alignment.centerLeft,
+                        ),
+                        child: const Text(
+                          "Login",
+                          style: TextStyle(
+                            fontWeight: FontWeight.bold,
+                            color: Color(0xFFFFCC00),
+                          ),
+                        ),
+                      ),
+                    ],
                   ),
-                ],
-              ),
+                ),
+                const SizedBox(height: 30),
+              ],
             ),
-          ],
+          ),
         ),
       ),
     );

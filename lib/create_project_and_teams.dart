@@ -1,12 +1,12 @@
-import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:p2bp_2025spring_mobile/project_map_creation.dart';
 import 'package:p2bp_2025spring_mobile/teams_and_invites_page.dart';
+
+import 'db_schema_classes.dart';
 import 'firestore_functions.dart';
 import 'home_screen.dart';
-import 'widgets.dart';
 import 'theme.dart';
-import 'db_schema_classes.dart';
+import 'widgets.dart';
 
 // For page selection switch. 0 = project, 1 = team.
 enum PageView { project, team }
@@ -19,8 +19,6 @@ class CreateProjectAndTeamsPage extends StatefulWidget {
       _CreateProjectAndTeamsPageState();
 }
 
-User? loggedInUser = FirebaseAuth.instance.currentUser;
-
 class _CreateProjectAndTeamsPageState extends State<CreateProjectAndTeamsPage> {
   PageView page = PageView.project;
   PageView pageSelection = PageView.project;
@@ -31,65 +29,61 @@ class _CreateProjectAndTeamsPageState extends State<CreateProjectAndTeamsPage> {
 
   @override
   Widget build(BuildContext context) {
-    return SafeArea(
-      maintainBottomViewPadding: true,
-      child: Scaffold(
-        // Top switch between Projects/Teams
-        appBar: AppBar(),
-        // Creation screens
-        body: SingleChildScrollView(
-          child: Center(
-            child: Column(
-              children: <Widget>[
-                // Switch at top to switch between create project and team pages.
-                SegmentedButton(
-                  selectedIcon: const Icon(Icons.check_circle),
-                  style: SegmentedButton.styleFrom(
-                    iconColor: Colors.white,
-                    backgroundColor: const Color(0xFF4871AE),
-                    foregroundColor: Colors.white70,
-                    selectedForegroundColor: Colors.white,
-                    selectedBackgroundColor: const Color(0xFF2E5598),
-                    side: const BorderSide(
-                      width: 0,
-                      color: Color(0xFF2180EA),
-                    ),
-                    elevation: 100,
-                    visualDensity:
-                        const VisualDensity(vertical: 1, horizontal: 1),
+    return SingleChildScrollView(
+      child: Center(
+        child: Column(
+          children: <Widget>[
+            // Switch at top to switch between create project and team pages.
+            Padding(
+              padding: const EdgeInsets.symmetric(vertical: 16),
+              child: SegmentedButton(
+                selectedIcon: const Icon(Icons.check_circle),
+                style: SegmentedButton.styleFrom(
+                  iconColor: Colors.white,
+                  backgroundColor: const Color(0xFF4871AE),
+                  foregroundColor: Colors.white70,
+                  selectedForegroundColor: Colors.white,
+                  selectedBackgroundColor: const Color(0xFF2E5598),
+                  side: const BorderSide(
+                    width: 0,
+                    color: Color(0xFF2180EA),
                   ),
-                  segments: const <ButtonSegment>[
-                    ButtonSegment(
-                        value: PageView.project,
-                        label: Text('Project'),
-                        icon: Icon(Icons.developer_board)),
-                    ButtonSegment(
-                        value: PageView.team,
-                        label: Text('Team'),
-                        icon: Icon(Icons.people)),
-                  ],
-                  selected: {pageSelection},
-                  onSelectionChanged: (Set newSelection) {
-                    setState(() {
-                      // By default there is only a single segment that can be
-                      // selected at one time, so its value is always the first
-                      // item in the selected set.
-                      pageSelection = newSelection.first;
-                    });
-                  },
+                  elevation: 100,
+                  visualDensity:
+                      const VisualDensity(vertical: 1, horizontal: 1),
                 ),
-
-                // Spacing between button and container w/ pages.
-                SizedBox(height: MediaQuery.of(context).size.height * .025),
-
-                // Changes page between two widgets: The CreateProjectWidget and CreateTeamWidget.
-                // These widgets display their respective screens to create either a project or team.
-                pages[pageSelection.index],
-
-                SizedBox(height: 100),
-              ],
+                segments: const <ButtonSegment>[
+                  ButtonSegment(
+                      value: PageView.project,
+                      label: Text('Project'),
+                      icon: Icon(Icons.developer_board)),
+                  ButtonSegment(
+                      value: PageView.team,
+                      label: Text('Team'),
+                      icon: Icon(Icons.people)),
+                ],
+                selected: {pageSelection},
+                onSelectionChanged: (Set newSelection) {
+                  setState(() {
+                    // By default there is only a single segment that can be
+                    // selected at one time, so its value is always the first
+                    // item in the selected set.
+                    pageSelection = newSelection.first;
+                  });
+                },
+              ),
             ),
-          ),
+
+            // Spacing between button and container w/ pages.
+            SizedBox(height: 10),
+
+            // Changes page between two widgets: The CreateProjectWidget and
+            // CreateTeamWidget. These widgets display their respective
+            // screens to create either a project or team.
+            pages[pageSelection.index],
+
+            SizedBox(height: 100),
+          ],
         ),
       ),
     );
@@ -109,6 +103,7 @@ class _CreateProjectWidgetState extends State<CreateProjectWidget> {
   // TODO: add cover photo?
   String projectDescription = '';
   String projectTitle = '';
+  String projectAddress = '';
   final _formKey = GlobalKey<FormState>();
 
   @override
@@ -119,12 +114,13 @@ class _CreateProjectWidgetState extends State<CreateProjectWidget> {
         padding: EdgeInsets.symmetric(horizontal: 20),
         child: Container(
           decoration: BoxDecoration(
-            color: Colors.grey[100],
+            color: directionsTransparency,
             borderRadius: BorderRadius.all(Radius.circular(10)),
           ),
           child: Padding(
             padding: const EdgeInsets.symmetric(horizontal: 15, vertical: 25),
             child: Column(
+              spacing: 5,
               children: <Widget>[
                 Align(
                   alignment: Alignment.centerLeft,
@@ -134,11 +130,10 @@ class _CreateProjectWidgetState extends State<CreateProjectWidget> {
                     style: TextStyle(
                       fontWeight: FontWeight.bold,
                       fontSize: 16.0,
-                      color: Colors.blue[900],
+                      color: p2bpBlue,
                     ),
                   ),
                 ),
-                const SizedBox(height: 5),
                 PhotoUpload(
                   width: 380,
                   height: 130,
@@ -150,7 +145,7 @@ class _CreateProjectWidgetState extends State<CreateProjectWidget> {
                     return;
                   },
                 ),
-                const SizedBox(height: 15.0),
+                const SizedBox(height: 10.0),
                 Align(
                   alignment: Alignment.centerLeft,
                   child: Text(
@@ -159,11 +154,10 @@ class _CreateProjectWidgetState extends State<CreateProjectWidget> {
                     style: TextStyle(
                       fontWeight: FontWeight.bold,
                       fontSize: 16.0,
-                      color: Colors.blue[900],
+                      color: p2bpBlue,
                     ),
                   ),
                 ),
-                const SizedBox(height: 5),
                 CreationTextBox(
                   maxLength: 60,
                   labelText: 'Project Name',
@@ -178,7 +172,6 @@ class _CreateProjectWidgetState extends State<CreateProjectWidget> {
                     });
                   },
                 ),
-                const SizedBox(height: 10.0),
                 Align(
                   alignment: Alignment.centerLeft,
                   child: Text(
@@ -187,11 +180,10 @@ class _CreateProjectWidgetState extends State<CreateProjectWidget> {
                     style: TextStyle(
                       fontWeight: FontWeight.bold,
                       fontSize: 16.0,
-                      color: Colors.blue[900],
+                      color: p2bpBlue,
                     ),
                   ),
                 ),
-                const SizedBox(height: 5),
                 CreationTextBox(
                   maxLength: 240,
                   labelText: 'Project Description',
@@ -206,17 +198,56 @@ class _CreateProjectWidgetState extends State<CreateProjectWidget> {
                     });
                   },
                 ),
+                Align(
+                  alignment: Alignment.centerLeft,
+                  child: Row(
+                    spacing: 5,
+                    mainAxisAlignment: MainAxisAlignment.start,
+                    children: [
+                      Text(
+                        'Project Address',
+                        textAlign: TextAlign.left,
+                        style: TextStyle(
+                          fontWeight: FontWeight.bold,
+                          fontSize: 16.0,
+                          color: p2bpBlue,
+                        ),
+                      ),
+                      Tooltip(
+                        triggerMode: TooltipTriggerMode.tap,
+                        enableTapToDismiss: true,
+                        showDuration: Duration(seconds: 3),
+                        preferBelow: false,
+                        message:
+                            'Enter a central address for the designated project location. \nIf no such address exists, give an approximate location.',
+                        child: Icon(Icons.help, size: 18, color: p2bpBlue),
+                      ),
+                    ],
+                  ),
+                ),
+                CreationTextBox(
+                  maxLength: 120,
+                  labelText: 'Project Address',
+                  maxLines: 2,
+                  minLines: 2,
+                  errorMessage:
+                      'Project address must be at least 3 characters long.',
+                  onChanged: (addressText) {
+                    setState(() {
+                      projectAddress = addressText;
+                    });
+                  },
+                ),
                 const SizedBox(height: 10.0),
                 Align(
                   alignment: Alignment.bottomRight,
                   child: EditButton(
                     text: 'Next',
                     foregroundColor: Colors.white,
-                    backgroundColor: const Color(0xFF4871AE),
+                    backgroundColor: p2bpBlue,
                     icon: const Icon(Icons.chevron_right),
                     onPressed: () async {
                       if (await getCurrentTeam() == null) {
-                        // TODO: Display error for creating project before team
                         if (!context.mounted) return;
                         ScaffoldMessenger.of(context).showSnackBar(
                           const SnackBar(
@@ -225,9 +256,12 @@ class _CreateProjectWidgetState extends State<CreateProjectWidget> {
                         );
                       } else if (_formKey.currentState!.validate()) {
                         Project partialProject = Project.partialProject(
-                            title: projectTitle,
-                            description: projectDescription);
+                          title: projectTitle,
+                          description: projectDescription,
+                          address: projectAddress,
+                        );
                         if (!context.mounted) return;
+                        FocusManager.instance.primaryFocus?.unfocus();
                         Navigator.push(
                             context,
                             MaterialPageRoute(
@@ -305,7 +339,7 @@ class _CreateTeamWidgetState extends State<CreateTeamWidget> {
         padding: const EdgeInsets.symmetric(horizontal: 20.0),
         child: Container(
           decoration: BoxDecoration(
-            color: Colors.grey[100],
+            color: directionsTransparency,
             borderRadius: const BorderRadius.all(Radius.circular(10)),
           ),
           child: Padding(
@@ -324,7 +358,7 @@ class _CreateTeamWidgetState extends State<CreateTeamWidget> {
                           style: TextStyle(
                             fontWeight: FontWeight.bold,
                             fontSize: 16.0,
-                            color: Colors.blue[900],
+                            color: p2bpBlue,
                           ),
                         ),
                         SizedBox(height: 5),
@@ -341,50 +375,50 @@ class _CreateTeamWidgetState extends State<CreateTeamWidget> {
                         ),
                       ],
                     ),
-                    Column(
-                      children: <Widget>[
-                        Text(
-                          'Team Color',
-                          textAlign: TextAlign.left,
-                          style: TextStyle(
-                            fontWeight: FontWeight.bold,
-                            fontSize: 16.0,
-                            color: Colors.blue[900],
-                          ),
-                        ),
-                        SizedBox(height: 5),
-                        Column(
-                          children: <Widget>[
-                            Row(
-                              children: <Widget>[
-                                ColorSelectCircle(
-                                  gradient: defaultGrad,
-                                ),
-                                ColorSelectCircle(
-                                  gradient: defaultGrad,
-                                ),
-                                ColorSelectCircle(
-                                  gradient: defaultGrad,
-                                ),
-                              ],
-                            ),
-                            Row(
-                              children: <Widget>[
-                                ColorSelectCircle(
-                                  gradient: defaultGrad,
-                                ),
-                                ColorSelectCircle(
-                                  gradient: defaultGrad,
-                                ),
-                                ColorSelectCircle(
-                                  gradient: defaultGrad,
-                                ),
-                              ],
-                            ),
-                          ],
-                        ),
-                      ],
-                    ),
+                    // Column(
+                    //   children: <Widget>[
+                    //     Text(
+                    //       'Team Color',
+                    //       textAlign: TextAlign.left,
+                    //       style: TextStyle(
+                    //         fontWeight: FontWeight.bold,
+                    //         fontSize: 16.0,
+                    //         color: p2bpBlue,
+                    //       ),
+                    //     ),
+                    //     SizedBox(height: 5),
+                    //     Column(
+                    //       children: <Widget>[
+                    //         Row(
+                    //           children: <Widget>[
+                    //             ColorSelectCircle(
+                    //               gradient: defaultGrad,
+                    //             ),
+                    //             ColorSelectCircle(
+                    //               gradient: defaultGrad,
+                    //             ),
+                    //             ColorSelectCircle(
+                    //               gradient: defaultGrad,
+                    //             ),
+                    //           ],
+                    //         ),
+                    //         Row(
+                    //           children: <Widget>[
+                    //             ColorSelectCircle(
+                    //               gradient: defaultGrad,
+                    //             ),
+                    //             ColorSelectCircle(
+                    //               gradient: defaultGrad,
+                    //             ),
+                    //             ColorSelectCircle(
+                    //               gradient: defaultGrad,
+                    //             ),
+                    //           ],
+                    //         ),
+                    //       ],
+                    //     ),
+                    //   ],
+                    // ),
                   ],
                 ),
                 SizedBox(height: 10),
@@ -396,7 +430,7 @@ class _CreateTeamWidgetState extends State<CreateTeamWidget> {
                     style: TextStyle(
                       fontWeight: FontWeight.bold,
                       fontSize: 16.0,
-                      color: Colors.blue[900],
+                      color: p2bpBlue,
                     ),
                   ),
                 ),
@@ -422,7 +456,7 @@ class _CreateTeamWidgetState extends State<CreateTeamWidget> {
                     style: TextStyle(
                       fontWeight: FontWeight.bold,
                       fontSize: 16.0,
-                      color: Colors.blue[900],
+                      color: p2bpBlue,
                     ),
                   ),
                 ),
@@ -477,7 +511,7 @@ class _CreateTeamWidgetState extends State<CreateTeamWidget> {
                   child: EditButton(
                     text: 'Create',
                     foregroundColor: Colors.white,
-                    backgroundColor: const Color(0xFF4871AE),
+                    backgroundColor: p2bpBlue,
                     icon: const Icon(Icons.chevron_right),
                     onPressed: () async {
                       if (_formKey.currentState!.validate()) {
@@ -487,6 +521,7 @@ class _CreateTeamWidgetState extends State<CreateTeamWidget> {
                         await saveTeam(
                             membersList: invitedMembers, teamName: teamName);
                         if (!context.mounted) return;
+                        FocusManager.instance.primaryFocus?.unfocus();
                         Navigator.pushReplacement(
                           context,
                           MaterialPageRoute(

@@ -3,34 +3,37 @@ import 'dart:async';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
-import 'strings.dart';
+import 'package:flutter/services.dart';
+import 'package:p2bp_2025spring_mobile/theme.dart';
+
 import 'firestore_functions.dart';
+import 'strings.dart';
 
 class ChangeNamePage extends StatelessWidget {
   const ChangeNamePage({super.key});
 
   @override
   Widget build(BuildContext context) {
-    return SafeArea(
-      child: Scaffold(
-        appBar: AppBar(
-          title: const Text('Change Name'),
+    return Scaffold(
+      appBar: AppBar(
+        systemOverlayStyle: SystemUiOverlayStyle.dark
+            .copyWith(statusBarColor: Colors.transparent),
+        title: const Text('Change Name'),
+      ),
+      body: DefaultTextStyle(
+        style: TextStyle(
+          color: p2bpBlue,
+          fontSize: 16,
+          fontWeight: FontWeight.normal,
         ),
-        body: DefaultTextStyle(
-          style: TextStyle(
-            color: Colors.blue[800],
-            fontSize: 16,
-            fontWeight: FontWeight.normal,
-          ),
-          child: ListView(
-            padding: const EdgeInsets.all(30),
-            children: <Widget>[
-              const Text(Strings.changeNameText),
-              const SizedBox(height: 16),
-              ChangeNameForm(),
-              const SizedBox(height: 40),
-            ],
-          ),
+        child: ListView(
+          padding: const EdgeInsets.all(30),
+          children: <Widget>[
+            const Text(Strings.changeNameText),
+            const SizedBox(height: 16),
+            ChangeNameForm(),
+            const SizedBox(height: 40),
+          ],
         ),
       ),
     );
@@ -145,7 +148,7 @@ class _ChangeNameFormState extends State<ChangeNameForm> {
           const SizedBox(height: 16),
           ElevatedButton(
             style: ElevatedButton.styleFrom(
-              backgroundColor: Colors.blue,
+              backgroundColor: p2bpBlue,
               padding: EdgeInsets.symmetric(vertical: 8),
               shape: RoundedRectangleBorder(
                 borderRadius: BorderRadius.circular(10),

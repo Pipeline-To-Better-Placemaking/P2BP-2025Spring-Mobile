@@ -22,10 +22,11 @@ class _SectionCreationPageState extends State<SectionCreationPage> {
   DocumentReference? teamRef;
   GoogleMapController? mapController;
   LatLng _location = defaultLocation; // Default location
+  double _zoom = 18;
   bool _isLoading = true;
   String _directions =
       "Create your section by marking your points. Then click confirm.";
-  Set<Polygon> _polygons = {}; // Set of polygons (project area polygon)
+  final Set<Polygon> _polygons = {}; // Set of polygons (project area polygon)
   Set<Marker> _markers = {}; // Set of markers for points
   List<LatLng> _linePoints = [];
   MapType _currentMapType = MapType.satellite; // Default map type
@@ -39,34 +40,20 @@ class _SectionCreationPageState extends State<SectionCreationPage> {
   @override
   void initState() {
     super.initState();
-    initProjectArea();
-  }
+    _polygons.add(getProjectPolygon(widget.activeProject.polygonPoints));
+    _location = getPolygonCentroid(_polygons.first);
+    _projectArea = _polygons.first.toMPLatLngList();
+    _zoom = getIdealZoom(_projectArea, _location.toMPLatLng()) - 0.2;
 
-  /// Gets the project polygon, adds it to the current polygon list, and
-  /// centers the map over it.
-  void initProjectArea() {
-    setState(() {
-      _polygons = getProjectPolygon(widget.activeProject.polygonPoints);
-      _projectArea = _polygons.first.toMPLatLngList();
-      _location = getPolygonCentroid(_polygons.first);
-      // Take some latitude away to center considering bottom sheet.
-      _location = LatLng(_location.latitude * .999999, _location.longitude);
-      // TODO: dynamic zooming
-      if (widget.currentSection != null) {
-        final List currentSection = widget.currentSection!;
-        _loadCurrentSection(currentSection);
-      }
-      _isLoading = false;
-    });
-  }
-
-  void _loadCurrentSection(List currentSection) {
-    final Polyline? polyline =
-        createPolyline(currentSection.toLatLngList(), Colors.green[600]!);
-    if (polyline == null) return;
-    setState(() {
-      _polyline = polyline;
-    });
+    if (widget.currentSection != null) {
+      final List currentSection = widget.currentSection!;
+      final Polyline? polyline = createPolyline(
+        currentSection.toLatLngList(),
+        Colors.green[600]!,
+      );
+      if (polyline != null) _polyline = polyline;
+    }
+    _isLoading = false;
   }
 
   Future<void> _polylineTap(LatLng point) async {
@@ -115,14 +102,14 @@ class _SectionCreationPageState extends State<SectionCreationPage> {
 
   void _onMapCreated(GoogleMapController controller) {
     mapController = controller;
-    _moveToLocation(); // Ensure the map is centered on the current location
+    _moveToLocation();
   }
 
+  /// Moves camera to project location.
   void _moveToLocation() {
-    if (mapController == null) return;
     mapController!.animateCamera(
       CameraUpdate.newCameraPosition(
-        CameraPosition(target: _location, zoom: 14.0),
+        CameraPosition(target: _location, zoom: _zoom),
       ),
     );
   }
@@ -137,53 +124,67 @@ class _SectionCreationPageState extends State<SectionCreationPage> {
 
   @override
   Widget build(BuildContext context) {
-    return SafeArea(
-      child: Scaffold(
-        body: _isLoading
-            ? const Center(child: CircularProgressIndicator())
-            : Stack(
-                children: [
-                  SizedBox(
-                    height: MediaQuery.of(context).size.height,
-                    child: Stack(
-                      children: [
-                        GoogleMap(
-                          onMapCreated: _onMapCreated,
-                          initialCameraPosition:
-                              CameraPosition(target: _location, zoom: 14.0),
-                          polygons: _polygons,
-                          polylines: {if (_polyline != null) _polyline!},
-                          markers: (_markers.isNotEmpty)
-                              ? {_markers.first, _markers.last}
-                              : {},
-                          mapType: _currentMapType, // Use current map type
-                          onTap: _polylineTap,
-                        ),
-                        Row(
-                          children: [
-                            Center(
+    return Scaffold(
+      body: _isLoading
+          ? const Center(child: CircularProgressIndicator())
+          : Stack(
+              children: [
+                SizedBox(
+                  height: MediaQuery.sizeOf(context).height,
+                  child: GoogleMap(
+                    onMapCreated: _onMapCreated,
+                    initialCameraPosition:
+                        CameraPosition(target: _location, zoom: _zoom),
+                    polygons: _polygons,
+                    polylines: {if (_polyline != null) _polyline!},
+                    markers: (_markers.isNotEmpty)
+                        ? {_markers.first, _markers.last}
+                        : {},
+                    mapType: _currentMapType, // Use current map type
+                    onTap: _polylineTap,
+                  ),
+                ),
+                SafeArea(
+                  child: Row(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Expanded(
+                        child: _directionsVisible
+                            ? Padding(
+                                padding: const EdgeInsets.symmetric(
+                                    horizontal: 15.0, vertical: 15.0),
                                 child: DirectionsText(
-                              onTap: () {},
-                              text: _directions,
-                            )),
+                                  onTap: () {
+                                    setState(() {
+                                      _directionsVisible = !_directionsVisible;
+                                    });
+                                  },
+                                  text: _directions,
+                                ),
+                              )
+                            : SizedBox(),
+                      ),
+                      Padding(
+                        padding: const EdgeInsets.only(top: 15, right: 15),
+                        child: Column(
+                          spacing: 10,
+                          children: <Widget>[
                             DirectionsButton(
                               onTap: () {
                                 setState(() {
                                   _directionsVisible = !_directionsVisible;
                                 });
                               },
-                              visibility: _directionsVisible,
                             ),
-                          ],
-                        ),
-                        Align(
-                          alignment: Alignment.bottomLeft,
-                          child: Padding(
-                            padding: const EdgeInsets.only(
-                                left: 10.0, bottom: 130.0),
-                            child: FloatingActionButton(
-                              tooltip: 'Clear all.',
-                              heroTag: null,
+                            CircularIconMapButton(
+                              backgroundColor: Colors.green,
+                              borderColor: Color(0xFF2D6040),
+                              onPressed: _toggleMapType,
+                              icon: const Icon(Icons.map),
+                            ),
+                            CircularIconMapButton(
+                              borderColor: Color(0xFF2D6040),
                               onPressed: () {
                                 setState(() {
                                   _markers = {};
@@ -195,71 +196,59 @@ class _SectionCreationPageState extends State<SectionCreationPage> {
                                 });
                               },
                               backgroundColor: Colors.red,
-                              child: Icon(
+                              icon: Icon(
                                 Icons.delete_sweep,
                                 size: 30,
                               ),
-                            ),
-                          ),
+                            )
+                          ],
                         ),
-                        Align(
-                          alignment: Alignment.bottomLeft,
-                          child: Padding(
-                            padding: EdgeInsets.only(left: 10.0, bottom: 50),
-                            child: FloatingActionButton(
-                              tooltip: 'Change map type.',
-                              onPressed: _toggleMapType,
-                              backgroundColor: Colors.green,
-                              child: const Icon(Icons.map),
-                            ),
+                      ),
+                    ],
+                  ),
+                ),
+                SafeArea(
+                  child: Padding(
+                    padding: EdgeInsets.only(bottom: 5),
+                    child: Align(
+                      alignment: Alignment.bottomCenter,
+                      child: FilledButton.icon(
+                        style: FilledButton.styleFrom(
+                          padding: const EdgeInsets.only(left: 15, right: 15),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(15.0),
                           ),
+                          elevation: 3.0,
+                          shadowColor: Colors.black,
+                          foregroundColor: Colors.white,
+                          backgroundColor: Colors.black,
+                          iconColor: Colors.white,
+                          disabledBackgroundColor: disabledGrey,
                         ),
-                        Padding(
-                          padding: EdgeInsets.only(bottom: 5),
-                          child: Align(
-                            alignment: Alignment.bottomCenter,
-                            child: FilledButton.icon(
-                              style: FilledButton.styleFrom(
-                                padding:
-                                    const EdgeInsets.only(left: 15, right: 15),
-                                shape: RoundedRectangleBorder(
-                                  borderRadius: BorderRadius.circular(15.0),
-                                ),
-                                elevation: 3.0,
-                                shadowColor: Colors.black,
-                                foregroundColor: Colors.white,
-                                backgroundColor: Colors.black,
-                                iconColor: Colors.white,
-                                disabledBackgroundColor: disabledGrey,
-                              ),
-                              onPressed: _isLoading
-                                  ? null
-                                  : () {
-                                      try {
-                                        setState(() {
-                                          _isLoading = true;
-                                        });
-                                        Navigator.pop(
-                                            context, _polyline?.points);
-                                      } catch (e, stacktrace) {
-                                        print(
-                                            "Exception in confirming section (section_creation_point.dart): $e");
-                                        print("Stacktrace: $stacktrace");
-                                      }
-                                    },
-                              label: Text('Confirm'),
-                              icon: const Icon(Icons.check),
-                              iconAlignment: IconAlignment.end,
-                            ),
-                          ),
-                        ),
-                        _outsidePoint ? TestErrorText() : SizedBox(),
-                      ],
+                        onPressed: _isLoading
+                            ? null
+                            : () {
+                                try {
+                                  setState(() {
+                                    _isLoading = true;
+                                  });
+                                  Navigator.pop(context, _polyline?.points);
+                                } catch (e, stacktrace) {
+                                  print(
+                                      "Exception in confirming section (section_creation_point.dart): $e");
+                                  print("Stacktrace: $stacktrace");
+                                }
+                              },
+                        label: Text('Confirm'),
+                        icon: const Icon(Icons.check),
+                        iconAlignment: IconAlignment.end,
+                      ),
                     ),
                   ),
-                ],
-              ),
-      ),
+                ),
+                SafeArea(child: _outsidePoint ? TestErrorText() : SizedBox()),
+              ],
+            ),
     );
   }
 }

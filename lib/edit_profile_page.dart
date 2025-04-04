@@ -7,12 +7,12 @@ class EditProfilePage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return SafeArea(
-      child: Scaffold(
-        appBar: AppBar(
-          title: const Text('Edit Profile'),
-        ),
-        body: ListTileTheme(
+    return Scaffold(
+      appBar: AppBar(
+        title: const Text('Edit Profile'),
+      ),
+      body: SafeArea(
+        child: ListTileTheme(
           tileColor: Colors.blue,
           contentPadding: const EdgeInsets.symmetric(horizontal: 8),
           iconColor: Colors.white,

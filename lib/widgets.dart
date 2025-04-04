@@ -1,3 +1,4 @@
+import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:p2bp_2025spring_mobile/theme.dart';
@@ -6,21 +7,24 @@ import 'google_maps_functions.dart';
 
 /// Bar Indicator for the Sliding Up Panels (Edit Project, Results)
 class BarIndicator extends StatelessWidget {
+  final Color? color;
+
   const BarIndicator({
     super.key,
+    this.color,
   });
 
   @override
   Widget build(BuildContext context) {
     return Padding(
-      padding: const EdgeInsets.only(top: 20, bottom: 10),
+      padding: const EdgeInsets.symmetric(vertical: 8),
       child: Center(
         child: Container(
           width: 40,
           height: 5,
-          decoration: const BoxDecoration(
-            color: Colors.white60,
-            borderRadius: BorderRadius.all(Radius.circular(10)),
+          decoration: BoxDecoration(
+            color: color ?? Colors.white60,
+            borderRadius: const BorderRadius.all(Radius.circular(10)),
           ),
         ),
       ),
@@ -35,17 +39,26 @@ class EditProjectTextBox extends StatelessWidget {
   final int maxLines;
   final int minLines;
   final String labelText;
+  final TextEditingController controller;
+  final String? Function(String?)? validator;
+  final FloatingLabelBehavior? floatingLabelBehavior;
 
-  const EditProjectTextBox(
-      {super.key,
-      required this.maxLength,
-      required this.labelText,
-      required this.maxLines,
-      required this.minLines});
+  const EditProjectTextBox({
+    super.key,
+    required this.maxLength,
+    required this.labelText,
+    required this.maxLines,
+    required this.minLines,
+    required this.controller,
+    this.validator,
+    this.floatingLabelBehavior,
+  });
   @override
   Widget build(BuildContext context) {
     return SizedBox(
-      child: TextField(
+      child: TextFormField(
+        validator: validator,
+        controller: controller,
         style: const TextStyle(color: Colors.white),
         maxLength: maxLength,
         maxLines: maxLines,
@@ -61,6 +74,7 @@ class EditProjectTextBox extends StatelessWidget {
             borderSide: BorderSide(color: Colors.white),
           ),
           labelText: labelText,
+          floatingLabelBehavior: floatingLabelBehavior,
           floatingLabelAlignment: FloatingLabelAlignment.start,
           floatingLabelStyle: const TextStyle(
             color: Colors.white,
@@ -84,6 +98,7 @@ class EditButton extends StatelessWidget {
   final VoidCallback? onPressed;
   final Color iconColor;
   final IconAlignment iconAlignment;
+  final OutlinedBorder? shape;
 
   const EditButton({
     super.key,
@@ -94,6 +109,7 @@ class EditButton extends StatelessWidget {
     this.icon,
     this.iconColor = Colors.white,
     this.iconAlignment = IconAlignment.end,
+    this.shape,
   });
 
   @override
@@ -101,9 +117,7 @@ class EditButton extends StatelessWidget {
     return FilledButton.icon(
       style: FilledButton.styleFrom(
         padding: const EdgeInsets.only(left: 15, right: 15),
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(10.0),
-        ),
+        shape: shape,
         foregroundColor: foregroundColor,
         backgroundColor: backgroundColor,
         iconColor: iconColor,
@@ -125,6 +139,8 @@ class CreationTextBox extends StatelessWidget {
   final ValueChanged? onChanged;
   final Icon? icon;
   final String? errorMessage;
+  final Color? textThemeColor;
+  final String? Function(String?)? validator;
 
   const CreationTextBox({
     super.key,
@@ -135,14 +151,18 @@ class CreationTextBox extends StatelessWidget {
     this.onChanged,
     this.icon,
     this.errorMessage,
+    this.textThemeColor,
+    this.validator,
   });
   @override
   Widget build(BuildContext context) {
     return SizedBox(
       child: Theme(
         data: Theme.of(context).copyWith(
-          textSelectionTheme: const TextSelectionThemeData(
-              selectionColor: Colors.blue, selectionHandleColor: Colors.blue),
+          textSelectionTheme: TextSelectionThemeData(
+            selectionColor: textThemeColor ?? Colors.blue,
+            selectionHandleColor: textThemeColor ?? Colors.blue,
+          ),
         ),
         child: TextFormField(
           onChanged: onChanged,
@@ -151,15 +171,16 @@ class CreationTextBox extends StatelessWidget {
           maxLines: maxLines,
           minLines: minLines,
           cursorColor: const Color(0xFF585A6A),
-          validator: (value) {
-            // TODO: custom error check parameter?
-            if (errorMessage != null && (value == null || value.length < 3)) {
-              // TODO: eventually require error message?
-              return errorMessage ??
-                  'Error, insufficient input (validator error message not set)';
-            }
-            return null;
-          },
+          validator: validator ??
+              (value) {
+                if (errorMessage != null &&
+                    (value == null || value.length < 3)) {
+                  // TODO: eventually require error message?
+                  return errorMessage ??
+                      'Error, insufficient input (validator error message not set)';
+                }
+                return null;
+              },
           decoration: InputDecoration(
             prefixIcon: icon,
             alignLabelWithHint: true,
@@ -251,37 +272,36 @@ class PhotoUpload extends StatelessWidget {
 }
 
 class PasswordTextFormField extends StatelessWidget {
-  final InputDecoration _decoration;
-  final TextEditingController? _controller;
-  final String? _forceErrorText;
-  final bool _obscureText;
-  final void Function(String)? _onChanged;
+  final InputDecoration? decoration;
+  final TextEditingController? controller;
+  final String? forceErrorText;
+  final bool? obscureText;
+  final void Function(String)? onChanged;
+  final Color? textColor;
 
-  PasswordTextFormField({
+  const PasswordTextFormField({
     super.key,
-    decoration,
-    controller,
-    forceErrorText,
-    obscureText,
-    onChanged,
-  })  : _decoration = decoration ??
-            InputDecoration().applyDefaults(ThemeData().inputDecorationTheme),
-        _controller = controller,
-        _forceErrorText = forceErrorText,
-        _obscureText = obscureText ?? true,
-        _onChanged = onChanged;
+    this.decoration,
+    this.controller,
+    this.forceErrorText,
+    this.obscureText,
+    this.onChanged,
+    this.textColor,
+  });
 
   @override
   Widget build(BuildContext context) {
     return TextFormField(
-      obscureText: _obscureText,
+      style: TextStyle(color: textColor ?? Colors.white),
+      obscureText: obscureText ?? true,
       enableSuggestions: false,
       autocorrect: false,
       autovalidateMode: AutovalidateMode.disabled,
-      decoration: _decoration,
-      controller: _controller,
-      forceErrorText: _forceErrorText,
-      onChanged: _onChanged,
+      decoration: decoration ??
+          InputDecoration().applyDefaults(ThemeData().inputDecorationTheme),
+      controller: controller,
+      forceErrorText: forceErrorText,
+      onChanged: onChanged,
     );
   }
 }
@@ -383,45 +403,63 @@ class DialogTextBox extends StatelessWidget {
 }
 
 class TimerButtonAndDisplay extends StatelessWidget {
-  const TimerButtonAndDisplay(
-      {required this.onPressed,
-      required this.testIsRunning,
-      required this.remainingSeconds,
-      super.key});
+  const TimerButtonAndDisplay({
+    super.key,
+    required this.onPressed,
+    required this.isTestRunning,
+    required this.remainingSeconds,
+  });
 
-  final VoidCallback onPressed;
-  final bool testIsRunning;
+  final void Function()? onPressed;
+  final bool isTestRunning;
   final int remainingSeconds;
 
   @override
   Widget build(BuildContext context) {
-    return Column(children: <Widget>[
-      ElevatedButton(
-        style: ElevatedButton.styleFrom(
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(8), // Rounded rectangle shape.
+    return SizedBox(
+      width: 68,
+      child: Column(
+        spacing: 10,
+        children: <Widget>[
+          SizedBox(
+            height: 50,
+            width: double.infinity,
+            child: ElevatedButton(
+              style: ElevatedButton.styleFrom(
+                disabledBackgroundColor: disabledGreyAlt,
+                disabledForegroundColor: Colors.grey,
+                foregroundColor: Colors.white,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                backgroundColor: isTestRunning ? Colors.red : Colors.green,
+                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
+              ),
+              onPressed: onPressed,
+              child: Text(
+                isTestRunning ? 'Stop' : 'Start',
+                textAlign: TextAlign.center,
+                style: const TextStyle(fontSize: 16),
+              ),
+            ),
           ),
-          backgroundColor: testIsRunning ? Colors.red : Colors.green,
-          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-        ),
-        onPressed: onPressed,
-        child: Text(
-          testIsRunning ? 'End' : 'Start',
-          style: const TextStyle(color: Colors.white, fontSize: 16),
-        ),
+          Container(
+            height: 40,
+            width: double.infinity,
+            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
+            decoration: BoxDecoration(
+              color: Colors.black.withValues(alpha: 0.6),
+              borderRadius: BorderRadius.circular(8),
+            ),
+            child: Text(
+              textAlign: TextAlign.center,
+              formatTime(remainingSeconds),
+              style: TextStyle(color: Colors.white, fontSize: 16),
+            ),
+          ),
+        ],
       ),
-      Container(
-        padding: EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-        decoration: BoxDecoration(
-          color: Colors.black.withValues(alpha: 0.6),
-          borderRadius: BorderRadius.circular(8),
-        ),
-        child: Text(
-          formatTime(remainingSeconds),
-          style: TextStyle(color: Colors.white, fontSize: 16),
-        ),
-      ),
-    ]);
+    );
   }
 }
 
@@ -597,9 +635,9 @@ class DataEditMenu extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      height: MediaQuery.of(context).size.height * (heightMultiplier ?? 0.5),
+      height: MediaQuery.sizeOf(context).height * (heightMultiplier ?? 0.5),
       decoration: BoxDecoration(
-        color: Color(0xFFDDE6F2).withValues(alpha: 0.9),
+        color: Color(0xFFC5CFDD).withValues(alpha: 0.9),
         borderRadius: BorderRadius.circular(20),
         border: Border.all(
           color: Color(0xFF2F6DCF),
@@ -610,18 +648,35 @@ class DataEditMenu extends StatelessWidget {
       child: Stack(
         children: [
           Align(
-            // Slightly closer to center than topRight alignment.
+            // Slightly closer to center than topRight alignment
             alignment: Alignment(0.95, -0.95),
-            child: IconButton(
-              onPressed: onPressedCloseMenu,
-              icon: Icon(Icons.close_outlined),
-              style: ButtonStyle(
-                backgroundColor: WidgetStatePropertyAll(Colors.red),
-                shape: WidgetStatePropertyAll(
-                  RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(10),
-                  ),
+            child: Container(
+              width: 30,
+              height: 30,
+              decoration: BoxDecoration(
+                color: Color(0xFFD1D7E1).withValues(alpha: 0.95),
+                shape: BoxShape.circle,
+                border: Border.all(
+                  color: Color(0xFF2F6DCF),
+                  width: 1.5,
                 ),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withValues(alpha: 0.12),
+                    spreadRadius: 0.5,
+                    blurRadius: 3,
+                    offset: Offset(0, 1),
+                  ),
+                ],
+              ),
+              child: IconButton(
+                padding: EdgeInsets.zero,
+                iconSize: 16,
+                icon: Icon(
+                  Icons.close,
+                  color: Color(0xFF2F6DCF),
+                ),
+                onPressed: onPressedCloseMenu,
               ),
             ),
           ),
@@ -736,6 +791,61 @@ class TestFinishDialog extends StatelessWidget {
   }
 }
 
+class GenericConfirmationDialog extends StatelessWidget {
+  final VoidCallback? onConfirm;
+  final String titleText;
+  final String contentText;
+  final String declineText;
+  final String confirmText;
+  final TextStyle? declineTextStyle;
+  final TextStyle? confirmTextStyle;
+
+  const GenericConfirmationDialog({
+    super.key,
+    this.onConfirm,
+    required this.titleText,
+    required this.contentText,
+    required this.declineText,
+    required this.confirmText,
+    this.declineTextStyle,
+    this.confirmTextStyle,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return AlertDialog(
+      scrollable: true,
+      title: Center(
+        child: Text(
+          titleText,
+          style: TextStyle(
+            fontWeight: FontWeight.bold,
+          ),
+        ),
+      ),
+      content: Text(
+        contentText,
+        style: TextStyle(fontWeight: FontWeight.bold),
+        overflow: TextOverflow.clip,
+      ),
+      actions: <Widget>[
+        TextButton(
+          onPressed: () {
+            Navigator.pop(context);
+          },
+          child: Text(declineText),
+        ),
+        TextButton(
+            onPressed: onConfirm,
+            child: Text(
+              confirmText,
+              style: confirmTextStyle ?? TextStyle(color: Colors.red[700]),
+            )),
+      ],
+    );
+  }
+}
+
 class DirectionsButton extends StatelessWidget {
   /// Directions widget used for tests.
   ///
@@ -747,13 +857,9 @@ class DirectionsButton extends StatelessWidget {
   const DirectionsButton({
     super.key,
     required this.onTap,
-    required this.visibility,
-    this.buttonPadding,
   });
 
   final VoidCallback? onTap;
-  final EdgeInsets? buttonPadding;
-  final bool visibility;
 
   @override
   Widget build(BuildContext context) {
@@ -783,7 +889,7 @@ class DirectionsButton extends StatelessWidget {
 class DirectionsText extends StatelessWidget {
   const DirectionsText({
     super.key,
-    required this.onTap,
+    this.onTap,
     required this.text,
   });
 
@@ -810,7 +916,8 @@ class DirectionsText extends StatelessWidget {
           ),
           child: Text(
             text,
-            maxLines: 3,
+            textAlign: TextAlign.center,
+            maxLines: 5,
             overflow: TextOverflow.ellipsis,
             style: TextStyle(
               fontSize: 18,
@@ -938,11 +1045,11 @@ void showTestModalGeneric(BuildContext context,
       builder: (BuildContext context) {
         return SingleChildScrollView(
           child: Padding(
-            padding: MediaQuery.of(context).viewInsets,
+            padding: MediaQuery.viewInsetsOf(context),
             child: Container(
               // Container decoration- rounded corners and gradient
               decoration: BoxDecoration(
-                gradient: defaultGrad,
+                gradient: formGradient,
                 borderRadius: const BorderRadius.only(
                   topLeft: Radius.circular(24.0),
                   topRight: Radius.circular(24.0),
@@ -961,7 +1068,7 @@ void showTestModalGeneric(BuildContext context,
                         style: TextStyle(
                           fontSize: 20,
                           fontWeight: FontWeight.bold,
-                          color: placeYellow,
+                          color: p2bpBlue,
                         ),
                       ),
                     ),
@@ -971,8 +1078,7 @@ void showTestModalGeneric(BuildContext context,
                               subtitle,
                               style: TextStyle(
                                 fontSize: 16,
-                                fontStyle: FontStyle.italic,
-                                color: Colors.grey[400],
+                                color: Colors.black,
                               ),
                             ),
                           )
@@ -984,14 +1090,14 @@ void showTestModalGeneric(BuildContext context,
                       alignment: Alignment.bottomRight,
                       child: InkWell(
                         onTap: onCancel,
-                        child: const Padding(
+                        child: Padding(
                           padding: EdgeInsets.only(right: 20, bottom: 0),
                           child: Text(
                             'Cancel',
                             style: TextStyle(
                                 fontSize: 16,
                                 fontWeight: FontWeight.w500,
-                                color: Color(0xFFFFD700)),
+                                color: p2bpBlue),
                           ),
                         ),
                       ),
@@ -1012,18 +1118,21 @@ class TestErrorText extends StatelessWidget {
   /// Displays a text error at bottom of screen with the text specified by the
   /// [text] parameter. Defaults to point placed outside of polygon error text.
   const TestErrorText({
-    this.text,
     super.key,
+    this.text,
+    this.padding,
   });
 
   final String? text;
+  final EdgeInsets? padding;
 
   @override
   Widget build(BuildContext context) {
     return Align(
       alignment: Alignment.bottomCenter,
       child: Padding(
-        padding: const EdgeInsets.symmetric(vertical: 30.0, horizontal: 100.0),
+        padding: padding ??
+            const EdgeInsets.symmetric(vertical: 20.0, horizontal: 50.0),
         child: Container(
           padding: EdgeInsets.symmetric(horizontal: 15, vertical: 10),
           decoration: BoxDecoration(
@@ -1039,6 +1148,7 @@ class TestErrorText extends StatelessWidget {
           ),
           child: Text(
             text ?? 'You have placed a point outside of the project area!',
+            textAlign: TextAlign.center,
             maxLines: 3,
             overflow: TextOverflow.ellipsis,
             style: TextStyle(
@@ -1047,6 +1157,118 @@ class TestErrorText extends StatelessWidget {
               color: Colors.red[50],
             ),
           ),
+        ),
+      ),
+    );
+  }
+}
+
+enum CustomTab { project, team }
+
+/// Segmented Tab for Projects and Teams View V2
+class CustomSegmentedTab extends StatefulWidget {
+  final CustomTab selectedTab;
+  final ValueChanged<CustomTab> onTabSelected;
+
+  const CustomSegmentedTab({
+    super.key,
+    required this.selectedTab,
+    required this.onTabSelected,
+  });
+
+  @override
+  _CustomSegmentedTabState createState() => _CustomSegmentedTabState();
+}
+
+class _CustomSegmentedTabState extends State<CustomSegmentedTab> {
+  // Cache styles and decorations outside the build method
+  final TextStyle selectedStyle = const TextStyle(
+    color: Colors.white,
+    fontWeight: FontWeight.bold,
+    fontSize: 16,
+  );
+
+  final TextStyle unselectedStyle = const TextStyle(
+    color: Color(0xFFB6D1EC),
+    fontWeight: FontWeight.bold,
+    fontSize: 16,
+  );
+
+  // Create a container decoration once
+  final containerDecoration = BoxDecoration(
+    borderRadius: BorderRadius.circular(60),
+    gradient: verticalBlueGrad,
+    boxShadow: [
+      BoxShadow(
+        color: Colors.black.withValues(alpha: 0.2),
+        offset: Offset(0, 4),
+        blurRadius: 12,
+      ),
+    ],
+  );
+
+  @override
+  Widget build(BuildContext context) {
+    return ClipRRect(
+      borderRadius: BorderRadius.circular(120),
+      child: BackdropFilter(
+        filter: ImageFilter.blur(sigmaX: 40, sigmaY: 40),
+        child: Container(
+          margin: const EdgeInsets.symmetric(horizontal: 64, vertical: 16),
+          constraints: const BoxConstraints(minHeight: 60),
+          padding: const EdgeInsets.all(8.0),
+          decoration: containerDecoration,
+          child: Row(
+            mainAxisSize: MainAxisSize.max,
+            mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+            children: [
+              RepaintBoundary(
+                child: _buildSegment(
+                  tab: CustomTab.project,
+                  label: 'PROJECT',
+                ),
+              ),
+              RepaintBoundary(
+                child: _buildSegment(
+                  tab: CustomTab.team,
+                  label: 'TEAM',
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildSegment({required CustomTab tab, required String label}) {
+    final bool isSelected = (widget.selectedTab == tab);
+
+    // Selected tab: white text
+    final TextStyle selectedStyle = const TextStyle(
+      color: Colors.white,
+      fontWeight: FontWeight.bold,
+      fontSize: 16,
+    );
+
+    // Unselected tab: B6D1EC
+    final TextStyle unselectedStyle = const TextStyle(
+      color: Color(0xFFB6D1EC),
+      fontWeight: FontWeight.bold,
+      fontSize: 16,
+    );
+
+    return GestureDetector(
+      onTap: () => widget.onTabSelected(tab),
+      child: Container(
+        padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 20),
+        decoration: BoxDecoration(
+          borderRadius: BorderRadius.circular(40),
+        ),
+        alignment: Alignment.center,
+        child: Text(
+          label,
+          style: isSelected ? selectedStyle : unselectedStyle,
         ),
       ),
     );

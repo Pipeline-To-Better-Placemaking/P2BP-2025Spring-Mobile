@@ -1,10 +1,13 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
+import 'package:p2bp_2025spring_mobile/firestore_functions.dart';
 import 'package:p2bp_2025spring_mobile/theme.dart';
-import 'google_maps_functions.dart';
+import 'package:p2bp_2025spring_mobile/widgets.dart';
+
 import 'db_schema_classes.dart';
-import 'firestore_functions.dart';
+import 'google_maps_functions.dart';
 
 class StandingPointsPage extends StatefulWidget {
   final Project activeProject;
@@ -17,57 +20,59 @@ class StandingPointsPage extends StatefulWidget {
 }
 
 final AssetMapBitmap disabledIcon = AssetMapBitmap(
-  'assets/standing_point_disabled_marker.png',
-  width: 45,
-  height: 45,
+  'assets/standing_point_disabled.png',
+  width: 48,
+  height: 48,
 );
 final AssetMapBitmap enabledIcon = AssetMapBitmap(
-  'assets/standing_point_enabled_marker.png',
-  width: 45,
-  height: 45,
+  'assets/standing_point_enabled.png',
+  width: 48,
+  height: 48,
 );
 
 class _StandingPointsPageState extends State<StandingPointsPage> {
   DocumentReference? teamRef;
-  GoogleMapController? mapController;
-  LatLng _location = defaultLocation; // Default location
+  late GoogleMapController mapController;
+  double _zoom = 18;
+  LatLng _location = defaultLocation;
   bool _isLoading = true;
   final String _directions =
       "Select the standing points you want to use in this test. Then click confirm.";
-  Set<Polygon> _polygons = {}; // Set of polygons
-  Set<Marker> _markers = {}; // Set of markers for points
+  final Set<Polygon> _polygons = {};
+  Set<Marker> _markers = {};
   List<StandingPoint> _standingPoints = [];
   Marker? _currentMarker;
   static const double _bottomSheetHeight = 300;
-  MapType _currentMapType = MapType.satellite; // Default map type
+  MapType _currentMapType = MapType.satellite;
   final List<bool> _checkboxValues = [];
   Project? project;
+
+  // Variables added with page rework on acoustic profile branch by Michael
+  // bool _isStandingPointSelected = false;
+  // double _sheetExtent = 0.28;
+  // static const double bottomOffset = 120.0;
+  // final GlobalKey _textContainerKey = GlobalKey();
+  // double containerHeight = 0.0;
 
   @override
   void initState() {
     super.initState();
-    initProjectArea();
-  }
+    _polygons.add(getProjectPolygon(widget.activeProject.polygonPoints));
+    _location = getPolygonCentroid(_polygons.first);
+    _zoom = getIdealZoom(
+          _polygons.first.toMPLatLngList(),
+          _location.toMPLatLng(),
+        ) -
+        0.2;
 
-  /// Gets the project polygon, adds it to the current polygon list, and
-  /// centers the map over it.
-  void initProjectArea() {
-    setState(() {
-      _polygons = getProjectPolygon(widget.activeProject.polygonPoints);
-      _location = getPolygonCentroid(_polygons.first);
-      // Take some latitude away to center considering bottom sheet.
-      _location = LatLng(_location.latitude * .999999, _location.longitude);
-      // TODO: dynamic zooming
-      _markers =
-          _setMarkersFromStandingPoints(widget.activeProject.standingPoints);
-      _standingPoints = widget.activeProject.standingPoints.toList();
-      if (widget.currentStandingPoints != null) {
-        final List<StandingPoint> currentStandingPoints =
-            widget.currentStandingPoints!;
-        _loadCurrentStandingPoints(currentStandingPoints);
-      }
-      _isLoading = false;
-    });
+    _standingPoints = widget.activeProject.standingPoints.toList();
+    _markers = _setMarkersFromStandingPoints(_standingPoints);
+    if (widget.currentStandingPoints != null) {
+      final List<StandingPoint> currentStandingPoints =
+          widget.currentStandingPoints!;
+      _loadCurrentStandingPoints(currentStandingPoints);
+    }
+    _isLoading = false;
   }
 
   /// Takes a list of points and creates the default markers from their title
@@ -141,14 +146,14 @@ class _StandingPointsPageState extends State<StandingPointsPage> {
 
   void _onMapCreated(GoogleMapController controller) {
     mapController = controller;
-    _moveToLocation(); // Ensure the map is centered on the current location
+    _moveToLocation();
   }
 
+  /// Moves camera to project location.
   void _moveToLocation() {
-    if (mapController == null) return;
-    mapController!.animateCamera(
+    mapController.animateCamera(
       CameraUpdate.newCameraPosition(
-        CameraPosition(target: _location, zoom: 14.0),
+        CameraPosition(target: _location, zoom: _zoom),
       ),
     );
   }
@@ -163,7 +168,14 @@ class _StandingPointsPageState extends State<StandingPointsPage> {
 
   @override
   Widget build(BuildContext context) {
-    return SafeArea(
+    return AnnotatedRegion<SystemUiOverlayStyle>(
+      value: (_currentMapType == MapType.normal)
+          ? SystemUiOverlayStyle.dark.copyWith(
+              statusBarColor: Colors.transparent,
+            )
+          : SystemUiOverlayStyle.light.copyWith(
+              statusBarColor: Colors.transparent,
+            ),
       child: Scaffold(
         body: _isLoading
             ? const Center(child: CircularProgressIndicator())
@@ -171,67 +183,40 @@ class _StandingPointsPageState extends State<StandingPointsPage> {
                 children: [
                   SizedBox(
                     height: MediaQuery.of(context).size.height,
-                    child: Stack(
-                      children: [
-                        GoogleMap(
-                          padding: EdgeInsets.only(bottom: _bottomSheetHeight),
-                          onMapCreated: _onMapCreated,
-                          initialCameraPosition:
-                              CameraPosition(target: _location, zoom: 14.0),
-                          polygons: _polygons,
-                          markers: _markers,
-                          mapType: _currentMapType, // Use current map type
+                    child: GoogleMap(
+                      padding: EdgeInsets.only(bottom: _bottomSheetHeight),
+                      onMapCreated: _onMapCreated,
+                      initialCameraPosition:
+                          CameraPosition(target: _location, zoom: _zoom),
+                      polygons: _polygons,
+                      markers: _markers,
+                      mapType: _currentMapType, // Use current map type
+                    ),
+                  ),
+                  SafeArea(
+                    child: Padding(
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 15, vertical: 4),
+                      child: DirectionsText(
+                        text: _directions,
+                      ),
+                    ),
+                  ),
+                  SafeArea(
+                    child: Align(
+                      alignment: Alignment.bottomLeft,
+                      child: Padding(
+                        padding: EdgeInsets.only(
+                          left: 12.0,
+                          bottom: _bottomSheetHeight + 50,
                         ),
-                        Align(
-                          alignment: Alignment.topCenter,
-                          child: Padding(
-                            padding: const EdgeInsets.symmetric(
-                                vertical: 20.0, horizontal: 25.0),
-                            child: Container(
-                              padding: EdgeInsets.symmetric(
-                                  horizontal: 15, vertical: 10),
-                              decoration: BoxDecoration(
-                                color: directionsTransparency,
-                                gradient: defaultGrad,
-                                borderRadius:
-                                    const BorderRadius.all(Radius.circular(10)),
-                                boxShadow: [
-                                  BoxShadow(
-                                    color: Colors.black.withValues(alpha: 0.1),
-                                    blurRadius: 6,
-                                    offset: const Offset(0, 2),
-                                  ),
-                                ],
-                              ),
-                              child: Text(
-                                _directions,
-                                maxLines: 3,
-                                overflow: TextOverflow.ellipsis,
-                                style: TextStyle(
-                                  fontSize: 18,
-                                  fontWeight: FontWeight.w500,
-                                  color: Colors.white,
-                                ),
-                              ),
-                            ),
-                          ),
+                        child: CircularIconMapButton(
+                          backgroundColor: Colors.green,
+                          borderColor: Color(0xFF2D6040),
+                          onPressed: _toggleMapType,
+                          icon: const Icon(Icons.map),
                         ),
-                        Align(
-                          alignment: Alignment.bottomLeft,
-                          child: Padding(
-                            padding: EdgeInsets.only(
-                              left: 10.0,
-                              bottom: _bottomSheetHeight + 50,
-                            ),
-                            child: FloatingActionButton(
-                              heroTag: null,
-                              onPressed: _toggleMapType,
-                              backgroundColor: Colors.green,
-                              child: const Icon(Icons.map),
-                            ),
-                          ),
-                        ),
-                      ],
+                      ),
                     ),
                   ),
                 ],
@@ -245,8 +230,7 @@ class _StandingPointsPageState extends State<StandingPointsPage> {
           child: Stack(
             children: [
               Padding(
-                padding:
-                    const EdgeInsets.only(left: 15.0, right: 15.0, top: 15.0),
+                padding: const EdgeInsets.fromLTRB(15, 15, 15, 0),
                 child: SizedBox(
                   height: _bottomSheetHeight,
                   child: ListView.separated(
@@ -292,9 +276,7 @@ class _StandingPointsPageState extends State<StandingPointsPage> {
                       );
                     },
                     separatorBuilder: (BuildContext context, int index) =>
-                        const SizedBox(
-                      height: 10,
-                    ),
+                        const SizedBox(height: 10),
                   ),
                 ),
               ),
