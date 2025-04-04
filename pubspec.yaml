@@ -50,6 +50,7 @@ dependencies:
   firebase_storage: ^12.4.4
   intl: ^0.20.2
   shared_preferences: ^2.0.15
+  background_app_bar: ^2.1.0
 
 dev_dependencies:
   flutter_test:

@@ -1,6 +1,8 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
+import 'package:p2bp_2025spring_mobile/theme.dart';
 import 'strings.dart';
 
 class SubmitBugReportPage extends StatelessWidget {
@@ -8,14 +10,18 @@ class SubmitBugReportPage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return SafeArea(
+    return AnnotatedRegion<SystemUiOverlayStyle>(
+      value: SystemUiOverlayStyle.dark
+          .copyWith(statusBarColor: Colors.transparent),
       child: Scaffold(
+        extendBody: true,
+        resizeToAvoidBottomInset: false,
         appBar: AppBar(
           title: const Text('Submit a bug report'),
         ),
         body: DefaultTextStyle(
           style: TextStyle(
-            color: Colors.blue[800],
+            color: p2bpBlue,
             fontSize: 16,
             fontWeight: FontWeight.bold,
           ),

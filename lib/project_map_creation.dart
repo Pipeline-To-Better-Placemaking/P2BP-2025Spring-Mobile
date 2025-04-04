@@ -1,5 +1,7 @@
+import 'dart:io';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:firebase_storage/firebase_storage.dart';
 import 'package:flutter/material.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:maps_toolkit/maps_toolkit.dart' as mp;
@@ -13,7 +15,12 @@ import 'google_maps_functions.dart';
 
 class ProjectMapCreation extends StatefulWidget {
   final Project partialProjectData;
-  const ProjectMapCreation({super.key, required this.partialProjectData});
+  final File? coverImage;
+  const ProjectMapCreation({
+    super.key,
+    required this.partialProjectData,
+    this.coverImage,
+  });
 
   @override
   State<ProjectMapCreation> createState() => _ProjectMapCreationState();
@@ -181,6 +188,20 @@ class _ProjectMapCreationState extends State<ProjectMapCreation> {
           ? MapType.satellite
           : MapType.normal);
     });
+  }
+
+  Future<String?> _uploadCoverImage(File imageFile) async {
+    try {
+      final storageRef = FirebaseStorage.instance.ref();
+      final coverImageRef = storageRef
+          .child('project_covers/${DateTime.now().millisecondsSinceEpoch}.jpg');
+      await coverImageRef.putFile(imageFile);
+      final downloadUrl = await coverImageRef.getDownloadURL();
+      return downloadUrl;
+    } catch (e) {
+      print('Error uploading cover image: $e');
+      return null;
+    }
   }
 
   @override
@@ -359,6 +380,14 @@ class _ProjectMapCreationState extends State<ProjectMapCreation> {
                                         setState(() {
                                           _isLoading = true;
                                         });
+
+                                        String? coverImageUrl;
+                                        if (widget.coverImage != null) {
+                                          coverImageUrl =
+                                              await _uploadCoverImage(
+                                                  widget.coverImage!);
+                                        }
+
                                         await saveProject(
                                           projectTitle:
                                               widget.partialProjectData.title,
@@ -366,6 +395,7 @@ class _ProjectMapCreationState extends State<ProjectMapCreation> {
                                               .partialProjectData.description,
                                           address:
                                               widget.partialProjectData.address,
+                                          coverImageUrl: coverImageUrl,
                                           polygonPoints: _polygons.first.points,
                                           polygonArea: _polygons.first
                                               .getAreaInSquareFeet(),
@@ -373,13 +403,6 @@ class _ProjectMapCreationState extends State<ProjectMapCreation> {
                                         );
                                         if (!context.mounted) return;
                                         Navigator.pushReplacement(
-                                            context,
-                                            MaterialPageRoute(
-                                              builder: (context) =>
-                                                  HomeScreen(),
-                                            ));
-                                        // TODO: Push to project details page.
-                                        Navigator.push(
                                             context,
                                             MaterialPageRoute(
                                               builder: (context) =>

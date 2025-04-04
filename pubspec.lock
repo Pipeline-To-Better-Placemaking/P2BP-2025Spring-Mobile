@@ -17,6 +17,14 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "2.12.0"
+  background_app_bar:
+    dependency: "direct main"
+    description:
+      name: background_app_bar
+      sha256: cf7e2af6137eac7c209d90e9a79cc46e6f5be6c712912ffb3da621e7790d0d0e
+      url: "https://pub.dev"
+    source: hosted
+    version: "2.1.0+1"
   boolean_selector:
     dependency: transitive
     description:

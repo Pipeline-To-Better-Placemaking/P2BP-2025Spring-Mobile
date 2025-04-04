@@ -1,6 +1,10 @@
+import 'dart:io';
+import 'dart:ui';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:firebase_storage/firebase_storage.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/rendering.dart';
 import 'package:flutter/services.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:intl/intl.dart';
@@ -11,6 +15,7 @@ import 'package:p2bp_2025spring_mobile/theme.dart';
 import 'db_schema_classes.dart';
 import 'firestore_functions.dart';
 import 'mini_map.dart';
+import 'package:background_app_bar/background_app_bar.dart';
 
 class ProjectDetailsPage extends StatefulWidget {
   final Project projectData;
@@ -33,19 +38,73 @@ class _ProjectDetailsPageState extends State<ProjectDetailsPage> {
   bool _isLoading = true;
   late Widget _testListView;
   late GoogleMapController mapController;
+  File? _coverImage;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadExistingCoverImage();
+  }
+
+  Future<void> _loadExistingCoverImage() async {
+    if (widget.projectData.coverImageUrl != null &&
+        widget.projectData.coverImageUrl!.isNotEmpty) {
+      try {
+        // If there's an existing cover image URL, display it
+        setState(() {});
+      } catch (e) {
+        print('Error loading cover image: $e');
+      }
+    }
+  }
+
+  Future<void> _uploadCoverImage(File imageFile) async {
+    try {
+      setState(() {
+        _coverImage = imageFile;
+      });
+
+      final storageRef = FirebaseStorage.instance.ref();
+      final coverImageRef = storageRef.child(
+          'project_covers/${widget.projectData.projectID}_${DateTime.now().millisecondsSinceEpoch}.jpg');
+
+      await coverImageRef.putFile(imageFile);
+
+      final downloadUrl = await coverImageRef.getDownloadURL();
+
+      await FirebaseFirestore.instance
+          .collection('projects')
+          .doc(widget.projectData.projectID)
+          .update({
+        'coverImageUrl': downloadUrl,
+      });
+
+      setState(() {
+        widget.projectData.coverImageUrl = downloadUrl;
+      });
+
+      print('Cover image uploaded successfully: $downloadUrl');
+    } catch (e) {
+      print('Error uploading cover image: $e');
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
     _testCount = widget.projectData.tests!.length;
     _testListView = _buildTestListView();
+    final double expandedHeight = MediaQuery.sizeOf(context).height * 0.15;
     return Scaffold(
       extendBodyBehindAppBar: true,
       body: CustomScrollView(
         slivers: <Widget>[
           SliverAppBar(
-            expandedHeight: 100,
+            expandedHeight: expandedHeight,
             pinned: true,
-            automaticallyImplyLeading: false, // Disable default back arrow
+            // backgroundColor:
+            //     _coverImage != null ? Color(0xFF999999) : Color(0xFF999999),
+            automaticallyImplyLeading:
+                false, // Disable default back arrow that comes with SliverAppBar
             leadingWidth: 48,
             systemOverlayStyle: SystemUiOverlayStyle(
               statusBarColor: Colors.white,
@@ -61,7 +120,7 @@ class _ProjectDetailsPageState extends State<ProjectDetailsPage> {
                 // Opaque circle container for visibility
                 alignment: Alignment.center,
                 decoration: BoxDecoration(
-                  color: Color.fromRGBO(255, 255, 255, 0.5),
+                  color: Color.fromRGBO(255, 255, 255, 0.8),
                   shape: BoxShape.circle,
                 ),
                 child: IconButton(
@@ -86,7 +145,7 @@ class _ProjectDetailsPageState extends State<ProjectDetailsPage> {
                       height: 32,
                       alignment: Alignment.center,
                       decoration: BoxDecoration(
-                        color: Color.fromRGBO(255, 255, 255, 0.5),
+                        color: Color.fromRGBO(255, 255, 255, 0.8),
                         shape: BoxShape.circle,
                       ),
                       child: IconButton(
@@ -96,27 +155,60 @@ class _ProjectDetailsPageState extends State<ProjectDetailsPage> {
                           Icons.more_vert,
                           color: p2bpBlue,
                         ),
-                        onPressed: () => showProjectOptionsDialog(context),
+                        onPressed: () => showProjectOptionsDialog(context,
+                            onImageSelected: (File imageFile) {
+                          _uploadCoverImage(imageFile);
+                        }),
                       ),
                     );
                   },
                 ),
               ),
             ],
-            flexibleSpace: FlexibleSpaceBar(
-              background: Stack(children: <Widget>[
-                // Banner image
-                Container(
-                  width: double.infinity,
-                  decoration: BoxDecoration(
-                    border: Border(
-                      bottom: BorderSide(color: Colors.white, width: .5),
-                    ),
-                    color: Color(0xFF999999),
-                  ),
+            flexibleSpace:
+                LayoutBuilder(builder: (BuildContext context, constraints) {
+              final double collapsedHeight =
+                  MediaQuery.paddingOf(context).top + kToolbarHeight;
+              final bool isCollapsed =
+                  constraints.maxHeight <= collapsedHeight + 10;
+
+              return BackgroundFlexibleSpaceBar(
+                background: ClipRRect(
+                  child: isCollapsed
+                      ? Container(
+                          decoration: BoxDecoration(
+                            color: Color(0xFF999999),
+                            image: widget.projectData.coverImageUrl != null
+                                ? DecorationImage(
+                                    image: NetworkImage(
+                                        widget.projectData.coverImageUrl!),
+                                    fit: BoxFit.cover)
+                                : null,
+                          ),
+                          child: BackdropFilter(
+                            filter:
+                                ImageFilter.blur(sigmaX: 10.0, sigmaY: 10.0),
+                            child: Container(
+                              decoration: BoxDecoration(
+                                color: Colors.black.withValues(alpha: 0.25),
+                              ),
+                            ),
+                          ),
+                        )
+                      : Container(
+                          decoration: BoxDecoration(
+                            color: Color(0xFF999999),
+                            image: widget.projectData.coverImageUrl != null
+                                ? DecorationImage(
+                                    image: NetworkImage(
+                                        widget.projectData.coverImageUrl!),
+                                    fit: BoxFit.cover)
+                                : null,
+                          ),
+                        ),
                 ),
-              ]),
-            ),
+              );
+            }),
           ),
           SliverList(delegate: SliverChildListDelegate([_getPageBody()])),
         ],
@@ -129,7 +221,7 @@ class _ProjectDetailsPageState extends State<ProjectDetailsPage> {
       decoration: BoxDecoration(gradient: defaultGrad),
       child: ConstrainedBox(
         constraints: BoxConstraints(
-          minHeight: MediaQuery.of(context).size.height,
+          minHeight: MediaQuery.sizeOf(context).height,
         ),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,

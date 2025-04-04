@@ -7,7 +7,10 @@ import 'package:p2bp_2025spring_mobile/theme.dart';
 import 'change_project_description_form.dart';
 import 'change_project_name_form.dart';
 
-void showProjectOptionsDialog(BuildContext context) {
+void showProjectOptionsDialog(
+  BuildContext context, {
+  Function(File imageFile)? onImageSelected,
+}) {
   // Calculate button position and menu placement.
   final RenderBox button = context.findRenderObject() as RenderBox;
   final Offset buttonPosition = button.localToGlobal(Offset.zero);
@@ -200,6 +203,9 @@ void showProjectOptionsDialog(BuildContext context) {
         if (pickedFile != null) {
           final File imageFile = File(pickedFile.path);
           // Now you have the image file, and you can submit or process it.
+          if (onImageSelected != null) {
+            onImageSelected(imageFile);
+          }
           print("Image selected: ${imageFile.path}");
         } else {
           print("No image selected.");
