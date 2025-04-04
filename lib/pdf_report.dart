@@ -550,7 +550,7 @@ Future<Uint8List> generateReport(
   );
 
   if (activeProject.tests == null || activeProject.tests!.isEmpty) {
-    activeProject.loadAllTestData();
+    await activeProject.loadAllTestData();
   }
   contributors = await getTeamMembers(activeProject.teamRef!.id);
   for (Member contributor in contributors) {
