@@ -6,6 +6,7 @@ import 'package:flutter/services.dart';
 import 'db_schema_classes.dart';
 import 'firestore_functions.dart';
 import 'team_settings_page.dart';
+import 'theme.dart';
 
 class TeamsAndInvitesPage extends StatefulWidget {
   const TeamsAndInvitesPage({super.key});
@@ -98,11 +99,15 @@ class _TeamsAndInvitesPageState extends State<TeamsAndInvitesPage> {
         length: 2,
         child: Scaffold(
           appBar: AppBar(
+            leading: IconButton(
+              icon: Icon(Icons.arrow_back, color: p2bpBlue),
+              onPressed: () => Navigator.of(context).pop(),
+            ),
             systemOverlayStyle: SystemUiOverlayStyle.dark
                 .copyWith(statusBarColor: Colors.transparent),
-            bottom: const TabBar(
-              labelColor: Colors.blue,
-              indicatorColor: Colors.blue,
+            bottom: TabBar(
+              labelColor: p2bpBlue,
+              indicatorColor: p2bpBlue,
               indicatorSize: TabBarIndicatorSize.tab,
               tabs: [
                 Tab(
@@ -139,7 +144,7 @@ class _TeamsAndInvitesPageState extends State<TeamsAndInvitesPage> {
                         itemBuilder: (BuildContext context, int index) {
                           return buildContainer(
                             index: index,
-                            color: Colors.blue,
+                            color: p2bpBlue,
                             numProjects: teams[index].numProjects,
                             team: teams[index],
                           );
@@ -226,7 +231,7 @@ class _TeamsAndInvitesPageState extends State<TeamsAndInvitesPage> {
   Container buildInviteCard(int index) {
     return Container(
       decoration: BoxDecoration(
-        color: Colors.blue,
+        color: p2bpBlue,
         borderRadius: const BorderRadius.all(Radius.circular(15)),
       ),
       height: 140,
@@ -339,8 +344,21 @@ class _TeamsAndInvitesPageState extends State<TeamsAndInvitesPage> {
                 child: Tooltip(
                   message: "Select team",
                   child: selectedIndex == index
-                      ? const Icon(Icons.radio_button_on)
-                      : const Icon(Icons.radio_button_off),
+                      ? Container(
+                          decoration: BoxDecoration(
+                            color: p2bpYellow,
+                            shape: BoxShape.circle,
+                          ),
+                          child: Icon(
+                            Icons.check,
+                            color: Colors.white,
+                            size: 20,
+                          ),
+                        )
+                      : Icon(
+                          Icons.circle,
+                          color: Colors.black.withValues(alpha: 0.25),
+                        ),
                 ),
               ),
             ),

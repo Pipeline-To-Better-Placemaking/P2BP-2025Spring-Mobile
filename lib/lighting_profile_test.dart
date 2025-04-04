@@ -274,7 +274,7 @@ class _LightingProfileTestPageState extends State<LightingProfileTestPage> {
             padding:
                 const EdgeInsets.symmetric(horizontal: 12.0, vertical: 10.0),
             decoration: BoxDecoration(
-              gradient: defaultGrad,
+              gradient: formGradient,
               borderRadius: const BorderRadius.only(
                 topLeft: Radius.circular(24.0),
                 topRight: Radius.circular(24.0),
@@ -296,7 +296,7 @@ class _LightingProfileTestPageState extends State<LightingProfileTestPage> {
                     style: TextStyle(
                       fontSize: 20,
                       fontWeight: FontWeight.bold,
-                      color: Colors.yellow[600],
+                      color: p2bpBlue,
                     ),
                   ),
                 ),

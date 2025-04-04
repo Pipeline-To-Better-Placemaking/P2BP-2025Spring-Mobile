@@ -420,7 +420,7 @@ class _IdentifyingAccessState extends State<IdentifyingAccess> {
                 padding: const EdgeInsets.symmetric(
                     horizontal: 12.0, vertical: 10.0),
                 decoration: BoxDecoration(
-                  gradient: defaultGrad,
+                  gradient: formGradient,
                   borderRadius: const BorderRadius.only(
                     topLeft: Radius.circular(24.0),
                     topRight: Radius.circular(24.0),
@@ -442,7 +442,7 @@ class _IdentifyingAccessState extends State<IdentifyingAccess> {
                         style: TextStyle(
                           fontSize: 20,
                           fontWeight: FontWeight.bold,
-                          color: placeYellow,
+                          color: p2bpBlue,
                         ),
                       ),
                     ),
@@ -452,8 +452,7 @@ class _IdentifyingAccessState extends State<IdentifyingAccess> {
                         'Mark where people enter the project area from.',
                         style: TextStyle(
                           fontSize: 16,
-                          fontStyle: FontStyle.italic,
-                          color: Colors.grey[400],
+                          color: Colors.black,
                         ),
                       ),
                     ),
@@ -464,7 +463,7 @@ class _IdentifyingAccessState extends State<IdentifyingAccess> {
                         style: TextStyle(
                           fontSize: 16,
                           fontWeight: FontWeight.bold,
-                          color: Colors.white,
+                          color: Colors.black,
                         ),
                       ),
                     ),

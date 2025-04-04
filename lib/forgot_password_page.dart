@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:flutter/services.dart';
 import 'theme.dart';
 import 'strings.dart';
 
@@ -9,11 +10,10 @@ class ForgotPasswordPage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     AssetBundle bundle = DefaultAssetBundle.of(context);
-    return SafeArea(
+    return AnnotatedRegion<SystemUiOverlayStyle>(
+      value: SystemUiOverlayStyle.light
+          .copyWith(statusBarColor: Colors.transparent),
       child: Scaffold(
-        appBar: AppBar(
-          title: const Text('Forgot Password?'),
-        ),
         body: Center(
           child: DefaultTextStyle(
             style: const TextStyle(

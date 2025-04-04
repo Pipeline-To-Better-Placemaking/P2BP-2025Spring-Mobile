@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
+import 'package:p2bp_2025spring_mobile/theme.dart';
 import 'strings.dart';
 import 'firestore_functions.dart';
 
@@ -18,7 +19,7 @@ class ChangeNamePage extends StatelessWidget {
         ),
         body: DefaultTextStyle(
           style: TextStyle(
-            color: Colors.blue[800],
+            color: p2bpBlue,
             fontSize: 16,
             fontWeight: FontWeight.normal,
           ),
@@ -145,7 +146,7 @@ class _ChangeNameFormState extends State<ChangeNameForm> {
           const SizedBox(height: 16),
           ElevatedButton(
             style: ElevatedButton.styleFrom(
-              backgroundColor: Colors.blue,
+              backgroundColor: p2bpBlue,
               padding: EdgeInsets.symmetric(vertical: 8),
               shape: RoundedRectangleBorder(
                 borderRadius: BorderRadius.circular(10),
