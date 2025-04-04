@@ -2,6 +2,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:p2bp_2025spring_mobile/pdf_report.dart';
 import 'package:p2bp_2025spring_mobile/project_details_page.dart';
 import 'package:p2bp_2025spring_mobile/teams_and_invites_page.dart';
 
@@ -263,27 +264,31 @@ class _HomeScreenState extends State<HomeScreen> {
                         style: TextStyle(fontSize: 12),
                       ),
                     ),
-                    // const SizedBox(width: 10),
-                    // Results button
-                    // ElevatedButton(
-                    //   onPressed: () {
-                    //     // Handle navigation to Results menu
-                    //     // showResultsModalSheet(context);
-                    //   },
-                    //   style: ElevatedButton.styleFrom(
-                    //     backgroundColor: const Color(0xFFFFCC00),
-                    //     shape: RoundedRectangleBorder(
-                    //       borderRadius: BorderRadius.circular(8),
-                    //     ),
-                    //   ),
-                    //   child: const Text(
-                    //     'Results',
-                    //     style: TextStyle(
-                    //       fontSize: 12,
-                    //       color: Color(0xFF1D4076),
-                    //     ),
-                    //   ),
-                    // ),
+                    const SizedBox(width: 10),
+                    ElevatedButton(
+                      onPressed: () {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (context) =>
+                                PdfReportPage(activeProject: project),
+                          ),
+                        );
+                      },
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: const Color(0xFFFFCC00),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                      ),
+                      child: const Text(
+                        'Results',
+                        style: TextStyle(
+                          fontSize: 12,
+                          color: Color(0xFF1D4076),
+                        ),
+                      ),
+                    ),
                   ],
                 ),
               ),
