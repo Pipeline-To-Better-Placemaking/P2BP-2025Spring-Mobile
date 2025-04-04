@@ -260,7 +260,7 @@ class PasswordTextFormField extends StatelessWidget {
   final void Function(String)? onChanged;
   final Color? textColor;
 
-  PasswordTextFormField({
+  const PasswordTextFormField({
     super.key,
     this.decoration,
     this.controller,

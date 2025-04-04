@@ -109,6 +109,7 @@ Future<Project> saveProject({
       'standingPoints': standingPoints.toJsonList(),
       'polygonArea': polygonArea,
       'tests': [],
+      'coverImageUrl': coverImageUrl ?? '',
     });
 
     await _firestore.doc('/${teamRef.path}').update({
@@ -122,12 +123,12 @@ Future<Project> saveProject({
       title: projectTitle,
       description: description,
       address: address,
-      coverImageUrl: coverImageUrl,
       projectAdmin: projectAdmin,
       polygonPoints: polygonPoints,
       polygonArea: polygonArea,
       standingPoints: standingPoints,
       testRefs: [],
+      coverImageUrl: coverImageUrl,
     );
   } catch (e, stacktrace) {
     print('Exception retrieving : $e');
@@ -172,6 +173,7 @@ Future<Project> getProjectInfo(String projectID) async {
           ],
           creationTime: projectDoc['creationTime'],
           testRefs: testRefs,
+          coverImageUrl: projectDoc.data()!['coverImageUrl'],
         );
       }
       // TODO: remove with database purge, along wtih above todo.
@@ -188,6 +190,7 @@ Future<Project> getProjectInfo(String projectID) async {
           standingPoints: [],
           creationTime: projectDoc['creationTime'],
           testRefs: testRefs,
+          coverImageUrl: projectDoc.data()!['coverImageUrl'],
         );
       }
     } else {

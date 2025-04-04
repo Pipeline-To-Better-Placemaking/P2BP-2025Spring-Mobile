@@ -388,7 +388,7 @@ class _SectionCutterState extends State<SectionCutter> {
                                         MaterialPageRoute(
                                           builder: (context) =>
                                               ProjectDetailsPage(
-                                                  projectData:
+                                                  activeProject:
                                                       widget.activeProject),
                                         ));
                                   }

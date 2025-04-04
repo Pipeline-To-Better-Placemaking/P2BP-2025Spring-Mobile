@@ -156,7 +156,7 @@ class _HomeScreenState extends State<HomeScreen> {
           Navigator.push(
             context,
             MaterialPageRoute(
-              builder: (context) => ProjectDetailsPage(projectData: project),
+              builder: (context) => ProjectDetailsPage(activeProject: project),
             ),
           );
         },

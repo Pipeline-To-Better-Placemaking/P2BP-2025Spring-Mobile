@@ -647,8 +647,9 @@ class _IdentifyingAccessState extends State<IdentifyingAccess> {
                                                       MaterialPageRoute(
                                                         builder: (context) =>
                                                             ProjectDetailsPage(
-                                                                projectData: widget
-                                                                    .activeProject),
+                                                                activeProject:
+                                                                    widget
+                                                                        .activeProject),
                                                       ));
                                                 },
                                               );

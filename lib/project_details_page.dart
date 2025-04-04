@@ -18,13 +18,13 @@ import 'mini_map.dart';
 import 'package:background_app_bar/background_app_bar.dart';
 
 class ProjectDetailsPage extends StatefulWidget {
-  final Project projectData;
+  final Project activeProject;
 
   /// IMPORTANT: When navigating to this page, pass in project details. Use
   /// `getProjectInfo()` from firestore_functions.dart to retrieve project
   /// object w/ data.
   /// <br/>Note: project is returned as future, await return before passing.
-  const ProjectDetailsPage({super.key, required this.projectData});
+  const ProjectDetailsPage({super.key, required this.activeProject});
 
   @override
   State<ProjectDetailsPage> createState() => _ProjectDetailsPageState();
@@ -38,49 +38,41 @@ class _ProjectDetailsPageState extends State<ProjectDetailsPage> {
   bool _isLoading = true;
   late Widget _testListView;
   late GoogleMapController mapController;
-  File? _coverImage;
+  String _coverImageUrl = '';
 
   @override
   void initState() {
     super.initState();
-    _loadExistingCoverImage();
-  }
 
-  Future<void> _loadExistingCoverImage() async {
-    if (widget.projectData.coverImageUrl != null &&
-        widget.projectData.coverImageUrl!.isNotEmpty) {
-      try {
-        // If there's an existing cover image URL, display it
-        setState(() {});
-      } catch (e) {
-        print('Error loading cover image: $e');
-      }
+    if (widget.activeProject.coverImageUrl != null) {
+      print('hi\n' * 4);
+    }
+    if (widget.activeProject.coverImageUrl != null &&
+        widget.activeProject.coverImageUrl!.isNotEmpty) {
+      _coverImageUrl = widget.activeProject.coverImageUrl!;
+      print(
+          'the cover image is real?! ${'widget.activeProject.coverImageUrl!\n' * 10}');
     }
   }
 
   Future<void> _uploadCoverImage(File imageFile) async {
     try {
-      setState(() {
-        _coverImage = imageFile;
-      });
-
       final storageRef = FirebaseStorage.instance.ref();
-      final coverImageRef = storageRef.child(
-          'project_covers/${widget.projectData.projectID}_${DateTime.now().millisecondsSinceEpoch}.jpg');
 
+      final coverImageRef = storageRef
+          .child('project_covers/${widget.activeProject.projectID}.jpg');
       await coverImageRef.putFile(imageFile);
-
       final downloadUrl = await coverImageRef.getDownloadURL();
 
       await FirebaseFirestore.instance
           .collection('projects')
-          .doc(widget.projectData.projectID)
+          .doc(widget.activeProject.projectID)
           .update({
         'coverImageUrl': downloadUrl,
       });
-
       setState(() {
-        widget.projectData.coverImageUrl = downloadUrl;
+        widget.activeProject.coverImageUrl = downloadUrl;
+        _coverImageUrl = downloadUrl;
       });
 
       print('Cover image uploaded successfully: $downloadUrl');
@@ -91,20 +83,16 @@ class _ProjectDetailsPageState extends State<ProjectDetailsPage> {
 
   @override
   Widget build(BuildContext context) {
-    _testCount = widget.projectData.tests!.length;
+    _testCount = widget.activeProject.tests!.length;
     _testListView = _buildTestListView();
-    final double expandedHeight = MediaQuery.sizeOf(context).height * 0.15;
     return Scaffold(
       extendBodyBehindAppBar: true,
       body: CustomScrollView(
         slivers: <Widget>[
           SliverAppBar(
-            expandedHeight: expandedHeight,
+            expandedHeight: MediaQuery.sizeOf(context).height * 0.15,
             pinned: true,
-            // backgroundColor:
-            //     _coverImage != null ? Color(0xFF999999) : Color(0xFF999999),
-            automaticallyImplyLeading:
-                false, // Disable default back arrow that comes with SliverAppBar
+            automaticallyImplyLeading: false,
             leadingWidth: 48,
             systemOverlayStyle: SystemUiOverlayStyle(
               statusBarColor: Colors.white,
@@ -178,10 +166,9 @@ class _ProjectDetailsPageState extends State<ProjectDetailsPage> {
                       ? Container(
                           decoration: BoxDecoration(
                             color: Color(0xFF999999),
-                            image: widget.projectData.coverImageUrl != null
+                            image: _coverImageUrl.isNotEmpty
                                 ? DecorationImage(
-                                    image: NetworkImage(
-                                        widget.projectData.coverImageUrl!),
+                                    image: NetworkImage(_coverImageUrl),
                                     fit: BoxFit.cover)
                                 : null,
                           ),
@@ -198,10 +185,9 @@ class _ProjectDetailsPageState extends State<ProjectDetailsPage> {
                       : Container(
                           decoration: BoxDecoration(
                             color: Color(0xFF999999),
-                            image: widget.projectData.coverImageUrl != null
+                            image: _coverImageUrl.isNotEmpty
                                 ? DecorationImage(
-                                    image: NetworkImage(
-                                        widget.projectData.coverImageUrl!),
+                                    image: NetworkImage(_coverImageUrl),
                                     fit: BoxFit.cover)
                                 : null,
                           ),
@@ -229,7 +215,7 @@ class _ProjectDetailsPageState extends State<ProjectDetailsPage> {
             Padding(
               padding: const EdgeInsets.only(left: 10.0),
               child: Text(
-                widget.projectData.title,
+                widget.activeProject.title,
                 style: TextStyle(
                   color: Colors.white,
                   fontSize: 24,
@@ -269,7 +255,7 @@ class _ProjectDetailsPageState extends State<ProjectDetailsPage> {
                 child: Text.rich(
                   maxLines: 7,
                   overflow: TextOverflow.ellipsis,
-                  TextSpan(text: "${widget.projectData.description}\n\n\n"),
+                  TextSpan(text: "${widget.activeProject.description}\n\n\n"),
                   style: TextStyle(fontSize: 15, color: Colors.white),
                 ),
               ),
@@ -284,7 +270,7 @@ class _ProjectDetailsPageState extends State<ProjectDetailsPage> {
                 child: ClipRRect(
                   borderRadius: BorderRadius.circular(16.0),
                   child: MiniMap(
-                    activeProject: widget.projectData,
+                    activeProject: widget.activeProject,
                   ),
                 ),
               ),
@@ -304,7 +290,8 @@ class _ProjectDetailsPageState extends State<ProjectDetailsPage> {
                       fontWeight: FontWeight.bold,
                     ),
                   ),
-                  if (widget.projectData.projectAdmin!.id == loggedInUser!.uid)
+                  if (widget.activeProject.projectAdmin!.id ==
+                      loggedInUser!.uid)
                     FilledButton.icon(
                       style: FilledButton.styleFrom(
                         padding: const EdgeInsets.only(left: 15, right: 15),
@@ -367,7 +354,7 @@ class _ProjectDetailsPageState extends State<ProjectDetailsPage> {
                 ),
               ),
               child: CreateTestForm(
-                activeProject: widget.projectData,
+                activeProject: widget.activeProject,
               ),
             );
           },
@@ -379,7 +366,7 @@ class _ProjectDetailsPageState extends State<ProjectDetailsPage> {
       title: newTestInfo['title'],
       scheduledTime: newTestInfo['scheduledTime'],
       projectRef:
-          _firestore.collection('projects').doc(widget.projectData.projectID),
+          _firestore.collection('projects').doc(widget.activeProject.projectID),
       collectionID: newTestInfo['collectionID'],
       standingPoints: newTestInfo.containsKey('standingPoints')
           ? newTestInfo['standingPoints']
@@ -395,12 +382,12 @@ class _ProjectDetailsPageState extends State<ProjectDetailsPage> {
           : null,
     );
     setState(() {
-      widget.projectData.tests?.add(test);
+      widget.activeProject.tests?.add(test);
     });
   }
 
   Widget _buildTestListView() {
-    widget.projectData.tests?.sort((a, b) => testTimeComparison(a, b));
+    widget.activeProject.tests?.sort((a, b) => testTimeComparison(a, b));
     Widget list = ListView.separated(
       physics: ClampingScrollPhysics(),
       shrinkWrap: true,
@@ -413,8 +400,8 @@ class _ProjectDetailsPageState extends State<ProjectDetailsPage> {
       ),
       itemBuilder: (BuildContext context, int index) {
         return TestCard(
-          test: widget.projectData.tests![index],
-          project: widget.projectData,
+          test: widget.activeProject.tests![index],
+          project: widget.activeProject,
         );
       },
       separatorBuilder: (BuildContext context, int index) =>

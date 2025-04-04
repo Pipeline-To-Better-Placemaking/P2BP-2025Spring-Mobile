@@ -346,7 +346,7 @@ class _SearchScreenState extends State<SearchScreen> {
                             context,
                             MaterialPageRoute(
                               builder: (context) => ProjectDetailsPage(
-                                projectData: Project.partialProject(
+                                activeProject: Project.partialProject(
                                     title: 'No data sent',
                                     description:
                                         'Accessed without project data',

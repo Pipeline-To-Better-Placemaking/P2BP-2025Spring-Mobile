@@ -74,7 +74,7 @@ class MyApp extends StatelessWidget {
         '/settings': (context) => const SettingsPage(),
         '/teams_and_invites': (context) => const TeamsAndInvitesPage(),
         '/create_project_details': (context) => ProjectDetailsPage(
-              projectData: Project.partialProject(
+              activeProject: Project.partialProject(
                   title: 'No data sent',
                   description: 'Accessed without project data',
                   address: 'No address set'),
