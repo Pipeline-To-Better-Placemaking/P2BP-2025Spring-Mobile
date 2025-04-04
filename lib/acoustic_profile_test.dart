@@ -342,11 +342,8 @@ class _AcousticProfileTestPageState extends State<AcousticProfileTestPage> {
       context: context,
       barrierDismissible: false,
       builder: (context) {
-        final screenSize = MediaQuery.of(context).size;
         return AlertDialog(
-          insetPadding: EdgeInsets.symmetric(
-              horizontal: screenSize.width * 0.05,
-              vertical: screenSize.height * 0.005),
+          insetPadding: const EdgeInsets.all(10),
           actionsPadding: EdgeInsets.zero,
           title: const Text(
             'How It Works:',
@@ -355,7 +352,7 @@ class _AcousticProfileTestPageState extends State<AcousticProfileTestPage> {
           ),
           content: SingleChildScrollView(
             child: SizedBox(
-              width: screenSize.width * 0.95,
+              width: double.maxFinite,
               child: Column(
                 mainAxisSize: MainAxisSize.min,
                 children: [
@@ -377,7 +374,7 @@ class _AcousticProfileTestPageState extends State<AcousticProfileTestPage> {
                   ],
                 ),
                 TextButton(
-                  onPressed: () => Navigator.of(context).pop(),
+                  onPressed: () => Navigator.pop(context),
                   child: const Text('OK'),
                 ),
               ],

@@ -107,6 +107,7 @@ class LoginScreen extends StatelessWidget {
                       TextButton(
                         onPressed: () {
                           // Handle navigation to Register screen
+                          FocusManager.instance.primaryFocus?.unfocus();
                           Navigator.push(
                             context,
                             MaterialPageRoute(
@@ -359,6 +360,7 @@ class _LoginFormState extends State<LoginForm> {
             child: TextButton(
               onPressed: () {
                 // Handle navigation to Register screen
+                FocusManager.instance.primaryFocus?.unfocus();
                 Navigator.push(
                     context,
                     MaterialPageRoute(

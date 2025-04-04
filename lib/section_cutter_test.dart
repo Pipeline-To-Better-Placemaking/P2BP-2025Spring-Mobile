@@ -38,7 +38,7 @@ class _SectionCutterState extends State<SectionCutter> {
   String _directions =
       "Go to designated section. Then upload the section drawing here.";
   XFile? sectionCutterFile;
-  static const double _bottomSheetHeight = 315;
+  static const double _bottomSheetHeight = 325;
   late DocumentReference teamRef;
 
   double _zoom = 18;
@@ -207,7 +207,7 @@ class _SectionCutterState extends State<SectionCutter> {
                     color: Colors.black,
                   ),
                 ),
-                SizedBox(height: 35),
+                SizedBox(height: 25),
                 Row(
                   children: <Widget>[
                     Expanded(

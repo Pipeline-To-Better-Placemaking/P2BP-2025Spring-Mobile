@@ -344,20 +344,13 @@ class _TeamsAndInvitesPageState extends State<TeamsAndInvitesPage> {
                 child: Tooltip(
                   message: "Select team",
                   child: selectedIndex == index
-                      ? Container(
-                          decoration: BoxDecoration(
-                            color: p2bpYellow,
-                            shape: BoxShape.circle,
-                          ),
-                          child: Icon(
-                            Icons.check,
-                            color: Colors.white,
-                            size: 20,
-                          ),
+                      ? const Icon(
+                          Icons.radio_button_on,
+                          color: placeYellow,
                         )
-                      : Icon(
-                          Icons.circle,
-                          color: Colors.black.withValues(alpha: 0.25),
+                      : const Icon(
+                          Icons.radio_button_off,
+                          color: placeYellow,
                         ),
                 ),
               ),

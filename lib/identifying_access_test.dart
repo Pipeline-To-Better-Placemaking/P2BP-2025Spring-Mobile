@@ -444,19 +444,20 @@ class _IdentifyingAccessState extends State<IdentifyingAccess> {
                           fontWeight: FontWeight.bold,
                           color: p2bpBlue,
                         ),
+                        textAlign: TextAlign.center,
                       ),
                     ),
-                    Align(
-                      alignment: Alignment.topCenter,
+                    Center(
                       child: Text(
                         'Mark where people enter the project area from.',
                         style: TextStyle(
                           fontSize: 16,
                           color: Colors.black,
                         ),
+                        textAlign: TextAlign.center,
                       ),
                     ),
-                    SizedBox(height: 15),
+                    SizedBox(height: 10),
                     Center(
                       child: Text(
                         'Access Type',
