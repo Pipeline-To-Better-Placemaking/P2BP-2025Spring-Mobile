@@ -1,26 +1,28 @@
-import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
+
 import 'widgets.dart';
 
 class ChangePasswordPage extends StatelessWidget {
   const ChangePasswordPage({super.key});
   @override
   Widget build(BuildContext context) {
-    return SafeArea(
-      child: Scaffold(
-        appBar: AppBar(
-          title: const Text('Change Password'),
-        ),
-        body: Padding(
-          padding: const EdgeInsets.all(20),
-          child: DefaultTextStyle(
-            style: TextStyle(
-              color: Colors.blue[800],
-              fontSize: 16,
-              fontWeight: FontWeight.bold,
-            ),
-            child: ChangePasswordForm(),
+    return Scaffold(
+      appBar: AppBar(
+        systemOverlayStyle: SystemUiOverlayStyle.dark
+            .copyWith(statusBarColor: Colors.transparent),
+        title: const Text('Change Password'),
+      ),
+      body: Padding(
+        padding: const EdgeInsets.all(20),
+        child: DefaultTextStyle(
+          style: TextStyle(
+            color: Colors.blue[800],
+            fontSize: 16,
+            fontWeight: FontWeight.bold,
           ),
+          child: ChangePasswordForm(),
         ),
       ),
     );
@@ -146,6 +148,7 @@ class _ChangePasswordFormState extends State<ChangePasswordForm> {
         children: <Widget>[
           const Text('Current Password'),
           PasswordTextFormField(
+            textColor: Colors.black,
             controller: _currentPasswordController,
             obscureText: _currentPassObscureText,
             forceErrorText: _currentPassErrorText,
@@ -167,6 +170,7 @@ class _ChangePasswordFormState extends State<ChangePasswordForm> {
           SizedBox(height: 12),
           const Text('New Password'),
           PasswordTextFormField(
+            textColor: Colors.black,
             controller: _newPasswordController,
             obscureText: _newPassObscureText,
             forceErrorText: _newPassErrorText,
@@ -187,6 +191,7 @@ class _ChangePasswordFormState extends State<ChangePasswordForm> {
           SizedBox(height: 12),
           const Text('Confirm New Password'),
           PasswordTextFormField(
+            textColor: Colors.black,
             controller: _confirmPasswordController,
             obscureText: _confirmPassObscureText,
             forceErrorText: _confirmPassErrorText,
