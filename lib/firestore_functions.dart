@@ -319,8 +319,7 @@ Future<DocumentReference?> getCurrentTeam() async {
           userDoc['teams'] is List &&
           userDoc['teams'].contains(userDoc['selectedTeam'])) {
         teamRef = userDoc['selectedTeam'];
-      }
-      if ((userDoc['teams'] as List).isEmpty) {
+      } else if ((userDoc['teams'] as List).isEmpty) {
         _firestore
             .collection('users')
             .doc(_loggedInUser?.uid)
