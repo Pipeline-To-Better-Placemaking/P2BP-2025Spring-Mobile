@@ -190,8 +190,8 @@ Future<Project> getProjectInfo(String projectID) async {
         );
       }
     } else {
-      print(
-          'Error in firestore_functions: Either project does not exist in Firestore or polygonArea is not initialized');
+      print('Error in firestore_functions: Either project does not exist in '
+          'Firestore or polygonArea is not initialized');
       print('Project exists? ${projectDoc.exists}.');
     }
   } catch (e, stacktrace) {
