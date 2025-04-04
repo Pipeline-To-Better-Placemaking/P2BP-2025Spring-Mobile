@@ -284,7 +284,8 @@ class _SectionCutterState extends State<SectionCutter> {
                                     _failedToUpload = false;
                                     _uploaded = false;
                                     _directions =
-                                        "Go to designated section. Then upload the section drawing here.";
+                                        "Go to designated section. Then upload "
+                                        "the section drawing here.";
                                   });
                                 },
                                 icon: Icon(Icons.cancel),
