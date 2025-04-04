@@ -82,7 +82,7 @@ class _ProjectDetailsPageState extends State<ProjectDetailsPage> {
           SliverAppBar(
             expandedHeight: 100,
             pinned: true,
-            automaticallyImplyLeading: false, // Disable default back arrow
+            automaticallyImplyLeading: false,
             leadingWidth: 60,
             systemOverlayStyle: SystemUiOverlayStyle.dark
                 .copyWith(statusBarColor: Colors.transparent),

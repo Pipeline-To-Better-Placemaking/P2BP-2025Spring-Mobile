@@ -24,7 +24,7 @@ class PdfReportPage extends StatelessWidget {
 
   // generate the PDF
   Future<Uint8List> _generatePdf() async {
-    return generateReport(PdfPageFormat.a4, activeProject);
+    return generateReport(PdfPageFormat.letter, activeProject);
   }
 
   @override
@@ -188,10 +188,12 @@ Future<PDFData?> retrievePDFInfo(Test test, Polygon projectPolygon) async {
                 graphTitle: 'Domestic vs. Wild',
               ),
               BarGraphData(
-                  color: PdfColors.green,
-                  dataMap: polygonAreas,
-                  graphTitle: 'Vegetation vs. Water',
-                  yAxisLabel: 'Area (sq. ft)'),
+                color: PdfColors.green,
+                dataMap: polygonAreas,
+                graphTitle: 'Vegetation vs. Water',
+                yAxisLabel: 'Area (sq. ft)',
+                customLabels: ['vegetation', 'body of water'],
+              ),
             ],
             pieGraphData: [],
             displayName: NaturePrevalenceTest.displayName,
@@ -210,8 +212,8 @@ Future<PDFData?> retrievePDFInfo(Test test, Polygon projectPolygon) async {
           AccessType.bikeRack.name: 0,
         };
         Map<String, double> spotsMap = {
-          AccessType.parking.name: 0,
           AccessType.bikeRack.name: 0,
+          AccessType.parking.name: 0,
         };
         for (final TaxiAndRideShare taxiShare in data.taxisAndRideShares) {
           polylineLengths[AccessType.taxiAndRideShare.name] =
@@ -245,13 +247,18 @@ Future<PDFData?> retrievePDFInfo(Test test, Polygon projectPolygon) async {
                 color: PdfColors.grey,
                 dataMap: polylineLengths,
                 graphTitle: 'Path Lengths for Each Transportation Type',
-                customLabels: ['Rideshare/Taxi', 'Car', 'Bus/Train', 'Bike'],
+                customLabels: [
+                  'rideshare/taxi',
+                  'car',
+                  'bus/train',
+                  'bike/scooter'
+                ],
                 yAxisLabel: 'Length (ft.)'),
             BarGraphData(
               color: PdfColors.black,
               dataMap: spotsMap,
               graphTitle: 'Number of Parking Spots by Vehicle',
-              customLabels: ['Bike', 'Car'],
+              customLabels: ['bike/scooter', 'car'],
             ),
           ],
           pieGraphData: [],
@@ -281,6 +288,7 @@ Future<PDFData?> retrievePDFInfo(Test test, Polygon projectPolygon) async {
               color: PdfColors.green,
               dataMap: dataMap,
               graphTitle: 'Posture Types',
+              customLabels: ['laying down', 'sitting', 'squatting', 'standing'],
             )
           ],
           pieGraphData: [],
@@ -296,10 +304,10 @@ Future<PDFData?> retrievePDFInfo(Test test, Polygon projectPolygon) async {
         PeopleInMotionData data = (test as PeopleInMotionTest).data;
         Map<String, double> dataMap = {
           ActivityTypeInMotion.activityOnWheels.name: 0,
-          ActivityTypeInMotion.handicapAssistedWheels.name: 0,
           ActivityTypeInMotion.walking.name: 0,
           ActivityTypeInMotion.swimming.name: 0,
           ActivityTypeInMotion.running.name: 0,
+          ActivityTypeInMotion.handicapAssistedWheels.name: 0,
         };
 
         for (final PersonInMotion person in data.persons) {
@@ -313,6 +321,13 @@ Future<PDFData?> retrievePDFInfo(Test test, Polygon projectPolygon) async {
               color: PdfColors.orange,
               dataMap: dataMap,
               graphTitle: 'Activity Types',
+              customLabels: [
+                'on wheels',
+                'walking',
+                'swimming',
+                'running',
+                'handicap assisted'
+              ],
             )
           ],
           pieGraphData: [],
@@ -432,11 +447,17 @@ Future<PDFData?> retrievePDFInfo(Test test, Polygon projectPolygon) async {
                 yAxisLabel: 'Area (sq. ft)',
               ),
               BarGraphData(
-                color: PdfColors.yellow,
-                dataMap: constructedLength,
-                graphTitle: 'Length of Constructed Types',
-                yAxisLabel: 'Length (ft)',
-              ),
+                  color: PdfColors.yellow,
+                  dataMap: constructedLength,
+                  graphTitle: 'Length of Constructed Types',
+                  yAxisLabel: 'Length (ft)',
+                  customLabels: [
+                    'building wall',
+                    'curb',
+                    'fence',
+                    'partial wall',
+                    'planter'
+                  ]),
             ],
             pieGraphData: [],
             displayName: SpatialBoundariesTest.displayName,

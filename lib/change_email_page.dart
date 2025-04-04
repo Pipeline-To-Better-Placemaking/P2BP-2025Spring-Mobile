@@ -2,7 +2,9 @@ import 'dart:async';
 
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:p2bp_2025spring_mobile/theme.dart';
+
 import 'strings.dart';
 
 class ChangeEmailPage extends StatelessWidget {
@@ -10,26 +12,26 @@ class ChangeEmailPage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return SafeArea(
-      child: Scaffold(
-        appBar: AppBar(
-          title: const Text('Change Email Address'),
+    return Scaffold(
+      appBar: AppBar(
+        systemOverlayStyle: SystemUiOverlayStyle.dark
+            .copyWith(statusBarColor: Colors.transparent),
+        title: const Text('Change Email Address'),
+      ),
+      body: DefaultTextStyle(
+        style: TextStyle(
+          color: p2bpBlue,
+          fontSize: 16,
+          fontWeight: FontWeight.normal,
         ),
-        body: DefaultTextStyle(
-          style: TextStyle(
-            color: p2bpBlue,
-            fontSize: 16,
-            fontWeight: FontWeight.normal,
-          ),
-          child: ListView(
-            padding: const EdgeInsets.all(20),
-            children: <Widget>[
-              const Text(Strings.changeEmailText1),
-              const SizedBox(height: 16),
-              ChangeEmailForm(),
-              const SizedBox(height: 40),
-            ],
-          ),
+        child: ListView(
+          padding: const EdgeInsets.all(20),
+          children: <Widget>[
+            const Text(Strings.changeEmailText1),
+            const SizedBox(height: 16),
+            ChangeEmailForm(),
+            const SizedBox(height: 40),
+          ],
         ),
       ),
     );

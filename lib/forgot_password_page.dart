@@ -25,50 +25,54 @@ class ForgotPasswordPage extends StatelessWidget {
                 gradient: defaultGrad,
               ),
               padding: const EdgeInsets.all(30),
-              child: ListView(
-                children: <Widget>[
-                  Image(
-                    image: AssetImage(
-                      'assets/ForgotPasswordBanner.png',
-                      bundle: bundle,
-                    ),
-                  ),
-                  SizedBox(height: 10),
-                  Text(
-                    'Forgot Password?',
-                    style: TextStyle(
-                      fontWeight: FontWeight.bold,
-                      fontSize: 32,
-                    ),
-                  ),
-                  SizedBox(height: 10),
-                  Text(
-                    Strings.forgotPasswordText,
-                    style: TextStyle(
-                      fontSize: 18,
-                    ),
-                  ),
-                  SizedBox(height: 10),
-                  ForgotPasswordForm(),
-                  SizedBox(height: 10),
-                  TextButton(
-                    onPressed: () {
-                      Navigator.pop(context);
-                    },
-                    style: const ButtonStyle(
-                      foregroundColor: WidgetStatePropertyAll(
-                        Color(0xFFFFD700),
+              child: SafeArea(
+                child: ListView(
+                  children: <Widget>[
+                    const SizedBox(height: 20),
+                    Image(
+                      image: AssetImage(
+                        'assets/ForgotPasswordBanner.png',
+                        bundle: bundle,
                       ),
                     ),
-                    child: const Text(
-                      'Return to Login',
+                    const SizedBox(height: 10),
+                    Text(
+                      'Forgot Password?',
                       style: TextStyle(
                         fontWeight: FontWeight.bold,
-                        fontSize: 17,
+                        fontSize: 32,
                       ),
                     ),
-                  ),
-                ],
+                    const SizedBox(height: 10),
+                    Text(
+                      Strings.forgotPasswordText,
+                      style: TextStyle(
+                        fontSize: 18,
+                      ),
+                    ),
+                    const SizedBox(height: 10),
+                    ForgotPasswordForm(),
+                    const SizedBox(height: 10),
+                    TextButton(
+                      onPressed: () {
+                        Navigator.pop(context);
+                      },
+                      style: const ButtonStyle(
+                        foregroundColor: WidgetStatePropertyAll(
+                          Color(0xFFFFD700),
+                        ),
+                      ),
+                      child: const Text(
+                        'Return to Login',
+                        style: TextStyle(
+                          fontWeight: FontWeight.bold,
+                          fontSize: 17,
+                        ),
+                      ),
+                    ),
+                    const SizedBox(height: 30),
+                  ],
+                ),
               ),
             ),
           ),
