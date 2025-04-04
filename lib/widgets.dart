@@ -1,3 +1,4 @@
+import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:p2bp_2025spring_mobile/theme.dart';
@@ -1048,7 +1049,7 @@ void showTestModalGeneric(BuildContext context,
             child: Container(
               // Container decoration- rounded corners and gradient
               decoration: BoxDecoration(
-                gradient: defaultGrad,
+                gradient: formGradient,
                 borderRadius: const BorderRadius.only(
                   topLeft: Radius.circular(24.0),
                   topRight: Radius.circular(24.0),
@@ -1067,7 +1068,7 @@ void showTestModalGeneric(BuildContext context,
                         style: TextStyle(
                           fontSize: 20,
                           fontWeight: FontWeight.bold,
-                          color: placeYellow,
+                          color: p2bpBlue,
                         ),
                       ),
                     ),
@@ -1077,8 +1078,7 @@ void showTestModalGeneric(BuildContext context,
                               subtitle,
                               style: TextStyle(
                                 fontSize: 16,
-                                fontStyle: FontStyle.italic,
-                                color: Colors.grey[400],
+                                color: Colors.black,
                               ),
                             ),
                           )
@@ -1090,14 +1090,14 @@ void showTestModalGeneric(BuildContext context,
                       alignment: Alignment.bottomRight,
                       child: InkWell(
                         onTap: onCancel,
-                        child: const Padding(
+                        child: Padding(
                           padding: EdgeInsets.only(right: 20, bottom: 0),
                           child: Text(
                             'Cancel',
                             style: TextStyle(
                                 fontSize: 16,
                                 fontWeight: FontWeight.w500,
-                                color: Color(0xFFFFD700)),
+                                color: p2bpBlue),
                           ),
                         ),
                       ),
@@ -1157,6 +1157,118 @@ class TestErrorText extends StatelessWidget {
               color: Colors.red[50],
             ),
           ),
+        ),
+      ),
+    );
+  }
+}
+
+enum CustomTab { project, team }
+
+/// Segmented Tab for Projects and Teams View V2
+class CustomSegmentedTab extends StatefulWidget {
+  final CustomTab selectedTab;
+  final ValueChanged<CustomTab> onTabSelected;
+
+  const CustomSegmentedTab({
+    super.key,
+    required this.selectedTab,
+    required this.onTabSelected,
+  });
+
+  @override
+  _CustomSegmentedTabState createState() => _CustomSegmentedTabState();
+}
+
+class _CustomSegmentedTabState extends State<CustomSegmentedTab> {
+  // Cache styles and decorations outside the build method
+  final TextStyle selectedStyle = const TextStyle(
+    color: Colors.white,
+    fontWeight: FontWeight.bold,
+    fontSize: 16,
+  );
+
+  final TextStyle unselectedStyle = const TextStyle(
+    color: Color(0xFFB6D1EC),
+    fontWeight: FontWeight.bold,
+    fontSize: 16,
+  );
+
+  // Create a container decoration once
+  final containerDecoration = BoxDecoration(
+    borderRadius: BorderRadius.circular(60),
+    gradient: verticalBlueGrad,
+    boxShadow: [
+      BoxShadow(
+        color: Colors.black.withValues(alpha: 0.2),
+        offset: Offset(0, 4),
+        blurRadius: 12,
+      ),
+    ],
+  );
+
+  @override
+  Widget build(BuildContext context) {
+    return ClipRRect(
+      borderRadius: BorderRadius.circular(120),
+      child: BackdropFilter(
+        filter: ImageFilter.blur(sigmaX: 40, sigmaY: 40),
+        child: Container(
+          margin: const EdgeInsets.symmetric(horizontal: 64, vertical: 16),
+          constraints: const BoxConstraints(minHeight: 60),
+          padding: const EdgeInsets.all(8.0),
+          decoration: containerDecoration,
+          child: Row(
+            mainAxisSize: MainAxisSize.max,
+            mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+            children: [
+              RepaintBoundary(
+                child: _buildSegment(
+                  tab: CustomTab.project,
+                  label: 'PROJECT',
+                ),
+              ),
+              RepaintBoundary(
+                child: _buildSegment(
+                  tab: CustomTab.team,
+                  label: 'TEAM',
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildSegment({required CustomTab tab, required String label}) {
+    final bool isSelected = (widget.selectedTab == tab);
+
+    // Selected tab: white text
+    final TextStyle selectedStyle = const TextStyle(
+      color: Colors.white,
+      fontWeight: FontWeight.bold,
+      fontSize: 16,
+    );
+
+    // Unselected tab: B6D1EC
+    final TextStyle unselectedStyle = const TextStyle(
+      color: Color(0xFFB6D1EC),
+      fontWeight: FontWeight.bold,
+      fontSize: 16,
+    );
+
+    return GestureDetector(
+      onTap: () => widget.onTabSelected(tab),
+      child: Container(
+        padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 20),
+        decoration: BoxDecoration(
+          borderRadius: BorderRadius.circular(40),
+        ),
+        alignment: Alignment.center,
+        child: Text(
+          label,
+          style: isSelected ? selectedStyle : unselectedStyle,
         ),
       ),
     );

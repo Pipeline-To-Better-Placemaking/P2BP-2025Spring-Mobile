@@ -348,7 +348,7 @@ class _AbsenceOfOrderTestPageState extends State<AbsenceOfOrderTestPage> {
             padding:
                 const EdgeInsets.symmetric(horizontal: 12.0, vertical: 10.0),
             decoration: BoxDecoration(
-              gradient: defaultGrad,
+              gradient: formGradient,
               borderRadius: const BorderRadius.only(
                 topLeft: Radius.circular(24.0),
                 topRight: Radius.circular(24.0),
@@ -369,7 +369,7 @@ class _AbsenceOfOrderTestPageState extends State<AbsenceOfOrderTestPage> {
                     style: TextStyle(
                       fontSize: 20,
                       fontWeight: FontWeight.bold,
-                      color: placeYellow,
+                      color: p2bpBlue,
                     ),
                   ),
                 ),
@@ -530,7 +530,7 @@ class _BehaviorDescriptionFormState extends State<_BehaviorDescriptionForm> {
           padding: MediaQuery.viewInsetsOf(context),
           child: Container(
             decoration: BoxDecoration(
-              gradient: defaultGrad,
+              gradient: formGradient,
               borderRadius: const BorderRadius.only(
                 topLeft: Radius.circular(24.0),
                 topRight: Radius.circular(24.0),
@@ -549,7 +549,7 @@ class _BehaviorDescriptionFormState extends State<_BehaviorDescriptionForm> {
                       style: TextStyle(
                         fontSize: 20,
                         fontWeight: FontWeight.bold,
-                        color: placeYellow,
+                        color: p2bpBlue,
                       ),
                     ),
                   ),
@@ -787,7 +787,7 @@ class _MaintenanceDescriptionFormState
           padding: MediaQuery.viewInsetsOf(context),
           child: Container(
             decoration: BoxDecoration(
-              gradient: defaultGrad,
+              gradient: formGradient,
               borderRadius: const BorderRadius.only(
                 topLeft: Radius.circular(24.0),
                 topRight: Radius.circular(24.0),
@@ -806,7 +806,7 @@ class _MaintenanceDescriptionFormState
                       style: TextStyle(
                         fontSize: 20,
                         fontWeight: FontWeight.bold,
-                        color: placeYellow,
+                        color: p2bpBlue,
                       ),
                     ),
                   ),

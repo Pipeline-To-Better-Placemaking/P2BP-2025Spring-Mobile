@@ -1,12 +1,12 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'package:p2bp_2025spring_mobile/project_map_creation.dart';
 import 'package:p2bp_2025spring_mobile/teams_and_invites_page.dart';
+
+import 'db_schema_classes.dart';
 import 'firestore_functions.dart';
 import 'home_screen.dart';
-import 'widgets.dart';
 import 'theme.dart';
-import 'db_schema_classes.dart';
+import 'widgets.dart';
 
 // For page selection switch. 0 = project, 1 = team.
 enum PageView { project, team }
@@ -114,7 +114,7 @@ class _CreateProjectWidgetState extends State<CreateProjectWidget> {
         padding: EdgeInsets.symmetric(horizontal: 20),
         child: Container(
           decoration: BoxDecoration(
-            color: Colors.grey[100],
+            color: directionsTransparency,
             borderRadius: BorderRadius.all(Radius.circular(10)),
           ),
           child: Padding(
@@ -130,7 +130,7 @@ class _CreateProjectWidgetState extends State<CreateProjectWidget> {
                     style: TextStyle(
                       fontWeight: FontWeight.bold,
                       fontSize: 16.0,
-                      color: Colors.blue[900],
+                      color: p2bpBlue,
                     ),
                   ),
                 ),
@@ -154,7 +154,7 @@ class _CreateProjectWidgetState extends State<CreateProjectWidget> {
                     style: TextStyle(
                       fontWeight: FontWeight.bold,
                       fontSize: 16.0,
-                      color: Colors.blue[900],
+                      color: p2bpBlue,
                     ),
                   ),
                 ),
@@ -180,7 +180,7 @@ class _CreateProjectWidgetState extends State<CreateProjectWidget> {
                     style: TextStyle(
                       fontWeight: FontWeight.bold,
                       fontSize: 16.0,
-                      color: Colors.blue[900],
+                      color: p2bpBlue,
                     ),
                   ),
                 ),
@@ -210,7 +210,7 @@ class _CreateProjectWidgetState extends State<CreateProjectWidget> {
                         style: TextStyle(
                           fontWeight: FontWeight.bold,
                           fontSize: 16.0,
-                          color: Colors.blue[900],
+                          color: p2bpBlue,
                         ),
                       ),
                       Tooltip(
@@ -220,8 +220,7 @@ class _CreateProjectWidgetState extends State<CreateProjectWidget> {
                         preferBelow: false,
                         message:
                             'Enter a central address for the designated project location. \nIf no such address exists, give an approximate location.',
-                        child:
-                            Icon(Icons.help, size: 18, color: Colors.blue[900]),
+                        child: Icon(Icons.help, size: 18, color: p2bpBlue),
                       ),
                     ],
                   ),
@@ -245,7 +244,7 @@ class _CreateProjectWidgetState extends State<CreateProjectWidget> {
                   child: EditButton(
                     text: 'Next',
                     foregroundColor: Colors.white,
-                    backgroundColor: const Color(0xFF4871AE),
+                    backgroundColor: p2bpBlue,
                     icon: const Icon(Icons.chevron_right),
                     onPressed: () async {
                       if (await getCurrentTeam() == null) {
@@ -262,6 +261,7 @@ class _CreateProjectWidgetState extends State<CreateProjectWidget> {
                           address: projectAddress,
                         );
                         if (!context.mounted) return;
+                        FocusManager.instance.primaryFocus?.unfocus();
                         Navigator.push(
                             context,
                             MaterialPageRoute(
@@ -339,7 +339,7 @@ class _CreateTeamWidgetState extends State<CreateTeamWidget> {
         padding: const EdgeInsets.symmetric(horizontal: 20.0),
         child: Container(
           decoration: BoxDecoration(
-            color: Colors.grey[100],
+            color: directionsTransparency,
             borderRadius: const BorderRadius.all(Radius.circular(10)),
           ),
           child: Padding(
@@ -358,7 +358,7 @@ class _CreateTeamWidgetState extends State<CreateTeamWidget> {
                           style: TextStyle(
                             fontWeight: FontWeight.bold,
                             fontSize: 16.0,
-                            color: Colors.blue[900],
+                            color: p2bpBlue,
                           ),
                         ),
                         SizedBox(height: 5),
@@ -375,50 +375,50 @@ class _CreateTeamWidgetState extends State<CreateTeamWidget> {
                         ),
                       ],
                     ),
-                    Column(
-                      children: <Widget>[
-                        Text(
-                          'Team Color',
-                          textAlign: TextAlign.left,
-                          style: TextStyle(
-                            fontWeight: FontWeight.bold,
-                            fontSize: 16.0,
-                            color: Colors.blue[900],
-                          ),
-                        ),
-                        SizedBox(height: 5),
-                        Column(
-                          children: <Widget>[
-                            Row(
-                              children: <Widget>[
-                                ColorSelectCircle(
-                                  gradient: defaultGrad,
-                                ),
-                                ColorSelectCircle(
-                                  gradient: defaultGrad,
-                                ),
-                                ColorSelectCircle(
-                                  gradient: defaultGrad,
-                                ),
-                              ],
-                            ),
-                            Row(
-                              children: <Widget>[
-                                ColorSelectCircle(
-                                  gradient: defaultGrad,
-                                ),
-                                ColorSelectCircle(
-                                  gradient: defaultGrad,
-                                ),
-                                ColorSelectCircle(
-                                  gradient: defaultGrad,
-                                ),
-                              ],
-                            ),
-                          ],
-                        ),
-                      ],
-                    ),
+                    // Column(
+                    //   children: <Widget>[
+                    //     Text(
+                    //       'Team Color',
+                    //       textAlign: TextAlign.left,
+                    //       style: TextStyle(
+                    //         fontWeight: FontWeight.bold,
+                    //         fontSize: 16.0,
+                    //         color: p2bpBlue,
+                    //       ),
+                    //     ),
+                    //     SizedBox(height: 5),
+                    //     Column(
+                    //       children: <Widget>[
+                    //         Row(
+                    //           children: <Widget>[
+                    //             ColorSelectCircle(
+                    //               gradient: defaultGrad,
+                    //             ),
+                    //             ColorSelectCircle(
+                    //               gradient: defaultGrad,
+                    //             ),
+                    //             ColorSelectCircle(
+                    //               gradient: defaultGrad,
+                    //             ),
+                    //           ],
+                    //         ),
+                    //         Row(
+                    //           children: <Widget>[
+                    //             ColorSelectCircle(
+                    //               gradient: defaultGrad,
+                    //             ),
+                    //             ColorSelectCircle(
+                    //               gradient: defaultGrad,
+                    //             ),
+                    //             ColorSelectCircle(
+                    //               gradient: defaultGrad,
+                    //             ),
+                    //           ],
+                    //         ),
+                    //       ],
+                    //     ),
+                    //   ],
+                    // ),
                   ],
                 ),
                 SizedBox(height: 10),
@@ -430,7 +430,7 @@ class _CreateTeamWidgetState extends State<CreateTeamWidget> {
                     style: TextStyle(
                       fontWeight: FontWeight.bold,
                       fontSize: 16.0,
-                      color: Colors.blue[900],
+                      color: p2bpBlue,
                     ),
                   ),
                 ),
@@ -456,7 +456,7 @@ class _CreateTeamWidgetState extends State<CreateTeamWidget> {
                     style: TextStyle(
                       fontWeight: FontWeight.bold,
                       fontSize: 16.0,
-                      color: Colors.blue[900],
+                      color: p2bpBlue,
                     ),
                   ),
                 ),
@@ -511,7 +511,7 @@ class _CreateTeamWidgetState extends State<CreateTeamWidget> {
                   child: EditButton(
                     text: 'Create',
                     foregroundColor: Colors.white,
-                    backgroundColor: const Color(0xFF4871AE),
+                    backgroundColor: p2bpBlue,
                     icon: const Icon(Icons.chevron_right),
                     onPressed: () async {
                       if (_formKey.currentState!.validate()) {
@@ -521,6 +521,7 @@ class _CreateTeamWidgetState extends State<CreateTeamWidget> {
                         await saveTeam(
                             membersList: invitedMembers, teamName: teamName);
                         if (!context.mounted) return;
+                        FocusManager.instance.primaryFocus?.unfocus();
                         Navigator.pushReplacement(
                           context,
                           MaterialPageRoute(

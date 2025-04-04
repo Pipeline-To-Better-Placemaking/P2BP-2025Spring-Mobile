@@ -1,6 +1,7 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
+import 'package:p2bp_2025spring_mobile/theme.dart';
 import 'strings.dart';
 
 class SubmitBugReportPage extends StatelessWidget {
@@ -15,7 +16,7 @@ class SubmitBugReportPage extends StatelessWidget {
         ),
         body: DefaultTextStyle(
           style: TextStyle(
-            color: Colors.blue[800],
+            color: p2bpBlue,
             fontSize: 16,
             fontWeight: FontWeight.bold,
           ),
@@ -140,7 +141,7 @@ class _SubmitBugReportFormState extends State<SubmitBugReportForm> {
           const SizedBox(height: 16),
           ElevatedButton(
             style: ElevatedButton.styleFrom(
-              backgroundColor: Colors.blue,
+              backgroundColor: p2bpBlue,
               padding: EdgeInsets.symmetric(vertical: 8),
               shape: RoundedRectangleBorder(
                 borderRadius: BorderRadius.circular(10),

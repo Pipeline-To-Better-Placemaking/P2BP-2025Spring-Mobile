@@ -38,7 +38,7 @@ class _SectionCutterState extends State<SectionCutter> {
   String _directions =
       "Go to designated section. Then upload the section drawing here.";
   XFile? sectionCutterFile;
-  static const double _bottomSheetHeight = 315;
+  static const double _bottomSheetHeight = 325;
   late DocumentReference teamRef;
 
   double _zoom = 18;
@@ -175,7 +175,7 @@ class _SectionCutterState extends State<SectionCutter> {
             padding:
                 const EdgeInsets.symmetric(horizontal: 12.0, vertical: 10.0),
             decoration: BoxDecoration(
-              gradient: defaultGrad,
+              gradient: formGradient,
               borderRadius: const BorderRadius.only(
                 topLeft: Radius.circular(24.0),
                 topRight: Radius.circular(24.0),
@@ -197,18 +197,17 @@ class _SectionCutterState extends State<SectionCutter> {
                   style: TextStyle(
                     fontSize: 20,
                     fontWeight: FontWeight.bold,
-                    color: placeYellow,
+                    color: p2bpBlue,
                   ),
                 ),
                 Text(
                   'Upload your section drawing here.',
                   style: TextStyle(
                     fontSize: 16,
-                    fontStyle: FontStyle.italic,
-                    color: Colors.grey[400],
+                    color: Colors.black,
                   ),
                 ),
-                SizedBox(height: 35),
+                SizedBox(height: 25),
                 Row(
                   children: <Widget>[
                     Expanded(
@@ -319,8 +318,7 @@ class _SectionCutterState extends State<SectionCutter> {
                   'Accepted formats: .png, .pdf, .jpg',
                   style: TextStyle(
                     fontSize: 16,
-                    fontStyle: FontStyle.italic,
-                    color: Colors.grey[400],
+                    color: Colors.black,
                   ),
                 ),
                 SizedBox(height: 20),

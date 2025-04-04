@@ -113,6 +113,7 @@ class SignUpScreen extends StatelessWidget {
                       TextButton(
                         onPressed: () {
                           // Handle navigation to the Login screen
+                          FocusManager.instance.primaryFocus?.unfocus();
                           Navigator.push(
                             context,
                             MaterialPageRoute(

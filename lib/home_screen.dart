@@ -2,6 +2,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:p2bp_2025spring_mobile/pdf_report.dart';
 import 'package:p2bp_2025spring_mobile/project_details_page.dart';
 import 'package:p2bp_2025spring_mobile/teams_and_invites_page.dart';
@@ -309,7 +310,7 @@ class _HomeScreenState extends State<HomeScreen> {
         child: Padding(
           padding: const EdgeInsets.symmetric(
             horizontal: 20,
-            vertical: 10,
+            vertical: 5,
           ),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
@@ -332,26 +333,56 @@ class _HomeScreenState extends State<HomeScreen> {
                       mainAxisAlignment: MainAxisAlignment.end,
                       children: [
                         // Teams Button
-                        IconButton(
-                          icon: const Icon(Icons.group),
-                          color: const Color(0xFF0A2A88),
-                          onPressed: () async {
-                            // Navigate to Teams/Invites screen
-                            await Navigator.push(
-                              context,
-                              MaterialPageRoute(
-                                  builder: (context) => TeamsAndInvitesPage()),
-                            );
-                            _populateProjects();
-                          },
-                          iconSize: 24,
+                        // IconButton(
+                        //   icon: const Icon(Icons.group),
+                        //   color: const Color(0xFF0A2A88),
+                        //   onPressed: () async {
+                        //     // Navigate to Teams/Invites screen
+                        //     await Navigator.push(
+                        //       context,
+                        //       MaterialPageRoute(
+                        //           builder: (context) => TeamsAndInvitesPage()),
+                        //     );
+                        //     _populateProjects();
+                        //   },
+                        //   iconSize: 24,
+                        // ),
+                        Container(
+                          width: 36,
+                          height: 36,
+                          decoration: BoxDecoration(
+                              shape: BoxShape.circle,
+                              color: Color(0xFF2F6DCF),
+                              border: Border.all(
+                                  color: Color(0xFF0A2A88), width: 3)),
+                          child: Center(
+                            child: Transform.translate(
+                              offset: Offset(-1.5, 0),
+                              child: IconButton(
+                                padding: EdgeInsets.zero,
+                                icon: const Icon(FontAwesomeIcons.users),
+                                color: p2bpYellow,
+                                onPressed: () async {
+                                  // Navigate to Teams/Invites screen
+                                  await Navigator.push(
+                                      context,
+                                      MaterialPageRoute(
+                                        builder: (context) =>
+                                            const TeamsAndInvitesPage(),
+                                      ));
+                                  _populateProjects();
+                                },
+                                iconSize: 16,
+                              ),
+                            ),
+                          ),
                         ),
                       ],
                     ),
                   ),
                   // "Hello, [user]" greeting, aligned to the left below the logo
                   Padding(
-                    padding: const EdgeInsets.only(top: 40),
+                    padding: const EdgeInsets.only(top: 40, left: 10),
                     child: Row(
                       mainAxisAlignment: MainAxisAlignment.start,
                       children: [
@@ -360,7 +391,7 @@ class _HomeScreenState extends State<HomeScreen> {
                             return defaultGrad.createShader(bounds);
                           },
                           child: Text(
-                            'Hello, $_firstName',
+                            'Hello, \n$_firstName',
                             style: TextStyle(
                               fontSize: 36,
                               fontWeight: FontWeight.bold,
@@ -408,7 +439,7 @@ class _HomeScreenState extends State<HomeScreen> {
                           padding: const EdgeInsets.only(
                             left: 15,
                             right: 15,
-                            top: 25,
+                            top: 5,
                             bottom: 25,
                           ),
                           itemCount: _projectsCount,
