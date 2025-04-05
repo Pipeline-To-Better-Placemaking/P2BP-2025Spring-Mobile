@@ -1,7 +1,5 @@
 import 'dart:io';
-import 'dart:ui';
 
-import 'package:background_app_bar/background_app_bar.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_storage/firebase_storage.dart';
@@ -146,48 +144,29 @@ class _ProjectDetailsPageState extends State<ProjectDetailsPage> {
                 ),
               ),
             ],
-            flexibleSpace:
-                LayoutBuilder(builder: (BuildContext context, constraints) {
-              final double collapsedHeight =
-                  MediaQuery.paddingOf(context).top + kToolbarHeight;
-              final bool isCollapsed =
-                  constraints.maxHeight <= collapsedHeight + 10;
-
-              return BackgroundFlexibleSpaceBar(
+            flexibleSpace: DecoratedBox(
+              decoration: BoxDecoration(
+                color: p2bpBlue,
+                image: _coverImageUrl.isNotEmpty
+                    ? DecorationImage(
+                        image: NetworkImage(_coverImageUrl), fit: BoxFit.cover)
+                    : null,
+              ),
+              child: FlexibleSpaceBar(
                 background: ClipRRect(
-                  child: isCollapsed
-                      ? Container(
-                          decoration: BoxDecoration(
-                            color: Color(0xFF999999),
-                            image: _coverImageUrl.isNotEmpty
-                                ? DecorationImage(
-                                    image: NetworkImage(_coverImageUrl),
-                                    fit: BoxFit.cover)
-                                : null,
-                          ),
-                          child: BackdropFilter(
-                            filter:
-                                ImageFilter.blur(sigmaX: 10.0, sigmaY: 10.0),
-                            child: Container(
-                              decoration: BoxDecoration(
-                                color: Colors.black.withValues(alpha: 0.25),
-                              ),
-                            ),
-                          ),
-                        )
-                      : Container(
-                          decoration: BoxDecoration(
-                            color: Color(0xFF999999),
-                            image: _coverImageUrl.isNotEmpty
-                                ? DecorationImage(
-                                    image: NetworkImage(_coverImageUrl),
-                                    fit: BoxFit.cover)
-                                : null,
-                          ),
-                        ),
+                  child: Container(
+                    decoration: BoxDecoration(
+                      color: p2bpDarkBlue,
+                      image: _coverImageUrl.isNotEmpty
+                          ? DecorationImage(
+                              image: NetworkImage(_coverImageUrl),
+                              fit: BoxFit.cover)
+                          : null,
+                    ),
+                  ),
                 ),
-              );
-            }),
+              ),
+            ),
           ),
           SliverList(delegate: SliverChildListDelegate([_getPageBody()])),
         ],
