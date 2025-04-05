@@ -72,7 +72,7 @@ class _SubmitBugReportFormState extends State<SubmitBugReportForm> {
     // Only succeeds if none of the fields had an error
     if (_titleErrorText == null && _descErrorText == null) {
       try {
-        String? uid = FirebaseAuth.instance.currentUser?.uid;
+        final String? uid = FirebaseAuth.instance.currentUser?.uid;
         await FirebaseFirestore.instance.collection('bug_reports').doc().set({
           'uid': uid,
           'title': titleText,

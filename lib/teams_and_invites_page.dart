@@ -16,9 +16,10 @@ class TeamsAndInvitesPage extends StatefulWidget {
 }
 
 final FirebaseFirestore _firestore = FirebaseFirestore.instance;
-User? loggedInUser = FirebaseAuth.instance.currentUser;
 
 class _TeamsAndInvitesPageState extends State<TeamsAndInvitesPage> {
+  final User? _loggedInUser = FirebaseAuth.instance.currentUser;
+
   List<Team> teams = [];
   List<Team> teamInvites = [];
   DocumentReference? currentTeam;
@@ -50,7 +51,7 @@ class _TeamsAndInvitesPageState extends State<TeamsAndInvitesPage> {
       if (currentTeam == null && teams.isNotEmpty) {
         // No selected team:
         print("No team selected. Defaulting to first if available.");
-        await _firestore.collection('users').doc(loggedInUser?.uid).update({
+        await _firestore.collection('users').doc(_loggedInUser?.uid).update({
           'selectedTeam': _firestore.doc('/teams/${teams.first.teamID}'),
         });
         setState(() {
@@ -66,7 +67,7 @@ class _TeamsAndInvitesPageState extends State<TeamsAndInvitesPage> {
         // No teams but a selected team:
         _firestore
             .collection('users')
-            .doc(loggedInUser?.uid)
+            .doc(_loggedInUser?.uid)
             .update({'selectedTeam': null});
         setState(() {
           selectedIndex = -1;
@@ -358,7 +359,7 @@ class _TeamsAndInvitesPageState extends State<TeamsAndInvitesPage> {
             onTap: () async {
               await _firestore
                   .collection('users')
-                  .doc(loggedInUser?.uid)
+                  .doc(_loggedInUser?.uid)
                   .update({
                 'selectedTeam': _firestore.doc('/teams/${team.teamID}'),
               });

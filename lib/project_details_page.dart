@@ -32,7 +32,6 @@ class ProjectDetailsPage extends StatefulWidget {
 }
 
 final FirebaseFirestore _firestore = FirebaseFirestore.instance;
-User? loggedInUser = FirebaseAuth.instance.currentUser;
 
 class _ProjectDetailsPageState extends State<ProjectDetailsPage> {
   int _testCount = 0;
@@ -331,7 +330,7 @@ class _ProjectDetailsPageState extends State<ProjectDetailsPage> {
                     ),
                   ),
                   if (widget.activeProject.projectAdmin!.id ==
-                      loggedInUser!.uid)
+                      FirebaseAuth.instance.currentUser!.uid)
                     FilledButton.icon(
                       style: FilledButton.styleFrom(
                         padding: const EdgeInsets.only(left: 15, right: 15),
