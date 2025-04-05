@@ -11,7 +11,6 @@ import 'db_schema_classes.dart';
 import 'google_maps_functions.dart';
 
 final FirebaseFirestore _firestore = FirebaseFirestore.instance;
-final User? _loggedInUser = FirebaseAuth.instance.currentUser;
 
 // NOTE: When creating delete functionality, delete ALL instances of object.
 // Make sure to delete references in other objects (i.e. deleting a team should
@@ -48,6 +47,9 @@ Future<String> getUserFullName(String? uid) async {
 /// issues. Returns future of String of teamID.
 Future<String> saveTeam(
     {required membersList, required String teamName}) async {
+  final User? loggedInUser = FirebaseAuth.instance.currentUser;
+  if (loggedInUser == null) return '';
+
   String teamID = _firestore.collection('teams').doc().id;
   await _firestore.collection('teams').doc(teamID).set({
     'title': teamName,
@@ -56,10 +58,10 @@ Future<String> saveTeam(
     'id': teamID,
     'projects': [],
     'teamMembers': FieldValue.arrayUnion([
-      {'role': 'owner', 'user': _firestore.doc('users/${_loggedInUser?.uid}')}
+      {'role': 'owner', 'user': _firestore.doc('users/${loggedInUser.uid}')}
     ]),
   });
-  await _firestore.collection('users').doc(_loggedInUser?.uid).update({
+  await _firestore.collection('users').doc(loggedInUser.uid).update({
     'teams': FieldValue.arrayUnion([_firestore.doc('/teams/$teamID')])
   });
   // Currently: invites team members only once team is created.
@@ -88,12 +90,14 @@ Future<Project> saveProject({
   required num polygonArea,
   File? coverImage,
 }) async {
+  final User? loggedInUser = FirebaseAuth.instance.currentUser;
   late Project tempProject;
   String coverImageUrl = '';
+  if (loggedInUser == null) throw Exception('no user logged in');
 
   try {
     DocumentReference projectAdmin =
-        _firestore.doc('users/${_loggedInUser?.uid}');
+        _firestore.doc('users/${loggedInUser.uid}');
     DocumentReference? teamRef = await getCurrentTeam();
     String projectID = _firestore.collection('projects').doc().id;
     if (teamRef == null) {
@@ -332,12 +336,13 @@ Future<bool> deleteTest(Test test) async {
 /// team. If retrieval throws an exception, then returns `null`. When
 /// implementing this function, check for `null` before using value.
 Future<DocumentReference?> getCurrentTeam() async {
+  final User? loggedInUser = FirebaseAuth.instance.currentUser;
+  if (loggedInUser == null) return null;
   DocumentReference? teamRef;
   final DocumentSnapshot<Map<String, dynamic>> userDoc;
 
   try {
-    userDoc =
-        await _firestore.collection('users').doc(_loggedInUser?.uid).get();
+    userDoc = await _firestore.collection('users').doc(loggedInUser.uid).get();
     if (userDoc.exists && userDoc.data()!.containsKey('selectedTeam')) {
       if (userDoc.data()!.containsKey('teams') &&
           userDoc['teams'] is List &&
@@ -346,12 +351,12 @@ Future<DocumentReference?> getCurrentTeam() async {
       } else if ((userDoc['teams'] as List).isEmpty) {
         _firestore
             .collection('users')
-            .doc(_loggedInUser?.uid)
+            .doc(loggedInUser.uid)
             .update({'selectedTeam': null});
       } else {
         _firestore
             .collection('users')
-            .doc(_loggedInUser?.uid)
+            .doc(loggedInUser.uid)
             .update({'selectedTeam': userDoc['teams'].first});
         teamRef = userDoc['teams'].first;
       }
@@ -393,14 +398,15 @@ Future<List<Project>> getTeamProjects(DocumentReference teamRef) async {
 /// of a list of `Team` objects. Checks to make sure document exists
 /// and invites field properly created (should *always* be created, failsafe).
 Future<List<Team>> getInvites() async {
+  final User? loggedInUser = FirebaseAuth.instance.currentUser;
+  if (loggedInUser == null) throw Exception('no user logged in');
   List<Team> teamInvites = [];
   final DocumentSnapshot<Map<String, dynamic>> userDoc;
   DocumentSnapshot<Map<String, dynamic>> teamDoc;
   DocumentSnapshot<Map<String, dynamic>> adminDoc;
 
   try {
-    userDoc =
-        await _firestore.collection("users").doc(_loggedInUser?.uid).get();
+    userDoc = await _firestore.collection("users").doc(loggedInUser.uid).get();
     Team tempTeam;
 
     if (userDoc.exists && userDoc.data()!.containsKey('invites')) {
@@ -434,6 +440,8 @@ Future<List<Team>> getInvites() async {
 /// of a list of `Team` objects. Checks to make sure document exists
 /// and teams field properly created (should *always* be created, failsafe).
 Future<List<Team>> getTeamsIDs() async {
+  final User? loggedInUser = FirebaseAuth.instance.currentUser;
+  if (loggedInUser == null) throw Exception('no user logged in');
   List<Team> teams = [];
   final DocumentSnapshot<Map<String, dynamic>> userDoc;
   DocumentSnapshot<Map<String, dynamic>> teamDoc;
@@ -441,8 +449,7 @@ Future<List<Team>> getTeamsIDs() async {
   // List<DocumentSnapshot<Map<String, dynamic>>> memberDocs;
 
   try {
-    userDoc =
-        await _firestore.collection("users").doc(_loggedInUser?.uid).get();
+    userDoc = await _firestore.collection("users").doc(loggedInUser.uid).get();
     Team tempTeam;
     if (userDoc.exists && userDoc.data()!.containsKey('teams')) {
       for (DocumentReference teamRef in userDoc['teams']) {
@@ -513,12 +520,14 @@ Future<void> sendInviteToUser(String userID, String teamID) async {
 /// field (*always* should). Makes sure that the invites field contains the
 /// invite being deleted. If so removes it from database.
 Future<void> removeInviteFromUser(String teamID) async {
+  final User? loggedInUser = FirebaseAuth.instance.currentUser;
+  if (loggedInUser == null) throw Exception('no user logged in');
   final DocumentReference<Map<String, dynamic>> userRef;
   final DocumentSnapshot<Map<String, dynamic>> userDoc;
   final DocumentReference<Map<String, dynamic>> teamRef;
 
   try {
-    userRef = _firestore.collection('users').doc('${_loggedInUser?.uid}');
+    userRef = _firestore.collection('users').doc(loggedInUser.uid);
     userDoc = await userRef.get();
     teamRef = _firestore.doc('teams/$teamID');
 
@@ -544,13 +553,15 @@ Future<void> removeInviteFromUser(String teamID) async {
 /// user to teams collection and remove invite from the user's database. If
 /// team no longer exists, removes invite from user's account without joining.
 Future<void> addUserToTeam(String teamID) async {
+  final User? loggedInUser = FirebaseAuth.instance.currentUser;
+  if (loggedInUser == null) throw Exception('no user logged in');
   final DocumentReference<Map<String, dynamic>> userRef;
   final DocumentSnapshot<Map<String, dynamic>> userDoc;
   final DocumentReference<Map<String, dynamic>> teamRef;
   final DocumentSnapshot<Map<String, dynamic>> teamDoc;
 
   try {
-    userRef = _firestore.collection('users').doc('${_loggedInUser?.uid}');
+    userRef = _firestore.collection('users').doc(loggedInUser.uid);
     userDoc = await userRef.get();
     teamRef = _firestore.doc('teams/$teamID');
     teamDoc = await teamRef.get();
@@ -567,7 +578,7 @@ Future<void> addUserToTeam(String teamID) async {
             'teamMembers': FieldValue.arrayUnion([
               {
                 'role': 'user',
-                'user': _firestore.doc('users/${_loggedInUser?.uid}')
+                'user': _firestore.doc('users/${loggedInUser.uid}')
               }
             ]),
           });
@@ -632,6 +643,8 @@ Future<void> removeUserFromTeam(String userID, String teamID) async {
 /// `Member` objects. Returns them as a future of a list of Member objects.
 /// Excludes current, logged in user. List can then be queried accordingly.
 Future<List<Member>> getMembersList() async {
+  final User? loggedInUser = FirebaseAuth.instance.currentUser;
+  if (loggedInUser == null) throw Exception('no user logged in');
   List<Member> membersList = [];
   final QuerySnapshot<Map<String, dynamic>> usersQuery;
 
@@ -642,7 +655,7 @@ Future<List<Member>> getMembersList() async {
         .get();
     Member tempMember;
     for (DocumentSnapshot<Map<String, dynamic>> document in usersQuery.docs) {
-      if (document.id != _loggedInUser?.uid) {
+      if (document.id != loggedInUser.uid) {
         tempMember =
             Member(userID: document.id, fullName: document.data()!['fullName']);
         membersList.add(tempMember);

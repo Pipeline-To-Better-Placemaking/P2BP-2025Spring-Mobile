@@ -356,24 +356,22 @@ class _HomeScreenState extends State<HomeScreen> {
                               border: Border.all(
                                   color: Color(0xFF0A2A88), width: 3)),
                           child: Center(
-                            child: Transform.translate(
-                              offset: Offset(-1.5, 0),
-                              child: IconButton(
-                                padding: EdgeInsets.zero,
-                                icon: const Icon(FontAwesomeIcons.users),
-                                color: p2bpYellow,
-                                onPressed: () async {
-                                  // Navigate to Teams/Invites screen
-                                  await Navigator.push(
-                                      context,
-                                      MaterialPageRoute(
-                                        builder: (context) =>
-                                            const TeamsAndInvitesPage(),
-                                      ));
-                                  _populateProjects();
-                                },
-                                iconSize: 16,
-                              ),
+                            child: IconButton(
+                              padding: EdgeInsets.zero,
+                              icon: const Icon(Icons.groups),
+                              color: p2bpYellow,
+                              onPressed: () async {
+                                // Navigate to Teams/Invites screen
+                                await Navigator.push(
+                                  context,
+                                  MaterialPageRoute(
+                                    builder: (context) =>
+                                        const TeamsAndInvitesPage(),
+                                  ),
+                                );
+                                _populateProjects();
+                              },
+                              iconSize: 24,
                             ),
                           ),
                         ),
