@@ -97,7 +97,6 @@ class Project {
     this.coverImageUrl,
   });
 
-  // TODO: Probably want to delete test if test reference is not found; however, functionality may be unnecessary if the implementation of deleting a test deletes it from the project also (which is ideal).
   /// Gets all fields for each [Test] in this [Project] and loads them
   /// into the [tests]. Also returns [tests].
   Future<List<Test>> loadAllTestData() async {

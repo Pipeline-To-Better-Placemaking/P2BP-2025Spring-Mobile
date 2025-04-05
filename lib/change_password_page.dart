@@ -11,20 +11,22 @@ class ChangePasswordPage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      resizeToAvoidBottomInset: false,
       appBar: AppBar(
         systemOverlayStyle: SystemUiOverlayStyle.dark
             .copyWith(statusBarColor: Colors.transparent),
         title: const Text('Change Password'),
       ),
       body: Padding(
-        padding: const EdgeInsets.all(20),
+        padding: const EdgeInsets.fromLTRB(20, 20, 20, 0) +
+            MediaQuery.viewInsetsOf(context),
         child: DefaultTextStyle(
           style: TextStyle(
             color: p2bpBlue,
             fontSize: 16,
             fontWeight: FontWeight.bold,
           ),
-          child: ChangePasswordForm(),
+          child: SafeArea(child: ChangePasswordForm()),
         ),
       ),
     );
@@ -172,7 +174,7 @@ class _ChangePasswordFormState extends State<ChangePasswordForm> {
               ),
             ),
           ),
-          SizedBox(height: 12),
+          const SizedBox(height: 12),
           const Text('New Password'),
           PasswordTextFormField(
             textColor: Colors.black,
@@ -195,7 +197,7 @@ class _ChangePasswordFormState extends State<ChangePasswordForm> {
               ),
             ),
           ),
-          SizedBox(height: 12),
+          const SizedBox(height: 12),
           const Text('Confirm New Password'),
           PasswordTextFormField(
             textColor: Colors.black,
@@ -219,7 +221,7 @@ class _ChangePasswordFormState extends State<ChangePasswordForm> {
               ),
             ),
           ),
-          SizedBox(height: 12),
+          const SizedBox(height: 12),
           ElevatedButton(
             style: ElevatedButton.styleFrom(
               backgroundColor: p2bpBlue,
@@ -238,6 +240,7 @@ class _ChangePasswordFormState extends State<ChangePasswordForm> {
               ),
             ),
           ),
+          const SizedBox(height: 30),
         ],
       ),
     );

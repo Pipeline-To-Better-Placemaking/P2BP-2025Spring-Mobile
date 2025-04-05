@@ -13,25 +13,22 @@ class ChangeEmailPage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      resizeToAvoidBottomInset: false,
       appBar: AppBar(
         systemOverlayStyle: SystemUiOverlayStyle.dark
             .copyWith(statusBarColor: Colors.transparent),
         title: const Text('Change Email Address'),
       ),
-      body: DefaultTextStyle(
-        style: TextStyle(
-          color: p2bpBlue,
-          fontSize: 16,
-          fontWeight: FontWeight.normal,
-        ),
-        child: ListView(
-          padding: const EdgeInsets.all(20),
-          children: <Widget>[
-            const Text(Strings.changeEmailText1),
-            const SizedBox(height: 16),
-            ChangeEmailForm(),
-            const SizedBox(height: 40),
-          ],
+      body: Padding(
+        padding: const EdgeInsets.fromLTRB(20, 20, 20, 0) +
+            MediaQuery.viewInsetsOf(context),
+        child: DefaultTextStyle(
+          style: TextStyle(
+            color: p2bpBlue,
+            fontSize: 16,
+            fontWeight: FontWeight.normal,
+          ),
+          child: SafeArea(child: ChangeEmailForm()),
         ),
       ),
     );
@@ -102,9 +99,10 @@ class _ChangeEmailFormState extends State<ChangeEmailForm> {
   Widget build(BuildContext context) {
     return Form(
       key: _formKey,
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
+      child: ListView(
         children: <Widget>[
+          const Text(Strings.changeEmailText1),
+          const SizedBox(height: 16),
           Text(
             style: TextStyle(
               fontSize: 20,
@@ -175,6 +173,7 @@ class _ChangeEmailFormState extends State<ChangeEmailForm> {
                 ),
               ],
             ),
+          const SizedBox(height: 30),
         ],
       ),
     );

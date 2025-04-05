@@ -12,25 +12,22 @@ class SubmitBugReportPage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      extendBody: true,
       resizeToAvoidBottomInset: false,
       appBar: AppBar(
         systemOverlayStyle: SystemUiOverlayStyle.dark
             .copyWith(statusBarColor: Colors.transparent),
         title: const Text('Submit a bug report'),
       ),
-      body: DefaultTextStyle(
-        style: TextStyle(
-          color: p2bpBlue,
-          fontSize: 16,
-          fontWeight: FontWeight.bold,
-        ),
-        child: ListView(
-          padding: EdgeInsets.all(30),
-          children: <Widget>[
-            SubmitBugReportForm(),
-            const SizedBox(height: 20),
-          ],
+      body: Padding(
+        padding: const EdgeInsets.fromLTRB(20, 20, 20, 0) +
+            MediaQuery.viewInsetsOf(context),
+        child: DefaultTextStyle(
+          style: TextStyle(
+            color: p2bpBlue,
+            fontSize: 16,
+            fontWeight: FontWeight.bold,
+          ),
+          child: SafeArea(child: SubmitBugReportForm()),
         ),
       ),
     );
@@ -109,8 +106,7 @@ class _SubmitBugReportFormState extends State<SubmitBugReportForm> {
   Widget build(BuildContext context) {
     return Form(
       key: _formKey,
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
+      child: ListView(
         children: <Widget>[
           const Text(
             Strings.submitBugReportText,
@@ -161,6 +157,7 @@ class _SubmitBugReportFormState extends State<SubmitBugReportForm> {
               ),
             ),
           ),
+          const SizedBox(height: 30),
         ],
       ),
     );
