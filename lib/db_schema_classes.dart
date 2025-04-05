@@ -30,6 +30,63 @@ class Member {
   Member({required this.userID, required this.fullName, this.invited = false});
 }
 
+class Member2 with JsonToString {
+  static const String collectionIDStatic = 'users';
+  static final ref = FirebaseFirestore.instance.collection(collectionIDStatic);
+
+  final Timestamp creationTime;
+  final String userID;
+  String fullName = '';
+  String email = '';
+  final List<DocumentReference> invites;
+  final List<DocumentReference> teamRefs;
+  DocumentReference? selectedTeam;
+  String profileImageUrl;
+
+  Member2({
+    required this.userID,
+    required this.fullName,
+    required this.email,
+    Timestamp? creationTime,
+    List<DocumentReference>? invites,
+    List<DocumentReference>? teams,
+    this.selectedTeam,
+    this.profileImageUrl = '',
+  })  : creationTime = creationTime ?? Timestamp.now(),
+        invites = invites ?? <DocumentReference>[],
+        teamRefs = teams ?? <DocumentReference>[];
+
+  factory Member2.fromJson(Map<String, Object?> json) {
+    if (json
+        case {
+          'id': String id,
+          'fullName': String fullName,
+          'email': String email,
+          'creationTime': Timestamp creationTime,
+          'lastLogin': Timestamp lastLogin,
+          'invites': List invites,
+          'teams': List teams,
+          'selectedTeam': dynamic selectedTeam,
+          'profileImageUrl': String profileImageUrl,
+        }) {}
+    throw FormatException('Invalid JSON: $json', json);
+  }
+
+  @override
+  Map<String, Object?> toJson() {
+    return {
+      'id': userID,
+      'fullName': fullName,
+      'email': email,
+      'creationTime': creationTime,
+      'invites': invites,
+      'teams': teamRefs,
+      'selectedTeam': selectedTeam,
+      'profileImageUrl': profileImageUrl,
+    };
+  }
+}
+
 // Team class for teams_and_invites_page.dart
 class Team {
   Timestamp? creationTime;
@@ -57,6 +114,27 @@ class Team {
   });
 }
 
+class Team2 {
+  final Timestamp creationTime;
+  final String teamID;
+  String title = '';
+  final List<Member2> teamMembers;
+  final List<DocumentReference> projects;
+
+  String adminName = '';
+
+  Team2({
+    required this.teamID,
+    required this.title,
+    Timestamp? creationTime,
+    List<Member2>? teamMembers,
+    List<DocumentReference>? projects,
+    this.adminName = '',
+  })  : creationTime = creationTime ?? Timestamp.now(),
+        teamMembers = teamMembers ?? <Member2>[],
+        projects = projects ?? <DocumentReference>[];
+}
+
 // Project class for project creation (create project + map)
 class Project {
   Timestamp? creationTime;
@@ -81,7 +159,7 @@ class Project {
     required this.title,
     required this.description,
     required this.address,
-    this.coverImageUrl,
+    this.coverImageUrl = '',
     required this.polygonPoints,
     required this.polygonArea,
     required this.standingPoints,
@@ -94,7 +172,6 @@ class Project {
     required this.title,
     required this.description,
     required this.address,
-    this.coverImageUrl,
   });
 
   /// Gets all fields for each [Test] in this [Project] and loads them
@@ -109,6 +186,36 @@ class Project {
     this.tests = tests;
     return tests;
   }
+}
+
+class Project2 {
+  final Timestamp creationTime;
+  final String projectID;
+  String title = '';
+  String description = '';
+  String address = '';
+  final Polygon polygon;
+  final double polygonArea;
+  final List<DocumentReference> testRefs;
+  final List<Test>? tests;
+  String coverImageUrl = '';
+  final List<StandingPoint> standingPoints;
+
+  Project2({
+    required this.projectID,
+    required this.title,
+    required this.description,
+    required this.address,
+    required this.polygon,
+    double? polygonArea,
+    required this.standingPoints,
+    Timestamp? creationTime,
+    List<DocumentReference>? testRefs,
+    this.tests,
+    this.coverImageUrl = '',
+  })  : creationTime = creationTime ?? Timestamp.now(),
+        polygonArea = polygonArea ?? polygon.getAreaInSquareFeet(),
+        testRefs = testRefs ?? <DocumentReference>[];
 }
 
 /// Comparison function for tests. Used in [.sort].
@@ -171,12 +278,20 @@ int testTimeComparison(Test a, Test b) {
 /// Additionally, each subclass is expected to statically define constants
 /// for the associated collection ID in Firestore and the basic structure
 /// used for that test's [data] for initialization.
-abstract class Test<T> {
+abstract class Test<T> with JsonToString {
   /// The time this [Test] was initially created at.
-  late Timestamp creationTime;
+  final Timestamp creationTime;
+
+  final String testID;
+
+  /// The collection ID used in Firestore for this specific test.
+  ///
+  /// Each implementation of [Test] should statically define its
+  /// collection ID for comparison against this field in
+  /// factory constructors and other use cases.
+  final String collectionID;
 
   String title = '';
-  String testID = '';
 
   /// The time scheduled for this test to be completed.
   ///
@@ -192,7 +307,7 @@ abstract class Test<T> {
   /// Maximum researchers that can complete this test.
   ///
   /// Currently always 1.
-  late int maxResearchers;
+  int maxResearchers = 1;
 
   /// Instance member using custom data type for each specific test
   /// implementation for storing test data.
@@ -202,13 +317,6 @@ abstract class Test<T> {
   /// `getInitialDataStructure()`, as this is used for initializing `data`
   /// when it is not defined in the constructor.
   T data;
-
-  /// The collection ID used in Firestore for this specific test.
-  ///
-  /// Each implementation of [Test] should statically define its
-  /// collection ID for comparison against this field in
-  /// factory constructors and other use cases.
-  late final String collectionID;
 
   /// Whether this test has been completed by a surveyor yet.
   bool isComplete = false;
