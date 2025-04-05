@@ -1,10 +1,13 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:p2bp_2025spring_mobile/firestore_functions.dart';
 import 'package:p2bp_2025spring_mobile/theme.dart';
-import 'google_maps_functions.dart';
+import 'package:p2bp_2025spring_mobile/widgets.dart';
+
 import 'db_schema_classes.dart';
+import 'google_maps_functions.dart';
 
 class StandingPointsPage extends StatefulWidget {
   final Project activeProject;
@@ -57,9 +60,10 @@ class _StandingPointsPageState extends State<StandingPointsPage> {
     _polygons.add(getProjectPolygon(widget.activeProject.polygonPoints));
     _location = getPolygonCentroid(_polygons.first);
     _zoom = getIdealZoom(
-      _polygons.first.toMPLatLngList(),
-      _location.toMPLatLng(),
-    );
+          _polygons.first.toMPLatLngList(),
+          _location.toMPLatLng(),
+        ) -
+        0.2;
 
     _standingPoints = widget.activeProject.standingPoints.toList();
     _markers = _setMarkersFromStandingPoints(_standingPoints);
@@ -164,7 +168,14 @@ class _StandingPointsPageState extends State<StandingPointsPage> {
 
   @override
   Widget build(BuildContext context) {
-    return SafeArea(
+    return AnnotatedRegion<SystemUiOverlayStyle>(
+      value: (_currentMapType == MapType.normal)
+          ? SystemUiOverlayStyle.dark.copyWith(
+              statusBarColor: Colors.transparent,
+            )
+          : SystemUiOverlayStyle.light.copyWith(
+              statusBarColor: Colors.transparent,
+            ),
       child: Scaffold(
         body: _isLoading
             ? const Center(child: CircularProgressIndicator())
@@ -172,67 +183,40 @@ class _StandingPointsPageState extends State<StandingPointsPage> {
                 children: [
                   SizedBox(
                     height: MediaQuery.of(context).size.height,
-                    child: Stack(
-                      children: [
-                        GoogleMap(
-                          padding: EdgeInsets.only(bottom: _bottomSheetHeight),
-                          onMapCreated: _onMapCreated,
-                          initialCameraPosition:
-                              CameraPosition(target: _location, zoom: _zoom),
-                          polygons: _polygons,
-                          markers: _markers,
-                          mapType: _currentMapType, // Use current map type
+                    child: GoogleMap(
+                      padding: EdgeInsets.only(bottom: _bottomSheetHeight),
+                      onMapCreated: _onMapCreated,
+                      initialCameraPosition:
+                          CameraPosition(target: _location, zoom: _zoom),
+                      polygons: _polygons,
+                      markers: _markers,
+                      mapType: _currentMapType, // Use current map type
+                    ),
+                  ),
+                  SafeArea(
+                    child: Padding(
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 15, vertical: 4),
+                      child: DirectionsText(
+                        text: _directions,
+                      ),
+                    ),
+                  ),
+                  SafeArea(
+                    child: Align(
+                      alignment: Alignment.bottomLeft,
+                      child: Padding(
+                        padding: EdgeInsets.only(
+                          left: 12.0,
+                          bottom: _bottomSheetHeight + 50,
                         ),
-                        Align(
-                          alignment: Alignment.topCenter,
-                          child: Padding(
-                            padding: const EdgeInsets.symmetric(
-                                vertical: 20.0, horizontal: 25.0),
-                            child: Container(
-                              padding: EdgeInsets.symmetric(
-                                  horizontal: 15, vertical: 10),
-                              decoration: BoxDecoration(
-                                color: directionsTransparency,
-                                gradient: defaultGrad,
-                                borderRadius:
-                                    const BorderRadius.all(Radius.circular(10)),
-                                boxShadow: [
-                                  BoxShadow(
-                                    color: Colors.black.withValues(alpha: 0.1),
-                                    blurRadius: 6,
-                                    offset: const Offset(0, 2),
-                                  ),
-                                ],
-                              ),
-                              child: Text(
-                                _directions,
-                                maxLines: 3,
-                                overflow: TextOverflow.ellipsis,
-                                style: TextStyle(
-                                  fontSize: 18,
-                                  fontWeight: FontWeight.w500,
-                                  color: Colors.white,
-                                ),
-                              ),
-                            ),
-                          ),
+                        child: CircularIconMapButton(
+                          backgroundColor: Colors.green,
+                          borderColor: Color(0xFF2D6040),
+                          onPressed: _toggleMapType,
+                          icon: const Icon(Icons.map),
                         ),
-                        Align(
-                          alignment: Alignment.bottomLeft,
-                          child: Padding(
-                            padding: EdgeInsets.only(
-                              left: 10.0,
-                              bottom: _bottomSheetHeight + 50,
-                            ),
-                            child: FloatingActionButton(
-                              heroTag: null,
-                              onPressed: _toggleMapType,
-                              backgroundColor: Colors.green,
-                              child: const Icon(Icons.map),
-                            ),
-                          ),
-                        ),
-                      ],
+                      ),
                     ),
                   ),
                 ],

@@ -1,16 +1,16 @@
-import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:p2bp_2025spring_mobile/theme.dart';
+
 import 'widgets.dart';
 
 class ChangePasswordPage extends StatelessWidget {
   const ChangePasswordPage({super.key});
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      extendBody: true,
-      resizeToAvoidBottomInset: false,
       appBar: AppBar(
         systemOverlayStyle: SystemUiOverlayStyle.dark
             .copyWith(statusBarColor: Colors.transparent),
@@ -222,7 +222,7 @@ class _ChangePasswordFormState extends State<ChangePasswordForm> {
           SizedBox(height: 12),
           ElevatedButton(
             style: ElevatedButton.styleFrom(
-              backgroundColor: Colors.blue,
+              backgroundColor: p2bpBlue,
               padding: EdgeInsets.symmetric(vertical: 8),
               shape: RoundedRectangleBorder(
                 borderRadius: BorderRadius.circular(10),

@@ -3,6 +3,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:p2bp_2025spring_mobile/theme.dart';
+
 import 'strings.dart';
 
 class SubmitBugReportPage extends StatelessWidget {
@@ -10,28 +11,26 @@ class SubmitBugReportPage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return AnnotatedRegion<SystemUiOverlayStyle>(
-      value: SystemUiOverlayStyle.dark
-          .copyWith(statusBarColor: Colors.transparent),
-      child: Scaffold(
-        extendBody: true,
-        resizeToAvoidBottomInset: false,
-        appBar: AppBar(
-          title: const Text('Submit a bug report'),
+    return Scaffold(
+      extendBody: true,
+      resizeToAvoidBottomInset: false,
+      appBar: AppBar(
+        systemOverlayStyle: SystemUiOverlayStyle.dark
+            .copyWith(statusBarColor: Colors.transparent),
+        title: const Text('Submit a bug report'),
+      ),
+      body: DefaultTextStyle(
+        style: TextStyle(
+          color: p2bpBlue,
+          fontSize: 16,
+          fontWeight: FontWeight.bold,
         ),
-        body: DefaultTextStyle(
-          style: TextStyle(
-            color: p2bpBlue,
-            fontSize: 16,
-            fontWeight: FontWeight.bold,
-          ),
-          child: ListView(
-            padding: EdgeInsets.all(30),
-            children: <Widget>[
-              SubmitBugReportForm(),
-              const SizedBox(height: 10),
-            ],
-          ),
+        child: ListView(
+          padding: EdgeInsets.all(30),
+          children: <Widget>[
+            SubmitBugReportForm(),
+            const SizedBox(height: 20),
+          ],
         ),
       ),
     );
@@ -146,7 +145,7 @@ class _SubmitBugReportFormState extends State<SubmitBugReportForm> {
           const SizedBox(height: 16),
           ElevatedButton(
             style: ElevatedButton.styleFrom(
-              backgroundColor: Colors.blue,
+              backgroundColor: p2bpBlue,
               padding: EdgeInsets.symmetric(vertical: 8),
               shape: RoundedRectangleBorder(
                 borderRadius: BorderRadius.circular(10),

@@ -8,8 +8,6 @@ import 'package:p2bp_2025spring_mobile/widgets.dart';
 
 import 'db_schema_classes.dart';
 import 'google_maps_functions.dart';
-import 'home_screen.dart';
-import 'project_details_page.dart';
 
 class IdentifyingAccess extends StatefulWidget {
   final Project activeProject;
@@ -281,6 +279,11 @@ class _IdentifyingAccessState extends State<IdentifyingAccess> {
     });
   }
 
+  void _endTest() {
+    widget.activeTest.submitData(_accessData);
+    Navigator.pop(context);
+  }
+
   @override
   Widget build(BuildContext context) {
     return AnnotatedRegion<SystemUiOverlayStyle>(
@@ -418,7 +421,7 @@ class _IdentifyingAccessState extends State<IdentifyingAccess> {
                 padding: const EdgeInsets.symmetric(
                     horizontal: 12.0, vertical: 10.0),
                 decoration: BoxDecoration(
-                  gradient: defaultGrad,
+                  gradient: formGradient,
                   borderRadius: const BorderRadius.only(
                     topLeft: Radius.circular(24.0),
                     topRight: Radius.circular(24.0),
@@ -440,29 +443,29 @@ class _IdentifyingAccessState extends State<IdentifyingAccess> {
                         style: TextStyle(
                           fontSize: 20,
                           fontWeight: FontWeight.bold,
-                          color: placeYellow,
+                          color: p2bpBlue,
                         ),
+                        textAlign: TextAlign.center,
                       ),
                     ),
-                    Align(
-                      alignment: Alignment.topCenter,
+                    Center(
                       child: Text(
                         'Mark where people enter the project area from.',
                         style: TextStyle(
                           fontSize: 16,
-                          fontStyle: FontStyle.italic,
-                          color: Colors.grey[400],
+                          color: Colors.black,
                         ),
+                        textAlign: TextAlign.center,
                       ),
                     ),
-                    SizedBox(height: 15),
+                    SizedBox(height: 10),
                     Center(
                       child: Text(
                         'Access Type',
                         style: TextStyle(
                           fontSize: 16,
                           fontWeight: FontWeight.bold,
-                          color: Colors.white,
+                          color: Colors.black,
                         ),
                       ),
                     ),
@@ -634,23 +637,8 @@ class _IdentifyingAccessState extends State<IdentifyingAccess> {
                                             builder: (context) {
                                               return TestFinishDialog(
                                                 onNext: () {
-                                                  widget.activeTest
-                                                      .submitData(_accessData);
-                                                  Navigator.pushReplacement(
-                                                      context,
-                                                      MaterialPageRoute(
-                                                        builder: (context) =>
-                                                            HomeScreen(),
-                                                      ));
-                                                  Navigator.push(
-                                                      context,
-                                                      MaterialPageRoute(
-                                                        builder: (context) =>
-                                                            ProjectDetailsPage(
-                                                                activeProject:
-                                                                    widget
-                                                                        .activeProject),
-                                                      ));
+                                                  Navigator.pop(context);
+                                                  _endTest();
                                                 },
                                               );
                                             });

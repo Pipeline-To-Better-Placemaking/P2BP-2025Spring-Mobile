@@ -37,8 +37,8 @@ class Team {
   String teamID = '';
   String title = '';
   List teamMembers = [];
-  List projects = [];
-  int numProjects = 0;
+  List<DocumentReference> projects = [];
+  int numProjects = 0; // this has no reason to exist imo
 
   Team({
     required this.teamID,
@@ -90,11 +90,12 @@ class Project {
   });
 
   // TODO: Eventually add Team Photo and Team Color
-  Project.partialProject(
-      {required this.title,
-      required this.description,
-      required this.address,
-      this.coverImageUrl});
+  Project.partialProject({
+    required this.title,
+    required this.description,
+    required this.address,
+    this.coverImageUrl,
+  });
 
   // TODO: Probably want to delete test if test reference is not found; however, functionality may be unnecessary if the implementation of deleting a test deletes it from the project also (which is ideal).
   /// Gets all fields for each [Test] in this [Project] and loads them

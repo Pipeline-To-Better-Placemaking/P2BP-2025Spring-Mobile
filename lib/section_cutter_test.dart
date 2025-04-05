@@ -9,8 +9,6 @@ import 'package:p2bp_2025spring_mobile/widgets.dart';
 
 import 'db_schema_classes.dart';
 import 'google_maps_functions.dart';
-import 'home_screen.dart';
-import 'project_details_page.dart';
 
 class SectionCutter extends StatefulWidget {
   final Project activeProject;
@@ -40,7 +38,7 @@ class _SectionCutterState extends State<SectionCutter> {
   String _directions =
       "Go to designated section. Then upload the section drawing here.";
   XFile? sectionCutterFile;
-  static const double _bottomSheetHeight = 315;
+  static const double _bottomSheetHeight = 325;
   late DocumentReference teamRef;
 
   double _zoom = 18;
@@ -177,7 +175,7 @@ class _SectionCutterState extends State<SectionCutter> {
             padding:
                 const EdgeInsets.symmetric(horizontal: 12.0, vertical: 10.0),
             decoration: BoxDecoration(
-              gradient: defaultGrad,
+              gradient: formGradient,
               borderRadius: const BorderRadius.only(
                 topLeft: Radius.circular(24.0),
                 topRight: Radius.circular(24.0),
@@ -199,18 +197,17 @@ class _SectionCutterState extends State<SectionCutter> {
                   style: TextStyle(
                     fontSize: 20,
                     fontWeight: FontWeight.bold,
-                    color: placeYellow,
+                    color: p2bpBlue,
                   ),
                 ),
                 Text(
                   'Upload your section drawing here.',
                   style: TextStyle(
                     fontSize: 16,
-                    fontStyle: FontStyle.italic,
-                    color: Colors.grey[400],
+                    color: Colors.black,
                   ),
                 ),
-                SizedBox(height: 35),
+                SizedBox(height: 25),
                 Row(
                   children: <Widget>[
                     Expanded(
@@ -286,7 +283,8 @@ class _SectionCutterState extends State<SectionCutter> {
                                     _failedToUpload = false;
                                     _uploaded = false;
                                     _directions =
-                                        "Go to designated section. Then upload the section drawing here.";
+                                        "Go to designated section. Then upload "
+                                        "the section drawing here.";
                                   });
                                 },
                                 icon: Icon(Icons.cancel),
@@ -320,8 +318,7 @@ class _SectionCutterState extends State<SectionCutter> {
                   'Accepted formats: .png, .pdf, .jpg',
                   style: TextStyle(
                     fontSize: 16,
-                    fontStyle: FontStyle.italic,
-                    color: Colors.grey[400],
+                    color: Colors.black,
                   ),
                 ),
                 SizedBox(height: 20),
@@ -351,26 +348,25 @@ class _SectionCutterState extends State<SectionCutter> {
                           onPressed: _isLoadingUpload
                               ? null
                               : () async {
-                                  final bool finishSuccess = await showDialog(
-                                          context: context,
-                                          builder: (context) {
-                                            return TestFinishDialog(
-                                                onNext: () async {
-                                              if (sectionCutterFile == null) {
-                                                Navigator.pop(context, false);
-                                                setState(() {
-                                                  _failedToUpload = true;
-                                                  _errorText =
-                                                      'No file uploaded. Please upload an image first.';
-                                                });
-                                                print("No file uploaded.");
-                                                return;
-                                              }
-                                              Navigator.pop(context, true);
+                                  final bool? finishSuccess = await showDialog(
+                                      context: context,
+                                      builder: (context) {
+                                        return TestFinishDialog(
+                                            onNext: () async {
+                                          if (sectionCutterFile == null) {
+                                            Navigator.pop(context, false);
+                                            setState(() {
+                                              _failedToUpload = true;
+                                              _errorText =
+                                                  'No file uploaded. Please upload an image first.';
                                             });
-                                          }) ??
-                                      false;
-                                  if (finishSuccess) {
+                                            print("No file uploaded.");
+                                            return;
+                                          }
+                                          Navigator.pop(context, true);
+                                        });
+                                      });
+                                  if (finishSuccess == true) {
                                     setState(() {
                                       _isLoadingUpload = true;
                                     });
@@ -378,19 +374,7 @@ class _SectionCutterState extends State<SectionCutter> {
                                         .saveXFile(sectionCutterFile!);
                                     widget.activeTest.submitData(data);
                                     if (!context.mounted) return;
-                                    Navigator.pushReplacement(
-                                        context,
-                                        MaterialPageRoute(
-                                          builder: (context) => HomeScreen(),
-                                        ));
-                                    Navigator.push(
-                                        context,
-                                        MaterialPageRoute(
-                                          builder: (context) =>
-                                              ProjectDetailsPage(
-                                                  activeProject:
-                                                      widget.activeProject),
-                                        ));
+                                    Navigator.pop(context);
                                   }
                                 },
                         ),

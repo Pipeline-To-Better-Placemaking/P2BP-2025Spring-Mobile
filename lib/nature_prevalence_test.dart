@@ -205,7 +205,7 @@ class _NaturePrevalenceState extends State<NaturePrevalence> {
           style: TextStyle(
             fontSize: 16,
             fontWeight: FontWeight.bold,
-            color: Colors.white,
+            color: Colors.black,
           ),
         ),
         SizedBox(height: 5),
@@ -281,7 +281,7 @@ class _NaturePrevalenceState extends State<NaturePrevalence> {
           style: TextStyle(
             fontSize: 16,
             fontWeight: FontWeight.bold,
-            color: Colors.white,
+            color: Colors.black,
           ),
         ),
         Row(
@@ -352,7 +352,7 @@ class _NaturePrevalenceState extends State<NaturePrevalence> {
           style: TextStyle(
             fontSize: 16,
             fontWeight: FontWeight.bold,
-            color: Colors.white,
+            color: Colors.black,
           ),
         ),
         Row(
@@ -381,7 +381,7 @@ class _NaturePrevalenceState extends State<NaturePrevalence> {
           style: TextStyle(
             fontSize: 16,
             fontWeight: FontWeight.bold,
-            color: Colors.white,
+            color: Colors.black,
           ),
         ),
         Row(
@@ -436,7 +436,7 @@ class _NaturePrevalenceState extends State<NaturePrevalence> {
           style: TextStyle(
             fontSize: 16,
             fontWeight: FontWeight.bold,
-            color: Colors.white,
+            color: Colors.black,
           ),
         ),
         Row(
@@ -776,7 +776,7 @@ class _NaturePrevalenceState extends State<NaturePrevalence> {
                 padding: const EdgeInsets.symmetric(
                     horizontal: 12.0, vertical: 10.0),
                 decoration: BoxDecoration(
-                  gradient: defaultGrad,
+                  gradient: formGradient,
                   borderRadius: const BorderRadius.only(
                     topLeft: Radius.circular(24.0),
                     topRight: Radius.circular(24.0),
@@ -799,7 +799,7 @@ class _NaturePrevalenceState extends State<NaturePrevalence> {
                         style: TextStyle(
                           fontSize: 20,
                           fontWeight: FontWeight.bold,
-                          color: placeYellow,
+                          color: p2bpBlue,
                         ),
                       ),
                     ),
@@ -809,7 +809,7 @@ class _NaturePrevalenceState extends State<NaturePrevalence> {
                       style: TextStyle(
                         fontSize: 16,
                         fontWeight: FontWeight.bold,
-                        color: Colors.white,
+                        color: Colors.black,
                       ),
                     ),
                     SizedBox(height: 5),
@@ -849,7 +849,7 @@ class _NaturePrevalenceState extends State<NaturePrevalence> {
                       style: TextStyle(
                         fontSize: 16,
                         fontWeight: FontWeight.bold,
-                        color: Colors.white,
+                        color: Colors.black,
                       ),
                     ),
                     SizedBox(height: 5),

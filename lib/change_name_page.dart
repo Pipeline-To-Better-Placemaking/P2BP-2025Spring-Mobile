@@ -5,8 +5,9 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:p2bp_2025spring_mobile/theme.dart';
-import 'strings.dart';
+
 import 'firestore_functions.dart';
+import 'strings.dart';
 
 class ChangeNamePage extends StatelessWidget {
   const ChangeNamePage({super.key});
@@ -14,8 +15,6 @@ class ChangeNamePage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      extendBody: true,
-      resizeToAvoidBottomInset: false,
       appBar: AppBar(
         systemOverlayStyle: SystemUiOverlayStyle.dark
             .copyWith(statusBarColor: Colors.transparent),
@@ -149,7 +148,7 @@ class _ChangeNameFormState extends State<ChangeNameForm> {
           const SizedBox(height: 16),
           ElevatedButton(
             style: ElevatedButton.styleFrom(
-              backgroundColor: Colors.blue,
+              backgroundColor: p2bpBlue,
               padding: EdgeInsets.symmetric(vertical: 8),
               shape: RoundedRectangleBorder(
                 borderRadius: BorderRadius.circular(10),

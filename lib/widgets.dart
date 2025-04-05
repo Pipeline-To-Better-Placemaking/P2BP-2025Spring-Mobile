@@ -1,5 +1,4 @@
-import 'dart:io';
-
+import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:p2bp_2025spring_mobile/theme.dart';
@@ -8,21 +7,24 @@ import 'google_maps_functions.dart';
 
 /// Bar Indicator for the Sliding Up Panels (Edit Project, Results)
 class BarIndicator extends StatelessWidget {
+  final Color? color;
+
   const BarIndicator({
     super.key,
+    this.color,
   });
 
   @override
   Widget build(BuildContext context) {
     return Padding(
-      padding: const EdgeInsets.only(top: 20, bottom: 10),
+      padding: const EdgeInsets.symmetric(vertical: 8),
       child: Center(
         child: Container(
           width: 40,
           height: 5,
-          decoration: const BoxDecoration(
-            color: Colors.white60,
-            borderRadius: BorderRadius.all(Radius.circular(10)),
+          decoration: BoxDecoration(
+            color: color ?? Colors.white60,
+            borderRadius: const BorderRadius.all(Radius.circular(10)),
           ),
         ),
       ),
@@ -37,17 +39,26 @@ class EditProjectTextBox extends StatelessWidget {
   final int maxLines;
   final int minLines;
   final String labelText;
+  final TextEditingController controller;
+  final String? Function(String?)? validator;
+  final FloatingLabelBehavior? floatingLabelBehavior;
 
-  const EditProjectTextBox(
-      {super.key,
-      required this.maxLength,
-      required this.labelText,
-      required this.maxLines,
-      required this.minLines});
+  const EditProjectTextBox({
+    super.key,
+    required this.maxLength,
+    required this.labelText,
+    required this.maxLines,
+    required this.minLines,
+    required this.controller,
+    this.validator,
+    this.floatingLabelBehavior,
+  });
   @override
   Widget build(BuildContext context) {
     return SizedBox(
-      child: TextField(
+      child: TextFormField(
+        validator: validator,
+        controller: controller,
         style: const TextStyle(color: Colors.white),
         maxLength: maxLength,
         maxLines: maxLines,
@@ -63,6 +74,7 @@ class EditProjectTextBox extends StatelessWidget {
             borderSide: BorderSide(color: Colors.white),
           ),
           labelText: labelText,
+          floatingLabelBehavior: floatingLabelBehavior,
           floatingLabelAlignment: FloatingLabelAlignment.start,
           floatingLabelStyle: const TextStyle(
             color: Colors.white,
@@ -127,6 +139,8 @@ class CreationTextBox extends StatelessWidget {
   final ValueChanged? onChanged;
   final Icon? icon;
   final String? errorMessage;
+  final Color? textThemeColor;
+  final String? Function(String?)? validator;
 
   const CreationTextBox({
     super.key,
@@ -137,14 +151,18 @@ class CreationTextBox extends StatelessWidget {
     this.onChanged,
     this.icon,
     this.errorMessage,
+    this.textThemeColor,
+    this.validator,
   });
   @override
   Widget build(BuildContext context) {
     return SizedBox(
       child: Theme(
         data: Theme.of(context).copyWith(
-          textSelectionTheme: const TextSelectionThemeData(
-              selectionColor: Colors.blue, selectionHandleColor: Colors.blue),
+          textSelectionTheme: TextSelectionThemeData(
+            selectionColor: textThemeColor ?? Colors.blue,
+            selectionHandleColor: textThemeColor ?? Colors.blue,
+          ),
         ),
         child: TextFormField(
           onChanged: onChanged,
@@ -153,15 +171,16 @@ class CreationTextBox extends StatelessWidget {
           maxLines: maxLines,
           minLines: minLines,
           cursorColor: const Color(0xFF585A6A),
-          validator: (value) {
-            // TODO: custom error check parameter?
-            if (errorMessage != null && (value == null || value.length < 3)) {
-              // TODO: eventually require error message?
-              return errorMessage ??
-                  'Error, insufficient input (validator error message not set)';
-            }
-            return null;
-          },
+          validator: validator ??
+              (value) {
+                if (errorMessage != null &&
+                    (value == null || value.length < 3)) {
+                  // TODO: eventually require error message?
+                  return errorMessage ??
+                      'Error, insufficient input (validator error message not set)';
+                }
+                return null;
+              },
           decoration: InputDecoration(
             prefixIcon: icon,
             alignLabelWithHint: true,
@@ -772,6 +791,61 @@ class TestFinishDialog extends StatelessWidget {
   }
 }
 
+class GenericConfirmationDialog extends StatelessWidget {
+  final VoidCallback? onConfirm;
+  final String titleText;
+  final String contentText;
+  final String declineText;
+  final String confirmText;
+  final TextStyle? declineTextStyle;
+  final TextStyle? confirmTextStyle;
+
+  const GenericConfirmationDialog({
+    super.key,
+    this.onConfirm,
+    required this.titleText,
+    required this.contentText,
+    required this.declineText,
+    required this.confirmText,
+    this.declineTextStyle,
+    this.confirmTextStyle,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return AlertDialog(
+      scrollable: true,
+      title: Center(
+        child: Text(
+          titleText,
+          style: TextStyle(
+            fontWeight: FontWeight.bold,
+          ),
+        ),
+      ),
+      content: Text(
+        contentText,
+        style: TextStyle(fontWeight: FontWeight.bold),
+        overflow: TextOverflow.clip,
+      ),
+      actions: <Widget>[
+        TextButton(
+          onPressed: () {
+            Navigator.pop(context);
+          },
+          child: Text(declineText),
+        ),
+        TextButton(
+            onPressed: onConfirm,
+            child: Text(
+              confirmText,
+              style: confirmTextStyle ?? TextStyle(color: Colors.red[700]),
+            )),
+      ],
+    );
+  }
+}
+
 class DirectionsButton extends StatelessWidget {
   /// Directions widget used for tests.
   ///
@@ -815,7 +889,7 @@ class DirectionsButton extends StatelessWidget {
 class DirectionsText extends StatelessWidget {
   const DirectionsText({
     super.key,
-    required this.onTap,
+    this.onTap,
     required this.text,
   });
 
@@ -975,7 +1049,7 @@ void showTestModalGeneric(BuildContext context,
             child: Container(
               // Container decoration- rounded corners and gradient
               decoration: BoxDecoration(
-                gradient: defaultGrad,
+                gradient: formGradient,
                 borderRadius: const BorderRadius.only(
                   topLeft: Radius.circular(24.0),
                   topRight: Radius.circular(24.0),
@@ -994,7 +1068,7 @@ void showTestModalGeneric(BuildContext context,
                         style: TextStyle(
                           fontSize: 20,
                           fontWeight: FontWeight.bold,
-                          color: placeYellow,
+                          color: p2bpBlue,
                         ),
                       ),
                     ),
@@ -1004,8 +1078,7 @@ void showTestModalGeneric(BuildContext context,
                               subtitle,
                               style: TextStyle(
                                 fontSize: 16,
-                                fontStyle: FontStyle.italic,
-                                color: Colors.grey[400],
+                                color: Colors.black,
                               ),
                             ),
                           )
@@ -1017,14 +1090,14 @@ void showTestModalGeneric(BuildContext context,
                       alignment: Alignment.bottomRight,
                       child: InkWell(
                         onTap: onCancel,
-                        child: const Padding(
+                        child: Padding(
                           padding: EdgeInsets.only(right: 20, bottom: 0),
                           child: Text(
                             'Cancel',
                             style: TextStyle(
                                 fontSize: 16,
                                 fontWeight: FontWeight.w500,
-                                color: Color(0xFFFFD700)),
+                                color: p2bpBlue),
                           ),
                         ),
                       ),
@@ -1090,26 +1163,114 @@ class TestErrorText extends StatelessWidget {
   }
 }
 
-/// Conditionally wraps its child in a SafeArea depending on the platform.
-///
-/// On Android, it wraps its child widget in a SafeArea to prevent system UI elements
-/// (like the status bar or navigation buttons) from overlapping your content.
-/// On iOS, it simply returns the child without extra padding, so you don't get unwanted
-/// blank spaces at the top or bottom.
-///
-/// Example:
-/// ```dart
-/// AdaptiveSafeArea(
-///   child: YourWidget(),
-/// );
-/// ```
-class AdaptiveSafeArea extends StatelessWidget {
-  final Widget child;
-  const AdaptiveSafeArea({super.key, required this.child});
+enum CustomTab { project, team }
+
+/// Segmented Tab for Projects and Teams View V2
+class CustomSegmentedTab extends StatefulWidget {
+  final CustomTab selectedTab;
+  final ValueChanged<CustomTab> onTabSelected;
+
+  const CustomSegmentedTab({
+    super.key,
+    required this.selectedTab,
+    required this.onTabSelected,
+  });
+
+  @override
+  _CustomSegmentedTabState createState() => _CustomSegmentedTabState();
+}
+
+class _CustomSegmentedTabState extends State<CustomSegmentedTab> {
+  // Cache styles and decorations outside the build method
+  final TextStyle selectedStyle = const TextStyle(
+    color: Colors.white,
+    fontWeight: FontWeight.bold,
+    fontSize: 16,
+  );
+
+  final TextStyle unselectedStyle = const TextStyle(
+    color: Color(0xFFB6D1EC),
+    fontWeight: FontWeight.bold,
+    fontSize: 16,
+  );
+
+  // Create a container decoration once
+  final containerDecoration = BoxDecoration(
+    borderRadius: BorderRadius.circular(60),
+    gradient: verticalBlueGrad,
+    boxShadow: [
+      BoxShadow(
+        color: Colors.black.withValues(alpha: 0.2),
+        offset: Offset(0, 4),
+        blurRadius: 12,
+      ),
+    ],
+  );
 
   @override
   Widget build(BuildContext context) {
-    // Wrap with SafeArea only on Android
-    return Platform.isAndroid ? SafeArea(child: child) : child;
+    return ClipRRect(
+      borderRadius: BorderRadius.circular(120),
+      child: BackdropFilter(
+        filter: ImageFilter.blur(sigmaX: 40, sigmaY: 40),
+        child: Container(
+          margin: const EdgeInsets.symmetric(horizontal: 64, vertical: 16),
+          constraints: const BoxConstraints(minHeight: 60),
+          padding: const EdgeInsets.all(8.0),
+          decoration: containerDecoration,
+          child: Row(
+            mainAxisSize: MainAxisSize.max,
+            mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+            children: [
+              RepaintBoundary(
+                child: _buildSegment(
+                  tab: CustomTab.project,
+                  label: 'PROJECT',
+                ),
+              ),
+              RepaintBoundary(
+                child: _buildSegment(
+                  tab: CustomTab.team,
+                  label: 'TEAM',
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildSegment({required CustomTab tab, required String label}) {
+    final bool isSelected = (widget.selectedTab == tab);
+
+    // Selected tab: white text
+    final TextStyle selectedStyle = const TextStyle(
+      color: Colors.white,
+      fontWeight: FontWeight.bold,
+      fontSize: 16,
+    );
+
+    // Unselected tab: B6D1EC
+    final TextStyle unselectedStyle = const TextStyle(
+      color: Color(0xFFB6D1EC),
+      fontWeight: FontWeight.bold,
+      fontSize: 16,
+    );
+
+    return GestureDetector(
+      onTap: () => widget.onTabSelected(tab),
+      child: Container(
+        padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 20),
+        decoration: BoxDecoration(
+          borderRadius: BorderRadius.circular(40),
+        ),
+        alignment: Alignment.center,
+        child: Text(
+          label,
+          style: isSelected ? selectedStyle : unselectedStyle,
+        ),
+      ),
+    );
   }
 }

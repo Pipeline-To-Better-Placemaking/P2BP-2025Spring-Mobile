@@ -5,6 +5,7 @@ import 'package:flutter/services.dart';
 import 'package:p2bp_2025spring_mobile/db_schema_classes.dart';
 import 'package:p2bp_2025spring_mobile/section_creation_page.dart';
 import 'package:p2bp_2025spring_mobile/standing_points_page.dart';
+import 'package:p2bp_2025spring_mobile/widgets.dart';
 
 import 'theme.dart';
 
@@ -134,26 +135,13 @@ class _CreateTestFormState extends State<CreateTestForm> {
             EdgeInsets.fromLTRB(16, 0, 16, 16),
         children: <Widget>[
           // Pill notch
-          Align(
-            alignment: Alignment.center,
-            child: Padding(
-              padding: const EdgeInsets.symmetric(vertical: 6.0),
-              child: Container(
-                width: 40,
-                height: 4,
-                decoration: BoxDecoration(
-                  color: Color.fromRGBO(47, 109, 207, 0.2),
-                  borderRadius: BorderRadius.circular(2.0),
-                ),
-              ),
-            ),
-          ),
+          const BarIndicator(color: Color.fromRGBO(47, 109, 207, 0.2)),
           // Vertical padding from the pill notch
           SizedBox(height: 16),
           TextFormField(
             controller: _activityNameController,
             decoration: InputDecoration(
-              labelText: "Activity Name",
+              labelText: 'Activity Name',
               floatingLabelBehavior: FloatingLabelBehavior.always,
               labelStyle: TextStyle(color: p2bpBlue),
               floatingLabelStyle: TextStyle(color: Color(0xFF1A3C70)),
