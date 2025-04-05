@@ -97,7 +97,9 @@ class SignUpScreen extends StatelessWidget {
                 //   ],
                 // ),
                 // const SizedBox(height: 20),
+
                 SignUpForm(),
+
                 const SizedBox(height: 20),
                 // Already have an account redirect
                 Center(
@@ -345,8 +347,8 @@ class _SignUpFormState extends State<SignUpForm> {
               ),
               filled: false,
               suffixIcon: IconButton(
-                icon: const Icon(
-                  Icons.visibility,
+                icon: Icon(
+                  !_obscureText ? Icons.visibility : Icons.visibility_off,
                   color: Colors.grey,
                 ),
                 onPressed: () {
@@ -387,7 +389,11 @@ class _SignUpFormState extends State<SignUpForm> {
               ),
               filled: false,
               suffixIcon: IconButton(
-                icon: const Icon(Icons.visibility, color: Colors.grey),
+                icon: Icon(
+                    !_obscureConfirmText
+                        ? Icons.visibility
+                        : Icons.visibility_off,
+                    color: Colors.grey),
                 onPressed: () {
                   // Toggle password visibility
                   setState(() {

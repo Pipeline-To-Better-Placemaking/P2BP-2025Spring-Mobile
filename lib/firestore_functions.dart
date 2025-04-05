@@ -1,7 +1,9 @@
+import 'dart:io';
 import 'dart:math';
 
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:firebase_storage/firebase_storage.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:maps_toolkit/maps_toolkit.dart' as mp;
 
@@ -84,8 +86,10 @@ Future<Project> saveProject({
   required List<LatLng> polygonPoints,
   required List<StandingPoint> standingPoints,
   required num polygonArea,
+  File? coverImage,
 }) async {
   late Project tempProject;
+  String coverImageUrl = '';
 
   try {
     DocumentReference projectAdmin =
@@ -95,6 +99,14 @@ Future<Project> saveProject({
     if (teamRef == null) {
       throw Exception(
           "teamRef unable to be retrieved in firestore_functions.dart");
+    }
+
+    // Upload and get link for cover image.
+    if (coverImage != null) {
+      final storageRef = FirebaseStorage.instance.ref();
+      final coverImageRef = storageRef.child('project_covers/$projectID.jpg');
+      await coverImageRef.putFile(coverImage);
+      coverImageUrl = await coverImageRef.getDownloadURL();
     }
 
     await _firestore.collection('projects').doc(projectID).set({
@@ -109,6 +121,7 @@ Future<Project> saveProject({
       'standingPoints': standingPoints.toJsonList(),
       'polygonArea': polygonArea,
       'tests': [],
+      'coverImageUrl': coverImageUrl,
     });
 
     await _firestore.doc('/${teamRef.path}').update({
@@ -127,6 +140,7 @@ Future<Project> saveProject({
       polygonArea: polygonArea,
       standingPoints: standingPoints,
       testRefs: [],
+      coverImageUrl: coverImageUrl,
     );
   } catch (e, stacktrace) {
     print('Exception retrieving : $e');
@@ -171,6 +185,7 @@ Future<Project> getProjectInfo(String projectID) async {
           ],
           creationTime: projectDoc['creationTime'],
           testRefs: testRefs,
+          coverImageUrl: projectDoc.data()!['coverImageUrl'] ?? '',
         );
       }
       // TODO: remove with database purge, along wtih above todo.
@@ -187,6 +202,7 @@ Future<Project> getProjectInfo(String projectID) async {
           standingPoints: [],
           creationTime: projectDoc['creationTime'],
           testRefs: testRefs,
+          coverImageUrl: projectDoc.data()!['coverImageUrl'] ?? '',
         );
       }
     } else {
@@ -270,6 +286,14 @@ Future<bool> deleteProject(Project project) async {
     await project.teamRef?.update({
       'projects': FieldValue.arrayRemove([projectRef])
     });
+
+    // Delete cover photo from storage if present.
+    if (project.coverImageUrl!.isNotEmpty) {
+      final storageRef = FirebaseStorage.instance.ref();
+      final coverImageRef =
+          storageRef.child('project_covers/${project.projectID}.jpg');
+      await coverImageRef.delete();
+    }
 
     // Delete project.
     await projectRef.delete();

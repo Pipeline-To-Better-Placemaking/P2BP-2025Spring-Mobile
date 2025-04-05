@@ -1,5 +1,6 @@
 import 'dart:math';
 import 'dart:typed_data';
+
 import 'package:collection/collection.dart';
 import 'package:firebase_storage/firebase_storage.dart';
 import 'package:flutter/material.dart';
@@ -11,6 +12,7 @@ import 'package:p2bp_2025spring_mobile/firestore_functions.dart';
 import 'package:pdf/pdf.dart';
 import 'package:pdf/widgets.dart' as pw;
 import 'package:printing/printing.dart';
+
 import 'google_maps_functions.dart';
 
 // Create a storage reference from app
@@ -625,7 +627,7 @@ Future<Uint8List> generateReport(
                   decoration: pw.TextDecoration.underline, fontSize: 16),
               textAlign: pw.TextAlign.center,
             ),
-            pw.Text('${contributorsNames.join(', ')}'),
+            pw.Text(contributorsNames.join(', ')),
             pw.SizedBox(height: 10),
             pw.Text(
               'Sponsor: ',

@@ -30,7 +30,7 @@ class _IdentifyingAccessState extends State<IdentifyingAccess> {
   bool _polygonMode = false;
   bool _pointMode = false;
   bool _polylineMode = false;
-  bool _oldPolylinesToggle = true;
+  bool _areOldPolylinesVisible = true;
 
   int? _currentSpotsOrRoute;
   bool _deleteMode = false;
@@ -303,15 +303,15 @@ class _IdentifyingAccessState extends State<IdentifyingAccess> {
               height: MediaQuery.sizeOf(context).height,
               child: GoogleMap(
                 polylines: _currentPolyline == null
-                    ? (_oldPolylinesToggle ? _polylines : {})
-                    : (_oldPolylinesToggle
+                    ? (_areOldPolylinesVisible ? _polylines : {})
+                    : (_areOldPolylinesVisible
                         ? {..._polylines, _currentPolyline!}
                         : {_currentPolyline!}),
                 padding: EdgeInsets.only(bottom: _bottomSheetHeight),
                 onMapCreated: _onMapCreated,
                 initialCameraPosition:
                     CameraPosition(target: _location, zoom: _zoom),
-                polygons: _oldPolylinesToggle
+                polygons: _areOldPolylinesVisible
                     ? {
                         _projectPolygon,
                         ..._polygons,
@@ -387,11 +387,12 @@ class _IdentifyingAccessState extends State<IdentifyingAccess> {
                           borderColor: Color(0xFF4A5D75),
                           onPressed: () {
                             setState(() {
-                              _oldPolylinesToggle = !_oldPolylinesToggle;
+                              _areOldPolylinesVisible =
+                                  !_areOldPolylinesVisible;
                             });
                           },
                           icon: Icon(
-                            _oldPolylinesToggle
+                            !_areOldPolylinesVisible
                                 ? Icons.visibility_off
                                 : Icons.visibility,
                             size: 30,

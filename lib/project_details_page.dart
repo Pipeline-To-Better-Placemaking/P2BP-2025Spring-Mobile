@@ -1,8 +1,12 @@
+import 'dart:io';
+
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:firebase_storage/firebase_storage.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
+import 'package:image_picker/image_picker.dart';
 import 'package:intl/intl.dart';
 import 'package:p2bp_2025spring_mobile/change_project_description_form.dart';
 import 'package:p2bp_2025spring_mobile/change_project_name_form.dart';
@@ -34,6 +38,7 @@ class _ProjectDetailsPageState extends State<ProjectDetailsPage> {
   int _testCount = 0;
   bool _isLoading = true;
   late GoogleMapController mapController;
+  String _coverImageUrl = '';
 
   @override
   void initState() {
@@ -42,6 +47,36 @@ class _ProjectDetailsPageState extends State<ProjectDetailsPage> {
       _loadTests();
     } else {
       _isLoading = false;
+    }
+    if (widget.activeProject.coverImageUrl != null) {
+      _coverImageUrl = widget.activeProject.coverImageUrl!;
+    }
+  }
+
+  // TODO reimplement this in MenuBar
+  Future<void> _uploadCoverImage(File imageFile) async {
+    try {
+      final storageRef = FirebaseStorage.instance.ref();
+
+      final coverImageRef = storageRef
+          .child('project_covers/${widget.activeProject.projectID}.jpg');
+      await coverImageRef.putFile(imageFile);
+      final downloadUrl = await coverImageRef.getDownloadURL();
+
+      await FirebaseFirestore.instance
+          .collection('projects')
+          .doc(widget.activeProject.projectID)
+          .update({
+        'coverImageUrl': downloadUrl,
+      });
+      setState(() {
+        widget.activeProject.coverImageUrl = downloadUrl;
+        _coverImageUrl = downloadUrl;
+      });
+
+      print('Cover image uploaded successfully: $downloadUrl');
+    } catch (e) {
+      print('Error uploading cover image: $e');
     }
   }
 
@@ -80,7 +115,7 @@ class _ProjectDetailsPageState extends State<ProjectDetailsPage> {
       body: CustomScrollView(
         slivers: <Widget>[
           SliverAppBar(
-            expandedHeight: 100,
+            expandedHeight: MediaQuery.sizeOf(context).height * 0.2,
             pinned: true,
             automaticallyImplyLeading: false,
             leadingWidth: 60,
@@ -93,7 +128,7 @@ class _ProjectDetailsPageState extends State<ProjectDetailsPage> {
                 // Opaque circle container for visibility
                 alignment: Alignment.center,
                 decoration: BoxDecoration(
-                  color: Colors.white.withValues(alpha: 0.3),
+                  color: Colors.white.withValues(alpha: 0.8),
                   shape: BoxShape.circle,
                 ),
                 child: IconButton(
@@ -110,6 +145,14 @@ class _ProjectDetailsPageState extends State<ProjectDetailsPage> {
             // 'Edit Options' button overlaid on right side of cover photo
             actions: [
               _SettingsMenuButton(
+                changePhotoCallback: () async {
+                  final XFile? pickedFile = await ImagePicker()
+                      .pickImage(source: ImageSource.gallery);
+                  if (pickedFile != null) {
+                    final File imageFile = File(pickedFile.path);
+                    _uploadCoverImage(imageFile);
+                  }
+                },
                 editNameCallback: () async {
                   final newName = await showModalBottomSheet<String>(
                     useSafeArea: true,
@@ -169,19 +212,28 @@ class _ProjectDetailsPageState extends State<ProjectDetailsPage> {
                 },
               ),
             ],
-            flexibleSpace: FlexibleSpaceBar(
-              background: Stack(children: <Widget>[
-                // Banner image
-                Container(
-                  width: double.infinity,
-                  decoration: BoxDecoration(
-                    border: Border(
-                      bottom: BorderSide(color: Colors.white, width: .5),
+            flexibleSpace: DecoratedBox(
+              decoration: BoxDecoration(
+                color: p2bpBlue,
+                image: _coverImageUrl.isNotEmpty
+                    ? DecorationImage(
+                        image: NetworkImage(_coverImageUrl), fit: BoxFit.cover)
+                    : null,
+              ),
+              child: FlexibleSpaceBar(
+                background: ClipRRect(
+                  child: Container(
+                    decoration: BoxDecoration(
+                      color: p2bpDarkBlue,
+                      image: _coverImageUrl.isNotEmpty
+                          ? DecorationImage(
+                              image: NetworkImage(_coverImageUrl),
+                              fit: BoxFit.cover)
+                          : null,
                     ),
-                    color: Color(0xFFAAAAAA),
                   ),
                 ),
-              ]),
+              ),
             ),
           ),
           SliverList(delegate: SliverChildListDelegate([_getPageBody()])),
@@ -195,7 +247,7 @@ class _ProjectDetailsPageState extends State<ProjectDetailsPage> {
       decoration: BoxDecoration(gradient: defaultGrad),
       child: ConstrainedBox(
         constraints: BoxConstraints(
-          minHeight: MediaQuery.of(context).size.height,
+          minHeight: MediaQuery.sizeOf(context).height,
         ),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -407,14 +459,14 @@ class _ProjectDetailsPageState extends State<ProjectDetailsPage> {
 //  style with different label names and callbacks and whatnot, probably
 //  copy MenuBar flutter.dev example somewhat
 class _SettingsMenuButton extends StatelessWidget {
-  // final VoidCallback? changePhotoCallback;
+  final VoidCallback? changePhotoCallback;
   final VoidCallback? editNameCallback;
   final VoidCallback? editDescriptionCallback;
   // final VoidCallback? archiveCallback;
   final VoidCallback? deleteCallback;
 
   const _SettingsMenuButton({
-    // this.changePhotoCallback,
+    this.changePhotoCallback,
     this.editNameCallback,
     this.editDescriptionCallback,
     // this.archiveCallback,
@@ -434,7 +486,7 @@ class _SettingsMenuButton extends StatelessWidget {
           borderRadius: BorderRadius.circular(100),
         )),
         backgroundColor:
-            WidgetStatePropertyAll(Colors.white.withValues(alpha: 0.3)),
+            WidgetStatePropertyAll(Colors.white.withValues(alpha: 0.8)),
         shadowColor: WidgetStatePropertyAll(Colors.transparent),
       ),
       children: <Widget>[
@@ -457,19 +509,19 @@ class _SettingsMenuButton extends StatelessWidget {
             ),
           ),
           menuChildren: [
-            // MenuItemButton(
-            //   style: paddingButtonStyle,
-            //   trailingIcon: Icon(
-            //     Icons.palette_outlined,
-            //     color: Colors.white,
-            //   ),
-            //   onPressed: changePhotoCallback,
-            //   child: Text(
-            //     'Change Project Photo',
-            //     style: whiteText,
-            //   ),
-            // ),
-            // Divider(color: Colors.white54, height: 1),
+            MenuItemButton(
+              style: paddingButtonStyle,
+              trailingIcon: Icon(
+                Icons.palette_outlined,
+                color: Colors.white,
+              ),
+              onPressed: changePhotoCallback,
+              child: Text(
+                'Change Project Photo',
+                style: whiteText,
+              ),
+            ),
+            Divider(color: Colors.white54, height: 1),
             MenuItemButton(
               style: paddingButtonStyle,
               trailingIcon: Icon(

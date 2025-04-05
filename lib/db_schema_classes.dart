@@ -66,6 +66,7 @@ class Project {
   String title = '';
   String description = '';
   String address = '';
+  String? coverImageUrl;
   List<LatLng> polygonPoints = [];
   num polygonArea = 0;
   List<DocumentReference> testRefs = [];
@@ -80,6 +81,7 @@ class Project {
     required this.title,
     required this.description,
     required this.address,
+    this.coverImageUrl,
     required this.polygonPoints,
     required this.polygonArea,
     required this.standingPoints,
@@ -88,10 +90,13 @@ class Project {
   });
 
   // TODO: Eventually add Team Photo and Team Color
-  Project.partialProject(
-      {required this.title, required this.description, required this.address});
+  Project.partialProject({
+    required this.title,
+    required this.description,
+    required this.address,
+    this.coverImageUrl,
+  });
 
-  // TODO: Probably want to delete test if test reference is not found; however, functionality may be unnecessary if the implementation of deleting a test deletes it from the project also (which is ideal).
   /// Gets all fields for each [Test] in this [Project] and loads them
   /// into the [tests]. Also returns [tests].
   Future<List<Test>> loadAllTestData() async {

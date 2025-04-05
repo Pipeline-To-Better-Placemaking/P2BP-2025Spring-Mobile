@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:io';
 
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
@@ -15,7 +16,13 @@ import 'google_maps_functions.dart';
 
 class ProjectMapCreation extends StatefulWidget {
   final Project partialProjectData;
-  const ProjectMapCreation({super.key, required this.partialProjectData});
+  final File? coverImage;
+
+  const ProjectMapCreation({
+    super.key,
+    required this.partialProjectData,
+    this.coverImage,
+  });
 
   @override
   State<ProjectMapCreation> createState() => _ProjectMapCreationState();
@@ -389,6 +396,7 @@ class _ProjectMapCreationState extends State<ProjectMapCreation> {
       setState(() {
         _isLoading = true;
       });
+
       await saveProject(
         projectTitle: widget.partialProjectData.title,
         description: widget.partialProjectData.description,
@@ -396,6 +404,7 @@ class _ProjectMapCreationState extends State<ProjectMapCreation> {
         polygonPoints: _polygons.first.points,
         polygonArea: _polygons.first.getAreaInSquareFeet(),
         standingPoints: _standingPoints,
+        coverImage: widget.coverImage,
       );
       if (!context.mounted) return;
 

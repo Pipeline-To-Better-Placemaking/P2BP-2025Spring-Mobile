@@ -1,4 +1,7 @@
+import 'dart:io';
+
 import 'package:flutter/material.dart';
+import 'package:image_picker/image_picker.dart';
 import 'package:p2bp_2025spring_mobile/project_map_creation.dart';
 import 'package:p2bp_2025spring_mobile/teams_and_invites_page.dart';
 
@@ -104,6 +107,7 @@ class _CreateProjectWidgetState extends State<CreateProjectWidget> {
   String projectDescription = '';
   String projectTitle = '';
   String projectAddress = '';
+  File? _selectedCoverImage;
   final _formKey = GlobalKey<FormState>();
 
   @override
@@ -134,17 +138,46 @@ class _CreateProjectWidgetState extends State<CreateProjectWidget> {
                     ),
                   ),
                 ),
-                PhotoUpload(
-                  width: 380,
-                  height: 130,
-                  icon: Icons.add_photo_alternate,
-                  circular: false,
-                  onTap: () {
-                    // TODO: Actual function (Photo Upload)
-                    print('Test');
-                    return;
-                  },
-                ),
+                _selectedCoverImage != null
+                    ? Stack(
+                        children: [
+                          Container(
+                            width: 380,
+                            height: 130,
+                            decoration: BoxDecoration(
+                              borderRadius: BorderRadius.circular(8),
+                              image: DecorationImage(
+                                image: FileImage(_selectedCoverImage!),
+                                fit: BoxFit.cover,
+                              ),
+                            ),
+                          ),
+                          Positioned(
+                            right: 8,
+                            top: 8,
+                            child: Container(
+                              decoration: BoxDecoration(
+                                color: Colors.white.withValues(alpha: 0.8),
+                                shape: BoxShape.circle,
+                              ),
+                              child: IconButton(
+                                icon: Icon(Icons.edit, color: Colors.grey),
+                                onPressed: _selectImage,
+                                iconSize: 20,
+                                padding: EdgeInsets.all(8),
+                                constraints: BoxConstraints(),
+                              ),
+                            ),
+                          )
+                        ],
+                      )
+                    : PhotoUpload(
+                        width: 380,
+                        height: 130,
+                        icon: Icons.add_photo_alternate,
+                        circular: false,
+                        onTap: _selectImage,
+                      ),
                 const SizedBox(height: 10.0),
                 Align(
                   alignment: Alignment.centerLeft,
@@ -266,7 +299,8 @@ class _CreateProjectWidgetState extends State<CreateProjectWidget> {
                             context,
                             MaterialPageRoute(
                                 builder: (context) => ProjectMapCreation(
-                                    partialProjectData: partialProject)));
+                                    partialProjectData: partialProject,
+                                    coverImage: _selectedCoverImage)));
                       } // function
                     },
                   ),
@@ -277,6 +311,23 @@ class _CreateProjectWidgetState extends State<CreateProjectWidget> {
         ),
       ),
     );
+  }
+
+  Future<void> _selectImage() async {
+    try {
+      final XFile? imageFile =
+          await ImagePicker().pickImage(source: ImageSource.gallery);
+      if (imageFile != null) {
+        setState(() {
+          _selectedCoverImage = File(imageFile.path);
+        });
+        print("Image selected: ${imageFile.path}");
+      } else {
+        print("No image selected.");
+      }
+    } catch (e) {
+      print("Error selecting image: $e");
+    }
   }
 }
 

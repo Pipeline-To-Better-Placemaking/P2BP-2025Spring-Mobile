@@ -7,23 +7,26 @@ import 'widgets.dart';
 
 class ChangePasswordPage extends StatelessWidget {
   const ChangePasswordPage({super.key});
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      resizeToAvoidBottomInset: false,
       appBar: AppBar(
         systemOverlayStyle: SystemUiOverlayStyle.dark
             .copyWith(statusBarColor: Colors.transparent),
         title: const Text('Change Password'),
       ),
       body: Padding(
-        padding: const EdgeInsets.all(20),
+        padding: const EdgeInsets.fromLTRB(20, 20, 20, 0) +
+            MediaQuery.viewInsetsOf(context),
         child: DefaultTextStyle(
           style: TextStyle(
             color: p2bpBlue,
             fontSize: 16,
             fontWeight: FontWeight.bold,
           ),
-          child: ChangePasswordForm(),
+          child: SafeArea(child: ChangePasswordForm()),
         ),
       ),
     );
@@ -132,6 +135,7 @@ class _ChangePasswordFormState extends State<ChangePasswordForm> {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(content: Text('Password changed successfully.')),
         );
+        Navigator.pop(context);
       } on FirebaseAuthException catch (e) {
         String errorMessage = e.code;
         _currentPassErrorText = 'An error occurred: $errorMessage';
@@ -156,8 +160,10 @@ class _ChangePasswordFormState extends State<ChangePasswordForm> {
             decoration: InputDecoration(
               border: OutlineInputBorder(),
               suffixIcon: IconButton(
-                icon: const Icon(
-                  Icons.visibility,
+                icon: Icon(
+                  !_currentPassObscureText
+                      ? Icons.visibility
+                      : Icons.visibility_off,
                   color: Colors.grey,
                 ),
                 onPressed: () {
@@ -168,7 +174,7 @@ class _ChangePasswordFormState extends State<ChangePasswordForm> {
               ),
             ),
           ),
-          SizedBox(height: 12),
+          const SizedBox(height: 12),
           const Text('New Password'),
           PasswordTextFormField(
             textColor: Colors.black,
@@ -178,8 +184,10 @@ class _ChangePasswordFormState extends State<ChangePasswordForm> {
             decoration: InputDecoration(
               border: OutlineInputBorder(),
               suffixIcon: IconButton(
-                icon: const Icon(
-                  Icons.visibility,
+                icon: Icon(
+                  !_newPassObscureText
+                      ? Icons.visibility
+                      : Icons.visibility_off,
                   color: Colors.grey,
                 ),
                 onPressed: () {
@@ -189,7 +197,7 @@ class _ChangePasswordFormState extends State<ChangePasswordForm> {
               ),
             ),
           ),
-          SizedBox(height: 12),
+          const SizedBox(height: 12),
           const Text('Confirm New Password'),
           PasswordTextFormField(
             textColor: Colors.black,
@@ -199,8 +207,10 @@ class _ChangePasswordFormState extends State<ChangePasswordForm> {
             decoration: InputDecoration(
               border: OutlineInputBorder(),
               suffixIcon: IconButton(
-                icon: const Icon(
-                  Icons.visibility,
+                icon: Icon(
+                  !_confirmPassObscureText
+                      ? Icons.visibility
+                      : Icons.visibility_off,
                   color: Colors.grey,
                 ),
                 onPressed: () {
@@ -211,7 +221,7 @@ class _ChangePasswordFormState extends State<ChangePasswordForm> {
               ),
             ),
           ),
-          SizedBox(height: 12),
+          const SizedBox(height: 12),
           ElevatedButton(
             style: ElevatedButton.styleFrom(
               backgroundColor: p2bpBlue,
@@ -230,6 +240,7 @@ class _ChangePasswordFormState extends State<ChangePasswordForm> {
               ),
             ),
           ),
+          const SizedBox(height: 30),
         ],
       ),
     );
