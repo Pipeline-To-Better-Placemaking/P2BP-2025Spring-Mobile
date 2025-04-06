@@ -30,63 +30,6 @@ class Member {
   Member({required this.userID, required this.fullName, this.invited = false});
 }
 
-class Member2 with JsonToString {
-  static const String collectionIDStatic = 'users';
-  static final ref = FirebaseFirestore.instance.collection(collectionIDStatic);
-
-  final Timestamp creationTime;
-  final String userID;
-  String fullName = '';
-  String email = '';
-  final List<DocumentReference> invites;
-  final List<DocumentReference> teamRefs;
-  DocumentReference? selectedTeam;
-  String profileImageUrl;
-
-  Member2({
-    required this.userID,
-    required this.fullName,
-    required this.email,
-    Timestamp? creationTime,
-    List<DocumentReference>? invites,
-    List<DocumentReference>? teams,
-    this.selectedTeam,
-    this.profileImageUrl = '',
-  })  : creationTime = creationTime ?? Timestamp.now(),
-        invites = invites ?? <DocumentReference>[],
-        teamRefs = teams ?? <DocumentReference>[];
-
-  factory Member2.fromJson(Map<String, Object?> json) {
-    if (json
-        case {
-          'id': String id,
-          'fullName': String fullName,
-          'email': String email,
-          'creationTime': Timestamp creationTime,
-          'lastLogin': Timestamp lastLogin,
-          'invites': List invites,
-          'teams': List teams,
-          'selectedTeam': dynamic selectedTeam,
-          'profileImageUrl': String profileImageUrl,
-        }) {}
-    throw FormatException('Invalid JSON: $json', json);
-  }
-
-  @override
-  Map<String, Object?> toJson() {
-    return {
-      'id': userID,
-      'fullName': fullName,
-      'email': email,
-      'creationTime': creationTime,
-      'invites': invites,
-      'teams': teamRefs,
-      'selectedTeam': selectedTeam,
-      'profileImageUrl': profileImageUrl,
-    };
-  }
-}
-
 // Team class for teams_and_invites_page.dart
 class Team {
   Timestamp? creationTime;
@@ -112,27 +55,6 @@ class Team {
     required this.title,
     required this.adminName,
   });
-}
-
-class Team2 {
-  final Timestamp creationTime;
-  final String teamID;
-  String title = '';
-  final List<Member2> teamMembers;
-  final List<DocumentReference> projects;
-
-  String adminName = '';
-
-  Team2({
-    required this.teamID,
-    required this.title,
-    Timestamp? creationTime,
-    List<Member2>? teamMembers,
-    List<DocumentReference>? projects,
-    this.adminName = '',
-  })  : creationTime = creationTime ?? Timestamp.now(),
-        teamMembers = teamMembers ?? <Member2>[],
-        projects = projects ?? <DocumentReference>[];
 }
 
 // Project class for project creation (create project + map)
@@ -186,36 +108,6 @@ class Project {
     this.tests = tests;
     return tests;
   }
-}
-
-class Project2 {
-  final Timestamp creationTime;
-  final String projectID;
-  String title = '';
-  String description = '';
-  String address = '';
-  final Polygon polygon;
-  final double polygonArea;
-  final List<DocumentReference> testRefs;
-  final List<Test>? tests;
-  String coverImageUrl = '';
-  final List<StandingPoint> standingPoints;
-
-  Project2({
-    required this.projectID,
-    required this.title,
-    required this.description,
-    required this.address,
-    required this.polygon,
-    double? polygonArea,
-    required this.standingPoints,
-    Timestamp? creationTime,
-    List<DocumentReference>? testRefs,
-    this.tests,
-    this.coverImageUrl = '',
-  })  : creationTime = creationTime ?? Timestamp.now(),
-        polygonArea = polygonArea ?? polygon.getAreaInSquareFeet(),
-        testRefs = testRefs ?? <DocumentReference>[];
 }
 
 /// Comparison function for tests. Used in [.sort].
@@ -282,7 +174,7 @@ abstract class Test<T> with JsonToString {
   /// The time this [Test] was initially created at.
   final Timestamp creationTime;
 
-  final String testID;
+  final String id;
 
   /// The collection ID used in Firestore for this specific test.
   ///
@@ -331,7 +223,7 @@ abstract class Test<T> with JsonToString {
   /// public methods acting as factory constructors.
   Test._({
     required this.title,
-    required this.testID,
+    required this.id,
     required this.scheduledTime,
     required this.projectRef,
     required this.collectionID,
@@ -354,7 +246,7 @@ abstract class Test<T> with JsonToString {
       String,
       Test Function({
         required String title,
-        required String testID,
+        required String id,
         required Timestamp scheduledTime,
         required DocumentReference projectRef,
         required String collectionID,
@@ -406,7 +298,7 @@ abstract class Test<T> with JsonToString {
   /// Utilizes values registered to [Test._newTestConstructors].
   static Test createNew(
       {required String title,
-      required String testID,
+      required String id,
       required Timestamp scheduledTime,
       required DocumentReference projectRef,
       required String collectionID,
@@ -419,7 +311,7 @@ abstract class Test<T> with JsonToString {
     if (constructor != null) {
       return constructor(
         title: title,
-        testID: testID,
+        id: id,
         scheduledTime: scheduledTime,
         projectRef: projectRef,
         collectionID: collectionID,
@@ -497,7 +389,7 @@ abstract class Test<T> with JsonToString {
   String toString() {
     return 'This is an instance of $runtimeType\n'
         'title: ${this.title}\n'
-        'testID: ${this.testID}\n'
+        'id: ${this.id}\n'
         'scheduledTime: ${this.scheduledTime}\n'
         'projectRef: ${this.projectRef}\n'
         'collectionID: ${this.collectionID}\n'
@@ -704,7 +596,7 @@ class LightingProfileTest extends Test<LightingProfileData>
   /// imitating factory constructors.
   LightingProfileTest._({
     required super.title,
-    required super.testID,
+    required super.id,
     required super.scheduledTime,
     required super.projectRef,
     required super.collectionID,
@@ -720,7 +612,7 @@ class LightingProfileTest extends Test<LightingProfileData>
     // Register for creating new Lighting Profile Tests
     Test._newTestConstructors[collectionIDStatic] = ({
       required String title,
-      required String testID,
+      required String id,
       required Timestamp scheduledTime,
       required DocumentReference projectRef,
       required String collectionID,
@@ -731,7 +623,7 @@ class LightingProfileTest extends Test<LightingProfileData>
     }) =>
         LightingProfileTest._(
           title: title,
-          testID: testID,
+          id: id,
           scheduledTime: scheduledTime,
           projectRef: projectRef,
           collectionID: collectionID,
@@ -752,7 +644,7 @@ class LightingProfileTest extends Test<LightingProfileData>
     Test._saveToFirestoreFunctions[LightingProfileTest] = (test) async {
       final testRef = _firestore
           .collection(test.collectionID)
-          .doc(test.testID)
+          .doc(test.id)
           .withConverter<LightingProfileTest>(
             fromFirestore: (snapshot, _) =>
                 LightingProfileTest.fromJson(snapshot.data()!),
@@ -767,7 +659,7 @@ class LightingProfileTest extends Test<LightingProfileData>
   @override
   void submitData(LightingProfileData data) async {
     try {
-      await _firestore.collection(collectionID).doc(testID).update({
+      await _firestore.collection(collectionID).doc(id).update({
         'data': data.toJson(),
         'isComplete': true,
       });
@@ -797,7 +689,7 @@ class LightingProfileTest extends Test<LightingProfileData>
         }) {
       return LightingProfileTest._(
         title: title,
-        testID: id,
+        id: id,
         scheduledTime: scheduledTime,
         projectRef: project,
         collectionID: collectionIDStatic,
@@ -815,7 +707,7 @@ class LightingProfileTest extends Test<LightingProfileData>
   Map<String, Object> toJson() {
     return {
       'title': title,
-      'id': testID,
+      'id': id,
       'scheduledTime': scheduledTime,
       'project': projectRef,
       'data': data.toJson(),
@@ -1095,7 +987,7 @@ class AbsenceOfOrderTest extends Test<AbsenceOfOrderData>
   /// imitating factory constructors.
   AbsenceOfOrderTest._({
     required super.title,
-    required super.testID,
+    required super.id,
     required super.scheduledTime,
     required super.projectRef,
     required super.collectionID,
@@ -1111,7 +1003,7 @@ class AbsenceOfOrderTest extends Test<AbsenceOfOrderData>
     // Register for creating new Absence of Order Tests
     Test._newTestConstructors[collectionIDStatic] = ({
       required String title,
-      required String testID,
+      required String id,
       required Timestamp scheduledTime,
       required DocumentReference projectRef,
       required String collectionID,
@@ -1122,7 +1014,7 @@ class AbsenceOfOrderTest extends Test<AbsenceOfOrderData>
     }) =>
         AbsenceOfOrderTest._(
           title: title,
-          testID: testID,
+          id: id,
           scheduledTime: scheduledTime,
           projectRef: projectRef,
           collectionID: collectionID,
@@ -1143,7 +1035,7 @@ class AbsenceOfOrderTest extends Test<AbsenceOfOrderData>
     Test._saveToFirestoreFunctions[AbsenceOfOrderTest] = (test) async {
       final testRef = _firestore
           .collection(test.collectionID)
-          .doc(test.testID)
+          .doc(test.id)
           .withConverter<AbsenceOfOrderTest>(
             fromFirestore: (snapshot, _) =>
                 AbsenceOfOrderTest.fromJson(snapshot.data()!),
@@ -1158,7 +1050,7 @@ class AbsenceOfOrderTest extends Test<AbsenceOfOrderData>
   @override
   void submitData(AbsenceOfOrderData data) async {
     try {
-      await _firestore.collection(collectionID).doc(testID).update({
+      await _firestore.collection(collectionID).doc(id).update({
         'data': data.toJson(),
         'isComplete': true,
       });
@@ -1194,7 +1086,7 @@ class AbsenceOfOrderTest extends Test<AbsenceOfOrderData>
         }) {
       return AbsenceOfOrderTest._(
         title: title,
-        testID: id,
+        id: id,
         scheduledTime: scheduledTime,
         projectRef: project,
         collectionID: collectionIDStatic,
@@ -1217,7 +1109,7 @@ class AbsenceOfOrderTest extends Test<AbsenceOfOrderData>
   Map<String, Object> toJson() {
     return {
       'title': title,
-      'id': testID,
+      'id': id,
       'scheduledTime': scheduledTime,
       'project': projectRef,
       'data': data.toJson(),
@@ -1573,7 +1465,7 @@ class SpatialBoundariesTest extends Test<SpatialBoundariesData>
 
   SpatialBoundariesTest._({
     required super.title,
-    required super.testID,
+    required super.id,
     required super.scheduledTime,
     required super.projectRef,
     required super.collectionID,
@@ -1589,7 +1481,7 @@ class SpatialBoundariesTest extends Test<SpatialBoundariesData>
     // Register for creating new Spatial Boundaries Tests
     Test._newTestConstructors[collectionIDStatic] = ({
       required String title,
-      required String testID,
+      required String id,
       required Timestamp scheduledTime,
       required DocumentReference projectRef,
       required String collectionID,
@@ -1600,7 +1492,7 @@ class SpatialBoundariesTest extends Test<SpatialBoundariesData>
     }) =>
         SpatialBoundariesTest._(
           title: title,
-          testID: testID,
+          id: id,
           scheduledTime: scheduledTime,
           projectRef: projectRef,
           collectionID: collectionID,
@@ -1621,7 +1513,7 @@ class SpatialBoundariesTest extends Test<SpatialBoundariesData>
     Test._saveToFirestoreFunctions[SpatialBoundariesTest] = (test) async {
       final testRef = _firestore
           .collection(test.collectionID)
-          .doc(test.testID)
+          .doc(test.id)
           .withConverter<SpatialBoundariesTest>(
             fromFirestore: (snapshot, _) =>
                 SpatialBoundariesTest.fromJson(snapshot.data()!),
@@ -1636,7 +1528,7 @@ class SpatialBoundariesTest extends Test<SpatialBoundariesData>
   @override
   void submitData(SpatialBoundariesData data) async {
     try {
-      await _firestore.collection(collectionID).doc(testID).update({
+      await _firestore.collection(collectionID).doc(id).update({
         'data': data.toJson(),
         'isComplete': true,
       });
@@ -1666,7 +1558,7 @@ class SpatialBoundariesTest extends Test<SpatialBoundariesData>
         }) {
       return SpatialBoundariesTest._(
         title: title,
-        testID: id,
+        id: id,
         scheduledTime: scheduledTime,
         projectRef: project,
         collectionID: collectionIDStatic,
@@ -1684,7 +1576,7 @@ class SpatialBoundariesTest extends Test<SpatialBoundariesData>
   Map<String, Object> toJson() {
     return {
       'title': title,
-      'id': testID,
+      'id': id,
       'scheduledTime': scheduledTime,
       'project': projectRef,
       'data': data.toJson(),
@@ -1739,7 +1631,7 @@ class SectionCutterTest extends Test<Section> with JsonToString {
   /// imitating factory constructors.
   SectionCutterTest._({
     required super.title,
-    required super.testID,
+    required super.id,
     required super.scheduledTime,
     required super.projectRef,
     required super.collectionID,
@@ -1755,7 +1647,7 @@ class SectionCutterTest extends Test<Section> with JsonToString {
     // Register for Map for Test.createNew
     Test._newTestConstructors[collectionIDStatic] = ({
       required String title,
-      required String testID,
+      required String id,
       required Timestamp scheduledTime,
       required DocumentReference projectRef,
       required String collectionID,
@@ -1766,7 +1658,7 @@ class SectionCutterTest extends Test<Section> with JsonToString {
     }) =>
         SectionCutterTest._(
           title: title,
-          testID: testID,
+          id: id,
           scheduledTime: scheduledTime,
           projectRef: projectRef,
           collectionID: collectionID,
@@ -1788,7 +1680,7 @@ class SectionCutterTest extends Test<Section> with JsonToString {
     Test._saveToFirestoreFunctions[SectionCutterTest] = (test) async {
       final testRef = _firestore
           .collection(test.collectionID)
-          .doc(test.testID)
+          .doc(test.id)
           .withConverter<SectionCutterTest>(
             fromFirestore: (snapshot, _) =>
                 SectionCutterTest.fromJson(snapshot.data()!),
@@ -1804,7 +1696,7 @@ class SectionCutterTest extends Test<Section> with JsonToString {
   void submitData(Section data) async {
     try {
       // Updates data in Firestore
-      await _firestore.collection(collectionID).doc(testID).update({
+      await _firestore.collection(collectionID).doc(id).update({
         'data': data.toJson(),
         'isComplete': true,
       });
@@ -1834,7 +1726,7 @@ class SectionCutterTest extends Test<Section> with JsonToString {
         }) {
       return SectionCutterTest._(
         title: title,
-        testID: id,
+        id: id,
         scheduledTime: scheduledTime,
         projectRef: project,
         collectionID: collectionIDStatic,
@@ -1852,7 +1744,7 @@ class SectionCutterTest extends Test<Section> with JsonToString {
   Map<String, Object> toJson() {
     return {
       'title': title,
-      'id': testID,
+      'id': id,
       'scheduledTime': scheduledTime,
       'project': projectRef,
       'data': data.toJson(),
@@ -1872,8 +1764,8 @@ class SectionCutterTest extends Test<Section> with JsonToString {
     Section? section;
     try {
       final storageRef = FirebaseStorage.instance.ref();
-      final sectionRef = storageRef.child(
-          "project_uploads/${projectRef.id}/section_cutter_files/$testID");
+      final sectionRef = storageRef
+          .child("project_uploads/${projectRef.id}/section_cutter_files/$id");
       final File sectionFile = File(data.path);
 
       print(sectionRef.fullPath);
@@ -2243,7 +2135,7 @@ class IdentifyingAccessTest extends Test<IdentifyingAccessData>
   /// Creates a new [IdentifyingAccessTest] instance from the given arguments.
   IdentifyingAccessTest._({
     required super.title,
-    required super.testID,
+    required super.id,
     required super.scheduledTime,
     required super.projectRef,
     required super.collectionID,
@@ -2258,7 +2150,7 @@ class IdentifyingAccessTest extends Test<IdentifyingAccessData>
     // Register for creating new Identifying Access Tests
     Test._newTestConstructors[collectionIDStatic] = ({
       required String title,
-      required String testID,
+      required String id,
       required Timestamp scheduledTime,
       required DocumentReference projectRef,
       required String collectionID,
@@ -2269,7 +2161,7 @@ class IdentifyingAccessTest extends Test<IdentifyingAccessData>
     }) =>
         IdentifyingAccessTest._(
           title: title,
-          testID: testID,
+          id: id,
           scheduledTime: scheduledTime,
           projectRef: projectRef,
           collectionID: collectionID,
@@ -2289,7 +2181,7 @@ class IdentifyingAccessTest extends Test<IdentifyingAccessData>
     Test._saveToFirestoreFunctions[IdentifyingAccessTest] = (test) async {
       final testRef = _firestore
           .collection(test.collectionID)
-          .doc(test.testID)
+          .doc(test.id)
           .withConverter<IdentifyingAccessTest>(
             fromFirestore: (snapshot, _) =>
                 IdentifyingAccessTest.fromJson(snapshot.data()!),
@@ -2303,7 +2195,7 @@ class IdentifyingAccessTest extends Test<IdentifyingAccessData>
   @override
   void submitData(IdentifyingAccessData data) async {
     try {
-      await _firestore.collection(collectionID).doc(testID).update({
+      await _firestore.collection(collectionID).doc(id).update({
         'data': data.toJson(),
         'isComplete': true,
       });
@@ -2332,7 +2224,7 @@ class IdentifyingAccessTest extends Test<IdentifyingAccessData>
         }) {
       return IdentifyingAccessTest._(
         title: title,
-        testID: id,
+        id: id,
         scheduledTime: scheduledTime,
         projectRef: project,
         collectionID: collectionIDStatic,
@@ -2349,7 +2241,7 @@ class IdentifyingAccessTest extends Test<IdentifyingAccessData>
   Map<String, Object> toJson() {
     return {
       'title': title,
-      'id': testID,
+      'id': id,
       'scheduledTime': scheduledTime,
       'project': projectRef,
       'data': data.toJson(),
@@ -2974,7 +2866,7 @@ class NaturePrevalenceTest extends Test<NaturePrevalenceData>
   /// Creates a new [NaturePrevalenceTest] instance from the given arguments.
   NaturePrevalenceTest._({
     required super.title,
-    required super.testID,
+    required super.id,
     required super.scheduledTime,
     required super.projectRef,
     required super.collectionID,
@@ -2990,7 +2882,7 @@ class NaturePrevalenceTest extends Test<NaturePrevalenceData>
     // Register for creating new Nature Prevalence Tests
     Test._newTestConstructors[collectionIDStatic] = ({
       required String title,
-      required String testID,
+      required String id,
       required Timestamp scheduledTime,
       required DocumentReference projectRef,
       required String collectionID,
@@ -3001,7 +2893,7 @@ class NaturePrevalenceTest extends Test<NaturePrevalenceData>
     }) =>
         NaturePrevalenceTest._(
           title: title,
-          testID: testID,
+          id: id,
           scheduledTime: scheduledTime,
           projectRef: projectRef,
           collectionID: collectionID,
@@ -3022,7 +2914,7 @@ class NaturePrevalenceTest extends Test<NaturePrevalenceData>
     Test._saveToFirestoreFunctions[NaturePrevalenceTest] = (test) async {
       final testRef = _firestore
           .collection(test.collectionID)
-          .doc(test.testID)
+          .doc(test.id)
           .withConverter<NaturePrevalenceTest>(
             fromFirestore: (snapshot, _) =>
                 NaturePrevalenceTest.fromJson(snapshot.data()!),
@@ -3041,7 +2933,7 @@ class NaturePrevalenceTest extends Test<NaturePrevalenceData>
   @override
   void submitData(NaturePrevalenceData data) async {
     try {
-      await _firestore.collection(collectionID).doc(testID).update({
+      await _firestore.collection(collectionID).doc(id).update({
         'data': data.toJson(),
         'isComplete': true,
       });
@@ -3071,7 +2963,7 @@ class NaturePrevalenceTest extends Test<NaturePrevalenceData>
         }) {
       return NaturePrevalenceTest._(
         title: title,
-        testID: id,
+        id: id,
         scheduledTime: scheduledTime,
         projectRef: project,
         collectionID: collectionIDStatic,
@@ -3089,7 +2981,7 @@ class NaturePrevalenceTest extends Test<NaturePrevalenceData>
   Map<String, Object> toJson() {
     return {
       'title': title,
-      'id': testID,
+      'id': id,
       'scheduledTime': scheduledTime,
       'project': projectRef,
       'data': data.toJson(),
@@ -3351,7 +3243,7 @@ class PeopleInPlaceTest extends Test<PeopleInPlaceData>
 
   PeopleInPlaceTest._({
     required super.title,
-    required super.testID,
+    required super.id,
     required super.scheduledTime,
     required super.projectRef,
     required super.collectionID,
@@ -3366,7 +3258,7 @@ class PeopleInPlaceTest extends Test<PeopleInPlaceData>
   static void register() {
     Test._newTestConstructors[collectionIDStatic] = ({
       required String title,
-      required String testID,
+      required String id,
       required Timestamp scheduledTime,
       required DocumentReference projectRef,
       required String collectionID,
@@ -3377,7 +3269,7 @@ class PeopleInPlaceTest extends Test<PeopleInPlaceData>
     }) =>
         PeopleInPlaceTest._(
           title: title,
-          testID: testID,
+          id: id,
           scheduledTime: scheduledTime,
           projectRef: projectRef,
           collectionID: collectionID,
@@ -3396,7 +3288,7 @@ class PeopleInPlaceTest extends Test<PeopleInPlaceData>
     Test._saveToFirestoreFunctions[PeopleInPlaceTest] = (test) async {
       final testRef = _firestore
           .collection(test.collectionID)
-          .doc(test.testID)
+          .doc(test.id)
           .withConverter<PeopleInPlaceTest>(
             fromFirestore: (snapshot, _) =>
                 PeopleInPlaceTest.fromJson(snapshot.data()!),
@@ -3412,7 +3304,7 @@ class PeopleInPlaceTest extends Test<PeopleInPlaceData>
   @override
   void submitData(PeopleInPlaceData data) async {
     try {
-      await _firestore.collection(collectionID).doc(testID).update({
+      await _firestore.collection(collectionID).doc(id).update({
         'data': data.toJson(),
         'isComplete': true,
       });
@@ -3443,7 +3335,7 @@ class PeopleInPlaceTest extends Test<PeopleInPlaceData>
         }) {
       return PeopleInPlaceTest._(
         title: title,
-        testID: id,
+        id: id,
         scheduledTime: scheduledTime,
         projectRef: project,
         collectionID: collectionIDStatic,
@@ -3462,7 +3354,7 @@ class PeopleInPlaceTest extends Test<PeopleInPlaceData>
   Map<String, Object> toJson() {
     return {
       'title': title,
-      'id': testID,
+      'id': id,
       'scheduledTime': scheduledTime,
       'project': projectRef,
       'data': data.toJson(),
@@ -3651,7 +3543,7 @@ class PeopleInMotionTest extends Test<PeopleInMotionData>
   /// Private constructor for PeopleInMotionTest.
   PeopleInMotionTest._({
     required super.title,
-    required super.testID,
+    required super.id,
     required super.scheduledTime,
     required super.projectRef,
     required super.collectionID,
@@ -3668,7 +3560,7 @@ class PeopleInMotionTest extends Test<PeopleInMotionData>
     // Register for creating new instances
     Test._newTestConstructors[collectionIDStatic] = ({
       required String title,
-      required String testID,
+      required String id,
       required Timestamp scheduledTime,
       required DocumentReference projectRef,
       required String collectionID,
@@ -3679,7 +3571,7 @@ class PeopleInMotionTest extends Test<PeopleInMotionData>
     }) =>
         PeopleInMotionTest._(
           title: title,
-          testID: testID,
+          id: id,
           scheduledTime: scheduledTime,
           projectRef: projectRef,
           collectionID: collectionID,
@@ -3701,7 +3593,7 @@ class PeopleInMotionTest extends Test<PeopleInMotionData>
     Test._saveToFirestoreFunctions[PeopleInMotionTest] = (test) async {
       final testRef = _firestore
           .collection(test.collectionID)
-          .doc(test.testID)
+          .doc(test.id)
           .withConverter<PeopleInMotionTest>(
             fromFirestore: (snapshot, _) =>
                 PeopleInMotionTest.fromJson(snapshot.data()!),
@@ -3719,7 +3611,7 @@ class PeopleInMotionTest extends Test<PeopleInMotionData>
   void submitData(PeopleInMotionData data) async {
     try {
       // Update Firestore with the test data and mark it as complete
-      await _firestore.collection(collectionID).doc(testID).update({
+      await _firestore.collection(collectionID).doc(id).update({
         'data': data.toJson(),
         'isComplete': true,
       });
@@ -3750,7 +3642,7 @@ class PeopleInMotionTest extends Test<PeopleInMotionData>
         }) {
       return PeopleInMotionTest._(
         title: title,
-        testID: id,
+        id: id,
         scheduledTime: scheduledTime,
         projectRef: project,
         collectionID: collectionIDStatic,
@@ -3769,7 +3661,7 @@ class PeopleInMotionTest extends Test<PeopleInMotionData>
   Map<String, Object> toJson() {
     return {
       'title': title,
-      'id': testID,
+      'id': id,
       'scheduledTime': scheduledTime,
       'project': projectRef,
       'data': data.toJson(),
@@ -3921,7 +3813,7 @@ class AcousticProfileTest extends Test<AcousticProfileData>
   /// Private constructor for AcousticProfileTest.
   AcousticProfileTest._({
     required super.title,
-    required super.testID,
+    required super.id,
     required super.scheduledTime,
     required super.projectRef,
     required super.collectionID,
@@ -3938,7 +3830,7 @@ class AcousticProfileTest extends Test<AcousticProfileData>
   static void register() {
     Test._newTestConstructors[collectionIDStatic] = ({
       required String title,
-      required String testID,
+      required String id,
       required Timestamp scheduledTime,
       required DocumentReference projectRef,
       required String collectionID,
@@ -3949,7 +3841,7 @@ class AcousticProfileTest extends Test<AcousticProfileData>
     }) =>
         AcousticProfileTest._(
           title: title,
-          testID: testID,
+          id: id,
           scheduledTime: scheduledTime,
           projectRef: projectRef,
           collectionID: collectionID,
@@ -3969,7 +3861,7 @@ class AcousticProfileTest extends Test<AcousticProfileData>
     Test._saveToFirestoreFunctions[AcousticProfileTest] = (test) async {
       final testRef = _firestore
           .collection(test.collectionID)
-          .doc(test.testID)
+          .doc(test.id)
           .withConverter<AcousticProfileTest>(
             fromFirestore: (snapshot, _) =>
                 AcousticProfileTest.fromJson(snapshot.data()!),
@@ -3985,7 +3877,7 @@ class AcousticProfileTest extends Test<AcousticProfileData>
   @override
   Future<void> submitData(AcousticProfileData data) async {
     try {
-      await _firestore.collection(collectionID).doc(testID).update({
+      await _firestore.collection(collectionID).doc(id).update({
         'data': data.toJson(),
         'isComplete': true,
       });
@@ -4017,7 +3909,7 @@ class AcousticProfileTest extends Test<AcousticProfileData>
         }) {
       return AcousticProfileTest._(
         title: title,
-        testID: id,
+        id: id,
         scheduledTime: scheduledTime,
         projectRef: project,
         collectionID: collectionIDStatic,
@@ -4037,7 +3929,7 @@ class AcousticProfileTest extends Test<AcousticProfileData>
   Map<String, Object> toJson() {
     return {
       'title': title,
-      'id': testID,
+      'id': id,
       'scheduledTime': scheduledTime,
       'project': projectRef,
       'data': data.toJson(),
@@ -4047,6 +3939,337 @@ class AcousticProfileTest extends Test<AcousticProfileData>
       'standingPoints': standingPoints.toJsonList(),
       'intervalDuration': intervalDuration,
       'intervalCount': intervalCount,
+    };
+  }
+}
+
+enum GroupRole {
+  member(rank: 0),
+  owner(rank: 10);
+
+  const GroupRole({required this.rank});
+
+  final int rank;
+}
+
+final Set<GroupRole> elevatedRoles =
+    GroupRole.values.where((role) => role.rank > 4).toSet();
+
+abstract interface class FirestoreDocument {
+  String get collectionID;
+}
+
+class Member2 with JsonToString implements FirestoreDocument {
+  static const String collectionIDStatic = 'users';
+
+  @override
+  String get collectionID => collectionIDStatic;
+
+  static final CollectionReference<Member2> collectionRef =
+      _firestore.collection(collectionIDStatic).withConverter<Member2>(
+            fromFirestore: (snapshot, _) => Member2.fromJson(snapshot.data()!),
+            toFirestore: (member, _) => member.toJson(),
+          );
+
+  final Timestamp creationTime;
+  final String id;
+  String fullName = '';
+  String email = '';
+  final List<DocumentReference> teamInviteRefs;
+  final List<TeamInvite>? teamInvites;
+  final List<DocumentReference> teamRefs;
+  final List<Team2>? teams;
+  DocumentReference? selectedTeam;
+  String profileImageUrl = '';
+
+  Member2({
+    required this.id,
+    required this.fullName,
+    required this.email,
+    Timestamp? creationTime,
+    List<DocumentReference>? teamInviteRefs,
+    this.teamInvites,
+    List<DocumentReference>? teamRefs,
+    this.teams,
+    this.selectedTeam,
+    this.profileImageUrl = '',
+  })  : creationTime = creationTime ?? Timestamp.now(),
+        teamInviteRefs = teamInviteRefs ?? <DocumentReference>[],
+        teamRefs = teamRefs ?? <DocumentReference>[];
+
+  factory Member2.fromJson(Map<String, Object?> json) {
+    if (json
+        case {
+          'id': String id,
+          'fullName': String fullName,
+          'email': String email,
+          'creationTime': Timestamp creationTime,
+          'invites': List invites,
+          'teams': List teams,
+          'selectedTeam': DocumentReference? selectedTeam,
+          'profileImageUrl': String profileImageUrl,
+        }) {
+      return Member2(
+        id: id,
+        fullName: fullName,
+        email: email,
+        creationTime: creationTime,
+        teamInviteRefs: List<DocumentReference>.from(invites),
+        teamRefs: List<DocumentReference>.from(teams),
+        selectedTeam: selectedTeam,
+        profileImageUrl: profileImageUrl,
+      );
+    }
+    throw FormatException('Invalid JSON: $json', json);
+  }
+
+  @override
+  Map<String, Object?> toJson() {
+    return {
+      'id': id,
+      'fullName': fullName,
+      'email': email,
+      'creationTime': creationTime,
+      'invites': teamInviteRefs,
+      'teams': teamRefs,
+      'selectedTeam': selectedTeam,
+      'profileImageUrl': profileImageUrl,
+    };
+  }
+}
+
+class Team2 with JsonToString implements FirestoreDocument {
+  static const String collectionIDStatic = 'teams';
+
+  @override
+  String get collectionID => collectionIDStatic;
+
+  static final CollectionReference<Team2> collectionRef =
+      _firestore.collection(collectionIDStatic).withConverter<Team2>(
+            fromFirestore: (snapshot, _) => Team2.fromJson(snapshot.data()!),
+            toFirestore: (team, _) => team.toJson(),
+          );
+
+  final Timestamp creationTime;
+  final String id;
+  String title = '';
+  final Map<GroupRole, List<DocumentReference>> memberRefMap;
+  final Map<GroupRole, List<Member2>>? memberMap;
+  final List<DocumentReference> projectRefs;
+  final List<Project2>? projects;
+
+  Team2({
+    required this.id,
+    required this.title,
+    required this.memberRefMap,
+    Timestamp? creationTime,
+    this.memberMap,
+    List<DocumentReference>? projectRefs,
+    this.projects,
+  })  : creationTime = creationTime ?? Timestamp.now(),
+        projectRefs = projectRefs ?? <DocumentReference>[];
+
+  factory Team2.fromJson(Map<String, Object?> json) {
+    if (json
+        case {
+          'id': String id,
+          'title': String title,
+          'creationTime': Timestamp creationTime,
+          'membersByRole': Map<String, Object?> membersByRole,
+          'projects': List projects,
+        }) {
+      return Team2(
+        id: id,
+        title: title,
+        creationTime: creationTime,
+        memberRefMap: <GroupRole, List<DocumentReference>>{
+          for (final role in membersByRole.keys)
+            GroupRole.values.byName(role):
+                List<DocumentReference>.from(membersByRole[role]! as List)
+        },
+        projectRefs: List<DocumentReference>.from(projects),
+      );
+    }
+    throw FormatException('Invalid JSON: $json', json);
+  }
+
+  @override
+  Map<String, Object?> toJson() {
+    return {
+      'id': id,
+      'title': title,
+      'membersByRole': memberRefMap.keysEnumToName(),
+      'creationTime': creationTime,
+      'projects': projectRefs,
+    };
+  }
+}
+
+class TeamInvite {
+  final String id;
+  final String title;
+  final String ownerName;
+
+  TeamInvite({
+    required this.id,
+    required this.title,
+    required this.ownerName,
+  });
+
+  static Future<TeamInvite> fromTeamID(String teamID) async {
+    final DocumentReference<Map<String, Object?>> teamRef =
+        _firestore.collection('teams').doc(teamID);
+    return await fromTeamRef(teamRef);
+  }
+
+  static Future<TeamInvite> fromTeamRef(DocumentReference teamRef) async {
+    final DocumentSnapshot<Map<String, Object?>> teamDoc;
+    final DocumentReference<Map<String, Object?>> userRef;
+    final DocumentSnapshot<Map<String, Object?>> userDoc;
+
+    try {
+      teamDoc = await _firestore.doc(teamRef.path).get();
+      if (teamDoc.exists) {
+        if (teamDoc
+            case {
+              'id': String id,
+              'title': String title,
+              'membersByRole': Map<String, Object?> membersByRole,
+            }) {
+          if (membersByRole.containsKey(GroupRole.owner.name) &&
+              membersByRole[GroupRole.owner.name] is List) {
+            userRef = _firestore
+                .collection('users')
+                .doc((membersByRole[GroupRole.owner.name] as List).first);
+            userDoc = await userRef.get();
+            if (userDoc
+                case {
+                  'fullName': String fullName,
+                }) {
+              return TeamInvite(id: id, title: title, ownerName: fullName);
+            }
+          }
+        }
+      }
+    } catch (e, s) {
+      print('Exception: $e');
+      print('Stacktrace: $s');
+    }
+
+    throw Exception('Failed to create TeamInvite');
+  }
+}
+
+class Project2 with JsonToString implements FirestoreDocument {
+  static const String collectionIDStatic = 'projects';
+
+  @override
+  String get collectionID => collectionIDStatic;
+
+  static final CollectionReference<Project2> collectionRef =
+      _firestore.collection(collectionIDStatic).withConverter<Project2>(
+            fromFirestore: (snapshot, _) => Project2.fromJson(snapshot.data()!),
+            toFirestore: (project, _) => project.toJson(),
+          );
+
+  final String id;
+  String title = '';
+  String description = '';
+  String address = '';
+  final Timestamp creationTime;
+  final DocumentReference teamRef;
+  final Team2? team;
+  final Map<GroupRole, List<DocumentReference>> memberRefMap;
+  final Map<GroupRole, List<Member2>>? memberMap;
+  final Polygon polygon;
+  final double polygonArea;
+  final List<DocumentReference> testRefs;
+  final List<Test>? tests;
+  String coverImageUrl = '';
+  final List<StandingPoint> standingPoints;
+
+  Project2({
+    required this.id,
+    required this.title,
+    required this.description,
+    required this.address,
+    Timestamp? creationTime,
+    required this.teamRef,
+    this.team,
+    required this.memberRefMap,
+    this.memberMap,
+    required this.polygon,
+    double? polygonArea,
+    required this.standingPoints,
+    List<DocumentReference>? testRefs,
+    this.tests,
+    this.coverImageUrl = '',
+  })  : creationTime = creationTime ?? Timestamp.now(),
+        polygonArea = polygonArea ?? polygon.getAreaInSquareFeet(),
+        testRefs = testRefs ?? <DocumentReference>[];
+
+  factory Project2.fromJson(Map<String, Object?> json) {
+    if (json
+        case {
+          'id': String id,
+          'title': String title,
+          'description': String description,
+          'address': String address,
+          'creationTime': Timestamp creationTime,
+          'team': DocumentReference team,
+          'membersByRole': Map<String, Object?> membersByRole,
+          'polygonPoints': List<Object?> polygonPoints,
+          'polygonArea': double polygonArea,
+          'standingPoints': List standingPoints,
+          'tests': List<Object?> tests,
+          'coverImageUrl': String coverImageUrl,
+        }) {
+      final List<LatLng> points =
+          List<GeoPoint>.from(polygonPoints).toLatLngList();
+      return Project2(
+        id: id,
+        title: title,
+        description: description,
+        address: address,
+        creationTime: creationTime,
+        teamRef: team,
+        memberRefMap: <GroupRole, List<DocumentReference>>{
+          for (final role in membersByRole.keys)
+            if (elevatedRoles.contains(GroupRole.values.byName(role)))
+              GroupRole.values.byName(role):
+                  List<DocumentReference>.from(membersByRole[role]! as List)
+        },
+        polygon: Polygon(
+          polygonId: PolygonId(points.toString()),
+          points: points,
+          strokeWidth: 1,
+          strokeColor: Colors.red,
+          fillColor: Color(0x52F34236),
+        ),
+        polygonArea: polygonArea,
+        standingPoints: StandingPoint.fromJsonList(standingPoints),
+        testRefs: List<DocumentReference>.from(tests),
+        coverImageUrl: coverImageUrl,
+      );
+    }
+    throw FormatException('Invalid JSON: $json', json);
+  }
+
+  @override
+  Map<String, Object?> toJson() {
+    return {
+      'id': id,
+      'title': title,
+      'description': description,
+      'address': address,
+      'creationTime': creationTime,
+      'team': teamRef,
+      'membersByRole': memberRefMap.keysEnumToName(),
+      'polygonPoints': polygon.toGeoPointList(),
+      'polygonArea': polygonArea,
+      'standingPoints': standingPoints.toJsonList(),
+      'tests': testRefs,
+      'coverImageUrl': coverImageUrl,
     };
   }
 }

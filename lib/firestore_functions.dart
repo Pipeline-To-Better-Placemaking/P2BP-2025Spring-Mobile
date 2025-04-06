@@ -314,7 +314,7 @@ Future<bool> deleteProject(Project project) async {
 Future<bool> deleteTest(Test test) async {
   try {
     final DocumentReference<Map<String, dynamic>> testRef =
-        _firestore.collection(test.collectionID).doc(test.testID);
+        _firestore.collection(test.collectionID).doc(test.id);
 
     // Delete reference to this test from the project it resides in
     await test.projectRef.update({
@@ -680,7 +680,7 @@ List<Member> searchMembers(List<Member> membersList, String text) {
 
 /// Creates a new [Test] from scratch and inserts it into Firestore.
 ///
-/// The [testID] is generated here to be used in the [Test] constructor.
+/// The [id] is generated here to be used in the [Test] constructor.
 ///
 /// Returns the [Test] object representing the instance just inserted
 /// to Firestore.
@@ -702,12 +702,12 @@ Future<Test> saveTest({
     }
 
     // Generates test document ID
-    String testID = _firestore.collection(collectionID).doc().id;
+    String id = _firestore.collection(collectionID).doc().id;
 
     // Creates Test object
     tempTest = Test.createNew(
       title: title,
-      testID: testID,
+      id: id,
       scheduledTime: scheduledTime,
       projectRef: projectRef,
       collectionID: collectionID,
@@ -721,7 +721,7 @@ Future<Test> saveTest({
 
     // Adds a reference to the Test to the relevant Project in Firestore
     await _firestore.doc('/${projectRef.path}').update({
-      'tests': FieldValue.arrayUnion([_firestore.doc('/$collectionID/$testID')])
+      'tests': FieldValue.arrayUnion([_firestore.doc('/$collectionID/$id')])
     });
   } catch (e, stacktrace) {
     print('Exception retrieving : $e');
@@ -895,5 +895,11 @@ extension DynamicLatLngExtraction on List<dynamic> {
       }
     });
     return newLatLngList;
+  }
+}
+
+extension EnumToName<E extends Enum> on Map<E, Object?> {
+  Map<String, Object?> keysEnumToName() {
+    return {for (final key in keys) key.name: this[key]};
   }
 }
