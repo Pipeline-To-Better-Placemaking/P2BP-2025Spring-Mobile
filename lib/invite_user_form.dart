@@ -38,8 +38,8 @@ class _InviteUserFormState extends State<InviteUserForm> {
       final allMemberList = await getMembersList();
       final teamMemberList = widget.teamMembers;
       membersList = allMemberList
-          .where((member) => !(teamMemberList
-              .any((teamMember) => teamMember.userID == member.userID)))
+          .where((member) =>
+              !(teamMemberList.any((teamMember) => teamMember.id == member.id)))
           .toList();
       setState(() {
         _isLoading = false;
@@ -169,7 +169,7 @@ class _InviteUserFormState extends State<InviteUserForm> {
       onTap: () {
         setState(() {
           if (!member.invited) {
-            sendInviteToUser(member.userID, widget.activeTeam.teamID);
+            sendInviteToUser(member.id, widget.activeTeam.teamID);
             member.invited = true;
           }
         });

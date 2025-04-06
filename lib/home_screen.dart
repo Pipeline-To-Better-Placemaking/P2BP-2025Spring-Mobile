@@ -33,7 +33,9 @@ final List<String> _bannerImages = [
 ];
 
 class HomeScreen extends StatefulWidget {
-  const HomeScreen({super.key});
+  final Member member;
+
+  const HomeScreen({super.key, required this.member});
 
   @override
   State<HomeScreen> createState() => _HomeScreenState();

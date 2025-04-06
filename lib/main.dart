@@ -81,8 +81,8 @@ class MyApp extends StatelessWidget {
             ),
         '/login': (context) => const LoginScreen(),
         '/signup': (context) => const SignUpScreen(),
-        '/home': (context) => const HomeScreen(),
-        '/new_home': (context) => const BottomFloatingNavBar(),
+        // '/home': (context) => const HomeScreen(),
+        // '/new_home': (context) => const BottomFloatingNavBar(),
         '/compare_projects': (context) => const ProjectComparisonPage(),
         // Commented out since you need project data to create page.
         // '/search': (context) => const SearchScreen(),

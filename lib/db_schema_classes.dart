@@ -2,6 +2,7 @@ import 'dart:io';
 
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:file_selector/file_selector.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_storage/firebase_storage.dart';
 import 'package:flutter/material.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
@@ -22,13 +23,13 @@ import 'nature_prevalence_test.dart';
 final FirebaseFirestore _firestore = FirebaseFirestore.instance;
 
 // User class for create_project_and_teams.dart
-class Member {
-  String userID = '';
-  String fullName = '';
-  bool invited = false;
-
-  Member({required this.userID, required this.fullName, this.invited = false});
-}
+// class Member {
+//   String userID = '';
+//   String fullName = '';
+//   bool invited = false;
+//
+//   Member({required this.userID, required this.fullName, this.invited = false});
+// }
 
 // Team class for teams_and_invites_page.dart
 class Team {
@@ -3959,22 +3960,25 @@ abstract interface class FirestoreDocument {
   String get collectionID;
 }
 
-class Member2 with JsonToString implements FirestoreDocument {
+class Member with JsonToString implements FirestoreDocument {
   static const String collectionIDStatic = 'users';
 
   @override
   String get collectionID => collectionIDStatic;
 
-  static final CollectionReference<Member2> collectionRef =
-      _firestore.collection(collectionIDStatic).withConverter<Member2>(
-            fromFirestore: (snapshot, _) => Member2.fromJson(snapshot.data()!),
+  static final CollectionReference defaultRef =
+      _firestore.collection(collectionIDStatic);
+
+  static final CollectionReference<Member> converterRef =
+      _firestore.collection(collectionIDStatic).withConverter<Member>(
+            fromFirestore: (snapshot, _) => Member.fromJson(snapshot.data()!),
             toFirestore: (member, _) => member.toJson(),
           );
 
-  final Timestamp creationTime;
   final String id;
   String fullName = '';
   String email = '';
+  final Timestamp? creationTime;
   final List<DocumentReference> teamInviteRefs;
   final List<TeamInvite>? teamInvites;
   final List<DocumentReference> teamRefs;
@@ -3982,22 +3986,21 @@ class Member2 with JsonToString implements FirestoreDocument {
   DocumentReference? selectedTeam;
   String profileImageUrl = '';
 
-  Member2({
+  Member({
     required this.id,
     required this.fullName,
     required this.email,
-    Timestamp? creationTime,
+    this.creationTime,
     List<DocumentReference>? teamInviteRefs,
     this.teamInvites,
     List<DocumentReference>? teamRefs,
     this.teams,
     this.selectedTeam,
     this.profileImageUrl = '',
-  })  : creationTime = creationTime ?? Timestamp.now(),
-        teamInviteRefs = teamInviteRefs ?? <DocumentReference>[],
+  })  : teamInviteRefs = teamInviteRefs ?? <DocumentReference>[],
         teamRefs = teamRefs ?? <DocumentReference>[];
 
-  factory Member2.fromJson(Map<String, Object?> json) {
+  factory Member.fromJson(Map<String, Object?> json) {
     if (json
         case {
           'id': String id,
@@ -4009,7 +4012,7 @@ class Member2 with JsonToString implements FirestoreDocument {
           'selectedTeam': DocumentReference? selectedTeam,
           'profileImageUrl': String profileImageUrl,
         }) {
-      return Member2(
+      return Member(
         id: id,
         fullName: fullName,
         email: email,
@@ -4029,12 +4032,60 @@ class Member2 with JsonToString implements FirestoreDocument {
       'id': id,
       'fullName': fullName,
       'email': email,
-      'creationTime': creationTime,
+      'creationTime': creationTime ?? FieldValue.serverTimestamp(),
       'invites': teamInviteRefs,
       'teams': teamRefs,
       'selectedTeam': selectedTeam,
       'profileImageUrl': profileImageUrl,
     };
+  }
+
+  /// Creates a [Member] from the given [User], adds it to Firestore, and sends
+  /// email verification.
+  ///
+  /// This should only be called after a [User] has been created with
+  /// `email` and `password`, and that User has had its profile updated
+  /// with a `displayName`.
+  static Future<Member> createNewUser(User user) async {
+    final member =
+        Member(id: user.uid, fullName: user.displayName!, email: user.email!);
+
+    await converterRef.doc(member.id).set(member);
+    await user.sendEmailVerification();
+
+    return member;
+  }
+
+  /// Attempts to create a [Member] from given [User] data in Firestore.
+  ///
+  /// This also performs some login-time updates to the document, such as
+  /// updating `email` if it has been changed in FirebaseAuth and updating
+  /// `lastLogin` to the current time.
+  static Future<Member> loginUser(User user) async {
+    final userRef = converterRef.doc(user.uid);
+
+    try {
+      return await _firestore.runTransaction<Member>((transaction) async {
+        final userDoc = await transaction.get<Member>(userRef);
+        final member = userDoc.data()!;
+
+        // Update email in Firestore to new email in Auth if they are different.
+        // This is done on login because there does not seem to be a way to
+        // listen for when the user has verified their new email address after
+        // changing it, which would be the ideal time to update the email
+        // in Firestore.
+        if (member.email != user.email) {
+          transaction.update(userRef, {'email': user.email});
+        }
+        transaction
+            .update(userRef, {'lastLogin': FieldValue.serverTimestamp()});
+        return member;
+      });
+    } catch (e, s) {
+      print('Exception: $e');
+      print('Stacktrace: $s');
+      throw Exception('Failed to login because of exception: $e');
+    }
   }
 }
 
@@ -4054,7 +4105,7 @@ class Team2 with JsonToString implements FirestoreDocument {
   final String id;
   String title = '';
   final Map<GroupRole, List<DocumentReference>> memberRefMap;
-  final Map<GroupRole, List<Member2>>? memberMap;
+  final Map<GroupRole, List<Member>>? memberMap;
   final List<DocumentReference> projectRefs;
   final List<Project2>? projects;
 
@@ -4180,7 +4231,7 @@ class Project2 with JsonToString implements FirestoreDocument {
   final DocumentReference teamRef;
   final Team2? team;
   final Map<GroupRole, List<DocumentReference>> memberRefMap;
-  final Map<GroupRole, List<Member2>>? memberMap;
+  final Map<GroupRole, List<Member>>? memberMap;
   final Polygon polygon;
   final double polygonArea;
   final List<DocumentReference> testRefs;

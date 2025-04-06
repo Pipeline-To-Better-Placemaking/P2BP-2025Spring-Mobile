@@ -278,6 +278,7 @@ class PasswordTextFormField extends StatelessWidget {
   final bool? obscureText;
   final void Function(String)? onChanged;
   final Color? textColor;
+  final String? Function(String?)? validator;
 
   const PasswordTextFormField({
     super.key,
@@ -287,6 +288,7 @@ class PasswordTextFormField extends StatelessWidget {
     this.obscureText,
     this.onChanged,
     this.textColor,
+    this.validator,
   });
 
   @override
@@ -302,6 +304,7 @@ class PasswordTextFormField extends StatelessWidget {
       controller: controller,
       forceErrorText: forceErrorText,
       onChanged: onChanged,
+      validator: validator,
     );
   }
 }
