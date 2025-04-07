@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:p2bp_2025spring_mobile/change_team_name_form.dart';
+import 'package:p2bp_2025spring_mobile/extensions.dart';
 import 'package:p2bp_2025spring_mobile/firestore_functions.dart';
 import 'package:p2bp_2025spring_mobile/invite_user_form.dart';
 import 'package:p2bp_2025spring_mobile/manage_team_members_form.dart';
@@ -32,25 +33,32 @@ class _TeamSettingsPageState extends State<TeamSettingsPage> {
   bool _isMultiSelectMode = false;
   final Set<Project> _selectedProjects = {};
   late final List<Project> _projects;
-  late final List<Member> _teamMembers;
+  late final RoleMap<Member> _teamMembers;
 
   @override
   void initState() {
     super.initState();
-    _getProjects();
-    _getTeamMembers();
+    if (widget.activeTeam.projects == null) {
+      _getProjects();
+    } else {
+      _projects = widget.activeTeam.projects!;
+    }
+    if (widget.activeTeam.memberMap == null) {
+      _getTeamMembers();
+    } else {
+      _teamMembers = widget.activeTeam.memberMap!;
+    }
   }
 
   Future<void> _getProjects() async {
-    _projects = await getTeamProjects(
-        _firestore.collection('teams').doc(widget.activeTeam.teamID));
+    _projects = await widget.activeTeam.loadProjectsInfo();
     setState(() {
       _isLoadingProjects = false;
     });
   }
 
   void _getTeamMembers() async {
-    _teamMembers = await getTeamMembers(widget.activeTeam.teamID);
+    _teamMembers = await widget.activeTeam.loadMembersInfo();
     setState(() {
       _isLoadingTeamMembers = false;
     });
@@ -89,13 +97,8 @@ class _TeamSettingsPageState extends State<TeamSettingsPage> {
         for (final project in _selectedProjects) {
           await deleteProject(project);
           _projects.remove(project);
-          widget.activeTeam.projects.removeWhere((projectRef) {
-            final bool test = projectRef.id == project.projectID;
-            if (test) {
-              widget.activeTeam.numProjects--; // dumb that I had to do this
-            }
-            return test;
-          });
+          widget.activeTeam.projects
+              ?.removeWhere((projectRef) => projectRef.id == project.id);
         }
 
         if (!mounted) return;
@@ -117,15 +120,15 @@ class _TeamSettingsPageState extends State<TeamSettingsPage> {
       declineText: 'No, go back',
       confirmText: 'Yes, delete this team',
       onConfirm: () async {
-        final success = await deleteTeam(widget.activeTeam);
-        if (success == true) {
-          if (!mounted) return;
-          Navigator.pop(context);
-          Navigator.pop(context, true);
-        } else {
-          if (!mounted) return;
-          Navigator.pop(context);
-        }
+        // final success = await deleteTeam(widget.activeTeam); TODO fix
+        // if (success == true) {
+        //   if (!mounted) return;
+        //   Navigator.pop(context);
+        //   Navigator.pop(context, true);
+        // } else {
+        //   if (!mounted) return;
+        //   Navigator.pop(context);
+        // }
       },
     );
   }
@@ -157,7 +160,7 @@ class _TeamSettingsPageState extends State<TeamSettingsPage> {
               if (newName == null || newName == widget.activeTeam.title) return;
               _firestore
                   .collection('teams')
-                  .doc(widget.activeTeam.teamID)
+                  .doc(widget.activeTeam.id)
                   .update({'title': newName});
               setState(() {
                 widget.activeTeam.title = newName;
@@ -208,7 +211,7 @@ class _TeamSettingsPageState extends State<TeamSettingsPage> {
                             context: context,
                             builder: (context) => InviteUserForm(
                               activeTeam: widget.activeTeam,
-                              teamMembers: _teamMembers,
+                              teamMembers: _teamMembers.toSingleList(),
                             ),
                           );
                           // _showInviteDialog(context);
@@ -325,16 +328,9 @@ class _TeamSettingsPageState extends State<TeamSettingsPage> {
                         projectDeletedCallback: () {
                           setState(() {
                             _projects.removeAt(index);
-                            widget.activeTeam.projects
-                                .removeWhere((projectRef) {
-                              final bool test =
-                                  projectRef.id == _projects[index].projectID;
-                              if (test) {
-                                widget.activeTeam
-                                    .numProjects--; // dumb that I had to do this
-                              }
-                              return test;
-                            });
+                            widget.activeTeam.projects?.removeWhere(
+                                (projectRef) =>
+                                    projectRef.id == _projects[index].id);
                           });
                         },
                       );

@@ -10,7 +10,7 @@ import 'theme.dart';
 
 class ManageTeamMembersForm extends StatefulWidget {
   final Team activeTeam;
-  final List<Member> teamMembers;
+  final RoleMap<Member> teamMembers;
 
   const ManageTeamMembersForm({
     super.key,
@@ -102,8 +102,8 @@ class _ManageTeamMembersFormState extends State<ManageTeamMembersForm> {
 
                                 if (didRemove != true) return;
                                 await removeUserFromTeam(
-                                  thisMember.userID,
-                                  widget.activeTeam.teamID,
+                                  thisMember.id,
+                                  widget.activeTeam.id,
                                 );
                                 setState(() {
                                   widget.teamMembers.remove(thisMember);

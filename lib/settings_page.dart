@@ -12,12 +12,15 @@ import 'package:p2bp_2025spring_mobile/theme.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 import 'change_password_page.dart';
+import 'db_schema_classes.dart';
 import 'firestore_functions.dart';
 import 'strings.dart';
 import 'submit_bug_report_page.dart';
 
 class SettingsPage extends StatefulWidget {
-  const SettingsPage({super.key});
+  final Member member;
+
+  const SettingsPage({super.key, required this.member});
 
   @override
   State<StatefulWidget> createState() => _SettingsPageState();

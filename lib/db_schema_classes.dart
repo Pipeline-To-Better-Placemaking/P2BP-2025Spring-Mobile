@@ -9,6 +9,7 @@ import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:p2bp_2025spring_mobile/absence_of_order_test.dart';
 import 'package:p2bp_2025spring_mobile/acoustic_profile_test.dart';
 import 'package:p2bp_2025spring_mobile/assets.dart';
+import 'package:p2bp_2025spring_mobile/extensions.dart';
 import 'package:p2bp_2025spring_mobile/google_maps_functions.dart';
 import 'package:p2bp_2025spring_mobile/lighting_profile_test.dart';
 import 'package:p2bp_2025spring_mobile/people_in_motion_test.dart';
@@ -16,100 +17,99 @@ import 'package:p2bp_2025spring_mobile/people_in_place_test.dart';
 import 'package:p2bp_2025spring_mobile/section_cutter_test.dart';
 import 'package:p2bp_2025spring_mobile/spatial_boundaries_test.dart';
 
-import 'firestore_functions.dart';
 import 'identifying_access_test.dart';
 import 'nature_prevalence_test.dart';
 
 final FirebaseFirestore _firestore = FirebaseFirestore.instance;
 
-// User class for create_project_and_teams.dart
-// class Member {
-//   String userID = '';
-//   String fullName = '';
-//   bool invited = false;
+// // User class for create_project_and_teams.dart
+// // class Member {
+// //   String userID = '';
+// //   String fullName = '';
+// //   bool invited = false;
+// //
+// //   Member({required this.userID, required this.fullName, this.invited = false});
+// // }
 //
-//   Member({required this.userID, required this.fullName, this.invited = false});
+// // Team class for teams_and_invites_page.dart
+// class Team {
+//   Timestamp? creationTime;
+//   String adminName = '';
+//   String id = '';
+//   String title = '';
+//   List teamMembers = [];
+//   List<DocumentReference> projects = [];
+//   int numProjects = 0; // this has no reason to exist imo
+//
+//   Team({
+//     required this.id,
+//     required this.title,
+//     required this.adminName,
+//     required this.projects,
+//     required this.numProjects,
+//   });
+//
+//   // Specifically for a team invite. Invite does not need numProjects, projects,
+//   // etc.
+//   Team.teamInvite({
+//     required this.id,
+//     required this.title,
+//     required this.adminName,
+//   });
 // }
-
-// Team class for teams_and_invites_page.dart
-class Team {
-  Timestamp? creationTime;
-  String adminName = '';
-  String teamID = '';
-  String title = '';
-  List teamMembers = [];
-  List<DocumentReference> projects = [];
-  int numProjects = 0; // this has no reason to exist imo
-
-  Team({
-    required this.teamID,
-    required this.title,
-    required this.adminName,
-    required this.projects,
-    required this.numProjects,
-  });
-
-  // Specifically for a team invite. Invite does not need numProjects, projects,
-  // etc.
-  Team.teamInvite({
-    required this.teamID,
-    required this.title,
-    required this.adminName,
-  });
-}
-
-// Project class for project creation (create project + map)
-class Project {
-  Timestamp? creationTime;
-  DocumentReference? teamRef;
-  DocumentReference? projectAdmin;
-  String projectID = '';
-  String title = '';
-  String description = '';
-  String address = '';
-  String? coverImageUrl;
-  List<LatLng> polygonPoints = [];
-  num polygonArea = 0;
-  List<DocumentReference> testRefs = [];
-  List<Test>? tests;
-  List<StandingPoint> standingPoints = [];
-
-  Project({
-    this.creationTime,
-    required this.teamRef,
-    required this.projectAdmin,
-    required this.projectID,
-    required this.title,
-    required this.description,
-    required this.address,
-    this.coverImageUrl = '',
-    required this.polygonPoints,
-    required this.polygonArea,
-    required this.standingPoints,
-    required this.testRefs,
-    this.tests,
-  });
-
-  // TODO: Eventually add Team Photo and Team Color
-  Project.partialProject({
-    required this.title,
-    required this.description,
-    required this.address,
-  });
-
-  /// Gets all fields for each [Test] in this [Project] and loads them
-  /// into the [tests]. Also returns [tests].
-  Future<List<Test>> loadAllTestData() async {
-    List<Test> tests = [];
-    for (final ref in testRefs) {
-      if (ref is DocumentReference<Map<String, dynamic>>) {
-        tests.add(await getTestInfo(ref));
-      }
-    }
-    this.tests = tests;
-    return tests;
-  }
-}
+//
+// // Project class for project creation (create project + map)
+// class Project {
+//   Timestamp? creationTime;
+//   DocumentReference? teamRef;
+//   DocumentReference? projectAdmin;
+//   String id = '';
+//   String title = '';
+//   String description = '';
+//   String address = '';
+//   String? coverImageUrl;
+//   List<LatLng> polygonPoints = [];
+//   num polygonArea = 0;
+//   List<DocumentReference> testRefs = [];
+//   List<Test>? tests;
+//   List<StandingPoint> standingPoints = [];
+//
+//   Project({
+//     this.creationTime,
+//     required this.teamRef,
+//     required this.projectAdmin,
+//     required this.id,
+//     required this.title,
+//     required this.description,
+//     required this.address,
+//     this.coverImageUrl = '',
+//     required this.polygonPoints,
+//     required this.polygonArea,
+//     required this.standingPoints,
+//     required this.testRefs,
+//     this.tests,
+//   });
+//
+//   // TODO: Eventually add Team Photo and Team Color
+//   Project.partialProject({
+//     required this.title,
+//     required this.description,
+//     required this.address,
+//   });
+//
+//   /// Gets all fields for each [Test] in this [Project] and loads them
+//   /// into the [tests]. Also returns [tests].
+//   Future<List<Test>> loadAllTestData() async {
+//     List<Test> tests = [];
+//     for (final ref in testRefs) {
+//       if (ref is DocumentReference<Map<String, dynamic>>) {
+//         tests.add(await getTestInfo(ref));
+//       }
+//     }
+//     this.tests = tests;
+//     return tests;
+//   }
+// }
 
 /// Comparison function for tests. Used in [.sort].
 ///
@@ -3966,7 +3966,7 @@ class Member with JsonToString implements FirestoreDocument {
   @override
   String get collectionID => collectionIDStatic;
 
-  static final CollectionReference defaultRef =
+  static final CollectionReference<Map<String, Object?>> defaultRef =
       _firestore.collection(collectionIDStatic);
 
   static final CollectionReference<Member> converterRef =
@@ -3978,26 +3978,29 @@ class Member with JsonToString implements FirestoreDocument {
   final String id;
   String fullName = '';
   String email = '';
-  final Timestamp? creationTime;
-  final List<DocumentReference> teamInviteRefs;
-  final List<TeamInvite>? teamInvites;
-  final List<DocumentReference> teamRefs;
-  final List<Team2>? teams;
-  DocumentReference? selectedTeam;
+  final Timestamp creationTime;
+  List<DocumentReference> teamInviteRefs;
+  List<TeamInvite>? teamInvites;
+  List<DocumentReference> teamRefs;
+  List<Team>? teams;
+  DocumentReference? selectedTeamRef; // Null if user is not on any teams
+  Team? selectedTeam;
   String profileImageUrl = '';
 
   Member({
     required this.id,
     required this.fullName,
     required this.email,
-    this.creationTime,
+    Timestamp? creationTime,
     List<DocumentReference>? teamInviteRefs,
     this.teamInvites,
     List<DocumentReference>? teamRefs,
     this.teams,
+    this.selectedTeamRef,
     this.selectedTeam,
     this.profileImageUrl = '',
-  })  : teamInviteRefs = teamInviteRefs ?? <DocumentReference>[],
+  })  : creationTime = creationTime ?? Timestamp.now(),
+        teamInviteRefs = teamInviteRefs ?? <DocumentReference>[],
         teamRefs = teamRefs ?? <DocumentReference>[];
 
   factory Member.fromJson(Map<String, Object?> json) {
@@ -4019,7 +4022,7 @@ class Member with JsonToString implements FirestoreDocument {
         creationTime: creationTime,
         teamInviteRefs: List<DocumentReference>.from(invites),
         teamRefs: List<DocumentReference>.from(teams),
-        selectedTeam: selectedTeam,
+        selectedTeamRef: selectedTeam,
         profileImageUrl: profileImageUrl,
       );
     }
@@ -4032,10 +4035,10 @@ class Member with JsonToString implements FirestoreDocument {
       'id': id,
       'fullName': fullName,
       'email': email,
-      'creationTime': creationTime ?? FieldValue.serverTimestamp(),
+      'creationTime': creationTime,
       'invites': teamInviteRefs,
       'teams': teamRefs,
-      'selectedTeam': selectedTeam,
+      'selectedTeam': selectedTeamRef,
       'profileImageUrl': profileImageUrl,
     };
   }
@@ -4077,6 +4080,7 @@ class Member with JsonToString implements FirestoreDocument {
         if (member.email != user.email) {
           transaction.update(userRef, {'email': user.email});
         }
+
         transaction
             .update(userRef, {'lastLogin': FieldValue.serverTimestamp()});
         return member;
@@ -4087,40 +4091,90 @@ class Member with JsonToString implements FirestoreDocument {
       throw Exception('Failed to login because of exception: $e');
     }
   }
+
+  /// Sets [Team] object [selectedTeam] with data retrieved with
+  /// [selectedTeamRef], and also returns the resulting [Team] object.
+  ///
+  /// Only intended to be used once when first logged in and it has not yet
+  /// been loaded, leaving [selectedTeam] null.
+  ///
+  /// Returns null if [selectedTeamRef] is null, or the `DocumentSnapshot`
+  /// retrieved for it comes back null.
+  Future<Team?> loadSelectedTeamInfo() async {
+    try {
+      if (selectedTeamRef == null) {
+        selectedTeam = null;
+        return selectedTeam;
+      }
+
+      final DocumentSnapshot<Team> teamDoc =
+          await Team.converterRef.doc(selectedTeamRef!.id).get();
+
+      selectedTeam = teamDoc.data();
+
+      return teamDoc.data();
+    } catch (e, s) {
+      print('Exception: $e');
+      print('Stacktrace: $s');
+      throw Exception('Failed to get selectedTeam because of exception: $e');
+    }
+  }
+
+  static Future<List<Member>> queryByFullName(String searchText) async {
+    try {
+      final queryResult = await converterRef
+          .where('fullName', isGreaterThanOrEqualTo: searchText)
+          .get();
+
+      final snapshotList = queryResult.docs;
+      final memberList = [for (final snapshot in snapshotList) snapshot.data()];
+
+      return memberList;
+    } catch (e, s) {
+      print('Exception: $e');
+      print('Stacktrace: $s');
+      throw Exception('Failed to query fullName because of exception: $e');
+    }
+  }
 }
 
-class Team2 with JsonToString implements FirestoreDocument {
+typedef RoleMap<T> = Map<GroupRole, List<T>>;
+
+class Team with JsonToString implements FirestoreDocument {
   static const String collectionIDStatic = 'teams';
 
   @override
   String get collectionID => collectionIDStatic;
 
-  static final CollectionReference<Team2> collectionRef =
-      _firestore.collection(collectionIDStatic).withConverter<Team2>(
-            fromFirestore: (snapshot, _) => Team2.fromJson(snapshot.data()!),
+  static final CollectionReference<Map<String, Object?>> defaultRef =
+      _firestore.collection(collectionIDStatic);
+
+  static final CollectionReference<Team> converterRef =
+      _firestore.collection(collectionIDStatic).withConverter<Team>(
+            fromFirestore: (snapshot, _) => Team.fromJson(snapshot.data()!),
             toFirestore: (team, _) => team.toJson(),
           );
 
-  final Timestamp creationTime;
   final String id;
   String title = '';
-  final Map<GroupRole, List<DocumentReference>> memberRefMap;
-  final Map<GroupRole, List<Member>>? memberMap;
-  final List<DocumentReference> projectRefs;
-  final List<Project2>? projects;
+  RoleMap<DocumentReference> memberRefMap;
+  RoleMap<Member>? memberMap;
+  List<DocumentReference> projectRefs;
+  List<Project>? projects;
+  final Timestamp creationTime;
 
-  Team2({
+  Team({
     required this.id,
     required this.title,
     required this.memberRefMap,
-    Timestamp? creationTime,
     this.memberMap,
     List<DocumentReference>? projectRefs,
     this.projects,
+    Timestamp? creationTime,
   })  : creationTime = creationTime ?? Timestamp.now(),
         projectRefs = projectRefs ?? <DocumentReference>[];
 
-  factory Team2.fromJson(Map<String, Object?> json) {
+  factory Team.fromJson(Map<String, Object?> json) {
     if (json
         case {
           'id': String id,
@@ -4129,7 +4183,7 @@ class Team2 with JsonToString implements FirestoreDocument {
           'membersByRole': Map<String, Object?> membersByRole,
           'projects': List projects,
         }) {
-      return Team2(
+      return Team(
         id: id,
         title: title,
         creationTime: creationTime,
@@ -4153,6 +4207,73 @@ class Team2 with JsonToString implements FirestoreDocument {
       'creationTime': creationTime,
       'projects': projectRefs,
     };
+  }
+
+  /// Updates [projects] to contain Projects
+  Future<List<Project>> loadProjectsInfo() async {
+    try {
+      // Sets projects to empty list and returns if refs is empty.
+      if (projectRefs.isEmpty) {
+        if (projects == null) {
+          projects = [];
+          return projects!;
+        }
+
+        projects!.clear();
+        return projects!;
+      }
+
+      // Refs not empty, actually retrieve project info.
+      List<Project> newProjectList = [];
+      for (final ref in projectRefs) {
+        final projectDoc = await Project.converterRef.doc(ref.id).get();
+        newProjectList.add(projectDoc.data()!);
+        newProjectList.last.team = this;
+      }
+
+      projects?.clear();
+      projects = newProjectList.toList();
+      return projects!;
+    } catch (e, s) {
+      print('Exception: $e');
+      print('Stacktrace: $s');
+      throw Exception('Failed to get projects because of exception: $e');
+    }
+  }
+
+  Future<RoleMap<Member>> loadMembersInfo() async {
+    try {
+      if (memberRefMap.isEmpty) {
+        if (memberMap == null) {
+          memberMap = {};
+          return memberMap!;
+        }
+
+        memberMap!.clear();
+        return memberMap!;
+      }
+
+      // Refs not empty, retrieve member info.
+      RoleMap<Member> newMemberMap = {};
+      for (final role in GroupRole.values) {
+        for (final ref in memberRefMap[role]!) {
+          final memberDoc = await Member.converterRef.doc(ref.id).get();
+          // Add each member to appropriate role list.
+          newMemberMap.update(role, (value) {
+            value.add(memberDoc.data()!);
+            return value;
+          }, ifAbsent: () => [memberDoc.data()!]);
+        }
+      }
+
+      memberMap?.clear();
+      memberMap = newMemberMap;
+      return memberMap!;
+    } catch (e, s) {
+      print('Exception: $e');
+      print('Stacktrace: $s');
+      throw Exception('Failed to get members because of exception: $e');
+    }
   }
 }
 
@@ -4211,15 +4332,18 @@ class TeamInvite {
   }
 }
 
-class Project2 with JsonToString implements FirestoreDocument {
+class Project with JsonToString implements FirestoreDocument {
   static const String collectionIDStatic = 'projects';
 
   @override
   String get collectionID => collectionIDStatic;
 
-  static final CollectionReference<Project2> collectionRef =
-      _firestore.collection(collectionIDStatic).withConverter<Project2>(
-            fromFirestore: (snapshot, _) => Project2.fromJson(snapshot.data()!),
+  static final CollectionReference<Map<String, Object?>> defaultRef =
+      _firestore.collection(collectionIDStatic);
+
+  static final CollectionReference<Project> converterRef =
+      _firestore.collection(collectionIDStatic).withConverter<Project>(
+            fromFirestore: (snapshot, _) => Project.fromJson(snapshot.data()!),
             toFirestore: (project, _) => project.toJson(),
           );
 
@@ -4227,39 +4351,39 @@ class Project2 with JsonToString implements FirestoreDocument {
   String title = '';
   String description = '';
   String address = '';
-  final Timestamp creationTime;
   final DocumentReference teamRef;
-  final Team2? team;
+  Team? team;
   final Map<GroupRole, List<DocumentReference>> memberRefMap;
-  final Map<GroupRole, List<Member>>? memberMap;
+  Map<GroupRole, List<Member>>? memberMap;
   final Polygon polygon;
   final double polygonArea;
-  final List<DocumentReference> testRefs;
-  final List<Test>? tests;
+  List<DocumentReference> testRefs;
+  List<Test>? tests;
   String coverImageUrl = '';
   final List<StandingPoint> standingPoints;
+  final Timestamp creationTime;
 
-  Project2({
+  Project({
     required this.id,
     required this.title,
     required this.description,
     required this.address,
-    Timestamp? creationTime,
     required this.teamRef,
-    this.team,
     required this.memberRefMap,
-    this.memberMap,
     required this.polygon,
-    double? polygonArea,
     required this.standingPoints,
+    this.team,
+    this.memberMap,
+    double? polygonArea,
     List<DocumentReference>? testRefs,
     this.tests,
     this.coverImageUrl = '',
+    Timestamp? creationTime,
   })  : creationTime = creationTime ?? Timestamp.now(),
         polygonArea = polygonArea ?? polygon.getAreaInSquareFeet(),
         testRefs = testRefs ?? <DocumentReference>[];
 
-  factory Project2.fromJson(Map<String, Object?> json) {
+  factory Project.fromJson(Map<String, Object?> json) {
     if (json
         case {
           'id': String id,
@@ -4277,7 +4401,7 @@ class Project2 with JsonToString implements FirestoreDocument {
         }) {
       final List<LatLng> points =
           List<GeoPoint>.from(polygonPoints).toLatLngList();
-      return Project2(
+      return Project(
         id: id,
         title: title,
         description: description,
@@ -4322,5 +4446,46 @@ class Project2 with JsonToString implements FirestoreDocument {
       'tests': testRefs,
       'coverImageUrl': coverImageUrl,
     };
+  }
+
+  Future<Team> loadTeamInfo() async {
+    try {
+      final teamDoc = await Team.converterRef.doc(teamRef.id).get();
+      team = teamDoc.data();
+      return team!;
+    } catch (e, s) {
+      print('Exception: $e');
+      print('Stacktrace: $s');
+      throw Exception('Failed to load team info because of exception: $e');
+    }
+  }
+
+  Future<List<Test>> loadAllTestInfo() async {
+    try {
+      if (testRefs.isEmpty) {
+        if (tests == null) {
+          tests = [];
+          return tests!;
+        }
+
+        tests!.clear();
+        return tests!;
+      }
+
+      final List<Test> newTestList = [];
+      for (final ref in testRefs) {
+        final testDoc = await _firestore.doc(ref.path).get();
+        if (testDoc.exists) {
+          newTestList.add(Test.recreateFromDoc(testDoc));
+        }
+      }
+
+      tests = newTestList.toList();
+      return tests!;
+    } catch (e, s) {
+      print('Exception: $e');
+      print('Stacktrace: $s');
+      throw Exception('Failed to load test info because of exception: $e');
+    }
   }
 }

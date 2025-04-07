@@ -20,8 +20,8 @@ class InviteUserForm extends StatefulWidget {
 }
 
 class _InviteUserFormState extends State<InviteUserForm> {
-  late final List<Member> membersList;
   List<Member> membersSearch = [];
+  List<Member> invitedMembers = [];
   int itemCount = 0;
 
   bool _isLoading = true;
@@ -29,25 +29,6 @@ class _InviteUserFormState extends State<InviteUserForm> {
   @override
   void initState() {
     super.initState();
-    _getMembersList();
-  }
-
-  // Retrieves all members and removes ones already in the team and sets membersList
-  Future<void> _getMembersList() async {
-    try {
-      final allMemberList = await getMembersList();
-      final teamMemberList = widget.teamMembers;
-      membersList = allMemberList
-          .where((member) =>
-              !(teamMemberList.any((teamMember) => teamMember.id == member.id)))
-          .toList();
-      setState(() {
-        _isLoading = false;
-      });
-    } catch (e, stacktrace) {
-      print("Error in create_project_and_teams, _getMembersList(): $e");
-      print("Stacktrace: $stacktrace");
-    }
   }
 
   @override
@@ -94,15 +75,23 @@ class _InviteUserFormState extends State<InviteUserForm> {
                   labelText: 'Members',
                   floatingLabelBehavior: FloatingLabelBehavior.never,
                 ),
-                onChanged: (memberText) {
-                  setState(() {
-                    if (memberText.length > 2) {
-                      membersSearch = searchMembers(membersList, memberText);
-                      itemCount = membersSearch.length;
-                    } else {
-                      itemCount = 0;
-                    }
-                  });
+                onChanged: (memberText) async {
+                  if (memberText.length > 2) {
+                    setState(() {
+                      _isLoading = true;
+                    });
+
+                    membersSearch = await Member.queryByFullName(memberText);
+                    membersSearch.removeWhere(
+                        (member) => widget.teamMembers.contains(member));
+                    itemCount = membersSearch.length;
+
+                    setState(() {
+                      _isLoading = false;
+                    });
+                  } else {
+                    itemCount = 0;
+                  }
                 },
               ),
               SizedBox(height: 10),
@@ -110,8 +99,23 @@ class _InviteUserFormState extends State<InviteUserForm> {
                 height: 250,
                 child: itemCount > 0
                     ? ListView.separated(
-                        itemBuilder: (context, index) => buildInviteCard(
-                            member: membersSearch[index], index: index),
+                        itemBuilder: (context, index) {
+                          final member = membersSearch[index];
+                          final invited = invitedMembers.contains(member);
+                          return MemberInviteCard(
+                            member: member,
+                            invited: invited,
+                            inviteCallback: () {
+                              if (!invited) {
+                                sendInviteToUser(
+                                    member.id, widget.activeTeam.id);
+                                setState(() {
+                                  invitedMembers.add(member);
+                                });
+                              }
+                            },
+                          );
+                        },
                         separatorBuilder: (context, index) =>
                             const SizedBox(height: 10),
                         itemCount: itemCount)
@@ -139,41 +143,6 @@ class _InviteUserFormState extends State<InviteUserForm> {
           ),
         ),
       ),
-    );
-  }
-
-  Card buildInviteCard({required Member member, required int index}) {
-    return Card(
-      child: Padding(
-        padding: const EdgeInsets.all(8.0),
-        child: Row(
-          children: <Widget>[
-            CircleAvatar(),
-            SizedBox(width: 15),
-            Expanded(
-              child: Text(member.fullName),
-            ),
-            Align(
-              alignment: Alignment.centerRight,
-              child: memberInviteButton(index: index, member: member),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  InkWell memberInviteButton({required int index, required Member member}) {
-    return InkWell(
-      child: Text(member.invited ? "Invite sent!" : "Invite"),
-      onTap: () {
-        setState(() {
-          if (!member.invited) {
-            sendInviteToUser(member.id, widget.activeTeam.teamID);
-            member.invited = true;
-          }
-        });
-      },
     );
   }
 }

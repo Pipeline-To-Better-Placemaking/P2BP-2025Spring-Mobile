@@ -11,11 +11,10 @@ import 'home_screen.dart';
 import 'theme.dart';
 import 'widgets.dart';
 
-// For page selection switch. 0 = project, 1 = team.
-enum PageView { project, team }
-
 class CreateProjectAndTeamsPage extends StatefulWidget {
-  const CreateProjectAndTeamsPage({super.key});
+  final Member member;
+
+  const CreateProjectAndTeamsPage({super.key, required this.member});
 
   @override
   State<CreateProjectAndTeamsPage> createState() =>
@@ -23,12 +22,13 @@ class CreateProjectAndTeamsPage extends StatefulWidget {
 }
 
 class _CreateProjectAndTeamsPageState extends State<CreateProjectAndTeamsPage> {
-  PageView page = PageView.project;
-  PageView pageSelection = PageView.project;
-  final pages = [
-    const CreateProjectWidget(),
-    const CreateTeamWidget(),
-  ];
+  late Widget pageSelection;
+
+  @override
+  void initState() {
+    super.initState();
+    pageSelection = CreateProjectWidget(member: widget.member);
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -55,15 +55,17 @@ class _CreateProjectAndTeamsPageState extends State<CreateProjectAndTeamsPage> {
                   visualDensity:
                       const VisualDensity(vertical: 1, horizontal: 1),
                 ),
-                segments: const <ButtonSegment>[
+                segments: <ButtonSegment>[
                   ButtonSegment(
-                      value: PageView.project,
-                      label: Text('Project'),
-                      icon: Icon(Icons.developer_board)),
+                    value: CreateProjectWidget(member: widget.member),
+                    label: const Text('Project'),
+                    icon: const Icon(Icons.developer_board),
+                  ),
                   ButtonSegment(
-                      value: PageView.team,
-                      label: Text('Team'),
-                      icon: Icon(Icons.people)),
+                    value: CreateTeamWidget(member: widget.member),
+                    label: const Text('Team'),
+                    icon: const Icon(Icons.people),
+                  ),
                 ],
                 selected: {pageSelection},
                 onSelectionChanged: (Set newSelection) {
@@ -76,16 +78,14 @@ class _CreateProjectAndTeamsPageState extends State<CreateProjectAndTeamsPage> {
                 },
               ),
             ),
-
-            // Spacing between button and container w/ pages.
-            SizedBox(height: 10),
+            const SizedBox(height: 10),
 
             // Changes page between two widgets: The CreateProjectWidget and
             // CreateTeamWidget. These widgets display their respective
             // screens to create either a project or team.
-            pages[pageSelection.index],
+            pageSelection,
 
-            SizedBox(height: 100),
+            const SizedBox(height: 100),
           ],
         ),
       ),
@@ -94,8 +94,11 @@ class _CreateProjectAndTeamsPageState extends State<CreateProjectAndTeamsPage> {
 }
 
 class CreateProjectWidget extends StatefulWidget {
+  final Member member;
+
   const CreateProjectWidget({
     super.key,
+    required this.member,
   });
 
   @override
@@ -279,28 +282,26 @@ class _CreateProjectWidgetState extends State<CreateProjectWidget> {
                     foregroundColor: Colors.white,
                     backgroundColor: p2bpBlue,
                     icon: const Icon(Icons.chevron_right),
-                    onPressed: () async {
-                      if (await getCurrentTeam() == null) {
-                        if (!context.mounted) return;
+                    onPressed: () {
+                      if (widget.member.selectedTeamRef == null) {
                         ScaffoldMessenger.of(context).showSnackBar(
                           const SnackBar(
                               content: Text(
                                   'You are not in a team! Join a team first.')),
                         );
                       } else if (_formKey.currentState!.validate()) {
-                        Project partialProject = Project.partialProject(
-                          title: projectTitle,
-                          description: projectDescription,
-                          address: projectAddress,
-                        );
-                        if (!context.mounted) return;
                         FocusManager.instance.primaryFocus?.unfocus();
                         Navigator.push(
-                            context,
-                            MaterialPageRoute(
-                                builder: (context) => ProjectMapCreation(
-                                    partialProjectData: partialProject,
-                                    coverImage: _selectedCoverImage)));
+                          context,
+                          MaterialPageRoute(
+                            builder: (context) => ProjectMapCreation(
+                              title: projectTitle,
+                              description: projectDescription,
+                              address: projectAddress,
+                              coverImage: _selectedCoverImage,
+                            ),
+                          ),
+                        );
                       } // function
                     },
                   ),
@@ -332,8 +333,11 @@ class _CreateProjectWidgetState extends State<CreateProjectWidget> {
 }
 
 class CreateTeamWidget extends StatefulWidget {
+  final Member member;
+
   const CreateTeamWidget({
     super.key,
+    required this.member,
   });
 
   @override
@@ -341,7 +345,6 @@ class CreateTeamWidget extends StatefulWidget {
 }
 
 class _CreateTeamWidgetState extends State<CreateTeamWidget> {
-  List<Member> _membersList = [];
   List<Member> membersSearch = [];
   List<Member> invitedMembers = [];
   bool _isLoading = false;
@@ -353,33 +356,6 @@ class _CreateTeamWidgetState extends State<CreateTeamWidget> {
   @override
   initState() {
     super.initState();
-    _getMembersList();
-  }
-
-  // Retrieves membersList and puts it in variable
-  Future<void> _getMembersList() async {
-    try {
-      _membersList = await getMembersList();
-    } catch (e, stacktrace) {
-      print("Error in create_project_and_teams, _getMembersList(): $e");
-      print("Stacktrace: $stacktrace");
-    }
-  }
-
-  // Searches member list for given String
-  List<Member> searchMembers(List<Member> membersList, String text) {
-    setState(() {
-      _isLoading = true;
-
-      membersList = membersList
-          .where((member) =>
-              member.fullName.toLowerCase().startsWith(text.toLowerCase()))
-          .toList();
-
-      _isLoading = false;
-    });
-
-    return membersList.isNotEmpty ? membersList : [];
   }
 
   @override
@@ -518,42 +494,56 @@ class _CreateTeamWidgetState extends State<CreateTeamWidget> {
                   maxLines: 1,
                   minLines: 1,
                   icon: const Icon(Icons.search),
-                  onChanged: (memberText) {
-                    setState(() {
-                      if (memberText.length > 2) {
-                        membersSearch = searchMembers(_membersList, memberText);
-                        itemCount = membersSearch.length;
-                      } else {
-                        itemCount = 0;
-                      }
-                    });
+                  onChanged: (memberText) async {
+                    if (memberText.length > 2) {
+                      setState(() {
+                        _isLoading = true;
+                      });
+
+                      membersSearch = await Member.queryByFullName(memberText);
+                      itemCount = membersSearch.length;
+
+                      setState(() {
+                        _isLoading = false;
+                      });
+                    } else {
+                      itemCount = 0;
+                    }
                   },
                 ),
                 const SizedBox(height: 10.0),
                 SizedBox(
                   height: 250,
-                  child: itemCount > 0
-                      ? ListView.separated(
-                          shrinkWrap: true,
-                          itemCount: itemCount,
-                          padding: const EdgeInsets.only(
-                            left: 5,
-                            right: 5,
-                          ),
-                          itemBuilder: (BuildContext context, int index) {
-                            return buildInviteCard(
-                                member: membersSearch[index], index: index);
-                          },
-                          separatorBuilder: (BuildContext context, int index) =>
-                              const SizedBox(
-                            height: 10,
-                          ),
-                        )
-                      : _isLoading == true
-                          ? const Center(child: CircularProgressIndicator())
+                  child: _isLoading
+                      ? const Center(child: CircularProgressIndicator())
+                      : itemCount > 0
+                          ? ListView.separated(
+                              shrinkWrap: true,
+                              itemCount: itemCount,
+                              padding: const EdgeInsets.only(left: 5, right: 5),
+                              itemBuilder: (context, index) {
+                                final member = membersSearch[index];
+                                final invited = invitedMembers.contains(member);
+                                return MemberInviteCard(
+                                  member: member,
+                                  invited: invited,
+                                  inviteCallback: () {
+                                    if (!invited) {
+                                      setState(() {
+                                        invitedMembers.add(member);
+                                      });
+                                    }
+                                  },
+                                );
+                              },
+                              separatorBuilder:
+                                  (BuildContext context, int index) =>
+                                      const SizedBox(height: 10),
+                            )
                           : const Center(
                               child: Text(
-                                  'No users matching criteria. Enter at least 3 characters to search.'),
+                                  'No users matching criteria. Enter at least '
+                                  '3 characters to search.'),
                             ),
                 ),
                 const SizedBox(height: 10.0),
@@ -576,7 +566,8 @@ class _CreateTeamWidgetState extends State<CreateTeamWidget> {
                         Navigator.pushReplacement(
                           context,
                           MaterialPageRoute(
-                            builder: (context) => const HomeScreen(),
+                            builder: (context) =>
+                                HomeScreen(member: widget.member),
                           ),
                         );
                         Navigator.push(
@@ -594,43 +585,6 @@ class _CreateTeamWidgetState extends State<CreateTeamWidget> {
           ),
         ),
       ),
-    );
-  }
-
-  Card buildInviteCard({required Member member, required int index}) {
-    return Card(
-      child: Padding(
-        padding: const EdgeInsets.all(8.0),
-        child: Row(
-          children: <Widget>[
-            CircleAvatar(),
-            SizedBox(width: 15),
-            Expanded(
-              child: Text(member.fullName),
-            ),
-            Align(
-              alignment: Alignment.centerRight,
-              child: memberInviteButton(
-                  teamID: teamID, index: index, member: member),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  InkWell memberInviteButton(
-      {required int index, required String teamID, required Member member}) {
-    return InkWell(
-      child: Text(member.invited ? "Invite sent!" : "Invite"),
-      onTap: () {
-        setState(() {
-          if (!member.invited) {
-            member.invited = true;
-            invitedMembers.add(member);
-          }
-        });
-      },
     );
   }
 }

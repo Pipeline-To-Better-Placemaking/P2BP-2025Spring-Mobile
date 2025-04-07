@@ -1,4 +1,3 @@
-import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -153,9 +152,7 @@ class _LoginFormState extends State<LoginForm> {
   final _formKey = GlobalKey<FormState>();
   final TextEditingController _emailController = TextEditingController(),
       _passwordController = TextEditingController();
-  final FirebaseFirestore _firestore = FirebaseFirestore.instance;
   bool _obscureText = true;
-  String _fullName = '';
 
   @override
   void dispose() {
@@ -195,13 +192,11 @@ class _LoginFormState extends State<LoginForm> {
 
       final member = await Member.loginUser(user!);
 
-      // Successfully logged in, navigate to the home screen
       if (!mounted) return;
       ScaffoldMessenger.of(context).clearSnackBars();
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text('Welcome, ${member.fullName}!')),
       );
-
       Navigator.pushReplacement(
         context,
         MaterialPageRoute(builder: (context) => HomeScreen(member: member)),

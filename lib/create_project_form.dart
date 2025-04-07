@@ -162,20 +162,16 @@ class _CreateProjectFormState extends State<CreateProjectForm> {
                     foregroundColor: Colors.white,
                     backgroundColor: const Color(0xFF4871AE),
                     icon: const Icon(Icons.chevron_right),
-                    onPressed: () async {
+                    onPressed: () {
                       if (!_formKey.currentState!.validate()) return;
 
-                      final partialProject = Project.partialProject(
-                        title: _titleController.text,
-                        description: _descriptionController.text,
-                        address: _addressController.text,
-                      );
-                      if (!context.mounted) return;
                       Navigator.push(
                         context,
                         MaterialPageRoute(
                           builder: (context) => ProjectMapCreation(
-                            partialProjectData: partialProject,
+                            title: _titleController.text,
+                            description: _descriptionController.text,
+                            address: _addressController.text,
                           ),
                         ),
                       );

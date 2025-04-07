@@ -52,7 +52,7 @@ class _TeamsAndInvitesPageState extends State<TeamsAndInvitesPage> {
         // No selected team:
         print("No team selected. Defaulting to first if available.");
         await _firestore.collection('users').doc(_loggedInUser?.uid).update({
-          'selectedTeam': _firestore.doc('/teams/${teams.first.teamID}'),
+          'selectedTeam': _firestore.doc('/teams/${teams.first.id}'),
         });
         setState(() {
           selectedIndex = 0;
@@ -60,8 +60,8 @@ class _TeamsAndInvitesPageState extends State<TeamsAndInvitesPage> {
       } else if (teams.isNotEmpty) {
         // A list of teams with a selected team:
         setState(() {
-          selectedIndex = teams.indexWhere(
-              (team) => team.teamID.compareTo(currentTeam!.id) == 0);
+          selectedIndex = teams
+              .indexWhere((team) => team.id.compareTo(currentTeam!.id) == 0);
         });
       } else if (teams.isEmpty && currentTeam != null) {
         // No teams but a selected team:
@@ -283,13 +283,11 @@ class _TeamsAndInvitesPageState extends State<TeamsAndInvitesPage> {
                         color: Colors.white,
                         onPressed: () {
                           // Add to database
-                          addUserToTeam(teamInvites[index].teamID);
+                          addUserToTeam(teamInvites[index].id);
                           // Remove invite from screen
                           setState(() {
                             teamInvites.removeWhere((team) =>
-                                team.teamID
-                                    .compareTo(teamInvites[index].teamID) ==
-                                0);
+                                team.id.compareTo(teamInvites[index].id) == 0);
                             teamsCount = teamInvites.length;
                           });
                         },
@@ -300,12 +298,11 @@ class _TeamsAndInvitesPageState extends State<TeamsAndInvitesPage> {
                           color: Colors.white,
                           onPressed: () {
                             // Remove invite from database
-                            removeInviteFromUser(teamInvites[index].teamID);
+                            removeInviteFromUser(teamInvites[index].id);
                             // Remove invite from screen
                             setState(() {
                               teamInvites.removeWhere((team) =>
-                                  team.teamID
-                                      .compareTo(teamInvites[index].teamID) ==
+                                  team.id.compareTo(teamInvites[index].id) ==
                                   0);
                               teamsCount = teamInvites.length;
                             });
@@ -361,7 +358,7 @@ class _TeamsAndInvitesPageState extends State<TeamsAndInvitesPage> {
                   .collection('users')
                   .doc(_loggedInUser?.uid)
                   .update({
-                'selectedTeam': _firestore.doc('/teams/${team.teamID}'),
+                'selectedTeam': _firestore.doc('/teams/${team.id}'),
               });
               setState(() {
                 selectedIndex = index;

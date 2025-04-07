@@ -2,7 +2,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
-import 'package:p2bp_2025spring_mobile/firestore_functions.dart';
+import 'package:p2bp_2025spring_mobile/extensions.dart';
 import 'package:p2bp_2025spring_mobile/theme.dart';
 import 'package:p2bp_2025spring_mobile/widgets.dart';
 
@@ -63,7 +63,7 @@ class _IdentifyingAccessState extends State<IdentifyingAccess> {
   @override
   void initState() {
     super.initState();
-    _projectPolygon = getProjectPolygon(widget.activeProject.polygonPoints);
+    _projectPolygon = widget.activeProject.polygon.clone();
     _location = getPolygonCentroid(_projectPolygon);
     _zoom = getIdealZoom(
           _projectPolygon.toMPLatLngList(),

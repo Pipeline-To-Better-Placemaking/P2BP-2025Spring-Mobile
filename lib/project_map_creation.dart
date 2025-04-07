@@ -6,21 +6,25 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:p2bp_2025spring_mobile/assets.dart';
+import 'package:p2bp_2025spring_mobile/extensions.dart';
 import 'package:p2bp_2025spring_mobile/home_screen.dart';
 import 'package:p2bp_2025spring_mobile/theme.dart';
 import 'package:p2bp_2025spring_mobile/widgets.dart';
 
 import 'db_schema_classes.dart';
-import 'firestore_functions.dart';
 import 'google_maps_functions.dart';
 
 class ProjectMapCreation extends StatefulWidget {
-  final Project partialProjectData;
+  final String title;
+  final String description;
+  final String address;
   final File? coverImage;
 
   const ProjectMapCreation({
     super.key,
-    required this.partialProjectData,
+    required this.title,
+    required this.description,
+    required this.address,
     this.coverImage,
   });
 
@@ -398,9 +402,9 @@ class _ProjectMapCreationState extends State<ProjectMapCreation> {
       });
 
       await saveProject(
-        projectTitle: widget.partialProjectData.title,
-        description: widget.partialProjectData.description,
-        address: widget.partialProjectData.address,
+        projectTitle: widget.title,
+        description: widget.description,
+        address: widget.address,
         polygonPoints: _polygons.first.points,
         polygonArea: _polygons.first.getAreaInSquareFeet(),
         standingPoints: _standingPoints,

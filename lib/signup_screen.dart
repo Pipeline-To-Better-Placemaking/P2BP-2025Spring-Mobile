@@ -170,12 +170,12 @@ class _SignUpFormState extends State<SignUpForm> {
   final FirebaseAuth _auth = FirebaseAuth.instance;
 
   // Validation feedback variables
-  bool _hasUpperCase = false;
-  bool _hasLowerCase = false;
-  bool _hasDigits = false;
-  bool _hasSpecialCharacter = false;
-  bool _isLengthValid = false;
-  bool _isTypingPassword = false;
+  // bool _hasUpperCase = false;
+  // bool _hasLowerCase = false;
+  // bool _hasDigits = false;
+  // bool _hasSpecialCharacter = false;
+  // bool _isLengthValid = false;
+  // bool _isTypingPassword = false;
 
   @override
   void dispose() {
@@ -236,16 +236,16 @@ class _SignUpFormState extends State<SignUpForm> {
     }
   }
 
-  void _checkPasswordConditions(String value) {
-    setState(() {
-      _isTypingPassword = true;
-      _hasUpperCase = value.contains(RegExp(r'[A-Z]'));
-      _hasLowerCase = value.contains(RegExp(r'[a-z]'));
-      _hasDigits = value.contains(RegExp(r'[0-9]'));
-      _hasSpecialCharacter = value.contains(RegExp(r'[!@#$%^&*(),.?":{}|<>]'));
-      _isLengthValid = value.length >= 12;
-    });
-  }
+  // void _checkPasswordConditions(String value) {
+  //   setState(() {
+  //     _isTypingPassword = true;
+  //     _hasUpperCase = value.contains(RegExp(r'[A-Z]'));
+  //     _hasLowerCase = value.contains(RegExp(r'[a-z]'));
+  //     _hasDigits = value.contains(RegExp(r'[0-9]'));
+  //     _hasSpecialCharacter = value.contains(RegExp(r'[!@#$%^&*(),.?":{}|<>]'));
+  //     _isLengthValid = value.length >= 12;
+  //   });
+  // }
 
   @override
   Widget build(BuildContext context) {

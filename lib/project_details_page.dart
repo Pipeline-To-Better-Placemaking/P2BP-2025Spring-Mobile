@@ -38,6 +38,7 @@ class _ProjectDetailsPageState extends State<ProjectDetailsPage> {
   bool _isLoading = true;
   late GoogleMapController mapController;
   String _coverImageUrl = '';
+  late final bool _isAdmin;
 
   @override
   void initState() {
@@ -47,9 +48,9 @@ class _ProjectDetailsPageState extends State<ProjectDetailsPage> {
     } else {
       _isLoading = false;
     }
-    if (widget.activeProject.coverImageUrl != null) {
-      _coverImageUrl = widget.activeProject.coverImageUrl!;
-    }
+    _isAdmin = widget.activeProject.memberRefMap[GroupRole.owner]!.any(
+        (memberRef) => memberRef.id == FirebaseAuth.instance.currentUser!.uid);
+    _coverImageUrl = widget.activeProject.coverImageUrl;
   }
 
   // TODO reimplement this in MenuBar
@@ -57,14 +58,14 @@ class _ProjectDetailsPageState extends State<ProjectDetailsPage> {
     try {
       final storageRef = FirebaseStorage.instance.ref();
 
-      final coverImageRef = storageRef
-          .child('project_covers/${widget.activeProject.projectID}.jpg');
+      final coverImageRef =
+          storageRef.child('project_covers/${widget.activeProject.id}.jpg');
       await coverImageRef.putFile(imageFile);
       final downloadUrl = await coverImageRef.getDownloadURL();
 
       await FirebaseFirestore.instance
           .collection('projects')
-          .doc(widget.activeProject.projectID)
+          .doc(widget.activeProject.id)
           .update({
         'coverImageUrl': downloadUrl,
       });
@@ -80,7 +81,7 @@ class _ProjectDetailsPageState extends State<ProjectDetailsPage> {
   }
 
   void _loadTests() async {
-    await widget.activeProject.loadAllTestData();
+    await widget.activeProject.loadAllTestInfo();
     setState(() {
       _isLoading = false;
     });
@@ -169,7 +170,7 @@ class _ProjectDetailsPageState extends State<ProjectDetailsPage> {
                   }
                   _firestore
                       .collection('projects')
-                      .doc(widget.activeProject.projectID)
+                      .doc(widget.activeProject.id)
                       .update({'title': newName});
                   setState(() {
                     widget.activeProject.title = newName;
@@ -192,7 +193,7 @@ class _ProjectDetailsPageState extends State<ProjectDetailsPage> {
                   }
                   _firestore
                       .collection('projects')
-                      .doc(widget.activeProject.projectID)
+                      .doc(widget.activeProject.id)
                       .update({'description': newDescription});
                   setState(() {
                     widget.activeProject.description = newDescription;
@@ -329,8 +330,7 @@ class _ProjectDetailsPageState extends State<ProjectDetailsPage> {
                       fontWeight: FontWeight.bold,
                     ),
                   ),
-                  if (widget.activeProject.projectAdmin!.id ==
-                      FirebaseAuth.instance.currentUser!.uid)
+                  if (_isAdmin)
                     FilledButton.icon(
                       style: FilledButton.styleFrom(
                         padding: const EdgeInsets.only(left: 15, right: 15),
@@ -407,7 +407,7 @@ class _ProjectDetailsPageState extends State<ProjectDetailsPage> {
       title: newTestInfo['title'],
       scheduledTime: newTestInfo['scheduledTime'],
       projectRef:
-          _firestore.collection('projects').doc(widget.activeProject.projectID),
+          _firestore.collection('projects').doc(widget.activeProject.id),
       collectionID: newTestInfo['collectionID'],
       standingPoints: newTestInfo.containsKey('standingPoints')
           ? newTestInfo['standingPoints']

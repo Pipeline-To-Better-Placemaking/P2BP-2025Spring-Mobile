@@ -1,7 +1,8 @@
 import 'package:flutter/material.dart';
-import 'package:p2bp_2025spring_mobile/db_schema_classes.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
-import 'package:p2bp_2025spring_mobile/firestore_functions.dart';
+import 'package:p2bp_2025spring_mobile/db_schema_classes.dart';
+import 'package:p2bp_2025spring_mobile/extensions.dart';
+
 import 'google_maps_functions.dart';
 
 class MiniMap extends StatefulWidget {

@@ -53,7 +53,7 @@ class _EditProjectFormState extends State<EditProjectForm> {
 
       FirebaseFirestore.instance
           .collection('projects')
-          .doc(widget.activeProject.projectID)
+          .doc(widget.activeProject.id)
           .update({
         'title': widget.activeProject.title,
         'description': widget.activeProject.description,

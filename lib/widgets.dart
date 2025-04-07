@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:p2bp_2025spring_mobile/theme.dart';
 
+import 'db_schema_classes.dart';
 import 'google_maps_functions.dart';
 
 /// Bar Indicator for the Sliding Up Panels (Edit Project, Results)
@@ -1272,6 +1273,44 @@ class _CustomSegmentedTabState extends State<CustomSegmentedTab> {
         child: Text(
           label,
           style: isSelected ? selectedStyle : unselectedStyle,
+        ),
+      ),
+    );
+  }
+}
+
+class MemberInviteCard extends StatelessWidget {
+  final Member member;
+  final bool invited;
+  final VoidCallback inviteCallback;
+
+  const MemberInviteCard({
+    super.key,
+    required this.member,
+    required this.invited,
+    required this.inviteCallback,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Card(
+      child: Padding(
+        padding: const EdgeInsets.all(8.0),
+        child: Row(
+          children: <Widget>[
+            CircleAvatar(),
+            SizedBox(width: 15),
+            Expanded(
+              child: Text(member.fullName),
+            ),
+            Align(
+              alignment: Alignment.centerRight,
+              child: InkWell(
+                onTap: inviteCallback,
+                child: Text(invited ? "Invite sent!" : "Invite"),
+              ),
+            ),
+          ],
         ),
       ),
     );
