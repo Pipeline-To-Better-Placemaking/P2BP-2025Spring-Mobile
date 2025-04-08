@@ -28,7 +28,7 @@ class _MiniMapState extends State<MiniMap> {
   @override
   void initState() {
     super.initState();
-    _polygons.add(getProjectPolygon(widget.activeProject.polygonPoints));
+    _polygons.add(widget.activeProject.polygon.clone());
     _location = getPolygonCentroid(_polygons.first);
     _zoom =
         getIdealZoom(_polygons.first.toMPLatLngList(), _location.toMPLatLng());

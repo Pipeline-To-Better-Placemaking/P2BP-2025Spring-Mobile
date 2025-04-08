@@ -573,7 +573,8 @@ class _CreateTeamWidgetState extends State<CreateTeamWidget> {
                         Navigator.push(
                           context,
                           MaterialPageRoute(
-                            builder: (context) => TeamsAndInvitesPage(),
+                            builder: (context) =>
+                                TeamsAndInvitesPage(member: widget.member),
                           ),
                         );
                       }

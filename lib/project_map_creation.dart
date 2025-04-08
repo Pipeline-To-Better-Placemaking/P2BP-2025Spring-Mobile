@@ -6,8 +6,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:p2bp_2025spring_mobile/assets.dart';
-import 'package:p2bp_2025spring_mobile/extensions.dart';
-import 'package:p2bp_2025spring_mobile/home_screen.dart';
 import 'package:p2bp_2025spring_mobile/theme.dart';
 import 'package:p2bp_2025spring_mobile/widgets.dart';
 
@@ -401,22 +399,22 @@ class _ProjectMapCreationState extends State<ProjectMapCreation> {
         _isLoading = true;
       });
 
-      await saveProject(
-        projectTitle: widget.title,
-        description: widget.description,
-        address: widget.address,
-        polygonPoints: _polygons.first.points,
-        polygonArea: _polygons.first.getAreaInSquareFeet(),
-        standingPoints: _standingPoints,
-        coverImage: widget.coverImage,
-      );
-      if (!context.mounted) return;
-
-      Navigator.pushAndRemoveUntil(
-        context,
-        MaterialPageRoute(builder: (context) => HomeScreen()),
-        (Route route) => false,
-      );
+      // await saveProject( TODO fix
+      //   projectTitle: widget.title,
+      //   description: widget.description,
+      //   address: widget.address,
+      //   polygonPoints: _polygons.first.points,
+      //   polygonArea: _polygons.first.getAreaInSquareFeet(),
+      //   standingPoints: _standingPoints,
+      //   coverImage: widget.coverImage,
+      // );
+      // if (!context.mounted) return;
+      //
+      // Navigator.pushAndRemoveUntil(
+      //   context,
+      //   MaterialPageRoute(builder: (context) => HomeScreen()),
+      //   (Route route) => false,
+      // );
     } else {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(

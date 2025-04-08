@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:p2bp_2025spring_mobile/db_schema_classes.dart';
 
-import 'project_details_page.dart';
 import 'theme.dart';
 
 class SearchScreen extends StatefulWidget {
@@ -21,10 +20,10 @@ class _SearchScreenState extends State<SearchScreen> {
 
   @override
   Widget build(BuildContext context) {
-    resultsSearchBarWidth = MediaQuery.of(context).size.width * 0.70;
+    resultsSearchBarWidth = MediaQuery.sizeOf(context).width * 0.70;
     searchBarWidth = hasSearched
         ? resultsSearchBarWidth
-        : MediaQuery.of(context).size.width - 32;
+        : MediaQuery.sizeOf(context).width - 32;
     return Scaffold(
         appBar: AppBar(
           elevation: 0,
@@ -342,17 +341,17 @@ class _SearchScreenState extends State<SearchScreen> {
                     trailing: ElevatedButton(
                       onPressed: () {
                         // Handle result action
-                        Navigator.push(
-                            context,
-                            MaterialPageRoute(
-                              builder: (context) => ProjectDetailsPage(
-                                activeProject: Project.partialProject(
-                                    title: 'No data sent',
-                                    description:
-                                        'Accessed without project data',
-                                    address: 'No data found.'),
-                              ),
-                            ));
+                        // Navigator.push( TODO maybe fix idk what this page even is
+                        //     context,
+                        //     MaterialPageRoute(
+                        //       builder: (context) => ProjectDetailsPage(
+                        //         activeProject: Project.partialProject(
+                        //             title: 'No data sent',
+                        //             description:
+                        //                 'Accessed without project data',
+                        //             address: 'No data found.'),
+                        //       ),
+                        //     ));
                       },
                       child: const Text("Select"),
                     ),

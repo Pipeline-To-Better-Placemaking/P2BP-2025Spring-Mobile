@@ -1,4 +1,5 @@
 import 'dart:ui';
+
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:p2bp_2025spring_mobile/theme.dart';
@@ -1181,7 +1182,7 @@ class CustomSegmentedTab extends StatefulWidget {
   });
 
   @override
-  _CustomSegmentedTabState createState() => _CustomSegmentedTabState();
+  State<CustomSegmentedTab> createState() => _CustomSegmentedTabState();
 }
 
 class _CustomSegmentedTabState extends State<CustomSegmentedTab> {

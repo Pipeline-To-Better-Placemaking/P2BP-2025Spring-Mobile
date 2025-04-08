@@ -50,7 +50,7 @@ class _LightingProfileTestPageState extends State<LightingProfileTestPage> {
   @override
   void initState() {
     super.initState();
-    _polygons.add(getProjectPolygon(widget.activeProject.polygonPoints));
+    _polygons.add(widget.activeProject.polygon.clone());
     _location = getPolygonCentroid(_polygons.first);
     _projectArea = _polygons.first.toMPLatLngList();
     _zoom = getIdealZoom(_projectArea, _location.toMPLatLng());

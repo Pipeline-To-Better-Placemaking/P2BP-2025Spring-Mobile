@@ -4136,6 +4136,66 @@ class Member with JsonToString implements FirestoreDocument {
       throw Exception('Failed to query fullName because of exception: $e');
     }
   }
+
+  Future<List<TeamInvite>> loadTeamInvitesInfo() async {
+    try {
+      // If refs list is empty, set invites list to empty and return.
+      if (teamInviteRefs.isEmpty) {
+        if (teamInvites == null) {
+          teamInvites = [];
+          return teamInvites!;
+        }
+
+        teamInvites!.clear();
+        return teamInvites!;
+      }
+
+      // Refs not empty, retrieve info for invites.
+      List<TeamInvite> newInviteList = [];
+      for (final ref in teamInviteRefs) {
+        final TeamInvite invite = await TeamInvite.fromTeamRef(ref);
+        newInviteList.add(invite);
+      }
+
+      teamInvites?.clear();
+      teamInvites = newInviteList.toList();
+      return teamInvites!;
+    } catch (e, s) {
+      print('Exception: $e');
+      print('Stacktrace: $s');
+      throw Exception('Failed to get team invites because of exception: $e');
+    }
+  }
+
+  Future<List<Team>> loadTeamsInfo() async {
+    try {
+      // If refs list is empty, set teams list to empty and return.
+      if (teamRefs.isEmpty) {
+        if (teams == null) {
+          teams = [];
+          return teams!;
+        }
+
+        teams!.clear();
+        return teams!;
+      }
+
+      // Refs not empty, retrieve info for teams.
+      List<Team> newTeamList = [];
+      for (final ref in teamRefs) {
+        final teamDoc = await Team.converterRef.doc(ref.id).get();
+        newTeamList.add(teamDoc.data()!);
+      }
+
+      teams?.clear();
+      teams = newTeamList.toList();
+      return teams!;
+    } catch (e, s) {
+      print('Exception: $e');
+      print('Stacktrace: $s');
+      throw Exception('Failed to get teams because of exception: $e');
+    }
+  }
 }
 
 typedef RoleMap<T> = Map<GroupRole, List<T>>;
@@ -4310,9 +4370,7 @@ class TeamInvite {
             }) {
           if (membersByRole.containsKey(GroupRole.owner.name) &&
               membersByRole[GroupRole.owner.name] is List) {
-            userRef = _firestore
-                .collection('users')
-                .doc((membersByRole[GroupRole.owner.name] as List).first);
+            userRef = (membersByRole[GroupRole.owner.name] as List).first;
             userDoc = await userRef.get();
             if (userDoc
                 case {

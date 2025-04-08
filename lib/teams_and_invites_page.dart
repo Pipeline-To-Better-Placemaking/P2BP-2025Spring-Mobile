@@ -9,7 +9,9 @@ import 'team_settings_page.dart';
 import 'theme.dart';
 
 class TeamsAndInvitesPage extends StatefulWidget {
-  const TeamsAndInvitesPage({super.key});
+  final Member member;
+
+  const TeamsAndInvitesPage({super.key, required this.member});
 
   @override
   State<TeamsAndInvitesPage> createState() => _TeamsAndInvitesPageState();
@@ -20,8 +22,8 @@ final FirebaseFirestore _firestore = FirebaseFirestore.instance;
 class _TeamsAndInvitesPageState extends State<TeamsAndInvitesPage> {
   final User? _loggedInUser = FirebaseAuth.instance.currentUser;
 
-  List<Team> teams = [];
-  List<Team> teamInvites = [];
+  List<Team> _teams = [];
+  List<TeamInvite> _teamInvites = [];
   DocumentReference? currentTeam;
   bool _isLoadingTeams = true;
   bool _isLoadingInvites = true;
@@ -29,62 +31,79 @@ class _TeamsAndInvitesPageState extends State<TeamsAndInvitesPage> {
   int invitesCount = 0;
   int selectedIndex = 0;
 
-  // Gets user info and once that is done gets teams and invites
-  Future<void> _getInvites() async {
-    try {
-      teamInvites = await getInvites();
-      setState(() {
-        _isLoadingInvites = false;
-        invitesCount = teamInvites.length;
-      });
-    } catch (e, stacktrace) {
-      print('Exception retrieving invites: $e');
-      print('Stacktrace: $stacktrace');
-    }
-  }
-
   Future<void> _getTeams() async {
     try {
-      teams = await getTeamsIDs();
-      currentTeam = await getCurrentTeam();
-
-      if (currentTeam == null && teams.isNotEmpty) {
-        // No selected team:
-        print("No team selected. Defaulting to first if available.");
-        await _firestore.collection('users').doc(_loggedInUser?.uid).update({
-          'selectedTeam': _firestore.doc('/teams/${teams.first.id}'),
-        });
-        setState(() {
-          selectedIndex = 0;
-        });
-      } else if (teams.isNotEmpty) {
-        // A list of teams with a selected team:
-        setState(() {
-          selectedIndex = teams
-              .indexWhere((team) => team.id.compareTo(currentTeam!.id) == 0);
-        });
-      } else if (teams.isEmpty && currentTeam != null) {
-        // No teams but a selected team:
-        _firestore
-            .collection('users')
-            .doc(_loggedInUser?.uid)
-            .update({'selectedTeam': null});
-        setState(() {
-          selectedIndex = -1;
-        });
-      } else {
-        // No teams but a selected team:
-        setState(() {
-          selectedIndex = -1;
-        });
+      if (widget.member.teams == null) {
+        _teams = await widget.member.loadTeamsInfo();
       }
-      _isLoadingTeams = false;
-      teamsCount = teams.length;
+      setState(() {
+        _isLoadingTeams = false;
+        teamsCount = _teams.length;
+      });
     } catch (e, stacktrace) {
       print('Exception retrieving teams: $e');
       print('Stacktrace: $stacktrace');
     }
   }
+
+  // Gets user info and once that is done gets teams and invites
+  Future<void> _getInvites() async {
+    try {
+      if (widget.member.teamInvites == null) {
+        _teamInvites = await widget.member.loadTeamInvitesInfo();
+      }
+      setState(() {
+        _isLoadingInvites = false;
+        invitesCount = _teamInvites.length;
+      });
+    } catch (e, stacktrace) {
+      print('Exception retrieving team invites: $e');
+      print('Stacktrace: $stacktrace');
+    }
+  }
+
+  // Future<void> _getTeams() async {
+  //   try {
+  //     _teams = await getTeamsIDs();
+  //     currentTeam = await getCurrentTeam();
+  //
+  //     if (currentTeam == null && _teams.isNotEmpty) {
+  //       // No selected team:
+  //       print("No team selected. Defaulting to first if available.");
+  //       await _firestore.collection('users').doc(_loggedInUser?.uid).update({
+  //         'selectedTeam': _firestore.doc('/teams/${_teams.first.id}'),
+  //       });
+  //       setState(() {
+  //         selectedIndex = 0;
+  //       });
+  //     } else if (_teams.isNotEmpty) {
+  //       // A list of teams with a selected team:
+  //       setState(() {
+  //         selectedIndex = _teams
+  //             .indexWhere((team) => team.id.compareTo(currentTeam!.id) == 0);
+  //       });
+  //     } else if (_teams.isEmpty && currentTeam != null) {
+  //       // No teams but a selected team:
+  //       _firestore
+  //           .collection('users')
+  //           .doc(_loggedInUser?.uid)
+  //           .update({'selectedTeam': null});
+  //       setState(() {
+  //         selectedIndex = -1;
+  //       });
+  //     } else {
+  //       // No teams but a selected team:
+  //       setState(() {
+  //         selectedIndex = -1;
+  //       });
+  //     }
+  //     _isLoadingTeams = false;
+  //     teamsCount = _teams.length;
+  //   } catch (e, stacktrace) {
+  //     print('Exception retrieving teams: $e');
+  //     print('Stacktrace: $stacktrace');
+  //   }
+  // }
 
   @override
   void initState() {
@@ -102,7 +121,7 @@ class _TeamsAndInvitesPageState extends State<TeamsAndInvitesPage> {
           appBar: AppBar(
             leading: IconButton(
               icon: Icon(Icons.arrow_back, color: p2bpBlue),
-              onPressed: () => Navigator.of(context).pop(),
+              onPressed: () => Navigator.pop(context),
             ),
             systemOverlayStyle: SystemUiOverlayStyle.dark
                 .copyWith(statusBarColor: Colors.transparent),
@@ -146,8 +165,8 @@ class _TeamsAndInvitesPageState extends State<TeamsAndInvitesPage> {
                           return buildContainer(
                             index: index,
                             color: p2bpBlue,
-                            numProjects: teams[index].numProjects,
-                            team: teams[index],
+                            numProjects: _teams[index].projectRefs.length,
+                            team: _teams[index],
                           );
                         },
                         separatorBuilder: (BuildContext context, int index) =>
@@ -179,7 +198,7 @@ class _TeamsAndInvitesPageState extends State<TeamsAndInvitesPage> {
               // Iterate through list of invites, each being a card.
               // Update variables each time with: color, team name, num of
               // projects, and members list from database.
-              teamInvites.isNotEmpty
+              _teamInvites.isNotEmpty
                   // If user has invites, display them
                   ? RefreshIndicator(
                       onRefresh: () async {
@@ -192,7 +211,7 @@ class _TeamsAndInvitesPageState extends State<TeamsAndInvitesPage> {
                           top: 25,
                           bottom: 25,
                         ),
-                        itemCount: teamInvites.length,
+                        itemCount: _teamInvites.length,
                         itemBuilder: (BuildContext context, int index) {
                           return buildInviteCard(index);
                         },
@@ -259,12 +278,12 @@ class _TeamsAndInvitesPageState extends State<TeamsAndInvitesPage> {
                     TextSpan(
                       children: [
                         TextSpan(
-                          text: teamInvites[index].adminName,
+                          text: _teamInvites[index].ownerName,
                           style: const TextStyle(fontWeight: FontWeight.bold),
                         ),
                         const TextSpan(text: ' has invited you to join: '),
                         TextSpan(
-                          text: teamInvites[index].title,
+                          text: _teamInvites[index].title,
                           style: const TextStyle(fontWeight: FontWeight.bold),
                         ),
                       ],
@@ -283,12 +302,12 @@ class _TeamsAndInvitesPageState extends State<TeamsAndInvitesPage> {
                         color: Colors.white,
                         onPressed: () {
                           // Add to database
-                          addUserToTeam(teamInvites[index].id);
+                          addUserToTeam(_teamInvites[index].id);
                           // Remove invite from screen
                           setState(() {
-                            teamInvites.removeWhere((team) =>
-                                team.id.compareTo(teamInvites[index].id) == 0);
-                            teamsCount = teamInvites.length;
+                            _teamInvites.removeWhere((team) =>
+                                team.id.compareTo(_teamInvites[index].id) == 0);
+                            teamsCount = _teamInvites.length;
                           });
                         },
                       ),
@@ -298,13 +317,13 @@ class _TeamsAndInvitesPageState extends State<TeamsAndInvitesPage> {
                           color: Colors.white,
                           onPressed: () {
                             // Remove invite from database
-                            removeInviteFromUser(teamInvites[index].id);
+                            removeInviteFromUser(_teamInvites[index].id);
                             // Remove invite from screen
                             setState(() {
-                              teamInvites.removeWhere((team) =>
-                                  team.id.compareTo(teamInvites[index].id) ==
+                              _teamInvites.removeWhere((team) =>
+                                  team.id.compareTo(_teamInvites[index].id) ==
                                   0);
-                              teamsCount = teamInvites.length;
+                              teamsCount = _teamInvites.length;
                             });
                           }),
                     ],

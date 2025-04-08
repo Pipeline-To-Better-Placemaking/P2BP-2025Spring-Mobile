@@ -74,7 +74,7 @@ class _SpatialBoundariesTestPageState extends State<SpatialBoundariesTestPage> {
   @override
   void initState() {
     super.initState();
-    _projectPolygon = getProjectPolygon(widget.activeProject.polygonPoints);
+    _projectPolygon = widget.activeProject.polygon.clone();
     _location = getPolygonCentroid(_projectPolygon);
     _projectArea = _projectPolygon.toMPLatLngList();
     _zoom = getIdealZoom(_projectArea, _location.toMPLatLng());

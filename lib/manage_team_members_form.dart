@@ -66,7 +66,7 @@ class _ManageTeamMembersFormState extends State<ManageTeamMembersForm> {
                   contentPadding: EdgeInsets.zero,
                   leading: CircleAvatar(),
                   title: Text(
-                    widget.teamMembers.first.fullName,
+                    widget.teamMembers[GroupRole.owner]!.first.fullName,
                     style: TextStyle(
                         color: Colors.white, fontWeight: FontWeight.bold),
                   ),
@@ -86,9 +86,10 @@ class _ManageTeamMembersFormState extends State<ManageTeamMembersForm> {
                 SizedBox(
                   height: MediaQuery.sizeOf(context).height * 0.4,
                   child: ListView.separated(
-                    itemCount: widget.teamMembers.length - 1,
+                    itemCount: widget.teamMembers[GroupRole.member]!.length,
                     itemBuilder: (context, index) {
-                      final thisMember = widget.teamMembers[index + 1];
+                      final thisMember =
+                          widget.teamMembers[GroupRole.member]![index];
                       return ListTile(
                         contentPadding: EdgeInsets.zero,
                         leading: Row(
@@ -106,7 +107,8 @@ class _ManageTeamMembersFormState extends State<ManageTeamMembersForm> {
                                   widget.activeTeam.id,
                                 );
                                 setState(() {
-                                  widget.teamMembers.remove(thisMember);
+                                  widget.teamMembers[GroupRole.member]!
+                                      .remove(thisMember);
                                 });
                               },
                               child: Container(

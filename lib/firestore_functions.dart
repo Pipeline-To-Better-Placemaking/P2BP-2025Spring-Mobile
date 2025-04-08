@@ -281,12 +281,12 @@ Future<bool> deleteProject(Project project) async {
     }
 
     // Delete reference to this project from the team it resides in.
-    await project.teamRef?.update({
+    await project.teamRef.update({
       'projects': FieldValue.arrayRemove([projectRef])
     });
 
     // Delete cover photo from storage if present.
-    if (project.coverImageUrl!.isNotEmpty) {
+    if (project.coverImageUrl.isNotEmpty) {
       final storageRef = FirebaseStorage.instance.ref();
       final coverImageRef =
           storageRef.child('project_covers/${project.id}.jpg');

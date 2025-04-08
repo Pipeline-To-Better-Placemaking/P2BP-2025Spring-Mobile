@@ -8,12 +8,10 @@ import 'package:flutter/services.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:intl/intl.dart';
 import 'package:p2bp_2025spring_mobile/db_schema_classes.dart';
-import 'package:p2bp_2025spring_mobile/firestore_functions.dart';
+import 'package:p2bp_2025spring_mobile/extensions.dart';
 import 'package:pdf/pdf.dart';
 import 'package:pdf/widgets.dart' as pw;
 import 'package:printing/printing.dart';
-
-import 'google_maps_functions.dart';
 
 // Create a storage reference from app
 final storageRef = FirebaseStorage.instance.ref();
@@ -573,9 +571,10 @@ Future<Uint8List> generateReport(
   );
 
   if (activeProject.tests == null || activeProject.tests!.isEmpty) {
-    await activeProject.loadAllTestData();
+    await activeProject.loadAllTestInfo();
   }
-  contributors = await getTeamMembers(activeProject.teamRef!.id);
+  final roleMap = await activeProject.team?.loadMembersInfo();
+  contributors = roleMap!.toSingleList();
   for (Member contributor in contributors) {
     contributorsNames.add(contributor.fullName);
   }
@@ -642,7 +641,7 @@ Future<Uint8List> generateReport(
     ),
   );
 
-  projectPolygon = getProjectPolygon(activeProject.polygonPoints);
+  projectPolygon = activeProject.polygon.clone();
   rawTests = activeProject.tests ?? [];
   for (Test currentTest in rawTests) {
     // If a test isn't complete, skip it

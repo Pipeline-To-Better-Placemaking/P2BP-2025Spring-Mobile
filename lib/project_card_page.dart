@@ -111,8 +111,8 @@ class _ProjectCardPageState extends State<ProjectCardPage> {
                                 await Navigator.push(
                                   context,
                                   MaterialPageRoute(
-                                    builder: (context) =>
-                                        const TeamsAndInvitesPage(),
+                                    builder: (context) => TeamsAndInvitesPage(
+                                        member: widget.member),
                                   ),
                                 );
                                 _populateProjects();
