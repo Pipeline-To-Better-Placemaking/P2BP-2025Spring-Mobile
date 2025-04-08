@@ -1,12 +1,10 @@
 import 'dart:io';
 
-import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:p2bp_2025spring_mobile/change_team_name_form.dart';
 import 'package:p2bp_2025spring_mobile/extensions.dart';
-import 'package:p2bp_2025spring_mobile/firestore_functions.dart';
 import 'package:p2bp_2025spring_mobile/invite_user_form.dart';
 import 'package:p2bp_2025spring_mobile/manage_team_members_form.dart';
 import 'package:p2bp_2025spring_mobile/widgets.dart';
@@ -16,12 +14,15 @@ import 'db_schema_classes.dart';
 import 'project_details_page.dart';
 import 'theme.dart';
 
-final FirebaseFirestore _firestore = FirebaseFirestore.instance;
-
 class TeamSettingsPage extends StatefulWidget {
+  final Member member;
   final Team activeTeam;
 
-  const TeamSettingsPage({super.key, required this.activeTeam});
+  const TeamSettingsPage({
+    super.key,
+    required this.member,
+    required this.activeTeam,
+  });
 
   @override
   State<TeamSettingsPage> createState() => _TeamSettingsPageState();
@@ -32,7 +33,6 @@ class _TeamSettingsPageState extends State<TeamSettingsPage> {
   bool _isLoadingTeamMembers = true;
   bool _isMultiSelectMode = false;
   final Set<Project> _selectedProjects = {};
-  late final List<Project> _projects;
   late final RoleMap<Member> _teamMembers;
 
   @override
@@ -40,8 +40,6 @@ class _TeamSettingsPageState extends State<TeamSettingsPage> {
     super.initState();
     if (widget.activeTeam.projects == null) {
       _getProjects();
-    } else {
-      _projects = widget.activeTeam.projects!;
     }
     if (widget.activeTeam.memberMap == null) {
       _getTeamMembers();
@@ -51,7 +49,7 @@ class _TeamSettingsPageState extends State<TeamSettingsPage> {
   }
 
   Future<void> _getProjects() async {
-    _projects = await widget.activeTeam.loadProjectsInfo();
+    await widget.activeTeam.loadProjectsInfo();
     setState(() {
       _isLoadingProjects = false;
     });
@@ -95,10 +93,11 @@ class _TeamSettingsPageState extends State<TeamSettingsPage> {
       confirmText: 'Yes, delete them',
       onConfirm: () async {
         for (final project in _selectedProjects) {
-          await deleteProject(project);
-          _projects.remove(project);
-          widget.activeTeam.projects
-              ?.removeWhere((projectRef) => projectRef.id == project.id);
+          await project.delete();
+          // the 2 statements below might not be needed because it is handled in project.delete
+          widget.activeTeam.projectRefs
+              .removeWhere((ref) => ref.id == project.id);
+          widget.activeTeam.projects!.remove(project);
         }
 
         if (!mounted) return;
@@ -120,15 +119,18 @@ class _TeamSettingsPageState extends State<TeamSettingsPage> {
       declineText: 'No, go back',
       confirmText: 'Yes, delete this team',
       onConfirm: () async {
-        // final success = await deleteTeam(widget.activeTeam); TODO fix
-        // if (success == true) {
-        //   if (!mounted) return;
-        //   Navigator.pop(context);
-        //   Navigator.pop(context, true);
-        // } else {
-        //   if (!mounted) return;
-        //   Navigator.pop(context);
-        // }
+        final success = await widget.activeTeam.delete();
+        if (success == true) {
+          widget.member.teams?.remove(widget.activeTeam);
+          widget.member.teamRefs
+              .removeWhere((ref) => ref.id == widget.activeTeam.id);
+          if (!mounted) return;
+          Navigator.pop(context);
+          Navigator.pop(context, true);
+        } else {
+          if (!mounted) return;
+          Navigator.pop(context);
+        }
       },
     );
   }
@@ -146,7 +148,7 @@ class _TeamSettingsPageState extends State<TeamSettingsPage> {
         actionsPadding: EdgeInsets.symmetric(horizontal: 4),
         actions: [
           _SettingsMenuButton(
-            editNameCallback: () async {
+            editName: () async {
               final String? newName = await showModalBottomSheet<String>(
                 useSafeArea: true,
                 backgroundColor: Colors.transparent,
@@ -158,16 +160,13 @@ class _TeamSettingsPageState extends State<TeamSettingsPage> {
               );
 
               if (newName == null || newName == widget.activeTeam.title) return;
-              _firestore
-                  .collection('teams')
-                  .doc(widget.activeTeam.id)
-                  .update({'title': newName});
               setState(() {
                 widget.activeTeam.title = newName;
               });
+              widget.activeTeam.update();
             },
-            selectProjectsCallback: toggleMultiSelect,
-            deleteTeamCallback: () {
+            selectProjects: toggleMultiSelect,
+            deleteTeam: () {
               showDialog(
                 context: context,
                 builder: (context) => _deleteTeamDialog(),
@@ -196,8 +195,8 @@ class _TeamSettingsPageState extends State<TeamSettingsPage> {
                             context: context,
                             builder: (BuildContext context) =>
                                 ManageTeamMembersForm(
-                              teamMembers: _teamMembers,
                               activeTeam: widget.activeTeam,
+                              teamMembers: _teamMembers,
                             ),
                           );
                         },
@@ -316,22 +315,35 @@ class _TeamSettingsPageState extends State<TeamSettingsPage> {
               else
                 Expanded(
                   child: ListView.separated(
-                    itemCount: _projects.length,
+                    itemCount: widget.activeTeam.projects!.length,
                     itemBuilder: (context, index) {
-                      bool isSelected =
-                          _selectedProjects.contains(_projects[index]);
+                      final project = widget.activeTeam.projects![index];
+                      bool isSelected = _selectedProjects.contains(project);
                       return _ProjectListTile(
                         isMultiSelectMode: _isMultiSelectMode,
                         isSelected: isSelected,
-                        project: _projects[index],
+                        project: project,
                         toggleProjectSelection: toggleProjectSelection,
-                        projectDeletedCallback: () {
-                          setState(() {
-                            _projects.removeAt(index);
-                            widget.activeTeam.projects?.removeWhere(
-                                (projectRef) =>
-                                    projectRef.id == _projects[index].id);
-                          });
+                        onTap: () async {
+                          if (_isMultiSelectMode) {
+                            toggleProjectSelection(project);
+                          } else {
+                            final status = await Navigator.push<String>(
+                              context,
+                              MaterialPageRoute(
+                                builder: (context) => ProjectDetailsPage(
+                                  member: widget.member,
+                                  activeProject: project,
+                                ),
+                              ),
+                            );
+                            if (status == 'deleted') {
+                              setState(() {
+                                widget.activeTeam.projectRefs.removeAt(index);
+                                widget.activeTeam.projects!.removeAt(index);
+                              });
+                            }
+                          }
                         },
                       );
                     },
@@ -366,14 +378,14 @@ class _ProjectListTile extends StatelessWidget {
   final bool isSelected;
   final Project project;
   final void Function(Project) toggleProjectSelection;
-  final VoidCallback projectDeletedCallback;
+  final VoidCallback onTap;
 
   const _ProjectListTile({
     required this.isMultiSelectMode,
     required this.isSelected,
     required this.project,
     required this.toggleProjectSelection,
-    required this.projectDeletedCallback,
+    required this.onTap,
   });
 
   @override
@@ -429,40 +441,24 @@ class _ProjectListTile extends StatelessWidget {
       trailing: isMultiSelectMode
           ? null
           : Icon(Icons.chevron_right, color: Colors.white),
-      onTap: () async {
-        if (isMultiSelectMode) {
-          toggleProjectSelection(project);
-        } else {
-          final status = await Navigator.push<String>(
-            context,
-            MaterialPageRoute(
-              builder: (context) => ProjectDetailsPage(
-                activeProject: project,
-              ),
-            ),
-          );
-          if (status == 'deleted') {
-            projectDeletedCallback();
-          }
-        }
-      },
+      onTap: onTap,
     );
   }
 }
 
 class _SettingsMenuButton extends StatelessWidget {
-  final VoidCallback? editNameCallback;
-  // final VoidCallback? changeColorCallback;
-  final VoidCallback? selectProjectsCallback;
-  // final VoidCallback? archiveTeamCallback;
-  final VoidCallback? deleteTeamCallback;
+  final VoidCallback? editName;
+  // final VoidCallback? changeColor;
+  final VoidCallback? selectProjects;
+  // final VoidCallback? archiveTeam;
+  final VoidCallback? deleteTeam;
 
   const _SettingsMenuButton({
-    this.editNameCallback,
-    // this.changeColorCallback,
-    this.selectProjectsCallback,
-    // this.archiveTeamCallback,
-    this.deleteTeamCallback,
+    this.editName,
+    // this.changeColor,
+    this.selectProjects,
+    // this.archiveTeam,
+    this.deleteTeam,
   });
 
   static const ButtonStyle paddingButtonStyle = ButtonStyle(
@@ -506,7 +502,7 @@ class _SettingsMenuButton extends StatelessWidget {
                 Icons.edit_outlined,
                 color: Colors.white,
               ),
-              onPressed: editNameCallback,
+              onPressed: editName,
               child: Text(
                 'Edit Team Name',
                 style: whiteText,
@@ -519,7 +515,7 @@ class _SettingsMenuButton extends StatelessWidget {
             //     Icons.palette_outlined,
             //     color: Colors.white,
             //   ),
-            //   onPressed: changeColorCallback,
+            //   onPressed: changeColor,
             //   child: Text(
             //     'Change Team Color',
             //     style: whiteText,
@@ -532,7 +528,7 @@ class _SettingsMenuButton extends StatelessWidget {
                 Icons.check_circle_outlined,
                 color: Colors.white,
               ),
-              onPressed: selectProjectsCallback,
+              onPressed: selectProjects,
               child: Text(
                 'Select Projects',
                 style: whiteText,
@@ -545,7 +541,7 @@ class _SettingsMenuButton extends StatelessWidget {
             //     Icons.inventory_2_outlined,
             //     color: Colors.white,
             //   ),
-            //   onPressed: archiveTeamCallback,
+            //   onPressed: archiveTeam,
             //   child: Text(
             //     'Archive Team',
             //     style: whiteText,
@@ -556,7 +552,7 @@ class _SettingsMenuButton extends StatelessWidget {
               style: paddingButtonStyle,
               trailingIcon:
                   Icon(Icons.delete_outlined, color: Color(0xFFFD6265)),
-              onPressed: deleteTeamCallback,
+              onPressed: deleteTeam,
               child: Text(
                 'Delete Team',
                 style: TextStyle(color: Color(0xFFFD6265)),

@@ -1,6 +1,5 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
-import 'package:firebase_storage/firebase_storage.dart';
 import 'package:flutter/material.dart';
 
 import 'db_schema_classes.dart';
@@ -269,43 +268,43 @@ Future<String> getUserFullName(String? uid) async {
 //   return true;
 // }
 
-Future<bool> deleteProject(Project project) async {
-  try {
-    final DocumentReference<Map<String, dynamic>> projectRef =
-        _firestore.collection('projects').doc(project.id);
-
-    // Delete tests residing in this project.
-    if (project.testRefs.isNotEmpty) {
-      for (final testRef in project.testRefs) {
-        await testRef.delete();
-        print('deleted test ${testRef.id}');
-      }
-    }
-
-    // Delete reference to this project from the team it resides in.
-    await project.teamRef.update({
-      'projects': FieldValue.arrayRemove([projectRef])
-    });
-
-    // Delete cover photo from storage if present.
-    if (project.coverImageUrl.isNotEmpty) {
-      final storageRef = FirebaseStorage.instance.ref();
-      final coverImageRef =
-          storageRef.child('project_covers/${project.id}.jpg');
-      await coverImageRef.delete();
-    }
-
-    // Delete project.
-    await projectRef.delete();
-    print('Success in deleteProject! Deleted project: ${project.title} '
-        'with ID ${project.id}');
-  } catch (e, stacktrace) {
-    print('Exception deleting project: $e');
-    print('Stacktrace: $stacktrace');
-    return false;
-  }
-  return true;
-}
+// Future<bool> deleteProject(Project project) async {
+//   try {
+//     final DocumentReference<Map<String, dynamic>> projectRef =
+//         _firestore.collection('projects').doc(project.id);
+//
+//     // Delete tests residing in this project.
+//     if (project.testRefs.isNotEmpty) {
+//       for (final testRef in project.testRefs) {
+//         await testRef.delete();
+//         print('deleted test ${testRef.id}');
+//       }
+//     }
+//
+//     // Delete reference to this project from the team it resides in.
+//     await project.teamRef.update({
+//       'projects': FieldValue.arrayRemove([projectRef])
+//     });
+//
+//     // Delete cover photo from storage if present.
+//     if (project.coverImageUrl.isNotEmpty) {
+//       final storageRef = FirebaseStorage.instance.ref();
+//       final coverImageRef =
+//           storageRef.child('project_covers/${project.id}.jpg');
+//       await coverImageRef.delete();
+//     }
+//
+//     // Delete project.
+//     await projectRef.delete();
+//     print('Success in deleteProject! Deleted project: ${project.title} '
+//         'with ID ${project.id}');
+//   } catch (e, stacktrace) {
+//     print('Exception deleting project: $e');
+//     print('Stacktrace: $stacktrace');
+//     return false;
+//   }
+//   return true;
+// }
 
 Future<bool> deleteTest(Test test) async {
   try {

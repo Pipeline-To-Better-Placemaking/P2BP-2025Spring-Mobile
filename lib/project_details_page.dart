@@ -19,13 +19,18 @@ import 'firestore_functions.dart';
 import 'mini_map.dart';
 
 class ProjectDetailsPage extends StatefulWidget {
+  final Member member;
   final Project activeProject;
 
   /// IMPORTANT: When navigating to this page, pass in project details. Use
   /// `getProjectInfo()` from firestore_functions.dart to retrieve project
   /// object w/ data.
   /// <br/>Note: project is returned as future, await return before passing.
-  const ProjectDetailsPage({super.key, required this.activeProject});
+  const ProjectDetailsPage({
+    super.key,
+    required this.member,
+    required this.activeProject,
+  });
 
   @override
   State<ProjectDetailsPage> createState() => _ProjectDetailsPageState();
@@ -97,7 +102,7 @@ class _ProjectDetailsPageState extends State<ProjectDetailsPage> {
       declineText: 'No, go back',
       confirmText: 'Yes, delete it',
       onConfirm: () async {
-        await deleteProject(widget.activeProject);
+        await widget.activeProject.delete();
 
         if (!mounted) return;
         Navigator.pop(context, true);

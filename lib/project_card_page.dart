@@ -157,7 +157,7 @@ class _ProjectCardPageState extends State<ProjectCardPage> {
                   ),
                 ],
               ),
-              // "Your Projects" label, aligned to the right of the screen"
+              // "Your Projects" label, aligned to the right of the screen
               Padding(
                 padding: const EdgeInsets.only(right: 5),
                 child: Row(
@@ -181,56 +181,72 @@ class _ProjectCardPageState extends State<ProjectCardPage> {
                 ),
               ),
               // Project Cards
-              _isLoading
-                  ? const Center(child: CircularProgressIndicator())
-                  : _projectsCount > 0
-                      // If there are projects populate ListView
-                      ? ListView.separated(
-                          physics: NeverScrollableScrollPhysics(),
-                          shrinkWrap: true,
-                          padding: const EdgeInsets.only(
-                            left: 15,
-                            right: 15,
-                            top: 5,
-                            bottom: 25,
-                          ),
-                          itemCount: _projectsCount,
-                          itemBuilder: (BuildContext context, int index) {
-                            // Get the team name for this project
-                            return ProjectCard(
-                              bannerImage:
-                                  _bannerImages[index % _bannerImages.length],
-                              project: _projectList[index],
-                              editProjectCallback: (updated) {
-                                if (updated == 'deleted') {
-                                  _populateProjects();
-                                } else if (updated == 'altered') {
-                                  setState(() {
-                                    // Update if something was changed in EditProject
-                                  });
-                                }
-                              },
-                            );
-                          },
-                          separatorBuilder: (BuildContext context, int index) =>
-                              const SizedBox(height: 50),
-                        )
-                      // Else if there are no projects
-                      : RefreshIndicator(
-                          onRefresh: () async {
-                            await _populateProjects();
-                          },
-                          child: SingleChildScrollView(
-                            physics: AlwaysScrollableScrollPhysics(),
-                            child: SizedBox(
-                              height: MediaQuery.sizeOf(context).height * 2 / 3,
-                              child: Center(
-                                child: Text('You have no projects! Join a team '
-                                    'or create a project first.'),
-                              ),
+              if (_isLoading)
+                const Center(child: CircularProgressIndicator())
+              else
+                _projectsCount > 0
+                    // If there are projects populate ListView
+                    ? ListView.separated(
+                        physics: NeverScrollableScrollPhysics(),
+                        shrinkWrap: true,
+                        padding: const EdgeInsets.only(
+                          left: 15,
+                          right: 15,
+                          top: 5,
+                          bottom: 25,
+                        ),
+                        itemCount: _projectsCount,
+                        itemBuilder: (BuildContext context, int index) {
+                          // Get the team name for this project
+                          return ProjectCard(
+                            bannerImage:
+                                _bannerImages[index % _bannerImages.length],
+                            project: _projectList[index],
+                            navigateToDetails: () async {
+                              await Navigator.push(
+                                context,
+                                MaterialPageRoute(
+                                  builder: (context) => ProjectDetailsPage(
+                                    member: widget.member,
+                                    activeProject: _projectList[index],
+                                  ),
+                                ),
+                              );
+
+                              // This might be really costly to do every time but not sure how else
+                              // to guarantee projects update after renaming or otherwise.
+                              // _populateProjects(); TODO check if this is needed after refactor
+                            },
+                            editProject: (updated) {
+                              if (updated == 'deleted') {
+                                _populateProjects();
+                              } else if (updated == 'altered') {
+                                setState(() {
+                                  // Update if something was changed in EditProject
+                                });
+                              }
+                            },
+                          );
+                        },
+                        separatorBuilder: (BuildContext context, int index) =>
+                            const SizedBox(height: 50),
+                      )
+                    // Else if there are no projects
+                    : RefreshIndicator(
+                        onRefresh: () async {
+                          await _populateProjects();
+                        },
+                        child: SingleChildScrollView(
+                          physics: AlwaysScrollableScrollPhysics(),
+                          child: SizedBox(
+                            height: MediaQuery.sizeOf(context).height * 2 / 3,
+                            child: Center(
+                              child: Text('You have no projects! Join a team '
+                                  'or create a project first.'),
                             ),
                           ),
                         ),
+                      ),
               SizedBox(height: 100),
             ],
           ),
@@ -400,36 +416,24 @@ class _ProjectCardPageState extends State<ProjectCardPage> {
 class ProjectCard extends StatelessWidget {
   final String bannerImage;
   final Project project;
-  final void Function(String) editProjectCallback;
+  final VoidCallback navigateToDetails;
+  final void Function(String) editProject;
 
   const ProjectCard({
     super.key,
     required this.bannerImage,
     required this.project,
-    required this.editProjectCallback,
+    required this.navigateToDetails,
+    required this.editProject,
   });
 
   @override
   Widget build(BuildContext context) {
     return Card(
       elevation: 5,
-      shape: RoundedRectangleBorder(
-          borderRadius:
-              BorderRadius.circular(12) // Match the container's corner radius
-          ),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
       child: InkWell(
-        onTap: () async {
-          await Navigator.push(
-            context,
-            MaterialPageRoute(
-              builder: (context) => ProjectDetailsPage(activeProject: project),
-            ),
-          );
-
-          // This might be really costly to do every time but not sure how else
-          // to guarantee projects update after renaming or otherwise.
-          // _populateProjects(); TODO check if this is needed after refactor
-        },
+        onTap: navigateToDetails,
         child: Container(
           decoration: BoxDecoration(
             gradient: const LinearGradient(
@@ -502,7 +506,7 @@ class ProjectCard extends StatelessWidget {
                         );
 
                         if (updated != null) {
-                          editProjectCallback(updated);
+                          editProject(updated);
                         }
                       },
                       style: OutlinedButton.styleFrom(

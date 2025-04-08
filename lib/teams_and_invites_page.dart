@@ -144,6 +144,7 @@ class _TeamsAndInvitesPageState extends State<TeamsAndInvitesPage> {
                                   context,
                                   MaterialPageRoute(
                                     builder: (context) => TeamSettingsPage(
+                                      member: widget.member,
                                       activeTeam: _teams[index],
                                     ),
                                   ),

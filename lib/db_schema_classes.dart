@@ -4132,6 +4132,34 @@ class Member with JsonToString implements FirestoreDocument {
     };
   }
 
+  /// Returns a Member object from the given [DocumentReference].
+  ///
+  /// Do not give this a [DocumentReference] of uncertain origin or something
+  /// very strange will probably happen. Undocumented behavior or whatever.
+  Future<Member?> get(DocumentReference ref) async {
+    try {
+      final doc = await converterRef.doc(ref.id).get();
+      if (doc.exists) {
+        return doc.data()!;
+      } else {
+        return null;
+      }
+    } catch (e, s) {
+      print('Exception: $e');
+      print('Stacktrace: $s');
+      throw Exception('Failed to get member because of exception: $e');
+    }
+  }
+
+  Future<bool> delete() async {
+    // TODO implement user delete
+    throw UnimplementedError();
+  }
+
+  Future<void> update() async {
+    await ref.update(toJson());
+  }
+
   /// Creates a [Member] from the given [User], adds it to Firestore, and sends
   /// email verification.
   ///
@@ -4211,17 +4239,18 @@ class Member with JsonToString implements FirestoreDocument {
   /// retrieved for it comes back null.
   Future<Team?> loadSelectedTeamInfo() async {
     try {
-      if (selectedTeamRef == null) {
+      if (teamRefs.isEmpty) {
+        selectedTeamRef = null;
         selectedTeam = null;
-        return selectedTeam;
+      } else if (selectedTeamRef == null) {
+        selectedTeamRef = teamRefs.first;
+        selectedTeam = await Team.get(selectedTeamRef!);
+      } else {
+        selectedTeam = await Team.get(selectedTeamRef!);
       }
 
-      final DocumentSnapshot<Team> teamDoc =
-          await Team.converterRef.doc(selectedTeamRef!.id).get();
-
-      selectedTeam = teamDoc.data();
-
-      return teamDoc.data();
+      await update();
+      return selectedTeam;
     } catch (e, s) {
       print('Exception: $e');
       print('Stacktrace: $s');
@@ -4387,6 +4416,55 @@ class Team with JsonToString implements FirestoreDocument {
       'creationTime': creationTime,
       'projects': projectRefs,
     };
+  }
+
+  static Future<Team?> get(DocumentReference ref) async {
+    try {
+      final doc = await converterRef.doc(ref.id).get();
+      if (doc.exists) {
+        return doc.data()!;
+      } else {
+        return null;
+      }
+    } catch (e, s) {
+      print('Exception: $e');
+      print('Stacktrace: $s');
+      throw Exception('Failed to get team because of exception: $e');
+    }
+  }
+
+  Future<bool> delete() async {
+    try {
+      _firestore.runTransaction((transaction) async {
+        loadProjectsInfo();
+
+        // Delete each project including all nested elements via builtin method.
+        for (final project in projects!) {
+          await project.delete();
+        }
+
+        // Delete references to this team from every member.
+        for (final ref in memberRefMap.toSingleList()) {
+          await ref.update({
+            'teams': FieldValue.arrayRemove([ref]),
+          });
+          print('deleted ref from user ${ref.id}');
+        }
+
+        // Delete team.
+        await ref.delete();
+        print('Success in Team.delete()! Deleted team: $title with ID $id');
+      });
+    } catch (e, s) {
+      print('Exception: $e');
+      print('Stacktrace: $s');
+      return false;
+    }
+    return true;
+  }
+
+  Future<void> update() async {
+    await ref.update(toJson());
   }
 
   /// Create new team from given values and save ref and [Team] to owner's
@@ -4701,6 +4779,90 @@ class Project with JsonToString implements FirestoreDocument {
     };
   }
 
+  static Future<Project?> get(DocumentReference ref) async {
+    try {
+      final doc = await converterRef.doc(ref.id).get();
+      if (doc.exists) {
+        return doc.data()!;
+      } else {
+        return null;
+      }
+    } catch (e, s) {
+      print('Exception: $e');
+      print('Stacktrace: $s');
+      throw Exception('Failed to get project because of exception: $e');
+    }
+  }
+
+  Future<bool> delete() async {
+    try {
+      _firestore.runTransaction((transaction) async {
+        // Deletes each test belonging to this project.
+        for (final testRef in testRefs) {
+          await testRef.delete();
+          print('deleted test ${testRef.id}');
+        }
+
+        // Delete reference to this project from the team it belongs to.
+        await teamRef.update({
+          'projects': FieldValue.arrayRemove([ref]),
+        });
+        if (team != null) {
+          team!.projects?.remove(this);
+          team!.projectRefs.removeWhere((ref) => ref.id == id);
+        }
+
+        // Delete cover photo from storage if present.
+        final storageRef = FirebaseStorage.instance.ref();
+        final coverImageRef = storageRef.child('project_covers/$id.jpg');
+        await coverImageRef.delete();
+
+        // Delete this project.
+        await ref.delete();
+        print('deleted project $id');
+      });
+    } catch (e, s) {
+      print('Exception: $e');
+      print('Stacktrace: $s');
+      return false;
+    }
+    return true;
+  }
+
+  Future<void> update() async {
+    await ref.update(toJson());
+  }
+
+  static Future<Project> createNew({
+    required String title,
+    required String description,
+    required String address,
+    required Polygon polygon,
+    required double polygonArea,
+    required List<StandingPoint> standingPoints,
+    File? coverImage,
+  }) async {
+    try {
+      final String projectID = Project.converterRef.doc().id;
+
+      // Construct Project.
+      final Project project = Project(
+        id: projectID,
+        title: title,
+        description: description,
+        address: address,
+        teamRef: teamRef,
+        memberRefMap: memberRefMap,
+        polygon: polygon,
+        standingPoints: standingPoints,
+      );
+    } catch (e, s) {
+      print('Exception: $e');
+      print('Stacktrace: $s');
+      throw Exception('Failed to create project because of exception: $e');
+    }
+  }
+
   Future<Team> loadTeamInfo() async {
     try {
       final teamDoc = await Team.converterRef.doc(teamRef.id).get();
@@ -4730,6 +4892,8 @@ class Project with JsonToString implements FirestoreDocument {
         final testDoc = await _firestore.doc(ref.path).get();
         if (testDoc.exists) {
           newTestList.add(Test.recreateFromDoc(testDoc));
+        } else {
+          testRefs.remove(ref);
         }
       }
 

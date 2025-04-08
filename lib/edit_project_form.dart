@@ -3,7 +3,6 @@ import 'package:flutter/material.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:p2bp_2025spring_mobile/db_schema_classes.dart';
 
-import 'firestore_functions.dart';
 import 'theme.dart';
 import 'widgets.dart';
 
@@ -38,7 +37,7 @@ class _EditProjectFormState extends State<EditProjectForm> {
       declineText: 'No, go back',
       confirmText: 'Yes, delete it',
       onConfirm: () async {
-        await deleteProject(widget.activeProject);
+        await widget.activeProject.delete();
 
         if (!mounted) return;
         Navigator.pop(context, true);
