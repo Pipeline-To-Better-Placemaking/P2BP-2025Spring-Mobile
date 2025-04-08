@@ -4049,14 +4049,34 @@ class Member with JsonToString implements FirestoreDocument {
   /// This should only be called after a [User] has been created with
   /// `email` and `password`, and that User has had its profile updated
   /// with a `displayName`.
-  static Future<Member> createNewUser(User user) async {
-    final member =
-        Member(id: user.uid, fullName: user.displayName!, email: user.email!);
+  static Future<Member> createNewUser(
+      String fullName, String email, String password) async {
+    try {
+      // Create user with email and password.
+      UserCredential userCredential =
+          await FirebaseAuth.instance.createUserWithEmailAndPassword(
+        email: email,
+        password: password,
+      );
 
-    await converterRef.doc(member.id).set(member);
-    await user.sendEmailVerification();
+      User? user = userCredential.user;
+      // Add user's full name to profile.
+      await user?.updateProfile(displayName: fullName);
 
-    return member;
+      // Create Member from info.
+      final member =
+          Member(id: user!.uid, fullName: fullName, email: user.email!);
+
+      // Save member to Firestore.
+      await converterRef.doc(member.id).set(member);
+
+      await user.sendEmailVerification();
+      return member;
+    } catch (e, s) {
+      print('Exception: $e');
+      print('Stacktrace: $s');
+      throw Exception('Failed to create user because of exception: $e');
+    }
   }
 
   /// Attempts to create a [Member] from given [User] data in Firestore.

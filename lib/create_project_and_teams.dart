@@ -22,12 +22,17 @@ class CreateProjectAndTeamsPage extends StatefulWidget {
 }
 
 class _CreateProjectAndTeamsPageState extends State<CreateProjectAndTeamsPage> {
+  late final List<Widget> pages;
   late Widget pageSelection;
 
   @override
   void initState() {
     super.initState();
-    pageSelection = CreateProjectWidget(member: widget.member);
+    pages = [
+      CreateProjectWidget(member: widget.member),
+      CreateTeamWidget(member: widget.member),
+    ];
+    pageSelection = pages[0];
   }
 
   @override
@@ -57,12 +62,12 @@ class _CreateProjectAndTeamsPageState extends State<CreateProjectAndTeamsPage> {
                 ),
                 segments: <ButtonSegment>[
                   ButtonSegment(
-                    value: CreateProjectWidget(member: widget.member),
+                    value: pages[0],
                     label: const Text('Project'),
                     icon: const Icon(Icons.developer_board),
                   ),
                   ButtonSegment(
-                    value: CreateTeamWidget(member: widget.member),
+                    value: pages[1],
                     label: const Text('Team'),
                     icon: const Icon(Icons.people),
                   ),

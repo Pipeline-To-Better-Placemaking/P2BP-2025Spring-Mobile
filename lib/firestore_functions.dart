@@ -1,8 +1,10 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_storage/firebase_storage.dart';
+import 'package:flutter/material.dart';
 
 import 'db_schema_classes.dart';
+import 'login_screen.dart';
 
 final FirebaseFirestore _firestore = FirebaseFirestore.instance;
 
@@ -744,4 +746,25 @@ Future<Test> getTestInfo(
   }
 
   return test;
+}
+
+/// Signs out of this account and returns to login screen.
+void signOutUser(BuildContext context) async {
+  try {
+    await FirebaseAuth.instance.signOut();
+    if (context.mounted) {
+      // Sends to login screen and removes everything else from nav stack
+      Navigator.pushAndRemoveUntil(
+          context,
+          MaterialPageRoute(builder: (context) => LoginScreen()),
+          (Route route) => false);
+    } else {
+      throw Exception('context-unmounted');
+    }
+  } catch (e) {
+    print('Error signing out: $e');
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text('Log out failed. Try again.')),
+    );
+  }
 }

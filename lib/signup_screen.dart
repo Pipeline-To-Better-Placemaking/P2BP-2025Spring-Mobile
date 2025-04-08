@@ -1,4 +1,3 @@
-import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:p2bp_2025spring_mobile/widgets.dart';
@@ -167,8 +166,6 @@ class _SignUpFormState extends State<SignUpForm> {
   bool _obscureText = true;
   bool _obscureConfirmText = true;
 
-  final FirebaseAuth _auth = FirebaseAuth.instance;
-
   // Validation feedback variables
   // bool _hasUpperCase = false;
   // bool _hasLowerCase = false;
@@ -199,19 +196,7 @@ class _SignUpFormState extends State<SignUpForm> {
         final String fullName = _fullNameController.text.trim();
         final String email = _emailController.text.trim();
 
-        // Create user with email and password.
-        UserCredential userCredential =
-            await _auth.createUserWithEmailAndPassword(
-          email: _emailController.text,
-          password: _passwordController.text,
-        );
-
-        User? user = userCredential.user;
-
-        // Add user's full name to profile.
-        await user?.updateProfile(displayName: fullName);
-
-        await Member.createNewUser(user!);
+        await Member.createNewUser(fullName, email, _passwordController.text);
 
         if (!mounted) return;
         ScaffoldMessenger.of(context).showSnackBar(
@@ -228,10 +213,10 @@ class _SignUpFormState extends State<SignUpForm> {
           SnackBar(content: Text('User Registered Successfully!')),
         );
         Navigator.pop(context);
-      } catch (e) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Failed to register: $e')),
-        );
+      } catch (e, s) {
+        print('Exception: $e');
+        print('Stacktrace: $s');
+        throw Exception('Failed to register because of exception: $e');
       }
     }
   }
@@ -258,6 +243,7 @@ class _SignUpFormState extends State<SignUpForm> {
           // Full Name Input
           TextFormField(
             controller: _fullNameController,
+            style: TextStyle(color: Colors.white),
             decoration: InputDecoration(
               prefixIcon: Padding(
                 padding: EdgeInsets.only(left: 10, right: 30),
@@ -293,6 +279,7 @@ class _SignUpFormState extends State<SignUpForm> {
           // Email Address Input
           TextFormField(
             controller: _emailController,
+            style: TextStyle(color: Colors.white),
             decoration: InputDecoration(
               prefixIcon: Padding(
                 padding: EdgeInsets.only(left: 10, right: 30),

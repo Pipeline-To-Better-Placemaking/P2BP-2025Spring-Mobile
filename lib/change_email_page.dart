@@ -5,10 +5,13 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:p2bp_2025spring_mobile/theme.dart';
 
+import 'db_schema_classes.dart';
 import 'strings.dart';
 
 class ChangeEmailPage extends StatelessWidget {
-  const ChangeEmailPage({super.key});
+  final Member member;
+
+  const ChangeEmailPage({super.key, required this.member});
 
   @override
   Widget build(BuildContext context) {
@@ -28,7 +31,7 @@ class ChangeEmailPage extends StatelessWidget {
             fontSize: 16,
             fontWeight: FontWeight.normal,
           ),
-          child: SafeArea(child: ChangeEmailForm()),
+          child: SafeArea(child: ChangeEmailForm(member: member)),
         ),
       ),
     );
@@ -36,7 +39,9 @@ class ChangeEmailPage extends StatelessWidget {
 }
 
 class ChangeEmailForm extends StatefulWidget {
-  const ChangeEmailForm({super.key});
+  final Member member;
+
+  const ChangeEmailForm({super.key, required this.member});
 
   @override
   State<ChangeEmailForm> createState() => _ChangeEmailFormState();
@@ -45,27 +50,8 @@ class ChangeEmailForm extends StatefulWidget {
 class _ChangeEmailFormState extends State<ChangeEmailForm> {
   final _formKey = GlobalKey<FormState>();
   final TextEditingController _emailController = TextEditingController();
-  User? _currentUser = FirebaseAuth.instance.currentUser;
-  String? _currentEmail;
-  StreamSubscription? _userChangesListener;
-
+  final User? _currentUser = FirebaseAuth.instance.currentUser;
   bool _isEmailSent = false;
-
-  @override
-  void initState() {
-    super.initState();
-    _currentEmail = _currentUser?.email;
-
-    // Meant to listen for auth update after changing email to update displayed
-    // current email address. But it doesn't work, the email never updates
-    // except sometimes to null.
-    _userChangesListener = FirebaseAuth.instance.userChanges().listen((user) {
-      setState(() {
-        _currentUser = user;
-        _currentEmail = _currentUser?.email;
-      });
-    });
-  }
 
   Future<void> _submitEmailChange() async {
     if (_formKey.currentState!.validate()) {
@@ -91,7 +77,6 @@ class _ChangeEmailFormState extends State<ChangeEmailForm> {
   @override
   void dispose() {
     _emailController.dispose();
-    _userChangesListener?.cancel();
     super.dispose();
   }
 
@@ -108,7 +93,7 @@ class _ChangeEmailFormState extends State<ChangeEmailForm> {
               fontSize: 20,
               color: Colors.black87,
             ),
-            'Your current email address is:\n$_currentEmail',
+            'Your current email address is:\n${widget.member.email}',
           ),
           const SizedBox(height: 16),
           TextFormField(
@@ -125,7 +110,7 @@ class _ChangeEmailFormState extends State<ChangeEmailForm> {
               if (!RegExp(r'^[^@]+@[^@]+\.[^@]+').hasMatch(value)) {
                 return 'Please enter a valid email address';
               }
-              if (value == _currentEmail) {
+              if (value == widget.member.email) {
                 return 'This is your current email address';
               }
               return null;

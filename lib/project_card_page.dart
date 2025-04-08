@@ -33,7 +33,7 @@ class _ProjectCardPageState extends State<ProjectCardPage> {
   List<Project> _projectList = [];
   int _projectsCount = 0;
   bool _isLoading = true;
-  late final String _firstName;
+  late String _firstName;
 
   @override
   void initState() {
@@ -45,7 +45,13 @@ class _ProjectCardPageState extends State<ProjectCardPage> {
   Future<void> _populateProjects() async {
     try {
       _currentTeam = await widget.member.loadSelectedTeamInfo();
-      if (_currentTeam == null) return;
+      if (_currentTeam == null) {
+        if (!mounted) return;
+        setState(() {
+          _isLoading = false;
+        });
+        return;
+      }
 
       _projectList = await _currentTeam!.loadProjectsInfo();
 
@@ -54,13 +60,15 @@ class _ProjectCardPageState extends State<ProjectCardPage> {
         _projectsCount = _projectList.length;
         _isLoading = false;
       });
-    } catch (e) {
+    } catch (e, s) {
       print("Error in _populateProjects(): $e");
+      print('Stacktrace: $s');
     }
   }
 
   @override
   Widget build(BuildContext context) {
+    _firstName = widget.member.fullName.split(' ').first;
     return RefreshIndicator(
       onRefresh: () async {
         await _populateProjects();
