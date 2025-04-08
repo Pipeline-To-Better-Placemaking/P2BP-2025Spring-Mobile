@@ -3958,13 +3958,11 @@ final Set<GroupRole> elevatedRoles =
 
 abstract interface class FirestoreDocument {
   String get collectionID;
+  DocumentReference get ref;
 }
 
 class Member with JsonToString implements FirestoreDocument {
   static const String collectionIDStatic = 'users';
-
-  @override
-  String get collectionID => collectionIDStatic;
 
   static final CollectionReference<Map<String, Object?>> defaultRef =
       _firestore.collection(collectionIDStatic);
@@ -3974,6 +3972,12 @@ class Member with JsonToString implements FirestoreDocument {
             fromFirestore: (snapshot, _) => Member.fromJson(snapshot.data()!),
             toFirestore: (member, _) => member.toJson(),
           );
+
+  @override
+  String get collectionID => collectionIDStatic;
+
+  @override
+  DocumentReference get ref => converterRef.doc(id); // this is so cool?!?!
 
   final String id;
   String fullName = '';
@@ -4173,8 +4177,12 @@ class Member with JsonToString implements FirestoreDocument {
       // Refs not empty, retrieve info for invites.
       List<TeamInvite> newInviteList = [];
       for (final ref in teamInviteRefs) {
-        final TeamInvite invite = await TeamInvite.fromTeamRef(ref);
-        newInviteList.add(invite);
+        final TeamInvite? invite = await TeamInvite.fromTeamRef(ref);
+        if (invite != null) {
+          newInviteList.add(invite);
+        } else {
+          teamInviteRefs.remove(ref);
+        }
       }
 
       teamInvites?.clear();
@@ -4204,7 +4212,11 @@ class Member with JsonToString implements FirestoreDocument {
       List<Team> newTeamList = [];
       for (final ref in teamRefs) {
         final teamDoc = await Team.converterRef.doc(ref.id).get();
-        newTeamList.add(teamDoc.data()!);
+        if (teamDoc.exists) {
+          newTeamList.add(teamDoc.data()!);
+        } else {
+          teamRefs.remove(ref);
+        }
       }
 
       teams?.clear();
@@ -4223,9 +4235,6 @@ typedef RoleMap<T> = Map<GroupRole, List<T>>;
 class Team with JsonToString implements FirestoreDocument {
   static const String collectionIDStatic = 'teams';
 
-  @override
-  String get collectionID => collectionIDStatic;
-
   static final CollectionReference<Map<String, Object?>> defaultRef =
       _firestore.collection(collectionIDStatic);
 
@@ -4234,6 +4243,12 @@ class Team with JsonToString implements FirestoreDocument {
             fromFirestore: (snapshot, _) => Team.fromJson(snapshot.data()!),
             toFirestore: (team, _) => team.toJson(),
           );
+
+  @override
+  String get collectionID => collectionIDStatic;
+
+  @override
+  DocumentReference get ref => converterRef.doc(id);
 
   final String id;
   String title = '';
@@ -4289,6 +4304,68 @@ class Team with JsonToString implements FirestoreDocument {
     };
   }
 
+  /// Create new team from given values and save ref and [Team] to owner's
+  /// lists.
+  ///
+  /// This internally creates the team in Firestore, adds the reference to the
+  /// owner's teams list in Firestore, and sends all the invites to users in
+  /// Firestore. And then updates everything locally for the current user too.
+  static Future<Team> createNew({
+    required String teamTitle,
+    required Member teamOwner,
+    required List<Member> inviteList,
+  }) async {
+    try {
+      final String teamID = Team.converterRef.doc().id;
+
+      // Make memberRefMap with owner in place and other roles as empty list.
+      final ownerRef = Member.converterRef.doc(teamOwner.id);
+      final RoleMap<DocumentReference> memberRefMap = {
+        for (final role in GroupRole.values) role: [],
+      };
+      memberRefMap[GroupRole.owner]!.add(ownerRef);
+
+      // Make memberMap with owner because we can.
+      final RoleMap<Member> memberMap = {
+        for (final role in GroupRole.values) role: [],
+      };
+      memberMap[GroupRole.owner]!.add(teamOwner);
+
+      // Construct Team.
+      final Team team = Team(
+        id: teamID,
+        title: teamTitle,
+        memberRefMap: memberRefMap,
+        memberMap: memberMap,
+      );
+      final teamRef = Team.converterRef.doc(team.id);
+
+      // Update Firestore with new team, add reference to new team to owner's
+      // teams list, and send invites to all invited users.
+      await _firestore.runTransaction((transaction) async {
+        await Team.converterRef.doc(team.id).set(team);
+        await ownerRef.update({
+          'teams': FieldValue.arrayUnion([teamRef]),
+        });
+        for (final member in inviteList) {
+          await member.ref.update({
+            'invites': FieldValue.arrayUnion([teamRef]),
+          });
+        }
+      });
+
+      // Finally, add this new Team to owner's local teams lists and return it.
+      teamOwner.teamRefs.add(teamRef);
+      teamOwner.teams ??= [];
+      teamOwner.teams!.add(team);
+      return team;
+    } catch (e, s) {
+      print('Exception: $e');
+      print('Stacktrace: $s');
+      throw Exception('Failed to create team because of exception: $e');
+    }
+  }
+
   /// Updates [projects] to contain Projects
   Future<List<Project>> loadProjectsInfo() async {
     try {
@@ -4307,8 +4384,12 @@ class Team with JsonToString implements FirestoreDocument {
       List<Project> newProjectList = [];
       for (final ref in projectRefs) {
         final projectDoc = await Project.converterRef.doc(ref.id).get();
-        newProjectList.add(projectDoc.data()!);
-        newProjectList.last.team = this;
+        if (projectDoc.exists) {
+          newProjectList.add(projectDoc.data()!);
+          newProjectList.last.team = this;
+        } else {
+          projectRefs.remove(ref);
+        }
       }
 
       projects?.clear();
@@ -4338,11 +4419,15 @@ class Team with JsonToString implements FirestoreDocument {
       for (final role in GroupRole.values) {
         for (final ref in memberRefMap[role]!) {
           final memberDoc = await Member.converterRef.doc(ref.id).get();
-          // Add each member to appropriate role list.
-          newMemberMap.update(role, (value) {
-            value.add(memberDoc.data()!);
-            return value;
-          }, ifAbsent: () => [memberDoc.data()!]);
+          if (memberDoc.exists) {
+            // Add each member to appropriate role list.
+            newMemberMap.update(role, (value) {
+              value.add(memberDoc.data()!);
+              return value;
+            }, ifAbsent: () => [memberDoc.data()!]);
+          } else {
+            memberRefMap[role]!.remove(ref);
+          }
         }
       }
 
@@ -4368,13 +4453,13 @@ class TeamInvite {
     required this.ownerName,
   });
 
-  static Future<TeamInvite> fromTeamID(String teamID) async {
+  static Future<TeamInvite?> fromTeamID(String teamID) async {
     final DocumentReference<Map<String, Object?>> teamRef =
         _firestore.collection('teams').doc(teamID);
     return await fromTeamRef(teamRef);
   }
 
-  static Future<TeamInvite> fromTeamRef(DocumentReference teamRef) async {
+  static Future<TeamInvite?> fromTeamRef(DocumentReference teamRef) async {
     final DocumentSnapshot<Map<String, Object?>> teamDoc;
     final DocumentReference<Map<String, Object?>> userRef;
     final DocumentSnapshot<Map<String, Object?>> userDoc;
@@ -4400,6 +4485,8 @@ class TeamInvite {
             }
           }
         }
+      } else {
+        return null;
       }
     } catch (e, s) {
       print('Exception: $e');
@@ -4413,9 +4500,6 @@ class TeamInvite {
 class Project with JsonToString implements FirestoreDocument {
   static const String collectionIDStatic = 'projects';
 
-  @override
-  String get collectionID => collectionIDStatic;
-
   static final CollectionReference<Map<String, Object?>> defaultRef =
       _firestore.collection(collectionIDStatic);
 
@@ -4424,6 +4508,12 @@ class Project with JsonToString implements FirestoreDocument {
             fromFirestore: (snapshot, _) => Project.fromJson(snapshot.data()!),
             toFirestore: (project, _) => project.toJson(),
           );
+
+  @override
+  String get collectionID => collectionIDStatic;
+
+  @override
+  DocumentReference get ref => converterRef.doc(id);
 
   final String id;
   String title = '';

@@ -6,7 +6,6 @@ import 'package:p2bp_2025spring_mobile/project_map_creation.dart';
 import 'package:p2bp_2025spring_mobile/teams_and_invites_page.dart';
 
 import 'db_schema_classes.dart';
-import 'firestore_functions.dart';
 import 'home_screen.dart';
 import 'theme.dart';
 import 'widgets.dart';
@@ -353,7 +352,7 @@ class _CreateTeamWidgetState extends State<CreateTeamWidget> {
   List<Member> membersSearch = [];
   List<Member> invitedMembers = [];
   bool _isLoading = false;
-  String teamName = '';
+  String teamTitle = '';
   int itemCount = 0;
   final _formKey = GlobalKey<FormState>();
   String teamID = '';
@@ -476,7 +475,7 @@ class _CreateTeamWidgetState extends State<CreateTeamWidget> {
                   errorMessage:
                       'Team names must be at least 3 characters long.',
                   onChanged: (teamText) {
-                    teamName = teamText;
+                    teamTitle = teamText;
                   },
                 ),
                 const SizedBox(height: 10.0),
@@ -564,8 +563,13 @@ class _CreateTeamWidgetState extends State<CreateTeamWidget> {
                         ScaffoldMessenger.of(context).showSnackBar(
                           const SnackBar(content: Text('Saving data...')),
                         );
-                        await saveTeam(
-                            membersList: invitedMembers, teamName: teamName);
+
+                        await Team.createNew(
+                          teamTitle: teamTitle,
+                          teamOwner: widget.member,
+                          inviteList: invitedMembers,
+                        );
+
                         if (!context.mounted) return;
                         FocusManager.instance.primaryFocus?.unfocus();
                         Navigator.pushReplacement(
