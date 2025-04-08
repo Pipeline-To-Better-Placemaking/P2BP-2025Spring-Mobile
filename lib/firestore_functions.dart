@@ -41,37 +41,37 @@ Future<String> getUserFullName(String? uid) async {
 /// list of members to invite and the name of the team. User who created the
 /// team is designated as owner. Projects list created to avoid retrieval
 /// issues. Returns future of String of teamID.
-Future<String> saveTeam(
-    {required membersList, required String teamName}) async {
-  final User? loggedInUser = FirebaseAuth.instance.currentUser;
-  if (loggedInUser == null) return '';
-
-  String teamID = _firestore.collection('teams').doc().id;
-  await _firestore.collection('teams').doc(teamID).set({
-    'title': teamName,
-    'creationTime': FieldValue.serverTimestamp(),
-    // Saves document id as field _id
-    'id': teamID,
-    'projects': [],
-    'teamMembers': FieldValue.arrayUnion([
-      {'role': 'owner', 'user': _firestore.doc('users/${loggedInUser.uid}')}
-    ]),
-  });
-  await _firestore.collection('users').doc(loggedInUser.uid).update({
-    'teams': FieldValue.arrayUnion([_firestore.doc('/teams/$teamID')])
-  });
-  // Currently: invites team members only once team is created.
-  for (Member members in membersList) {
-    await _firestore.collection('users').doc(members.id).update({
-      'invites': FieldValue.arrayUnion([_firestore.doc('/teams/$teamID')])
-    });
-  }
-
-  // Debugging print statement:
-  // print("Teams reference: ${_firestore.doc('/teams/$teamID')}");
-
-  return teamID;
-}
+// Future<String> saveTeam(
+//     {required membersList, required String teamName}) async {
+//   final User? loggedInUser = FirebaseAuth.instance.currentUser;
+//   if (loggedInUser == null) return '';
+//
+//   String teamID = _firestore.collection('teams').doc().id;
+//   await _firestore.collection('teams').doc(teamID).set({
+//     'title': teamName,
+//     'creationTime': FieldValue.serverTimestamp(),
+//     // Saves document id as field _id
+//     'id': teamID,
+//     'projects': [],
+//     'teamMembers': FieldValue.arrayUnion([
+//       {'role': 'owner', 'user': _firestore.doc('users/${loggedInUser.uid}')}
+//     ]),
+//   });
+//   await _firestore.collection('users').doc(loggedInUser.uid).update({
+//     'teams': FieldValue.arrayUnion([_firestore.doc('/teams/$teamID')])
+//   });
+//   // Currently: invites team members only once team is created.
+//   for (Member members in membersList) {
+//     await _firestore.collection('users').doc(members.id).update({
+//       'invites': FieldValue.arrayUnion([_firestore.doc('/teams/$teamID')])
+//     });
+//   }
+//
+//   // Debugging print statement:
+//   // print("Teams reference: ${_firestore.doc('/teams/$teamID')}");
+//
+//   return teamID;
+// }
 
 /// Saves project after project creation in create_project_and_teams.dart. Takes
 /// fields for project: `String` projectTitle, `String` description,

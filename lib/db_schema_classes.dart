@@ -171,18 +171,11 @@ int testTimeComparison(Test a, Test b) {
 /// Additionally, each subclass is expected to statically define constants
 /// for the associated collection ID in Firestore and the basic structure
 /// used for that test's [data] for initialization.
-abstract class Test<T> with JsonToString {
+abstract class Test<T> with JsonToString implements FirestoreDocument {
   /// The time this [Test] was initially created at.
   final Timestamp creationTime;
 
   final String id;
-
-  /// The collection ID used in Firestore for this specific test.
-  ///
-  /// Each implementation of [Test] should statically define its
-  /// collection ID for comparison against this field in
-  /// factory constructors and other use cases.
-  final String collectionID;
 
   String title = '';
 
@@ -227,7 +220,6 @@ abstract class Test<T> with JsonToString {
     required this.id,
     required this.scheduledTime,
     required this.projectRef,
-    required this.collectionID,
     required this.data,
     Timestamp? creationTime,
     int? maxResearchers,
@@ -250,7 +242,6 @@ abstract class Test<T> with JsonToString {
         required String id,
         required Timestamp scheduledTime,
         required DocumentReference projectRef,
-        required String collectionID,
         List? standingPoints,
         int? testDuration,
         int? intervalDuration,
@@ -315,7 +306,6 @@ abstract class Test<T> with JsonToString {
         id: id,
         scheduledTime: scheduledTime,
         projectRef: projectRef,
-        collectionID: collectionID,
         standingPoints: standingPoints,
         testDuration: testDuration,
         intervalDuration: intervalDuration,
@@ -393,7 +383,7 @@ abstract class Test<T> with JsonToString {
         'id: ${this.id}\n'
         'scheduledTime: ${this.scheduledTime}\n'
         'projectRef: ${this.projectRef}\n'
-        'collectionID: ${this.collectionID}\n'
+        'collectionID: $collectionID\n'
         'data: ${this.data}\n'
         'creationTime: ${this.creationTime}\n'
         'maxResearchers: ${this.maxResearchers}\n'
@@ -587,6 +577,21 @@ class LightingProfileTest extends Test<LightingProfileData>
   static const String collectionIDStatic = 'lighting_profile_tests';
   static const String displayName = 'Lighting Profile';
 
+  static final CollectionReference<LightingProfileTest> converterRef =
+      _firestore
+          .collection(collectionIDStatic)
+          .withConverter<LightingProfileTest>(
+            fromFirestore: (snapshot, _) =>
+                LightingProfileTest.fromJson(snapshot.data()!),
+            toFirestore: (test, _) => test.toJson(),
+          );
+
+  @override
+  String get collectionID => collectionIDStatic;
+
+  @override
+  DocumentReference<Object?> get ref => converterRef.doc(id);
+
   @override
   final int testDuration;
 
@@ -600,7 +605,6 @@ class LightingProfileTest extends Test<LightingProfileData>
     required super.id,
     required super.scheduledTime,
     required super.projectRef,
-    required super.collectionID,
     required super.data,
     super.creationTime,
     super.maxResearchers,
@@ -616,7 +620,6 @@ class LightingProfileTest extends Test<LightingProfileData>
       required String id,
       required Timestamp scheduledTime,
       required DocumentReference projectRef,
-      required String collectionID,
       List? standingPoints,
       int? testDuration,
       int? intervalDuration,
@@ -627,7 +630,6 @@ class LightingProfileTest extends Test<LightingProfileData>
           id: id,
           scheduledTime: scheduledTime,
           projectRef: projectRef,
-          collectionID: collectionID,
           data: LightingProfileData.empty(),
           testDuration: testDuration ?? -1,
         );
@@ -693,7 +695,6 @@ class LightingProfileTest extends Test<LightingProfileData>
         id: id,
         scheduledTime: scheduledTime,
         projectRef: project,
-        collectionID: collectionIDStatic,
         data: LightingProfileData.fromJson(data),
         creationTime: creationTime,
         maxResearchers: maxResearchers,
@@ -978,6 +979,20 @@ class AbsenceOfOrderTest extends Test<AbsenceOfOrderData>
   static const String collectionIDStatic = 'absence_of_order_tests';
   static const String displayName = 'Absence of Order Locator';
 
+  static final CollectionReference<AbsenceOfOrderTest> converterRef = _firestore
+      .collection(collectionIDStatic)
+      .withConverter<AbsenceOfOrderTest>(
+        fromFirestore: (snapshot, _) =>
+            AbsenceOfOrderTest.fromJson(snapshot.data()!),
+        toFirestore: (test, _) => test.toJson(),
+      );
+
+  @override
+  String get collectionID => collectionIDStatic;
+
+  @override
+  DocumentReference<Object?> get ref => converterRef.doc(id);
+
   @override
   final int testDuration;
 
@@ -991,7 +1006,6 @@ class AbsenceOfOrderTest extends Test<AbsenceOfOrderData>
     required super.id,
     required super.scheduledTime,
     required super.projectRef,
-    required super.collectionID,
     required super.data,
     required this.testDuration,
     super.creationTime,
@@ -1007,7 +1021,6 @@ class AbsenceOfOrderTest extends Test<AbsenceOfOrderData>
       required String id,
       required Timestamp scheduledTime,
       required DocumentReference projectRef,
-      required String collectionID,
       List? standingPoints,
       int? testDuration,
       int? intervalDuration,
@@ -1018,7 +1031,6 @@ class AbsenceOfOrderTest extends Test<AbsenceOfOrderData>
           id: id,
           scheduledTime: scheduledTime,
           projectRef: projectRef,
-          collectionID: collectionID,
           data: AbsenceOfOrderData.empty(),
           testDuration: testDuration ?? -1,
         );
@@ -1090,7 +1102,6 @@ class AbsenceOfOrderTest extends Test<AbsenceOfOrderData>
         id: id,
         scheduledTime: scheduledTime,
         projectRef: project,
-        collectionID: collectionIDStatic,
         data: AbsenceOfOrderData.fromJson(data),
         creationTime: creationTime,
         maxResearchers: maxResearchers,
@@ -1461,6 +1472,21 @@ class SpatialBoundariesTest extends Test<SpatialBoundariesData>
   static const String collectionIDStatic = 'spatial_boundaries_tests';
   static const String displayName = 'Spatial Boundaries';
 
+  static final CollectionReference<SpatialBoundariesTest> converterRef =
+      _firestore
+          .collection(collectionIDStatic)
+          .withConverter<SpatialBoundariesTest>(
+            fromFirestore: (snapshot, _) =>
+                SpatialBoundariesTest.fromJson(snapshot.data()!),
+            toFirestore: (test, _) => test.toJson(),
+          );
+
+  @override
+  String get collectionID => collectionIDStatic;
+
+  @override
+  DocumentReference<Object?> get ref => converterRef.doc(id);
+
   @override
   final int testDuration;
 
@@ -1469,7 +1495,6 @@ class SpatialBoundariesTest extends Test<SpatialBoundariesData>
     required super.id,
     required super.scheduledTime,
     required super.projectRef,
-    required super.collectionID,
     required super.data,
     required this.testDuration,
     super.creationTime,
@@ -1485,7 +1510,6 @@ class SpatialBoundariesTest extends Test<SpatialBoundariesData>
       required String id,
       required Timestamp scheduledTime,
       required DocumentReference projectRef,
-      required String collectionID,
       List? standingPoints,
       int? testDuration,
       int? intervalDuration,
@@ -1496,7 +1520,6 @@ class SpatialBoundariesTest extends Test<SpatialBoundariesData>
           id: id,
           scheduledTime: scheduledTime,
           projectRef: projectRef,
-          collectionID: collectionID,
           data: SpatialBoundariesData.empty(),
           testDuration: testDuration ?? -1,
         );
@@ -1562,7 +1585,6 @@ class SpatialBoundariesTest extends Test<SpatialBoundariesData>
         id: id,
         scheduledTime: scheduledTime,
         projectRef: project,
-        collectionID: collectionIDStatic,
         data: SpatialBoundariesData.fromJson(data),
         creationTime: creationTime,
         maxResearchers: maxResearchers,
@@ -1622,6 +1644,20 @@ class SectionCutterTest extends Test<Section> with JsonToString {
   static const String collectionIDStatic = 'section_cutter_tests';
   static const String displayName = 'Section Cutter';
 
+  static final CollectionReference<SectionCutterTest> converterRef = _firestore
+      .collection(collectionIDStatic)
+      .withConverter<SectionCutterTest>(
+        fromFirestore: (snapshot, _) =>
+            SectionCutterTest.fromJson(snapshot.data()!),
+        toFirestore: (test, _) => test.toJson(),
+      );
+
+  @override
+  String get collectionID => collectionIDStatic;
+
+  @override
+  DocumentReference<Object?> get ref => converterRef.doc(id);
+
   /// Line used for taking section. Standing point equivalent for this test.
   List<LatLng> linePoints;
 
@@ -1635,7 +1671,6 @@ class SectionCutterTest extends Test<Section> with JsonToString {
     required super.id,
     required super.scheduledTime,
     required super.projectRef,
-    required super.collectionID,
     required super.data,
     required this.linePoints,
     super.creationTime,
@@ -1651,7 +1686,6 @@ class SectionCutterTest extends Test<Section> with JsonToString {
       required String id,
       required Timestamp scheduledTime,
       required DocumentReference projectRef,
-      required String collectionID,
       List? standingPoints,
       int? testDuration,
       int? intervalDuration,
@@ -1662,7 +1696,6 @@ class SectionCutterTest extends Test<Section> with JsonToString {
           id: id,
           scheduledTime: scheduledTime,
           projectRef: projectRef,
-          collectionID: collectionID,
           data: Section.empty(),
           linePoints: (standingPoints as List<LatLng>?) ?? [],
         );
@@ -1730,7 +1763,6 @@ class SectionCutterTest extends Test<Section> with JsonToString {
         id: id,
         scheduledTime: scheduledTime,
         projectRef: project,
-        collectionID: collectionIDStatic,
         data: Section.fromJson(data),
         creationTime: creationTime,
         maxResearchers: maxResearchers,
@@ -2133,13 +2165,27 @@ class IdentifyingAccessTest extends Test<IdentifyingAccessData>
   static const String collectionIDStatic = 'identifying_access_tests';
   static const String displayName = 'Identifying Access';
 
+  static final CollectionReference<IdentifyingAccessTest> converterRef =
+      _firestore
+          .collection(collectionIDStatic)
+          .withConverter<IdentifyingAccessTest>(
+            fromFirestore: (snapshot, _) =>
+                IdentifyingAccessTest.fromJson(snapshot.data()!),
+            toFirestore: (test, _) => test.toJson(),
+          );
+
+  @override
+  String get collectionID => collectionIDStatic;
+
+  @override
+  DocumentReference<Object?> get ref => converterRef.doc(id);
+
   /// Creates a new [IdentifyingAccessTest] instance from the given arguments.
   IdentifyingAccessTest._({
     required super.title,
     required super.id,
     required super.scheduledTime,
     required super.projectRef,
-    required super.collectionID,
     required super.data,
     super.creationTime,
     super.maxResearchers,
@@ -2154,7 +2200,6 @@ class IdentifyingAccessTest extends Test<IdentifyingAccessData>
       required String id,
       required Timestamp scheduledTime,
       required DocumentReference projectRef,
-      required String collectionID,
       List? standingPoints,
       int? testDuration,
       int? intervalDuration,
@@ -2165,7 +2210,6 @@ class IdentifyingAccessTest extends Test<IdentifyingAccessData>
           id: id,
           scheduledTime: scheduledTime,
           projectRef: projectRef,
-          collectionID: collectionID,
           data: IdentifyingAccessData.empty(),
         );
     // Register for recreating a Identifying Access Test from Firestore
@@ -2228,7 +2272,6 @@ class IdentifyingAccessTest extends Test<IdentifyingAccessData>
         id: id,
         scheduledTime: scheduledTime,
         projectRef: project,
-        collectionID: collectionIDStatic,
         data: IdentifyingAccessData.fromJson(data),
         creationTime: creationTime,
         maxResearchers: maxResearchers,
@@ -2860,6 +2903,21 @@ class NaturePrevalenceTest extends Test<NaturePrevalenceData>
   static const String assetDirectoryPath =
       'assets/test_specific/nature_prevalence/';
 
+  static final CollectionReference<NaturePrevalenceTest> converterRef =
+      _firestore
+          .collection(collectionIDStatic)
+          .withConverter<NaturePrevalenceTest>(
+            fromFirestore: (snapshot, _) =>
+                NaturePrevalenceTest.fromJson(snapshot.data()!),
+            toFirestore: (test, _) => test.toJson(),
+          );
+
+  @override
+  String get collectionID => collectionIDStatic;
+
+  @override
+  DocumentReference<Object?> get ref => converterRef.doc(id);
+
   /// User defined test timer duration in seconds.
   @override
   final int testDuration;
@@ -2870,7 +2928,6 @@ class NaturePrevalenceTest extends Test<NaturePrevalenceData>
     required super.id,
     required super.scheduledTime,
     required super.projectRef,
-    required super.collectionID,
     required super.data,
     super.creationTime,
     super.maxResearchers,
@@ -2886,7 +2943,6 @@ class NaturePrevalenceTest extends Test<NaturePrevalenceData>
       required String id,
       required Timestamp scheduledTime,
       required DocumentReference projectRef,
-      required String collectionID,
       List? standingPoints,
       int? testDuration,
       int? intervalDuration,
@@ -2897,7 +2953,6 @@ class NaturePrevalenceTest extends Test<NaturePrevalenceData>
           id: id,
           scheduledTime: scheduledTime,
           projectRef: projectRef,
-          collectionID: collectionID,
           data: NaturePrevalenceData.empty(),
           testDuration: testDuration ?? -1,
         );
@@ -2967,7 +3022,6 @@ class NaturePrevalenceTest extends Test<NaturePrevalenceData>
         id: id,
         scheduledTime: scheduledTime,
         projectRef: project,
-        collectionID: collectionIDStatic,
         data: NaturePrevalenceData.fromJson(data),
         creationTime: creationTime,
         maxResearchers: maxResearchers,
@@ -3237,6 +3291,20 @@ class PeopleInPlaceTest extends Test<PeopleInPlaceData>
   static const String collectionIDStatic = 'people_in_place_tests';
   static const String displayName = 'People in Place';
 
+  static final CollectionReference<PeopleInPlaceTest> converterRef = _firestore
+      .collection(collectionIDStatic)
+      .withConverter<PeopleInPlaceTest>(
+        fromFirestore: (snapshot, _) =>
+            PeopleInPlaceTest.fromJson(snapshot.data()!),
+        toFirestore: (test, _) => test.toJson(),
+      );
+
+  @override
+  String get collectionID => collectionIDStatic;
+
+  @override
+  DocumentReference<Object?> get ref => converterRef.doc(id);
+
   @override
   final List<StandingPoint> standingPoints;
   @override
@@ -3247,7 +3315,6 @@ class PeopleInPlaceTest extends Test<PeopleInPlaceData>
     required super.id,
     required super.scheduledTime,
     required super.projectRef,
-    required super.collectionID,
     required super.data,
     required this.standingPoints,
     super.creationTime,
@@ -3262,7 +3329,6 @@ class PeopleInPlaceTest extends Test<PeopleInPlaceData>
       required String id,
       required Timestamp scheduledTime,
       required DocumentReference projectRef,
-      required String collectionID,
       List? standingPoints,
       int? testDuration,
       int? intervalDuration,
@@ -3273,7 +3339,6 @@ class PeopleInPlaceTest extends Test<PeopleInPlaceData>
           id: id,
           scheduledTime: scheduledTime,
           projectRef: projectRef,
-          collectionID: collectionID,
           data: PeopleInPlaceData.empty(),
           standingPoints: (standingPoints as List<StandingPoint>?) ?? [],
           testDuration: testDuration ?? -1,
@@ -3339,7 +3404,6 @@ class PeopleInPlaceTest extends Test<PeopleInPlaceData>
         id: id,
         scheduledTime: scheduledTime,
         projectRef: project,
-        collectionID: collectionIDStatic,
         data: PeopleInPlaceData.fromJson(data),
         creationTime: creationTime,
         maxResearchers: maxResearchers,
@@ -3534,6 +3598,20 @@ class PeopleInMotionTest extends Test<PeopleInMotionData>
   static const String collectionIDStatic = 'people_in_motion_tests';
   static const String displayName = 'People in Motion';
 
+  static final CollectionReference<PeopleInMotionTest> converterRef = _firestore
+      .collection(collectionIDStatic)
+      .withConverter<PeopleInMotionTest>(
+        fromFirestore: (snapshot, _) =>
+            PeopleInMotionTest.fromJson(snapshot.data()!),
+        toFirestore: (test, _) => test.toJson(),
+      );
+
+  @override
+  String get collectionID => collectionIDStatic;
+
+  @override
+  DocumentReference<Object?> get ref => converterRef.doc(id);
+
   @override
   final List<StandingPoint> standingPoints;
 
@@ -3547,7 +3625,6 @@ class PeopleInMotionTest extends Test<PeopleInMotionData>
     required super.id,
     required super.scheduledTime,
     required super.projectRef,
-    required super.collectionID,
     required super.data,
     required this.standingPoints,
     required this.testDuration,
@@ -3564,7 +3641,6 @@ class PeopleInMotionTest extends Test<PeopleInMotionData>
       required String id,
       required Timestamp scheduledTime,
       required DocumentReference projectRef,
-      required String collectionID,
       List? standingPoints,
       int? testDuration,
       int? intervalDuration,
@@ -3575,7 +3651,6 @@ class PeopleInMotionTest extends Test<PeopleInMotionData>
           id: id,
           scheduledTime: scheduledTime,
           projectRef: projectRef,
-          collectionID: collectionID,
           data: PeopleInMotionData.empty(),
           standingPoints: (standingPoints as List<StandingPoint>?) ?? [],
           testDuration: testDuration ?? -1,
@@ -3646,7 +3721,6 @@ class PeopleInMotionTest extends Test<PeopleInMotionData>
         id: id,
         scheduledTime: scheduledTime,
         projectRef: project,
-        collectionID: collectionIDStatic,
         data: PeopleInMotionData.fromJson(data),
         creationTime: creationTime,
         maxResearchers: maxResearchers,
@@ -3804,6 +3878,21 @@ class AcousticProfileTest extends Test<AcousticProfileData>
   static const String collectionIDStatic = 'acoustic_profile_tests';
   static const String displayName = 'Acoustic Profile';
 
+  static final CollectionReference<AcousticProfileTest> converterRef =
+      _firestore
+          .collection(collectionIDStatic)
+          .withConverter<AcousticProfileTest>(
+            fromFirestore: (snapshot, _) =>
+                AcousticProfileTest.fromJson(snapshot.data()!),
+            toFirestore: (test, _) => test.toJson(),
+          );
+
+  @override
+  String get collectionID => collectionIDStatic;
+
+  @override
+  DocumentReference<Object?> get ref => converterRef.doc(id);
+
   @override
   final List<StandingPoint> standingPoints;
   @override
@@ -3817,7 +3906,6 @@ class AcousticProfileTest extends Test<AcousticProfileData>
     required super.id,
     required super.scheduledTime,
     required super.projectRef,
-    required super.collectionID,
     required super.data,
     required this.standingPoints,
     required this.intervalDuration,
@@ -3834,7 +3922,6 @@ class AcousticProfileTest extends Test<AcousticProfileData>
       required String id,
       required Timestamp scheduledTime,
       required DocumentReference projectRef,
-      required String collectionID,
       List? standingPoints,
       int? testDuration,
       int? intervalDuration,
@@ -3845,7 +3932,6 @@ class AcousticProfileTest extends Test<AcousticProfileData>
           id: id,
           scheduledTime: scheduledTime,
           projectRef: projectRef,
-          collectionID: collectionID,
           data: AcousticProfileData.empty(),
           standingPoints: (standingPoints as List<StandingPoint>?) ?? [],
           intervalDuration: intervalDuration ?? -1,
@@ -3913,7 +3999,6 @@ class AcousticProfileTest extends Test<AcousticProfileData>
         id: id,
         scheduledTime: scheduledTime,
         projectRef: project,
-        collectionID: collectionIDStatic,
         data: AcousticProfileData.fromJson(data),
         creationTime: creationTime,
         maxResearchers: maxResearchers.toInt(),
