@@ -2,7 +2,6 @@ import 'dart:io';
 
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
-import 'package:firebase_storage/firebase_storage.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
@@ -58,56 +57,11 @@ class _ProjectDetailsPageState extends State<ProjectDetailsPage> {
     _coverImageUrl = widget.activeProject.coverImageUrl;
   }
 
-  // TODO reimplement this in MenuBar
-  Future<void> _uploadCoverImage(File imageFile) async {
-    try {
-      final storageRef = FirebaseStorage.instance.ref();
-
-      final coverImageRef =
-          storageRef.child('project_covers/${widget.activeProject.id}.jpg');
-      await coverImageRef.putFile(imageFile);
-      final downloadUrl = await coverImageRef.getDownloadURL();
-
-      await FirebaseFirestore.instance
-          .collection('projects')
-          .doc(widget.activeProject.id)
-          .update({
-        'coverImageUrl': downloadUrl,
-      });
-      setState(() {
-        widget.activeProject.coverImageUrl = downloadUrl;
-        _coverImageUrl = downloadUrl;
-      });
-
-      print('Cover image uploaded successfully: $downloadUrl');
-    } catch (e) {
-      print('Error uploading cover image: $e');
-    }
-  }
-
   void _loadTests() async {
     await widget.activeProject.loadAllTestInfo();
     setState(() {
       _isLoading = false;
     });
-  }
-
-  Widget _deleteProjectDialog() {
-    return GenericConfirmationDialog(
-      titleText: 'Delete Project?',
-      contentText:
-          'This will delete the selected project and all the tests within it. '
-          'This cannot be undone. '
-          'Are you absolutely certain you want to delete this project?',
-      declineText: 'No, go back',
-      confirmText: 'Yes, delete it',
-      onConfirm: () async {
-        await widget.activeProject.delete();
-
-        if (!mounted) return;
-        Navigator.pop(context, true);
-      },
-    );
   }
 
   @override
@@ -146,19 +100,23 @@ class _ProjectDetailsPageState extends State<ProjectDetailsPage> {
                 ),
               ),
             ),
-            actionsPadding: EdgeInsets.only(right: 12),
+            actionsPadding: const EdgeInsets.only(right: 12),
             // 'Edit Options' button overlaid on right side of cover photo
             actions: [
               _SettingsMenuButton(
-                changePhotoCallback: () async {
+                changePhoto: () async {
                   final XFile? pickedFile = await ImagePicker()
                       .pickImage(source: ImageSource.gallery);
                   if (pickedFile != null) {
                     final File imageFile = File(pickedFile.path);
-                    _uploadCoverImage(imageFile);
+                    final coverImageUrl =
+                        await widget.activeProject.addCoverImage(imageFile);
+                    setState(() {
+                      _coverImageUrl = coverImageUrl;
+                    });
                   }
                 },
-                editNameCallback: () async {
+                editName: () async {
                   final newName = await showModalBottomSheet<String>(
                     useSafeArea: true,
                     backgroundColor: Colors.transparent,
@@ -173,15 +131,13 @@ class _ProjectDetailsPageState extends State<ProjectDetailsPage> {
                       newName == widget.activeProject.title) {
                     return;
                   }
-                  _firestore
-                      .collection('projects')
-                      .doc(widget.activeProject.id)
-                      .update({'title': newName});
+
                   setState(() {
                     widget.activeProject.title = newName;
                   });
+                  widget.activeProject.update();
                 },
-                editDescriptionCallback: () async {
+                editDescription: () async {
                   final newDescription = await showModalBottomSheet(
                     useSafeArea: true,
                     backgroundColor: Colors.transparent,
@@ -196,18 +152,16 @@ class _ProjectDetailsPageState extends State<ProjectDetailsPage> {
                       newDescription == widget.activeProject.description) {
                     return;
                   }
-                  _firestore
-                      .collection('projects')
-                      .doc(widget.activeProject.id)
-                      .update({'description': newDescription});
+
                   setState(() {
                     widget.activeProject.description = newDescription;
                   });
+                  widget.activeProject.update();
                 },
-                deleteCallback: () async {
-                  final didDelete = await showDialog<bool>(
+                delete: () async {
+                  final didDelete = await showDeleteProjectDialog(
                     context: context,
-                    builder: (context) => _deleteProjectDialog(),
+                    project: widget.activeProject,
                   );
 
                   if (!context.mounted) return;
@@ -463,18 +417,18 @@ class _ProjectDetailsPageState extends State<ProjectDetailsPage> {
 //  style with different label names and callbacks and whatnot, probably
 //  copy MenuBar flutter.dev example somewhat
 class _SettingsMenuButton extends StatelessWidget {
-  final VoidCallback? changePhotoCallback;
-  final VoidCallback? editNameCallback;
-  final VoidCallback? editDescriptionCallback;
+  final VoidCallback? changePhoto;
+  final VoidCallback? editName;
+  final VoidCallback? editDescription;
   // final VoidCallback? archiveCallback;
-  final VoidCallback? deleteCallback;
+  final VoidCallback? delete;
 
   const _SettingsMenuButton({
-    this.changePhotoCallback,
-    this.editNameCallback,
-    this.editDescriptionCallback,
+    this.changePhoto,
+    this.editName,
+    this.editDescription,
     // this.archiveCallback,
-    this.deleteCallback,
+    this.delete,
   });
 
   static const ButtonStyle paddingButtonStyle = ButtonStyle(
@@ -519,7 +473,7 @@ class _SettingsMenuButton extends StatelessWidget {
                 Icons.palette_outlined,
                 color: Colors.white,
               ),
-              onPressed: changePhotoCallback,
+              onPressed: changePhoto,
               child: Text(
                 'Change Project Photo',
                 style: whiteText,
@@ -532,7 +486,7 @@ class _SettingsMenuButton extends StatelessWidget {
                 Icons.edit_outlined,
                 color: Colors.white,
               ),
-              onPressed: editNameCallback,
+              onPressed: editName,
               child: Text(
                 'Edit Project Name',
                 style: whiteText,
@@ -545,7 +499,7 @@ class _SettingsMenuButton extends StatelessWidget {
                 Icons.description,
                 color: Colors.white,
               ),
-              onPressed: editDescriptionCallback,
+              onPressed: editDescription,
               child: Text(
                 'Edit Project Description',
                 style: whiteText,
@@ -569,7 +523,7 @@ class _SettingsMenuButton extends StatelessWidget {
               style: paddingButtonStyle,
               trailingIcon:
                   Icon(Icons.delete_outlined, color: Color(0xFFFD6265)),
-              onPressed: deleteCallback,
+              onPressed: delete,
               child: Text(
                 'Delete Project',
                 style: TextStyle(color: Color(0xFFFD6265)),

@@ -9,23 +9,27 @@ import 'google_maps_functions.dart';
 
 /// Bar Indicator for the Sliding Up Panels (Edit Project, Results)
 class BarIndicator extends StatelessWidget {
-  final Color? color;
+  final Color color;
+  final double topPadding;
+  final double bottomPadding;
 
   const BarIndicator({
     super.key,
-    this.color,
+    this.color = Colors.white60,
+    this.topPadding = 8,
+    this.bottomPadding = 8,
   });
 
   @override
   Widget build(BuildContext context) {
     return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 8),
+      padding: EdgeInsets.only(top: topPadding, bottom: bottomPadding),
       child: Center(
         child: Container(
           width: 40,
           height: 5,
           decoration: BoxDecoration(
-            color: color ?? Colors.white60,
+            color: color,
             borderRadius: const BorderRadius.all(Radius.circular(10)),
           ),
         ),
@@ -233,8 +237,9 @@ class PhotoUpload extends StatelessWidget {
   final double width;
   final double height;
   final IconData icon;
-  final bool circular;
   final GestureTapCallback onTap;
+  final bool circular;
+  final Color backgroundColor;
 
   const PhotoUpload({
     super.key,
@@ -243,6 +248,7 @@ class PhotoUpload extends StatelessWidget {
     required this.icon,
     required this.onTap,
     required this.circular,
+    this.backgroundColor = const Color(0x2A000000),
   });
 
   @override
@@ -254,12 +260,12 @@ class PhotoUpload extends StatelessWidget {
         height: height,
         decoration: circular
             ? BoxDecoration(
-                color: const Color(0x2A000000),
+                color: backgroundColor,
                 shape: BoxShape.circle,
                 border: Border.all(color: const Color(0xFF6A89B8)),
               )
             : BoxDecoration(
-                color: const Color(0x2A000000),
+                color: backgroundColor,
                 shape: BoxShape.rectangle,
                 borderRadius: const BorderRadius.all(Radius.circular(10)),
                 border: Border.all(color: const Color(0xFF6A89B8)),
@@ -849,6 +855,31 @@ class GenericConfirmationDialog extends StatelessWidget {
       ],
     );
   }
+}
+
+// Reused implementation(s) of GenericConfirmationDialog.
+Future<bool?> showDeleteProjectDialog({
+  required BuildContext context,
+  required Project project,
+}) async {
+  return await showDialog<bool>(
+    context: context,
+    builder: (context) => GenericConfirmationDialog(
+      titleText: 'Delete Project?',
+      contentText:
+          'This will delete the selected project and all the tests within it. '
+          'This cannot be undone. '
+          'Are you absolutely certain you want to delete this project?',
+      declineText: 'No, go back',
+      confirmText: 'Yes, delete it',
+      onConfirm: () async {
+        await project.delete();
+
+        if (!context.mounted) return;
+        Navigator.pop(context, true);
+      },
+    ),
+  );
 }
 
 class DirectionsButton extends StatelessWidget {

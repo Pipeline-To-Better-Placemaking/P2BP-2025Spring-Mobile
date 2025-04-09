@@ -65,6 +65,7 @@ class _MiniMapState extends State<MiniMap> {
                 zoom: _zoom,
               ),
               polygons: _polygons,
+              mapType: MapType.satellite,
               liteModeEnabled: true,
               myLocationButtonEnabled: false,
 

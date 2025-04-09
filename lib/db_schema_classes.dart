@@ -4901,6 +4901,25 @@ class Project with JsonToString implements FirestoreDocument {
     }
   }
 
+  Future<String> addCoverImage(File imageFile) async {
+    try {
+      final coverImageRef =
+          FirebaseStorage.instance.ref('project_covers/$id.jpg');
+      await coverImageRef.putFile(imageFile);
+      final downloadUrl = await coverImageRef.getDownloadURL();
+
+      coverImageUrl = downloadUrl;
+      await update();
+
+      print('Cover image uploaded successfully: $downloadUrl');
+      return downloadUrl;
+    } catch (e, s) {
+      print('Exception: $e');
+      print('Stacktrace: $s');
+      throw Exception('Failed to add cover image because of exception: $e');
+    }
+  }
+
   Future<Team> loadTeamInfo() async {
     try {
       final teamDoc = await Team.converterRef.doc(teamRef.id).get();

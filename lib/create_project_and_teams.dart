@@ -163,9 +163,12 @@ class _CreateProjectWidgetState extends State<CreateProjectWidget> {
                             right: 8,
                             top: 8,
                             child: Container(
+                              width: 48,
+                              height: 48,
                               decoration: BoxDecoration(
-                                color: Colors.white.withValues(alpha: 0.8),
+                                color: Colors.white,
                                 shape: BoxShape.circle,
+                                border: Border.all(width: 1.5),
                               ),
                               child: IconButton(
                                 icon: Icon(Icons.edit, color: Colors.grey),
