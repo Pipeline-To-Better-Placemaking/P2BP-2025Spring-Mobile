@@ -16,25 +16,25 @@ final FirebaseFirestore _firestore = FirebaseFirestore.instance;
 /// Contains error handling for every case starting from uid being null.
 /// This will always either return the successfully found name or throw
 /// an exception, so running this in a try-catch is strongly encouraged.
-Future<String> getUserFullName(String? uid) async {
-  if (uid == null) {
-    throw Exception('no-user-id-found');
-  }
-
-  final userDoc =
-      await FirebaseFirestore.instance.collection('users').doc(uid).get();
-
-  if (userDoc.exists) {
-    String? fullName = userDoc['fullName'];
-    if (fullName == null || fullName.isEmpty) {
-      throw Exception('user-has-no-name');
-    } else {
-      return fullName;
-    }
-  } else {
-    throw Exception('user-document-does-not-exist');
-  }
-}
+// Future<String> getUserFullName(String? uid) async {
+//   if (uid == null) {
+//     throw Exception('no-user-id-found');
+//   }
+//
+//   final userDoc =
+//       await FirebaseFirestore.instance.collection('users').doc(uid).get();
+//
+//   if (userDoc.exists) {
+//     String? fullName = userDoc['fullName'];
+//     if (fullName == null || fullName.isEmpty) {
+//       throw Exception('user-has-no-name');
+//     } else {
+//       return fullName;
+//     }
+//   } else {
+//     throw Exception('user-document-does-not-exist');
+//   }
+// }
 
 /// Saves team after team creation in create_project_and_teams.dart. Takes in a
 /// list of members to invite and the name of the team. User who created the
@@ -306,62 +306,62 @@ Future<String> getUserFullName(String? uid) async {
 //   return true;
 // }
 
-Future<bool> deleteTest(Test test) async {
-  try {
-    final DocumentReference<Map<String, dynamic>> testRef =
-        _firestore.collection(test.collectionID).doc(test.id);
-
-    // Delete reference to this test from the project it resides in
-    await test.projectRef.update({
-      'tests': FieldValue.arrayRemove([testRef])
-    });
-
-    // Delete test
-    await testRef.delete();
-    print('Success in deleteTest! Deleted test: $test');
-  } catch (e, stacktrace) {
-    print('Exception deleting test: $e');
-    print('Stacktrace: $stacktrace');
-    return false;
-  }
-  return true;
-}
+// Future<bool> deleteTest(Test test) async {
+//   try {
+//     final DocumentReference<Map<String, dynamic>> testRef =
+//         _firestore.collection(test.collectionID).doc(test.id);
+//
+//     // Delete reference to this test from the project it resides in
+//     await test.projectRef.update({
+//       'tests': FieldValue.arrayRemove([testRef])
+//     });
+//
+//     // Delete test
+//     await testRef.delete();
+//     print('Success in deleteTest! Deleted test: $test');
+//   } catch (e, stacktrace) {
+//     print('Exception deleting test: $e');
+//     print('Stacktrace: $stacktrace');
+//     return false;
+//   }
+//   return true;
+// }
 
 /// Calling this function returns a future reference to the currently selected
 /// team. If retrieval throws an exception, then returns `null`. When
 /// implementing this function, check for `null` before using value.
-Future<DocumentReference?> getCurrentTeam() async {
-  final User? loggedInUser = FirebaseAuth.instance.currentUser;
-  if (loggedInUser == null) return null;
-  DocumentReference? teamRef;
-  final DocumentSnapshot<Map<String, dynamic>> userDoc;
-
-  try {
-    userDoc = await _firestore.collection('users').doc(loggedInUser.uid).get();
-    if (userDoc.exists && userDoc.data()!.containsKey('selectedTeam')) {
-      if (userDoc.data()!.containsKey('teams') &&
-          userDoc['teams'] is List &&
-          userDoc['teams'].contains(userDoc['selectedTeam'])) {
-        teamRef = userDoc['selectedTeam'];
-      } else if ((userDoc['teams'] as List).isEmpty) {
-        _firestore
-            .collection('users')
-            .doc(loggedInUser.uid)
-            .update({'selectedTeam': null});
-      } else {
-        _firestore
-            .collection('users')
-            .doc(loggedInUser.uid)
-            .update({'selectedTeam': userDoc['teams'].first});
-        teamRef = userDoc['teams'].first;
-      }
-    }
-  } catch (e) {
-    print("Exception trying to getCurrentTeam(): $e");
-    return null;
-  }
-  return teamRef;
-}
+// Future<DocumentReference?> getCurrentTeam() async {
+//   final User? loggedInUser = FirebaseAuth.instance.currentUser;
+//   if (loggedInUser == null) return null;
+//   DocumentReference? teamRef;
+//   final DocumentSnapshot<Map<String, dynamic>> userDoc;
+//
+//   try {
+//     userDoc = await _firestore.collection('users').doc(loggedInUser.uid).get();
+//     if (userDoc.exists && userDoc.data()!.containsKey('selectedTeam')) {
+//       if (userDoc.data()!.containsKey('teams') &&
+//           userDoc['teams'] is List &&
+//           userDoc['teams'].contains(userDoc['selectedTeam'])) {
+//         teamRef = userDoc['selectedTeam'];
+//       } else if ((userDoc['teams'] as List).isEmpty) {
+//         _firestore
+//             .collection('users')
+//             .doc(loggedInUser.uid)
+//             .update({'selectedTeam': null});
+//       } else {
+//         _firestore
+//             .collection('users')
+//             .doc(loggedInUser.uid)
+//             .update({'selectedTeam': userDoc['teams'].first});
+//         teamRef = userDoc['teams'].first;
+//       }
+//     }
+//   } catch (e) {
+//     print("Exception trying to getCurrentTeam(): $e");
+//     return null;
+//   }
+//   return teamRef;
+// }
 
 /// Takes a team reference and returns a list of projects belonging to that
 /// team. If the team contains no projects, returns an empty list. Otherwise

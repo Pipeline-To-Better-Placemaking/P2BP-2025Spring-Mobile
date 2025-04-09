@@ -353,6 +353,11 @@ abstract class Test<T> with JsonToString implements FirestoreDocument {
         'No registered saveToFirestore function for test type: $runtimeType');
   }
 
+  /// Returns 2-letter initials for given test type if they are registered.
+  String getInitials() {
+    return _testInitialsMap[runtimeType] ?? '';
+  }
+
   /// Returns whether [Test] subclass with given [collectionID] is
   /// registered as a standing points test.
   static bool isStandingPointTest(String? collectionID) {
@@ -371,9 +376,19 @@ abstract class Test<T> with JsonToString implements FirestoreDocument {
     return _intervalTimerTestCollectionIDs.contains(collectionID);
   }
 
-  /// Returns 2-letter initials for given test type if they are registered.
-  String getInitials() {
-    return _testInitialsMap[runtimeType] ?? '';
+  Future<Test?> get(DocumentReference ref) async {
+    try {
+      final doc = await ref.get();
+      if (doc.exists && doc.data()! is Map<String, Object?>) {
+        return recreateFromDoc(doc as DocumentSnapshot<Map<String, Object?>>);
+      } else {
+        return null;
+      }
+    } catch (e, s) {
+      print('Exception: $e');
+      print('Stacktrace: $s');
+      throw Exception('Failed to get test because of exception: $e');
+    }
   }
 
   @override
