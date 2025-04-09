@@ -196,7 +196,7 @@ class _SignUpFormState extends State<SignUpForm> {
         final String fullName = _fullNameController.text.trim();
         final String email = _emailController.text.trim();
 
-        await Member.createNewUser(fullName, email, _passwordController.text);
+        await Member.createNew(fullName, email, _passwordController.text);
 
         if (!mounted) return;
         ScaffoldMessenger.of(context).showSnackBar(

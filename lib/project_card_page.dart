@@ -240,9 +240,13 @@ class _ProjectCardPageState extends State<ProjectCardPage> {
                           physics: AlwaysScrollableScrollPhysics(),
                           child: SizedBox(
                             height: MediaQuery.sizeOf(context).height * 2 / 3,
-                            child: Center(
-                              child: Text('You have no projects! Join a team '
-                                  'or create a project first.'),
+                            child: Align(
+                              alignment: Alignment(0, -0.3),
+                              child: Text(
+                                'You have no projects! Join a team '
+                                'or create a project first.',
+                                textAlign: TextAlign.center,
+                              ),
                             ),
                           ),
                         ),
@@ -254,163 +258,6 @@ class _ProjectCardPageState extends State<ProjectCardPage> {
       ),
     );
   }
-
-  // Widget buildProjectCard({
-  //   required BuildContext context,
-  //   required String bannerImage,
-  //   required Project project,
-  //   required String teamName,
-  //   required int index,
-  // }) {
-  //   return Card(
-  //     elevation: 5,
-  //     shape: RoundedRectangleBorder(
-  //         borderRadius:
-  //             BorderRadius.circular(12) // Match the container's corner radius
-  //         ),
-  //     child: InkWell(
-  //       onTap: () async {
-  //         await Navigator.push(
-  //           context,
-  //           MaterialPageRoute(
-  //             builder: (context) => ProjectDetailsPage(activeProject: project),
-  //           ),
-  //         );
-  //
-  //         // This might be really costly to do every time but not sure how else
-  //         // to guarantee projects update after renaming or otherwise.
-  //         _populateProjects();
-  //       },
-  //       child: Container(
-  //         decoration: BoxDecoration(
-  //           gradient: const LinearGradient(
-  //             colors: [Color(0xFF3874CB), Color(0xFF183769)],
-  //             begin: Alignment.topCenter,
-  //             end: Alignment.bottomCenter,
-  //           ),
-  //           borderRadius: BorderRadius.circular(12),
-  //         ),
-  //         child: Column(
-  //           crossAxisAlignment: CrossAxisAlignment.start,
-  //           children: [
-  //             // Banner image at the top
-  //             ClipRRect(
-  //               borderRadius: const BorderRadius.only(
-  //                 topLeft: Radius.circular(12),
-  //                 topRight: Radius.circular(12),
-  //               ),
-  //               child: Image.asset(
-  //                 bannerImage,
-  //                 width: double.infinity,
-  //                 height: 150,
-  //                 fit: BoxFit.cover,
-  //               ),
-  //             ),
-  //             // Project details section
-  //             Padding(
-  //               padding: const EdgeInsets.all(10),
-  //               child: Column(
-  //                 crossAxisAlignment: CrossAxisAlignment.start,
-  //                 children: [
-  //                   // Project name
-  //                   Text(
-  //                     project.title,
-  //                     style: const TextStyle(
-  //                       fontSize: 17,
-  //                       fontWeight: FontWeight.bold,
-  //                       color: Color(0xFFFFCC00),
-  //                     ),
-  //                   ),
-  //                   const SizedBox(height: 5),
-  //                   // Team name
-  //                   Text(
-  //                     teamName,
-  //                     style: const TextStyle(
-  //                       fontSize: 12,
-  //                       fontWeight: FontWeight.bold,
-  //                       color: Color(0xFFFFCC00),
-  //                     ),
-  //                   ),
-  //                 ],
-  //               ),
-  //             ),
-  //             // Row with Edit and Results buttons in the bottom right corner
-  //             Padding(
-  //               padding: const EdgeInsets.all(10),
-  //               child: Row(
-  //                 mainAxisAlignment: MainAxisAlignment.end,
-  //                 children: [
-  //                   // Edit Info button
-  //                   OutlinedButton(
-  //                     onPressed: () async {
-  //                       // Handle navigation to Edit menu
-  //                       final updated = await showModalBottomSheet<String>(
-  //                         context: context,
-  //                         isScrollControlled: true,
-  //                         useSafeArea: true,
-  //                         builder: (context) =>
-  //                             EditProjectForm(activeProject: project),
-  //                       );
-  //
-  //                       if (updated != null) {
-  //                         if (updated == 'deleted') {
-  //                           await _populateProjects();
-  //                         } else if (updated == 'altered') {
-  //                           setState(() {
-  //                             // Update if something was changed in EditProject
-  //                           });
-  //                         }
-  //                       }
-  //                     },
-  //                     style: OutlinedButton.styleFrom(
-  //                       side: const BorderSide(
-  //                         color: Color(0xFFFFCC00),
-  //                         width: 2.0,
-  //                       ),
-  //                       foregroundColor: const Color(0xFFFFCC00),
-  //                       shape: RoundedRectangleBorder(
-  //                         borderRadius: BorderRadius.circular(8),
-  //                       ),
-  //                     ),
-  //                     child: const Text(
-  //                       'Edit Info',
-  //                       style: TextStyle(fontSize: 12),
-  //                     ),
-  //                   ),
-  //                   const SizedBox(width: 10),
-  //                   ElevatedButton(
-  //                     onPressed: () {
-  //                       Navigator.push(
-  //                         context,
-  //                         MaterialPageRoute(
-  //                           builder: (context) =>
-  //                               PdfReportPage(activeProject: project),
-  //                         ),
-  //                       );
-  //                     },
-  //                     style: ElevatedButton.styleFrom(
-  //                       backgroundColor: const Color(0xFFFFCC00),
-  //                       shape: RoundedRectangleBorder(
-  //                         borderRadius: BorderRadius.circular(8),
-  //                       ),
-  //                     ),
-  //                     child: const Text(
-  //                       'Results',
-  //                       style: TextStyle(
-  //                         fontSize: 12,
-  //                         color: Color(0xFF1D4076),
-  //                       ),
-  //                     ),
-  //                   ),
-  //                 ],
-  //               ),
-  //             ),
-  //           ],
-  //         ),
-  //       ),
-  //     ),
-  //   );
-  // }
 }
 
 class ProjectCard extends StatelessWidget {

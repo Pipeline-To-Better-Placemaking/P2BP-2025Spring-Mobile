@@ -286,6 +286,7 @@ class _TeamSettingsPageState extends State<TeamSettingsPage> {
                             isScrollControlled: true,
                             context: context,
                             builder: (context) => CreateProjectForm(
+                              member: widget.member,
                               activeTeam: widget.activeTeam,
                             ),
                           );

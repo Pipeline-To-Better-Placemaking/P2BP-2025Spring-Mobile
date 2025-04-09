@@ -1,4 +1,3 @@
-import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:p2bp_2025spring_mobile/db_schema_classes.dart';
@@ -50,13 +49,7 @@ class _EditProjectFormState extends State<EditProjectForm> {
       widget.activeProject.title = nameController.text;
       widget.activeProject.description = descriptionController.text;
 
-      FirebaseFirestore.instance
-          .collection('projects')
-          .doc(widget.activeProject.id)
-          .update({
-        'title': widget.activeProject.title,
-        'description': widget.activeProject.description,
-      });
+      widget.activeProject.update();
 
       if (!mounted) return;
       Navigator.pop(context, 'altered');
@@ -125,6 +118,7 @@ class _EditProjectFormState extends State<EditProjectForm> {
                           ),
                         ),
                         // Add photo button
+                        // TODO add cover photo upload functionality
                         Expanded(
                           flex: 1,
                           child: Column(

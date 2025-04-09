@@ -4062,7 +4062,7 @@ class Member with JsonToString implements FirestoreDocument {
   String get collectionID => collectionIDStatic;
 
   @override
-  DocumentReference get ref => converterRef.doc(id); // this is so cool?!?!
+  DocumentReference<Member> get ref => converterRef.doc(id);
 
   final String id;
   String fullName = '';
@@ -4166,7 +4166,7 @@ class Member with JsonToString implements FirestoreDocument {
   /// This should only be called after a [User] has been created with
   /// `email` and `password`, and that User has had its profile updated
   /// with a `displayName`.
-  static Future<Member> createNewUser(
+  static Future<Member> createNew(
       String fullName, String email, String password) async {
     try {
       // Create user with email and password.
@@ -4362,7 +4362,7 @@ class Team with JsonToString implements FirestoreDocument {
   String get collectionID => collectionIDStatic;
 
   @override
-  DocumentReference get ref => converterRef.doc(id);
+  DocumentReference<Team> get ref => converterRef.doc(id);
 
   final String id;
   String title = '';
@@ -4482,11 +4482,10 @@ class Team with JsonToString implements FirestoreDocument {
       final String teamID = Team.converterRef.doc().id;
 
       // Make memberRefMap with owner in place and other roles as empty list.
-      final ownerRef = Member.converterRef.doc(teamOwner.id);
       final RoleMap<DocumentReference> memberRefMap = {
         for (final role in GroupRole.values) role: [],
       };
-      memberRefMap[GroupRole.owner]!.add(ownerRef);
+      memberRefMap[GroupRole.owner]!.add(teamOwner.ref);
 
       // Make memberMap with owner because we can.
       final RoleMap<Member> memberMap = {
@@ -4501,13 +4500,13 @@ class Team with JsonToString implements FirestoreDocument {
         memberRefMap: memberRefMap,
         memberMap: memberMap,
       );
-      final teamRef = Team.converterRef.doc(team.id);
+      final teamRef = team.ref;
 
       // Update Firestore with new team, add reference to new team to owner's
       // teams list, and send invites to all invited users.
       await _firestore.runTransaction((transaction) async {
-        await Team.converterRef.doc(team.id).set(team);
-        await ownerRef.update({
+        await teamRef.set(team);
+        await teamOwner.ref.update({
           'teams': FieldValue.arrayUnion([teamRef]),
         });
         for (final member in inviteList) {
@@ -4676,7 +4675,7 @@ class Project with JsonToString implements FirestoreDocument {
   String get collectionID => collectionIDStatic;
 
   @override
-  DocumentReference get ref => converterRef.doc(id);
+  DocumentReference<Project> get ref => converterRef.doc(id);
 
   final String id;
   String title = '';
@@ -4813,9 +4812,11 @@ class Project with JsonToString implements FirestoreDocument {
         }
 
         // Delete cover photo from storage if present.
-        final storageRef = FirebaseStorage.instance.ref();
-        final coverImageRef = storageRef.child('project_covers/$id.jpg');
-        await coverImageRef.delete();
+        if (coverImageUrl.isNotEmpty) {
+          final storageRef = FirebaseStorage.instance.ref();
+          final coverImageRef = storageRef.child('project_covers/$id.jpg');
+          await coverImageRef.delete();
+        }
 
         // Delete this project.
         await ref.delete();
@@ -4837,13 +4838,36 @@ class Project with JsonToString implements FirestoreDocument {
     required String title,
     required String description,
     required String address,
+    required Team team,
+    required Member owner,
     required Polygon polygon,
-    required double polygonArea,
     required List<StandingPoint> standingPoints,
     File? coverImage,
   }) async {
+    String coverImageUrl = '';
+
     try {
       final String projectID = Project.converterRef.doc().id;
+
+      // Make memberRefMap with only elevated roles. Only owner for now.
+      final RoleMap<DocumentReference> memberRefMap = {
+        for (final role in elevatedRoles) role: [],
+      };
+      memberRefMap[GroupRole.owner]!.add(owner.ref);
+
+      // Make memberMap too because we can.
+      final RoleMap<Member> memberMap = {
+        for (final role in elevatedRoles) role: [owner],
+      };
+      memberMap[GroupRole.owner]!.add(owner);
+
+      // Upload and get link for cover image.
+      if (coverImage != null) {
+        final storageRef = FirebaseStorage.instance.ref();
+        final coverImageRef = storageRef.child('project_covers/$projectID.jpg');
+        await coverImageRef.putFile(coverImage);
+        coverImageUrl = await coverImageRef.getDownloadURL();
+      }
 
       // Construct Project.
       final Project project = Project(
@@ -4851,11 +4875,25 @@ class Project with JsonToString implements FirestoreDocument {
         title: title,
         description: description,
         address: address,
-        teamRef: teamRef,
+        teamRef: team.ref,
         memberRefMap: memberRefMap,
         polygon: polygon,
         standingPoints: standingPoints,
+        coverImageUrl: coverImageUrl,
       );
+
+      // Add the project and update the team's projects list in Firestore.
+      await _firestore.runTransaction((transaction) async {
+        await project.ref.set(project);
+        await team.ref.update({
+          'projects': FieldValue.arrayUnion([project.ref]),
+        });
+      });
+
+      team.projectRefs.add(project.ref);
+      team.projects ??= [];
+      team.projects!.add(project);
+      return project;
     } catch (e, s) {
       print('Exception: $e');
       print('Stacktrace: $s');

@@ -6,9 +6,14 @@ import 'package:p2bp_2025spring_mobile/widgets.dart';
 import 'db_schema_classes.dart';
 
 class CreateProjectForm extends StatefulWidget {
+  final Member member;
   final Team activeTeam;
 
-  const CreateProjectForm({super.key, required this.activeTeam});
+  const CreateProjectForm({
+    super.key,
+    required this.member,
+    required this.activeTeam,
+  });
 
   @override
   State<CreateProjectForm> createState() => _CreateProjectFormState();
@@ -165,10 +170,13 @@ class _CreateProjectFormState extends State<CreateProjectForm> {
                     onPressed: () {
                       if (!_formKey.currentState!.validate()) return;
 
+                      // TODO add cover image uploading on project creation here
                       Navigator.push(
                         context,
                         MaterialPageRoute(
                           builder: (context) => ProjectMapCreation(
+                            member: widget.member,
+                            team: widget.activeTeam,
                             title: _titleController.text,
                             description: _descriptionController.text,
                             address: _addressController.text,

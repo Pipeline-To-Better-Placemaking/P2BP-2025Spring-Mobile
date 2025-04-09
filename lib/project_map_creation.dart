@@ -11,8 +11,11 @@ import 'package:p2bp_2025spring_mobile/widgets.dart';
 
 import 'db_schema_classes.dart';
 import 'google_maps_functions.dart';
+import 'home_screen.dart';
 
 class ProjectMapCreation extends StatefulWidget {
+  final Member member;
+  final Team team;
   final String title;
   final String description;
   final String address;
@@ -20,6 +23,8 @@ class ProjectMapCreation extends StatefulWidget {
 
   const ProjectMapCreation({
     super.key,
+    required this.member,
+    required this.team,
     required this.title,
     required this.description,
     required this.address,
@@ -382,7 +387,7 @@ class _ProjectMapCreationState extends State<ProjectMapCreation> {
                   SafeArea(
                     child: _outsidePoint || _deleteMode
                         ? TestErrorText(
-                            padding: EdgeInsets.fromLTRB(60, 0, 50, 60),
+                            padding: EdgeInsets.fromLTRB(50, 0, 50, 60),
                             text: _errorText,
                           )
                         : SizedBox(),
@@ -399,22 +404,26 @@ class _ProjectMapCreationState extends State<ProjectMapCreation> {
         _isLoading = true;
       });
 
-      // await saveProject( TODO fix
-      //   projectTitle: widget.title,
-      //   description: widget.description,
-      //   address: widget.address,
-      //   polygonPoints: _polygons.first.points,
-      //   polygonArea: _polygons.first.getAreaInSquareFeet(),
-      //   standingPoints: _standingPoints,
-      //   coverImage: widget.coverImage,
-      // );
-      // if (!context.mounted) return;
-      //
-      // Navigator.pushAndRemoveUntil(
-      //   context,
-      //   MaterialPageRoute(builder: (context) => HomeScreen()),
-      //   (Route route) => false,
-      // );
+      await Project.createNew(
+        title: widget.title,
+        description: widget.description,
+        address: widget.address,
+        team: widget.team,
+        owner: widget.member,
+        polygon: _polygons.first,
+        standingPoints: _standingPoints,
+        coverImage: widget.coverImage,
+      );
+
+      if (!context.mounted) return;
+      // Navigate to HomeScreen after emptying navigator stack.
+      Navigator.pushAndRemoveUntil(
+        context,
+        MaterialPageRoute(
+          builder: (context) => HomeScreen(member: widget.member),
+        ),
+        (Route route) => false,
+      );
     } else {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(

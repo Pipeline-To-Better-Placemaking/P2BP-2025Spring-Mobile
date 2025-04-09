@@ -299,6 +299,8 @@ class _CreateProjectWidgetState extends State<CreateProjectWidget> {
                           context,
                           MaterialPageRoute(
                             builder: (context) => ProjectMapCreation(
+                              member: widget.member,
+                              team: widget.member.selectedTeam!,
                               title: projectTitle,
                               description: projectDescription,
                               address: projectAddress,
