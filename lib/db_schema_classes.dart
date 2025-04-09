@@ -4229,6 +4229,25 @@ class Member with JsonToString implements FirestoreDocument {
     }
   }
 
+  Future<String> addProfileImage(File imageFile) async {
+    try {
+      final profileImageRef =
+          FirebaseStorage.instance.ref().child('profile_images/$id.jpg');
+      await profileImageRef.putFile(imageFile);
+      final downloadUrl = await profileImageRef.getDownloadURL();
+
+      profileImageUrl = downloadUrl;
+      await update();
+
+      print('Profile image uploaded successfully: $downloadUrl');
+      return downloadUrl;
+    } catch (e, s) {
+      print('Error uploading profile image: $e');
+      print('Stacktrace: $s');
+      throw Exception('Failed to add profile image because of exception: $e');
+    }
+  }
+
   /// Sets [Team] object [selectedTeam] with data retrieved with
   /// [selectedTeamRef], and also returns the resulting [Team] object.
   ///

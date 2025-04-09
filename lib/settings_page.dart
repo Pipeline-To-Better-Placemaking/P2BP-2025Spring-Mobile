@@ -1,8 +1,5 @@
 import 'dart:io';
 
-import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:firebase_auth/firebase_auth.dart';
-import 'package:firebase_storage/firebase_storage.dart';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:p2bp_2025spring_mobile/change_email_page.dart';
@@ -341,7 +338,6 @@ class ProfileIconEditStack extends StatefulWidget {
 }
 
 class _ProfileIconEditStackState extends State<ProfileIconEditStack> {
-  final User? _currentUser = FirebaseAuth.instance.currentUser;
   late String _initials;
 
   @override
@@ -362,40 +358,25 @@ class _ProfileIconEditStackState extends State<ProfileIconEditStack> {
     return result;
   }
 
-  Future<void> _uploadProfileImage(File imageFile) async {
-    try {
-      final storageRef = FirebaseStorage.instance.ref();
-
-      final profileImageRef =
-          storageRef.child('profile_images/${_currentUser?.uid}.jpg');
-      await profileImageRef.putFile(imageFile);
-      final downloadUrl = await profileImageRef.getDownloadURL();
-
-      await FirebaseFirestore.instance
-          .collection('users')
-          .doc(_currentUser?.uid)
-          .update({'profileImageUrl': downloadUrl});
-      setState(() {
-        widget.member.profileImageUrl = downloadUrl;
-      });
-      print('Profile image uploaded successfully: $downloadUrl');
-    } catch (e, s) {
-      print('Error uploading profile image: $e');
-      print('Stacktrace: $s');
-    }
-  }
-
   Future<void> _selectAndUploadImage() async {
-    final ImagePicker picker = ImagePicker();
-
     try {
-      final XFile? image = await picker.pickImage(source: ImageSource.gallery);
+      final XFile? image =
+          await ImagePicker().pickImage(source: ImageSource.gallery);
 
+      String? profileImageUrl;
       if (image != null) {
-        _uploadProfileImage(File(image.path));
+        final File imageFile = File(image.path);
+        profileImageUrl = await widget.member.addProfileImage(imageFile);
       }
-    } catch (e) {
+
+      if (profileImageUrl != null) {
+        setState(() {
+          // Update if image was given.
+        });
+      }
+    } catch (e, s) {
       print('Error selecting image $e');
+      print('Stacktrace: $s');
     }
   }
 
