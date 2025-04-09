@@ -89,6 +89,7 @@ class _ProjectDetailsPageState extends State<ProjectDetailsPage> {
                 decoration: BoxDecoration(
                   color: Colors.white.withValues(alpha: 0.8),
                   shape: BoxShape.circle,
+                  border: Border.all(width: 1.5),
                 ),
                 child: IconButton(
                   padding: EdgeInsets.zero,
@@ -442,6 +443,7 @@ class _SettingsMenuButton extends StatelessWidget {
         padding: WidgetStatePropertyAll(EdgeInsets.zero),
         shape: WidgetStatePropertyAll(RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(100),
+          side: BorderSide(width: 1.5),
         )),
         backgroundColor:
             WidgetStatePropertyAll(Colors.white.withValues(alpha: 0.8)),

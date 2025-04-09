@@ -33,9 +33,6 @@ class _EditProjectFormState extends State<EditProjectForm> {
 
   void _saveChanges() async {
     try {
-      widget.activeProject.title = _nameController.text;
-      widget.activeProject.description = _descriptionController.text;
-
       if (_imageFile != null) {
         final coverImageRef = FirebaseStorage.instance
             .ref('project_covers/${widget.activeProject.id}.jpg');
@@ -175,7 +172,11 @@ class _EditProjectFormState extends State<EditProjectForm> {
                             borderRadius: BorderRadius.circular(8)),
                         onPressed: () {
                           if (_formKey.currentState!.validate()) {
+                            widget.activeProject.title = _nameController.text;
+                            widget.activeProject.description =
+                                _descriptionController.text;
                             _saveChanges();
+                            Navigator.pop(context, 'altered');
                           }
                         },
                       ),

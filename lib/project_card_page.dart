@@ -105,10 +105,13 @@ class _ProjectCardPageState extends State<ProjectCardPage> {
                           width: 36,
                           height: 36,
                           decoration: BoxDecoration(
-                              shape: BoxShape.circle,
-                              color: Color(0xFF2F6DCF),
-                              border: Border.all(
-                                  color: Color(0xFF0A2A88), width: 3)),
+                            shape: BoxShape.circle,
+                            color: Color(0xFF2F6DCF),
+                            border: Border.all(
+                              color: Color(0xFF0A2A88),
+                              width: 3,
+                            ),
+                          ),
                           child: Center(
                             child: IconButton(
                               padding: EdgeInsets.zero,
@@ -120,7 +123,8 @@ class _ProjectCardPageState extends State<ProjectCardPage> {
                                   context,
                                   MaterialPageRoute(
                                     builder: (context) => TeamsAndInvitesPage(
-                                        member: widget.member),
+                                      member: widget.member,
+                                    ),
                                   ),
                                 );
                                 _populateProjects();

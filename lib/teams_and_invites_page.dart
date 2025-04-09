@@ -1,5 +1,3 @@
-import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
@@ -17,21 +15,22 @@ class TeamsAndInvitesPage extends StatefulWidget {
   State<TeamsAndInvitesPage> createState() => _TeamsAndInvitesPageState();
 }
 
-final FirebaseFirestore _firestore = FirebaseFirestore.instance;
-
 class _TeamsAndInvitesPageState extends State<TeamsAndInvitesPage> {
-  final User? _loggedInUser = FirebaseAuth.instance.currentUser;
-
   List<Team> _teams = [];
   List<TeamInvite> _teamInvites = [];
-  DocumentReference? currentTeam;
   bool _isLoadingTeams = true;
   bool _isLoadingInvites = true;
-  int selectedIndex = 0;
+  int _selectedIndex = 0;
 
   @override
   void initState() {
     super.initState();
+    if (widget.member.selectedTeamRef != null) {
+      _selectedIndex =
+          widget.member.teamRefs.indexOf(widget.member.selectedTeamRef!);
+    } else {
+      _selectedIndex = -1;
+    }
     if (widget.member.teams == null) {
       _getTeams();
     } else {
@@ -126,20 +125,19 @@ class _TeamsAndInvitesPageState extends State<TeamsAndInvitesPage> {
                           itemBuilder: (context, index) {
                             return TeamCard(
                               team: _teams[index],
-                              selected: selectedIndex == index,
-                              radioSelectCallback: () async {
-                                await _firestore
-                                    .collection('users')
-                                    .doc(_loggedInUser?.uid)
-                                    .update({
-                                  'selectedTeam': _firestore
-                                      .doc('/teams/${_teams[index].id}'),
-                                });
+                              selected: _selectedIndex == index,
+                              selectTeam: () async {
+                                widget.member.selectedTeamRef =
+                                    _teams[index].ref;
+                                widget.member.selectedTeam = _teams[index];
+
                                 setState(() {
-                                  selectedIndex = index;
+                                  _selectedIndex = index;
                                 });
+
+                                await widget.member.update();
                               },
-                              teamSettingsCallback: () async {
+                              teamSettings: () async {
                                 final bool? doRefresh = await Navigator.push(
                                   context,
                                   MaterialPageRoute(
@@ -245,15 +243,15 @@ class _TeamsAndInvitesPageState extends State<TeamsAndInvitesPage> {
 class TeamCard extends StatelessWidget {
   final Team team;
   final bool selected;
-  final VoidCallback radioSelectCallback;
-  final VoidCallback teamSettingsCallback;
+  final VoidCallback selectTeam;
+  final VoidCallback teamSettings;
 
   const TeamCard({
     super.key,
     required this.team,
     required this.selected,
-    required this.radioSelectCallback,
-    required this.teamSettingsCallback,
+    required this.selectTeam,
+    required this.teamSettings,
   });
 
   @override
@@ -267,7 +265,7 @@ class TeamCard extends StatelessWidget {
       child: Row(
         children: <Widget>[
           InkWell(
-            onTap: radioSelectCallback,
+            onTap: selectTeam,
             child: Align(
               alignment: Alignment.bottomLeft,
               child: Padding(
@@ -348,7 +346,7 @@ class TeamCard extends StatelessWidget {
                 color: Colors.white,
               ),
               tooltip: 'Open team settings',
-              onPressed: teamSettingsCallback,
+              onPressed: teamSettings,
             ),
           ),
         ],
