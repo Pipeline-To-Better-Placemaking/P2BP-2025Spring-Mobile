@@ -199,7 +199,6 @@ class _TeamsAndInvitesPageState extends State<TeamsAndInvitesPage> {
                                 setState(() {
                                   _teamInvites.removeWhere((team) =>
                                       team.id.compareTo(invite.id) == 0);
-                                  // _teamsCount = _teamInvites.length;
                                 });
                               },
                               declineCallback: () {
@@ -209,7 +208,6 @@ class _TeamsAndInvitesPageState extends State<TeamsAndInvitesPage> {
                                 setState(() {
                                   _teamInvites.removeWhere((team) =>
                                       team.id.compareTo(invite.id) == 0);
-                                  // _teamsCount = _teamInvites.length;
                                 });
                               },
                             );

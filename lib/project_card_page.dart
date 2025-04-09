@@ -31,7 +31,6 @@ class ProjectCardPage extends StatefulWidget {
 class _ProjectCardPageState extends State<ProjectCardPage> {
   Team? _currentTeam;
   List<Project> _projectList = [];
-  int _projectsCount = 0;
   bool _isLoading = true;
   late String _firstName;
 
@@ -57,7 +56,6 @@ class _ProjectCardPageState extends State<ProjectCardPage> {
 
       if (!mounted) return;
       setState(() {
-        _projectsCount = _projectList.length;
         _isLoading = false;
       });
     } catch (e, s) {
@@ -97,48 +95,40 @@ class _ProjectCardPageState extends State<ProjectCardPage> {
                   ),
                   Align(
                     alignment: Alignment.topRight,
-                    child: Row(
-                      mainAxisAlignment: MainAxisAlignment.end,
-                      children: [
-                        // Teams Button
-                        Container(
-                          width: 36,
-                          height: 36,
-                          decoration: BoxDecoration(
-                            shape: BoxShape.circle,
-                            color: Color(0xFF2F6DCF),
-                            border: Border.all(
-                              color: Color(0xFF0A2A88),
-                              width: 3,
-                            ),
-                          ),
-                          child: Center(
-                            child: IconButton(
-                              padding: EdgeInsets.zero,
-                              icon: const Icon(Icons.groups),
-                              color: p2bpYellow,
-                              onPressed: () async {
-                                // Navigate to Teams/Invites screen
-                                await Navigator.push(
-                                  context,
-                                  MaterialPageRoute(
-                                    builder: (context) => TeamsAndInvitesPage(
-                                      member: widget.member,
-                                    ),
-                                  ),
-                                );
-                                _populateProjects();
-                              },
-                              iconSize: 24,
-                            ),
-                          ),
+                    child: Container(
+                      width: 40,
+                      height: 40,
+                      decoration: BoxDecoration(
+                        shape: BoxShape.circle,
+                        color: Color(0xFF2F6DCF),
+                        border: Border.all(
+                          color: Color(0xFF0A2A88),
+                          width: 3,
                         ),
-                      ],
+                      ),
+                      child: IconButton(
+                        padding: EdgeInsets.zero,
+                        icon: const Icon(Icons.groups),
+                        color: p2bpYellow,
+                        onPressed: () async {
+                          // Navigate to Teams/Invites screen
+                          await Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (context) => TeamsAndInvitesPage(
+                                member: widget.member,
+                              ),
+                            ),
+                          );
+                          _populateProjects();
+                        },
+                        iconSize: 27,
+                      ),
                     ),
                   ),
                   // "Hello, [user]" greeting, aligned to the left below the logo
                   Padding(
-                    padding: const EdgeInsets.only(top: 40, left: 10),
+                    padding: const EdgeInsets.symmetric(horizontal: 10),
                     child: Row(
                       mainAxisAlignment: MainAxisAlignment.start,
                       children: [
@@ -147,7 +137,7 @@ class _ProjectCardPageState extends State<ProjectCardPage> {
                             return defaultGrad.createShader(bounds);
                           },
                           child: Text(
-                            'Hello, \n$_firstName',
+                            'Hello, \n\t\t\t$_firstName',
                             style: TextStyle(
                               fontSize: 36,
                               fontWeight: FontWeight.bold,
@@ -163,7 +153,7 @@ class _ProjectCardPageState extends State<ProjectCardPage> {
               ),
               // "Your Projects" label, aligned to the right of the screen
               Padding(
-                padding: const EdgeInsets.only(right: 5),
+                padding: const EdgeInsets.symmetric(horizontal: 10),
                 child: Row(
                   mainAxisAlignment: MainAxisAlignment.end,
                   children: [
@@ -188,7 +178,7 @@ class _ProjectCardPageState extends State<ProjectCardPage> {
               if (_isLoading)
                 const Center(child: CircularProgressIndicator())
               else
-                _projectsCount > 0
+                _projectList.isNotEmpty
                     // If there are projects populate ListView
                     ? ListView.separated(
                         physics: NeverScrollableScrollPhysics(),
@@ -199,7 +189,7 @@ class _ProjectCardPageState extends State<ProjectCardPage> {
                           top: 5,
                           bottom: 25,
                         ),
-                        itemCount: _projectsCount,
+                        itemCount: _projectList.length,
                         itemBuilder: (BuildContext context, int index) {
                           // Get the team name for this project
                           return ProjectCard(
@@ -207,7 +197,7 @@ class _ProjectCardPageState extends State<ProjectCardPage> {
                                 _bannerImages[index % _bannerImages.length],
                             project: _projectList[index],
                             navigateToDetails: () async {
-                              await Navigator.push(
+                              final updated = await Navigator.push<String>(
                                 context,
                                 MaterialPageRoute(
                                   builder: (context) => ProjectDetailsPage(
@@ -217,17 +207,35 @@ class _ProjectCardPageState extends State<ProjectCardPage> {
                                 ),
                               );
 
-                              // This might be really costly to do every time but not sure how else
-                              // to guarantee projects update after renaming or otherwise.
-                              // _populateProjects(); TODO check if this is needed after refactor
+                              if (updated != null) {
+                                if (updated == 'deleted') {
+                                  _populateProjects();
+                                  return;
+                                }
+                              }
+                              setState(() {
+                                // Update in case name or something changed.
+                              });
                             },
-                            editProject: (updated) {
-                              if (updated == 'deleted') {
-                                _populateProjects();
-                              } else if (updated == 'altered') {
-                                setState(() {
-                                  // Update if something was changed in EditProject
-                                });
+                            editProject: () async {
+                              // Handle navigation to Edit menu
+                              final updated =
+                                  await showModalBottomSheet<String>(
+                                context: context,
+                                isScrollControlled: true,
+                                useSafeArea: true,
+                                builder: (context) => EditProjectForm(
+                                    activeProject: _projectList[index]),
+                              );
+
+                              if (updated != null) {
+                                if (updated == 'deleted') {
+                                  _populateProjects();
+                                } else if (updated == 'altered') {
+                                  setState(() {
+                                    // Update if something was changed in EditProject
+                                  });
+                                }
                               }
                             },
                           );
@@ -243,9 +251,9 @@ class _ProjectCardPageState extends State<ProjectCardPage> {
                         child: SingleChildScrollView(
                           physics: AlwaysScrollableScrollPhysics(),
                           child: SizedBox(
-                            height: MediaQuery.sizeOf(context).height * 2 / 3,
+                            height: MediaQuery.sizeOf(context).height * 0.9,
                             child: Align(
-                              alignment: Alignment(0, -0.3),
+                              alignment: Alignment(0, -0.5),
                               child: Text(
                                 'You have no projects! Join a team '
                                 'or create a project first.',
@@ -255,7 +263,7 @@ class _ProjectCardPageState extends State<ProjectCardPage> {
                           ),
                         ),
                       ),
-              SizedBox(height: 100),
+              const SizedBox(height: 100),
             ],
           ),
         ),
@@ -268,7 +276,7 @@ class ProjectCard extends StatelessWidget {
   final String bannerImage;
   final Project project;
   final VoidCallback navigateToDetails;
-  final void Function(String) editProject;
+  final VoidCallback editProject;
 
   const ProjectCard({
     super.key,
@@ -346,20 +354,7 @@ class ProjectCard extends StatelessWidget {
                   children: [
                     // Edit Info button
                     OutlinedButton(
-                      onPressed: () async {
-                        // Handle navigation to Edit menu
-                        final updated = await showModalBottomSheet<String>(
-                          context: context,
-                          isScrollControlled: true,
-                          useSafeArea: true,
-                          builder: (context) =>
-                              EditProjectForm(activeProject: project),
-                        );
-
-                        if (updated != null) {
-                          editProject(updated);
-                        }
-                      },
+                      onPressed: editProject,
                       style: OutlinedButton.styleFrom(
                         side: const BorderSide(
                           color: Color(0xFFFFCC00),

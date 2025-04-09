@@ -33,18 +33,19 @@ class _TeamSettingsPageState extends State<TeamSettingsPage> {
   bool _isLoadingTeamMembers = true;
   bool _isMultiSelectMode = false;
   final Set<Project> _selectedProjects = {};
-  late final RoleMap<Member> _teamMembers;
 
   @override
   void initState() {
     super.initState();
     if (widget.activeTeam.projects == null) {
       _getProjects();
+    } else {
+      _isLoadingProjects = false;
     }
     if (widget.activeTeam.memberMap == null) {
       _getTeamMembers();
     } else {
-      _teamMembers = widget.activeTeam.memberMap!;
+      _isLoadingTeamMembers = false;
     }
   }
 
@@ -56,7 +57,7 @@ class _TeamSettingsPageState extends State<TeamSettingsPage> {
   }
 
   void _getTeamMembers() async {
-    _teamMembers = await widget.activeTeam.loadMembersInfo();
+    await widget.activeTeam.loadMembersInfo();
     setState(() {
       _isLoadingTeamMembers = false;
     });
@@ -196,7 +197,7 @@ class _TeamSettingsPageState extends State<TeamSettingsPage> {
                             builder: (BuildContext context) =>
                                 ManageTeamMembersForm(
                               activeTeam: widget.activeTeam,
-                              teamMembers: _teamMembers,
+                              teamMembers: widget.activeTeam.memberMap!,
                             ),
                           );
                         },
@@ -210,7 +211,8 @@ class _TeamSettingsPageState extends State<TeamSettingsPage> {
                             context: context,
                             builder: (context) => InviteUserForm(
                               activeTeam: widget.activeTeam,
-                              teamMembers: _teamMembers.toSingleList(),
+                              teamMembers:
+                                  widget.activeTeam.memberMap!.toSingleList(),
                             ),
                           );
                           // _showInviteDialog(context);

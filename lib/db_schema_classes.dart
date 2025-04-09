@@ -4596,16 +4596,15 @@ class Team with JsonToString implements FirestoreDocument {
       }
 
       // Refs not empty, retrieve member info.
-      RoleMap<Member> newMemberMap = {};
+      RoleMap<Member> newMemberMap = {
+        for (final role in GroupRole.values) role: [],
+      };
       for (final role in GroupRole.values) {
         for (final ref in memberRefMap[role]!) {
           final memberDoc = await Member.converterRef.doc(ref.id).get();
           if (memberDoc.exists) {
             // Add each member to appropriate role list.
-            newMemberMap.update(role, (value) {
-              value.add(memberDoc.data()!);
-              return value;
-            }, ifAbsent: () => [memberDoc.data()!]);
+            newMemberMap[role]!.add(memberDoc.data()!);
           } else {
             memberRefMap[role]!.remove(ref);
           }
@@ -4822,13 +4821,9 @@ class Project with JsonToString implements FirestoreDocument {
         }
 
         // Delete reference to this project from the team it belongs to.
-        await teamRef.update({
-          'projects': FieldValue.arrayRemove([ref]),
-        });
-        if (team != null) {
-          team!.projects?.remove(this);
-          team!.projectRefs.removeWhere((ref) => ref.id == id);
-        }
+        team!.projects?.remove(this);
+        team!.projectRefs.removeWhere((ref) => ref.id == id);
+        team!.update();
 
         // Delete cover photo from storage if present.
         if (coverImageUrl.isNotEmpty) {
