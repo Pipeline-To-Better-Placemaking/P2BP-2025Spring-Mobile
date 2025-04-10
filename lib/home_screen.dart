@@ -26,6 +26,7 @@ class _HomeScreenState extends State<HomeScreen> {
   int selectedIndex = 1;
 
   void onNavItemTapped(int index) {
+    FocusManager.instance.primaryFocus?.unfocus();
     setState(() {
       selectedIndex = index;
     });

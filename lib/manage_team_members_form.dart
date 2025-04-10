@@ -102,13 +102,9 @@ class _ManageTeamMembersFormState extends State<ManageTeamMembersForm> {
                                     await _showRemoveMemberDialog(thisMember);
 
                                 if (didRemove != true) return;
-                                await removeUserFromTeam(
-                                  thisMember.id,
-                                  widget.activeTeam.id,
-                                );
+                                widget.activeTeam.removeMember(thisMember);
                                 setState(() {
-                                  widget.teamMembers[GroupRole.member]!
-                                      .remove(thisMember);
+                                  // Update member list after removal.
                                 });
                               },
                               child: Container(

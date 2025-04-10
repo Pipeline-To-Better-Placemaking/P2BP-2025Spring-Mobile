@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
 import 'db_schema_classes.dart';
-import 'firestore_functions.dart';
 import 'team_settings_page.dart';
 import 'theme.dart';
 
@@ -16,8 +15,6 @@ class TeamsAndInvitesPage extends StatefulWidget {
 }
 
 class _TeamsAndInvitesPageState extends State<TeamsAndInvitesPage> {
-  List<Team> _teams = [];
-  List<TeamInvite> _teamInvites = [];
   bool _isLoadingTeams = true;
   bool _isLoadingInvites = true;
   int _selectedIndex = 0;
@@ -34,20 +31,20 @@ class _TeamsAndInvitesPageState extends State<TeamsAndInvitesPage> {
     if (widget.member.teams == null) {
       _getTeams();
     } else {
-      _teams = widget.member.teams!;
+      widget.member.teams!;
       _isLoadingTeams = false;
     }
     if (widget.member.teamInvites == null) {
       _getInvites();
     } else {
-      _teamInvites = widget.member.teamInvites!;
+      widget.member.teamInvites!;
       _isLoadingInvites = false;
     }
   }
 
   Future<void> _getTeams() async {
     try {
-      _teams = await widget.member.loadTeamsInfo();
+      await widget.member.loadTeamsInfo();
 
       setState(() {
         _isLoadingTeams = false;
@@ -60,7 +57,7 @@ class _TeamsAndInvitesPageState extends State<TeamsAndInvitesPage> {
 
   Future<void> _getInvites() async {
     try {
-      _teamInvites = await widget.member.loadTeamInvitesInfo();
+      await widget.member.loadTeamInvitesInfo();
 
       setState(() {
         _isLoadingInvites = false;
@@ -113,7 +110,7 @@ class _TeamsAndInvitesPageState extends State<TeamsAndInvitesPage> {
                   onRefresh: () async {
                     await _getTeams();
                   },
-                  child: _teams.isNotEmpty
+                  child: widget.member.teams!.isNotEmpty
                       ? ListView.separated(
                           padding: const EdgeInsets.only(
                             left: 35,
@@ -121,15 +118,16 @@ class _TeamsAndInvitesPageState extends State<TeamsAndInvitesPage> {
                             top: 50,
                             bottom: 20,
                           ),
-                          itemCount: _teams.length,
+                          itemCount: widget.member.teams!.length,
                           itemBuilder: (context, index) {
                             return TeamCard(
-                              team: _teams[index],
+                              team: widget.member.teams![index],
                               selected: _selectedIndex == index,
                               selectTeam: () async {
                                 widget.member.selectedTeamRef =
-                                    _teams[index].ref;
-                                widget.member.selectedTeam = _teams[index];
+                                    widget.member.teams![index].ref;
+                                widget.member.selectedTeam =
+                                    widget.member.teams![index];
 
                                 setState(() {
                                   _selectedIndex = index;
@@ -143,7 +141,7 @@ class _TeamsAndInvitesPageState extends State<TeamsAndInvitesPage> {
                                   MaterialPageRoute(
                                     builder: (context) => TeamSettingsPage(
                                       member: widget.member,
-                                      activeTeam: _teams[index],
+                                      activeTeam: widget.member.teams![index],
                                     ),
                                   ),
                                 );
@@ -179,7 +177,7 @@ class _TeamsAndInvitesPageState extends State<TeamsAndInvitesPage> {
                   onRefresh: () async {
                     await _getInvites();
                   },
-                  child: _teamInvites.isNotEmpty
+                  child: widget.member.teamInvites!.isNotEmpty
                       ? ListView.separated(
                           padding: const EdgeInsets.only(
                             left: 35,
@@ -187,29 +185,21 @@ class _TeamsAndInvitesPageState extends State<TeamsAndInvitesPage> {
                             top: 25,
                             bottom: 25,
                           ),
-                          itemCount: _teamInvites.length,
+                          itemCount: widget.member.teamInvites!.length,
                           itemBuilder: (BuildContext context, int index) {
-                            final invite = _teamInvites[index];
+                            final invite = widget.member.teamInvites![index];
                             return InviteCard(
                               invite: invite,
-                              acceptCallback: () {
-                                // Add to database
-                                addUserToTeam(invite.teamID);
-                                // Remove invite from screen
+                              acceptInvite: () async {
+                                invite.accept(widget.member);
                                 setState(() {
-                                  _teamInvites.removeWhere((team) =>
-                                      team.teamID.compareTo(invite.teamID) ==
-                                      0);
+                                  // Update visible invites after accept.
                                 });
                               },
-                              declineCallback: () {
-                                // Remove invite from database
-                                removeInviteFromUser(invite.teamID);
-                                // Remove invite from screen
+                              declineInvite: () {
+                                invite.decline(widget.member);
                                 setState(() {
-                                  _teamInvites.removeWhere((team) =>
-                                      team.teamID.compareTo(invite.teamID) ==
-                                      0);
+                                  // Update visible invites after decline.
                                 });
                               },
                             );
@@ -357,14 +347,14 @@ class TeamCard extends StatelessWidget {
 
 class InviteCard extends StatelessWidget {
   final TeamInvite invite;
-  final VoidCallback acceptCallback;
-  final VoidCallback declineCallback;
+  final VoidCallback acceptInvite;
+  final VoidCallback declineInvite;
 
   const InviteCard({
     super.key,
     required this.invite,
-    required this.acceptCallback,
-    required this.declineCallback,
+    required this.acceptInvite,
+    required this.declineInvite,
   });
 
   @override
@@ -403,7 +393,7 @@ class InviteCard extends StatelessWidget {
                         ),
                         const TextSpan(text: ' has invited you to join: '),
                         TextSpan(
-                          text: invite.title,
+                          text: invite.team.title,
                           style: const TextStyle(fontWeight: FontWeight.bold),
                         ),
                       ],
@@ -420,13 +410,13 @@ class InviteCard extends StatelessWidget {
                         icon: const Icon(Icons.check),
                         tooltip: 'Accept invitation',
                         color: Colors.white,
-                        onPressed: acceptCallback,
+                        onPressed: acceptInvite,
                       ),
                       IconButton(
                         icon: const Icon(Icons.clear),
                         tooltip: 'Decline invitation',
                         color: Colors.white,
-                        onPressed: declineCallback,
+                        onPressed: declineInvite,
                       ),
                     ],
                   ),

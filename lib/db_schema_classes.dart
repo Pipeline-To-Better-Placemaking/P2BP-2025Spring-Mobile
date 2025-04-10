@@ -18,6 +18,7 @@ import 'package:p2bp_2025spring_mobile/section_cutter_test.dart';
 import 'package:p2bp_2025spring_mobile/spatial_boundaries_test.dart';
 
 import 'identifying_access_test.dart';
+import 'login_screen.dart';
 import 'nature_prevalence_test.dart';
 
 final FirebaseFirestore _firestore = FirebaseFirestore.instance;
@@ -4216,7 +4217,7 @@ class Member with JsonToString implements FirestoreDocument {
   /// This also performs some login-time updates to the document, such as
   /// updating `email` if it has been changed in FirebaseAuth and updating
   /// `lastLogin` to the current time.
-  static Future<Member> loginUser(User user) async {
+  static Future<Member> login(User user) async {
     final userRef = converterRef.doc(user.uid);
 
     try {
@@ -4244,6 +4245,27 @@ class Member with JsonToString implements FirestoreDocument {
     }
   }
 
+  static void logOut(BuildContext context) async {
+    try {
+      await FirebaseAuth.instance.signOut();
+      if (context.mounted) {
+        // Sends to login screen and removes everything else from nav stack
+        Navigator.pushAndRemoveUntil(
+            context,
+            MaterialPageRoute(builder: (context) => LoginScreen()),
+            (Route route) => false);
+      } else {
+        throw Exception('context-unmounted');
+      }
+    } catch (e, s) {
+      print('Exception: $e');
+      print('Stacktrace: $s');
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Log out failed. Try again.')),
+      );
+    }
+  }
+
   Future<String> addProfileImage(File imageFile) async {
     try {
       final profileImageRef =
@@ -4260,6 +4282,23 @@ class Member with JsonToString implements FirestoreDocument {
       print('Error uploading profile image: $e');
       print('Stacktrace: $s');
       throw Exception('Failed to add profile image because of exception: $e');
+    }
+  }
+
+  static Future<List<Member>> queryByFullName(String searchText) async {
+    try {
+      final queryResult = await converterRef
+          .where('fullName', isGreaterThanOrEqualTo: searchText)
+          .get();
+
+      final snapshotList = queryResult.docs;
+      final memberList = [for (final snapshot in snapshotList) snapshot.data()];
+
+      return memberList;
+    } catch (e, s) {
+      print('Exception: $e');
+      print('Stacktrace: $s');
+      throw Exception('Failed to query fullName because of exception: $e');
     }
   }
 
@@ -4289,23 +4328,6 @@ class Member with JsonToString implements FirestoreDocument {
       print('Exception: $e');
       print('Stacktrace: $s');
       throw Exception('Failed to get selectedTeam because of exception: $e');
-    }
-  }
-
-  static Future<List<Member>> queryByFullName(String searchText) async {
-    try {
-      final queryResult = await converterRef
-          .where('fullName', isGreaterThanOrEqualTo: searchText)
-          .get();
-
-      final snapshotList = queryResult.docs;
-      final memberList = [for (final snapshot in snapshotList) snapshot.data()];
-
-      return memberList;
-    } catch (e, s) {
-      print('Exception: $e');
-      print('Stacktrace: $s');
-      throw Exception('Failed to query fullName because of exception: $e');
     }
   }
 
@@ -4562,6 +4584,29 @@ class Team with JsonToString implements FirestoreDocument {
     }
   }
 
+  void removeMember(Member member) {
+    try {
+      // Remove references to Team from Member.
+      member.teamRefs.removeWhere((ref) => ref.id == id);
+      member.teams?.removeWhere((team) => team.id == id);
+
+      // Remove references to Member from Team.
+      for (final role in GroupRole.values) {
+        memberRefMap[role]!.removeWhere((ref) => ref.id == member.id);
+        memberMap?[role]!.removeWhere((mem) => mem.id == member.id);
+      }
+
+      // Update Firestore.
+      _firestore.runTransaction((transaction) async {
+        member.update();
+        update();
+      });
+    } catch (e, s) {
+      print('Exception: $e');
+      print('Stacktrace: $s');
+    }
+  }
+
   /// Updates [projects] to contain Projects
   Future<List<Project>> loadProjectsInfo() async {
     try {
@@ -4638,13 +4683,11 @@ class Team with JsonToString implements FirestoreDocument {
 }
 
 class TeamInvite {
-  final String teamID;
-  final String title;
+  final Team team;
   final String ownerName;
 
   TeamInvite({
-    required this.teamID,
-    required this.title,
+    required this.team,
     required this.ownerName,
   });
 
@@ -4655,40 +4698,22 @@ class TeamInvite {
   }
 
   static Future<TeamInvite?> fromTeamRef(DocumentReference teamRef) async {
-    final DocumentSnapshot<Map<String, Object?>> teamDoc;
-    final DocumentReference<Map<String, Object?>> userRef;
-    final DocumentSnapshot<Map<String, Object?>> userDoc;
+    final DocumentReference userRef;
 
     try {
-      teamDoc = await _firestore.doc(teamRef.path).get();
-      if (teamDoc.exists) {
-        if (teamDoc
-            case {
-              'id': String id,
-              'title': String title,
-              'membersByRole': Map<String, Object?> membersByRole,
-            }) {
-          if (membersByRole.containsKey(GroupRole.owner.name) &&
-              membersByRole[GroupRole.owner.name] is List) {
-            userRef = (membersByRole[GroupRole.owner.name] as List).first;
-            userDoc = await userRef.get();
-            if (userDoc
-                case {
-                  'fullName': String fullName,
-                }) {
-              return TeamInvite(teamID: id, title: title, ownerName: fullName);
-            }
-          }
+      Team? team = await Team.get(teamRef);
+      if (team != null) {
+        userRef = team.memberRefMap[GroupRole.owner]!.first;
+        final owner = await Member.converterRef.doc(userRef.id).get();
+        if (owner.exists) {
+          return TeamInvite(team: team, ownerName: owner.data()!.fullName);
         }
-      } else {
-        return null;
       }
     } catch (e, s) {
       print('Exception: $e');
       print('Stacktrace: $s');
     }
-
-    throw Exception('Failed to create TeamInvite');
+    return null;
   }
 
   static Future<void> sendToUser(Member member, Team team) async {
@@ -4703,27 +4728,41 @@ class TeamInvite {
     }
   }
 
-  static Future<void> removeFromUser(Member member, Team team) async {
+  void accept(Member member) {
     try {
+      // Remove this invite and add team to local Member object.
       member.teamInviteRefs.removeWhere((invite) => invite.id == team.id);
-      member.teamInvites?.removeWhere((invite) => invite.teamID == team.id);
+      member.teamInvites?.removeWhere((invite) => invite.team.id == team.id);
+      member.teamRefs.add(team.ref);
+      if (member.teams == null) member.loadTeamsInfo();
 
-      await member.ref.update({
-        'invites': FieldValue.arrayRemove([team.ref]),
+      // Add this Member to local Team object.
+      team.memberRefMap[GroupRole.member]!.add(member.ref);
+      if (team.memberMap == null) team.loadMembersInfo();
+
+      // Update Firestore.
+      _firestore.runTransaction((transaction) async {
+        member.update();
+        team.update();
       });
 
-      print('Success in TeamInvite.removeFromUser!');
+      print('Success in invite.accept!');
     } catch (e, s) {
       print('Exception: $e');
       print('Stacktrace: $s');
     }
   }
 
-  Future<void> accept(Member member) async {
+  void decline(Member member) {
     try {
-      // TODO implement this
+      // Remove invite from local Member object.
+      member.teamInviteRefs.removeWhere((invite) => invite.id == team.id);
+      member.teamInvites?.removeWhere((invite) => invite.team.id == team.id);
 
-      print('Success in invite.accept!');
+      // Update Firestore invites list to remove this invite.
+      member.update();
+
+      print('Success in TeamInvite.removeFromUser!');
     } catch (e, s) {
       print('Exception: $e');
       print('Stacktrace: $s');

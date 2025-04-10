@@ -3,7 +3,6 @@ import 'package:p2bp_2025spring_mobile/theme.dart';
 import 'package:p2bp_2025spring_mobile/widgets.dart';
 
 import 'db_schema_classes.dart';
-import 'firestore_functions.dart';
 
 class InviteUserForm extends StatefulWidget {
   final Team activeTeam;
@@ -107,8 +106,10 @@ class _InviteUserFormState extends State<InviteUserForm> {
                             invited: invited,
                             inviteMember: () {
                               if (!invited) {
-                                sendInviteToUser(
-                                    member.id, widget.activeTeam.id);
+                                TeamInvite.sendToUser(
+                                  member,
+                                  widget.activeTeam,
+                                );
                                 setState(() {
                                   invitedMembers.add(member);
                                 });

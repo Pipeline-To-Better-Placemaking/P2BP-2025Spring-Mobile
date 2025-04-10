@@ -1,9 +1,6 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:firebase_auth/firebase_auth.dart';
-import 'package:flutter/material.dart';
 
 import 'db_schema_classes.dart';
-import 'login_screen.dart';
 
 final FirebaseFirestore _firestore = FirebaseFirestore.instance;
 
@@ -504,134 +501,134 @@ final FirebaseFirestore _firestore = FirebaseFirestore.instance;
 // }
 
 /// Sends an invite to the given already existing team to the given user.
-Future<void> sendInviteToUser(String userID, String teamID) async {
-  await _firestore.collection('users').doc(userID).update({
-    'invites': FieldValue.arrayUnion([_firestore.doc('/teams/$teamID')])
-  });
-  print('Success in sendInviteToUser!');
-}
+// Future<void> sendInviteToUser(String userID, String teamID) async {
+//   await _firestore.collection('users').doc(userID).update({
+//     'invites': FieldValue.arrayUnion([_firestore.doc('/teams/$teamID')])
+//   });
+//   print('Success in sendInviteToUser!');
+// }
 
 /// Removes the invite from the user. Checks if the user exists and has invites
 /// field (*always* should). Makes sure that the invites field contains the
 /// invite being deleted. If so removes it from database.
-Future<void> removeInviteFromUser(String teamID) async {
-  final User? loggedInUser = FirebaseAuth.instance.currentUser;
-  if (loggedInUser == null) throw Exception('no user logged in');
-  final DocumentReference<Map<String, dynamic>> userRef;
-  final DocumentSnapshot<Map<String, dynamic>> userDoc;
-  final DocumentReference<Map<String, dynamic>> teamRef;
-
-  try {
-    userRef = _firestore.collection('users').doc(loggedInUser.uid);
-    userDoc = await userRef.get();
-    teamRef = _firestore.doc('teams/$teamID');
-
-    if (userDoc.exists && userDoc.data()!.containsKey('invites')) {
-      if (userDoc.data()!['invites'].contains(teamRef)) {
-        // Remove invite from invites field
-        userRef.update({
-          'invites': FieldValue.arrayRemove([teamRef]),
-        });
-      } else {
-        // TODO: Display a message to user:
-        print("Error in addUserToTeam()! No invite matching that id.");
-      }
-    }
-  } catch (e, stacktrace) {
-    print('Exception accepting team invite: $e');
-    print('Stacktrace: $stacktrace');
-  }
-}
+// Future<void> removeInviteFromUser(String teamID) async {
+//   final User? loggedInUser = FirebaseAuth.instance.currentUser;
+//   if (loggedInUser == null) throw Exception('no user logged in');
+//   final DocumentReference<Map<String, dynamic>> userRef;
+//   final DocumentSnapshot<Map<String, dynamic>> userDoc;
+//   final DocumentReference<Map<String, dynamic>> teamRef;
+//
+//   try {
+//     userRef = _firestore.collection('users').doc(loggedInUser.uid);
+//     userDoc = await userRef.get();
+//     teamRef = _firestore.doc('teams/$teamID');
+//
+//     if (userDoc.exists && userDoc.data()!.containsKey('invites')) {
+//       if (userDoc.data()!['invites'].contains(teamRef)) {
+//         // Remove invite from invites field
+//         userRef.update({
+//           'invites': FieldValue.arrayRemove([teamRef]),
+//         });
+//       } else {
+//         // TODO: Display a message to user:
+//         print("Error in addUserToTeam()! No invite matching that id.");
+//       }
+//     }
+//   } catch (e, stacktrace) {
+//     print('Exception accepting team invite: $e');
+//     print('Stacktrace: $stacktrace');
+//   }
+// }
 
 /// Adds user to team when they accept the invite. Checks if the user exists,
 /// has invites field (*always* should), and the team still exists. If so, adds
 /// user to teams collection and remove invite from the user's database. If
 /// team no longer exists, removes invite from user's account without joining.
-Future<void> addUserToTeam(String teamID) async {
-  final User? loggedInUser = FirebaseAuth.instance.currentUser;
-  if (loggedInUser == null) throw Exception('no user logged in');
-  final DocumentReference<Map<String, dynamic>> userRef;
-  final DocumentSnapshot<Map<String, dynamic>> userDoc;
-  final DocumentReference<Map<String, dynamic>> teamRef;
-  final DocumentSnapshot<Map<String, dynamic>> teamDoc;
-
-  try {
-    userRef = _firestore.collection('users').doc(loggedInUser.uid);
-    userDoc = await userRef.get();
-    teamRef = _firestore.doc('teams/$teamID');
-    teamDoc = await teamRef.get();
-
-    if (userDoc.exists && userDoc.data()!.containsKey('invites')) {
-      if (userDoc.data()!['invites'].contains(teamRef)) {
-        if (teamDoc.exists) {
-          // Add team to teams field, remove from invites field
-          userRef.update({
-            'teams': FieldValue.arrayUnion([teamRef]),
-            'invites': FieldValue.arrayRemove([teamRef]),
-          });
-          teamRef.update({
-            'teamMembers': FieldValue.arrayUnion([
-              {
-                'role': 'user',
-                'user': _firestore.doc('users/${loggedInUser.uid}')
-              }
-            ]),
-          });
-        } else {
-          // TODO: Display a message to user:
-          print("Team no longer exists. Deleting invite.");
-          userRef.update({
-            'invites': FieldValue.arrayRemove([teamRef]),
-          });
-        }
-      } else {
-        print("Error in addUserToTeam()! No invite matching that id.");
-      }
-    }
-  } catch (e, stacktrace) {
-    print('Exception accepting team invite: $e');
-    print('Stacktrace: $stacktrace');
-  }
-}
+// Future<void> addUserToTeam(String teamID) async {
+//   final User? loggedInUser = FirebaseAuth.instance.currentUser;
+//   if (loggedInUser == null) throw Exception('no user logged in');
+//   final DocumentReference<Map<String, dynamic>> userRef;
+//   final DocumentSnapshot<Map<String, dynamic>> userDoc;
+//   final DocumentReference<Map<String, dynamic>> teamRef;
+//   final DocumentSnapshot<Map<String, dynamic>> teamDoc;
+//
+//   try {
+//     userRef = _firestore.collection('users').doc(loggedInUser.uid);
+//     userDoc = await userRef.get();
+//     teamRef = _firestore.doc('teams/$teamID');
+//     teamDoc = await teamRef.get();
+//
+//     if (userDoc.exists && userDoc.data()!.containsKey('invites')) {
+//       if (userDoc.data()!['invites'].contains(teamRef)) {
+//         if (teamDoc.exists) {
+//           // Add team to teams field, remove from invites field
+//           userRef.update({
+//             'teams': FieldValue.arrayUnion([teamRef]),
+//             'invites': FieldValue.arrayRemove([teamRef]),
+//           });
+//           teamRef.update({
+//             'teamMembers': FieldValue.arrayUnion([
+//               {
+//                 'role': 'user',
+//                 'user': _firestore.doc('users/${loggedInUser.uid}')
+//               }
+//             ]),
+//           });
+//         } else {
+//           // TODO: Display a message to user:
+//           print("Team no longer exists. Deleting invite.");
+//           userRef.update({
+//             'invites': FieldValue.arrayRemove([teamRef]),
+//           });
+//         }
+//       } else {
+//         print("Error in addUserToTeam()! No invite matching that id.");
+//       }
+//     }
+//   } catch (e, stacktrace) {
+//     print('Exception accepting team invite: $e');
+//     print('Stacktrace: $stacktrace');
+//   }
+// }
 
 /// Remove user from team they are currently in.
-Future<void> removeUserFromTeam(String id, String teamID) async {
-  final DocumentReference<Map<String, dynamic>> userRef;
-  final DocumentReference<Map<String, dynamic>> teamRef;
-  final DocumentSnapshot<Map<String, dynamic>> userDoc;
-  final DocumentSnapshot<Map<String, dynamic>> teamDoc;
-
-  try {
-    userRef = _firestore.collection('users').doc(id);
-    teamRef = _firestore.collection('teams').doc(teamID);
-    userDoc = await userRef.get();
-    teamDoc = await teamRef.get();
-
-    if (userDoc.exists && userDoc.data()!.containsKey('teams')) {
-      if (userDoc.data()!['teams'].contains(teamRef)) {
-        userRef.update({
-          'teams': FieldValue.arrayRemove([teamRef]),
-        });
-
-        if (teamDoc.exists && teamDoc.data()!.containsKey('teamMembers')) {
-          for (final member in teamDoc.data()!['teamMembers']) {
-            if (member is Map<String, dynamic> && member.containsKey('user')) {
-              if (member['user'] == userRef) {
-                teamRef.update({
-                  'teamMembers': FieldValue.arrayRemove([member]),
-                });
-                print('success deleting member $member from team');
-              }
-            }
-          }
-        }
-      }
-    }
-  } catch (e, stacktrace) {
-    print('Exception removing user from team: $e');
-    print('Stacktrace: $stacktrace');
-  }
-}
+// Future<void> removeUserFromTeam(String id, String teamID) async {
+//   final DocumentReference<Map<String, dynamic>> userRef;
+//   final DocumentReference<Map<String, dynamic>> teamRef;
+//   final DocumentSnapshot<Map<String, dynamic>> userDoc;
+//   final DocumentSnapshot<Map<String, dynamic>> teamDoc;
+//
+//   try {
+//     userRef = _firestore.collection('users').doc(id);
+//     teamRef = _firestore.collection('teams').doc(teamID);
+//     userDoc = await userRef.get();
+//     teamDoc = await teamRef.get();
+//
+//     if (userDoc.exists && userDoc.data()!.containsKey('teams')) {
+//       if (userDoc.data()!['teams'].contains(teamRef)) {
+//         userRef.update({
+//           'teams': FieldValue.arrayRemove([teamRef]),
+//         });
+//
+//         if (teamDoc.exists && teamDoc.data()!.containsKey('teamMembers')) {
+//           for (final member in teamDoc.data()!['teamMembers']) {
+//             if (member is Map<String, dynamic> && member.containsKey('user')) {
+//               if (member['user'] == userRef) {
+//                 teamRef.update({
+//                   'teamMembers': FieldValue.arrayRemove([member]),
+//                 });
+//                 print('success deleting member $member from team');
+//               }
+//             }
+//           }
+//         }
+//       }
+//     }
+//   } catch (e, stacktrace) {
+//     print('Exception removing user from team: $e');
+//     print('Stacktrace: $stacktrace');
+//   }
+// }
 
 // /// Fetches the list of all users in database. Used for inviting members to
 // /// to teams. Extracts the name and ID from them and puts them into a list of
@@ -748,22 +745,22 @@ Future<Test> getTestInfo(
 }
 
 /// Signs out of this account and returns to login screen.
-void signOutUser(BuildContext context) async {
-  try {
-    await FirebaseAuth.instance.signOut();
-    if (context.mounted) {
-      // Sends to login screen and removes everything else from nav stack
-      Navigator.pushAndRemoveUntil(
-          context,
-          MaterialPageRoute(builder: (context) => LoginScreen()),
-          (Route route) => false);
-    } else {
-      throw Exception('context-unmounted');
-    }
-  } catch (e) {
-    print('Error signing out: $e');
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text('Log out failed. Try again.')),
-    );
-  }
-}
+// void signOutUser(BuildContext context) async {
+//   try {
+//     await FirebaseAuth.instance.signOut();
+//     if (context.mounted) {
+//       // Sends to login screen and removes everything else from nav stack
+//       Navigator.pushAndRemoveUntil(
+//           context,
+//           MaterialPageRoute(builder: (context) => LoginScreen()),
+//           (Route route) => false);
+//     } else {
+//       throw Exception('context-unmounted');
+//     }
+//   } catch (e) {
+//     print('Error signing out: $e');
+//     ScaffoldMessenger.of(context).showSnackBar(
+//       SnackBar(content: Text('Log out failed. Try again.')),
+//     );
+//   }
+// }

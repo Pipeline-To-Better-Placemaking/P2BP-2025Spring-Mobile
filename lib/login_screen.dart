@@ -190,7 +190,7 @@ class _LoginFormState extends State<LoginForm> {
         return;
       }
 
-      final member = await Member.loginUser(user!);
+      final member = await Member.login(user!);
 
       if (!mounted) return;
       ScaffoldMessenger.of(context).clearSnackBars();

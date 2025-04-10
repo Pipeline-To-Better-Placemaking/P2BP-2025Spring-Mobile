@@ -9,7 +9,6 @@ import 'package:url_launcher/url_launcher.dart';
 
 import 'change_password_page.dart';
 import 'db_schema_classes.dart';
-import 'firestore_functions.dart';
 import 'strings.dart';
 import 'submit_bug_report_page.dart';
 
@@ -47,7 +46,7 @@ class _SettingsPageState extends State<SettingsPage> {
             child: const Text('No, go back'),
           ),
           TextButton(
-            onPressed: () => signOutUser(context),
+            onPressed: () => Member.logOut(context),
             child: const Text('Yes, log me out'),
           ),
         ],
