@@ -536,7 +536,7 @@ class _CreateTeamWidgetState extends State<CreateTeamWidget> {
                                 return MemberInviteCard(
                                   member: member,
                                   invited: invited,
-                                  inviteCallback: () {
+                                  inviteMember: () {
                                     if (!invited) {
                                       setState(() {
                                         invitedMembers.add(member);

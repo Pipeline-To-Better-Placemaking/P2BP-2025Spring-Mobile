@@ -72,7 +72,7 @@ class _AbsenceOfOrderTestPageState extends State<AbsenceOfOrderTestPage> {
   Timer? _timer;
   Timer? _outsidePointTimer;
   int _remainingSeconds = -1;
-  static const double _bottomSheetHeight = 185;
+  static const double _bottomSheetHeight = 190;
 
   @override
   void initState() {

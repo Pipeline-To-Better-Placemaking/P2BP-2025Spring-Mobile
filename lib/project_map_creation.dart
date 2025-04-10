@@ -71,7 +71,7 @@ class _ProjectMapCreationState extends State<ProjectMapCreation> {
 
   void _onMapCreated(GoogleMapController controller) {
     mapController = controller;
-    _moveToCurrentLocation(); // Ensure the map is centered on the current location
+    _moveToCurrentLocation();
   }
 
   Future<void> _checkAndFetchLocation() async {
@@ -134,8 +134,8 @@ class _ProjectMapCreationState extends State<ProjectMapCreation> {
           position: point,
           infoWindow: InfoWindow(
               title: title,
-              snippet:
-                  '${point.latitude.toStringAsFixed(5)}, ${point.latitude.toStringAsFixed(5)}',
+              snippet: '${point.latitude.toStringAsFixed(5)}, '
+                  '${point.longitude.toStringAsFixed(5)}',
               onTap: () {}),
           icon: standingPointEnabledIcon,
           onTap: () {

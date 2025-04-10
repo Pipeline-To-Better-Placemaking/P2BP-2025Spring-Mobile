@@ -1314,13 +1314,13 @@ class _CustomSegmentedTabState extends State<CustomSegmentedTab> {
 class MemberInviteCard extends StatelessWidget {
   final Member member;
   final bool invited;
-  final VoidCallback inviteCallback;
+  final VoidCallback inviteMember;
 
   const MemberInviteCard({
     super.key,
     required this.member,
     required this.invited,
-    required this.inviteCallback,
+    required this.inviteMember,
   });
 
   @override
@@ -1338,7 +1338,7 @@ class MemberInviteCard extends StatelessWidget {
             Align(
               alignment: Alignment.centerRight,
               child: InkWell(
-                onTap: inviteCallback,
+                onTap: inviteMember,
                 child: Text(invited ? "Invite sent!" : "Invite"),
               ),
             ),

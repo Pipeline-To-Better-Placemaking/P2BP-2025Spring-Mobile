@@ -105,7 +105,7 @@ class _InviteUserFormState extends State<InviteUserForm> {
                           return MemberInviteCard(
                             member: member,
                             invited: invited,
-                            inviteCallback: () {
+                            inviteMember: () {
                               if (!invited) {
                                 sendInviteToUser(
                                     member.id, widget.activeTeam.id);

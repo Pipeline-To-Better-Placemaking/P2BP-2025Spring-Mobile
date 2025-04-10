@@ -600,16 +600,16 @@ class _AvatarAndTitleRow extends StatelessWidget {
               ),
               GestureDetector(
                 onTap: () async {
-                  // Open image edit functionality
-                  final XFile? pickedFile = await ImagePicker()
-                      .pickImage(source: ImageSource.gallery);
-                  if (pickedFile != null) {
-                    final File imageFile = File(pickedFile.path);
-                    // TODO: Submit image or something.
-                    print("Image selected: ${imageFile.path}");
-                  } else {
-                    print("No image selected.");
-                  }
+                  // // Open image edit functionality
+                  // final XFile? pickedFile = await ImagePicker()
+                  //     .pickImage(source: ImageSource.gallery);
+                  // if (pickedFile != null) {
+                  //   final File imageFile = File(pickedFile.path);
+                  //   // TODO: Submit image or something.
+                  //   print("Image selected: ${imageFile.path}");
+                  // } else {
+                  //   print("No image selected.");
+                  // }
                 },
                 child: CircleAvatar(
                   radius: 16,

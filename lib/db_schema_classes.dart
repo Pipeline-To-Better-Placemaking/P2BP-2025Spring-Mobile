@@ -4638,12 +4638,12 @@ class Team with JsonToString implements FirestoreDocument {
 }
 
 class TeamInvite {
-  final String id;
+  final String teamID;
   final String title;
   final String ownerName;
 
   TeamInvite({
-    required this.id,
+    required this.teamID,
     required this.title,
     required this.ownerName,
   });
@@ -4676,7 +4676,7 @@ class TeamInvite {
                 case {
                   'fullName': String fullName,
                 }) {
-              return TeamInvite(id: id, title: title, ownerName: fullName);
+              return TeamInvite(teamID: id, title: title, ownerName: fullName);
             }
           }
         }
@@ -4689,6 +4689,45 @@ class TeamInvite {
     }
 
     throw Exception('Failed to create TeamInvite');
+  }
+
+  static Future<void> sendToUser(Member member, Team team) async {
+    try {
+      await member.ref.update({
+        'invites': FieldValue.arrayUnion([team.ref]),
+      });
+      print('Success in TeamInvite.sendToUser!');
+    } catch (e, s) {
+      print('Exception: $e');
+      print('Stacktrace: $s');
+    }
+  }
+
+  static Future<void> removeFromUser(Member member, Team team) async {
+    try {
+      member.teamInviteRefs.removeWhere((invite) => invite.id == team.id);
+      member.teamInvites?.removeWhere((invite) => invite.teamID == team.id);
+
+      await member.ref.update({
+        'invites': FieldValue.arrayRemove([team.ref]),
+      });
+
+      print('Success in TeamInvite.removeFromUser!');
+    } catch (e, s) {
+      print('Exception: $e');
+      print('Stacktrace: $s');
+    }
+  }
+
+  Future<void> accept(Member member) async {
+    try {
+      // TODO implement this
+
+      print('Success in invite.accept!');
+    } catch (e, s) {
+      print('Exception: $e');
+      print('Stacktrace: $s');
+    }
   }
 }
 
@@ -4911,6 +4950,11 @@ class Project with JsonToString implements FirestoreDocument {
         coverImageUrl: coverImageUrl,
       );
 
+      // Add project to team locally.
+      team.projectRefs.add(project.ref);
+      team.projects ??= [];
+      team.projects!.add(project);
+
       // Add the project and update the team's projects list in Firestore.
       await _firestore.runTransaction((transaction) async {
         await project.ref.set(project);
@@ -4919,9 +4963,6 @@ class Project with JsonToString implements FirestoreDocument {
         });
       });
 
-      team.projectRefs.add(project.ref);
-      team.projects ??= [];
-      team.projects!.add(project);
       return project;
     } catch (e, s) {
       print('Exception: $e');

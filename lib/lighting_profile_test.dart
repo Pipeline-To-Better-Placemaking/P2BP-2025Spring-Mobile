@@ -45,7 +45,7 @@ class _LightingProfileTestPageState extends State<LightingProfileTestPage> {
   Timer? _timer;
   Timer? _outsidePointTimer;
   int _remainingSeconds = -1;
-  static const double _bottomSheetHeight = 220;
+  static const double _bottomSheetHeight = 240;
 
   @override
   void initState() {
@@ -355,7 +355,7 @@ class _LightingProfileTestPageState extends State<LightingProfileTestPage> {
                     Spacer(flex: 1),
                   ],
                 ),
-                SizedBox(height: 10),
+                SizedBox(height: 15),
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   spacing: 10,

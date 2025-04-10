@@ -194,20 +194,22 @@ class _TeamsAndInvitesPageState extends State<TeamsAndInvitesPage> {
                               invite: invite,
                               acceptCallback: () {
                                 // Add to database
-                                addUserToTeam(invite.id);
+                                addUserToTeam(invite.teamID);
                                 // Remove invite from screen
                                 setState(() {
                                   _teamInvites.removeWhere((team) =>
-                                      team.id.compareTo(invite.id) == 0);
+                                      team.teamID.compareTo(invite.teamID) ==
+                                      0);
                                 });
                               },
                               declineCallback: () {
                                 // Remove invite from database
-                                removeInviteFromUser(invite.id);
+                                removeInviteFromUser(invite.teamID);
                                 // Remove invite from screen
                                 setState(() {
                                   _teamInvites.removeWhere((team) =>
-                                      team.id.compareTo(invite.id) == 0);
+                                      team.teamID.compareTo(invite.teamID) ==
+                                      0);
                                 });
                               },
                             );
