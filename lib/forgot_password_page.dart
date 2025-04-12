@@ -94,7 +94,6 @@ class _ForgotPasswordFormState extends State<ForgotPasswordForm> {
   final TextEditingController _emailController = TextEditingController();
   String _message = '';
   bool _isEmailValid = true;
-  bool _isRequestSent = false;
 
   @override
   void dispose() {
@@ -108,12 +107,10 @@ class _ForgotPasswordFormState extends State<ForgotPasswordForm> {
     try {
       await FirebaseAuth.instance.sendPasswordResetEmail(email: email);
       setState(() {
-        _isRequestSent = true;
         _message = 'A reset email has been sent to $email.';
       });
     } catch (error) {
       setState(() {
-        _isRequestSent = false;
         _message = error.toString(); // Provide error details
       });
     }

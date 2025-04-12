@@ -4065,9 +4065,6 @@ abstract interface class FirestoreDocument {
 class Member with JsonToString implements FirestoreDocument {
   static const String collectionIDStatic = 'users';
 
-  static final CollectionReference<Map<String, Object?>> defaultRef =
-      _firestore.collection(collectionIDStatic);
-
   static final CollectionReference<Member> converterRef =
       _firestore.collection(collectionIDStatic).withConverter<Member>(
             fromFirestore: (snapshot, _) => Member.fromJson(snapshot.data()!),
@@ -4269,7 +4266,7 @@ class Member with JsonToString implements FirestoreDocument {
   Future<String> addProfileImage(File imageFile) async {
     try {
       final profileImageRef =
-          FirebaseStorage.instance.ref().child('profile_images/$id.jpg');
+          FirebaseStorage.instance.ref().child('profile_images/$id');
       await profileImageRef.putFile(imageFile);
       final downloadUrl = await profileImageRef.getDownloadURL();
 
@@ -4420,9 +4417,6 @@ typedef RoleMap<T> = Map<GroupRole, List<T>>;
 
 class Team with JsonToString implements FirestoreDocument {
   static const String collectionIDStatic = 'teams';
-
-  static final CollectionReference<Map<String, Object?>> defaultRef =
-      _firestore.collection(collectionIDStatic);
 
   static final CollectionReference<Team> converterRef =
       _firestore.collection(collectionIDStatic).withConverter<Team>(
@@ -4645,8 +4639,6 @@ class Team with JsonToString implements FirestoreDocument {
         if (projectDoc.exists) {
           newProjectList.add(projectDoc.data()!);
           newProjectList.last.team = this;
-        } else {
-          projectRefs.remove(ref);
         }
       }
 
@@ -4682,8 +4674,6 @@ class Team with JsonToString implements FirestoreDocument {
           if (memberDoc.exists) {
             // Add each member to appropriate role list.
             newMemberMap[role]!.add(memberDoc.data()!);
-          } else {
-            memberRefMap[role]!.remove(ref);
           }
         }
       }
@@ -4794,9 +4784,6 @@ class TeamInvite {
 
 class Project with JsonToString implements FirestoreDocument {
   static const String collectionIDStatic = 'projects';
-
-  static final CollectionReference<Map<String, Object?>> defaultRef =
-      _firestore.collection(collectionIDStatic);
 
   static final CollectionReference<Project> converterRef =
       _firestore.collection(collectionIDStatic).withConverter<Project>(
@@ -4943,7 +4930,7 @@ class Project with JsonToString implements FirestoreDocument {
         // Delete cover photo from storage if present.
         if (coverImageUrl.isNotEmpty) {
           final storageRef = FirebaseStorage.instance.ref();
-          final coverImageRef = storageRef.child('project_covers/$id.jpg');
+          final coverImageRef = storageRef.child('project_covers/$id');
           await coverImageRef.delete();
         }
 
@@ -4993,7 +4980,7 @@ class Project with JsonToString implements FirestoreDocument {
       // Upload and get link for cover image.
       if (coverImage != null) {
         final storageRef = FirebaseStorage.instance.ref();
-        final coverImageRef = storageRef.child('project_covers/$projectID.jpg');
+        final coverImageRef = storageRef.child('project_covers/$projectID');
         await coverImageRef.putFile(coverImage);
         coverImageUrl = await coverImageRef.getDownloadURL();
       }
@@ -5034,8 +5021,7 @@ class Project with JsonToString implements FirestoreDocument {
 
   Future<String> addCoverImage(File imageFile) async {
     try {
-      final coverImageRef =
-          FirebaseStorage.instance.ref('project_covers/$id.jpg');
+      final coverImageRef = FirebaseStorage.instance.ref('project_covers/$id');
       await coverImageRef.putFile(imageFile);
       final downloadUrl = await coverImageRef.getDownloadURL();
 
@@ -5080,8 +5066,6 @@ class Project with JsonToString implements FirestoreDocument {
         final testDoc = await _firestore.doc(ref.path).get();
         if (testDoc.exists) {
           newTestList.add(Test.recreateFromDoc(testDoc));
-        } else {
-          testRefs.remove(ref);
         }
       }
 

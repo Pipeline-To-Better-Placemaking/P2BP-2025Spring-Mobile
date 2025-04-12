@@ -174,7 +174,7 @@ class _ProjectDetailsPageState extends State<ProjectDetailsPage> {
             ],
             flexibleSpace: DecoratedBox(
               decoration: BoxDecoration(
-                color: p2bpBlue,
+                color: Colors.grey,
                 image: _coverImageUrl.isNotEmpty
                     ? DecorationImage(
                         image: NetworkImage(_coverImageUrl), fit: BoxFit.cover)
@@ -184,7 +184,7 @@ class _ProjectDetailsPageState extends State<ProjectDetailsPage> {
                 background: ClipRRect(
                   child: Container(
                     decoration: BoxDecoration(
-                      color: p2bpDarkBlue,
+                      color: Colors.grey,
                       image: _coverImageUrl.isNotEmpty
                           ? DecorationImage(
                               image: NetworkImage(_coverImageUrl),
