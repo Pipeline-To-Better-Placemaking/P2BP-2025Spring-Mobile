@@ -1,8 +1,5 @@
-import 'dart:io';
-
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:image_picker/image_picker.dart';
 import 'package:p2bp_2025spring_mobile/change_team_name_form.dart';
 import 'package:p2bp_2025spring_mobile/extensions.dart';
 import 'package:p2bp_2025spring_mobile/invite_user_form.dart';
@@ -186,7 +183,7 @@ class _TeamSettingsPageState extends State<TeamSettingsPage> {
                 padding: const EdgeInsets.symmetric(horizontal: 16.0),
                 child: _AvatarAndTitleRow(
                   title: widget.activeTeam.title,
-                  manageMembersCallback: _isLoadingTeamMembers
+                  manageMembers: _isLoadingTeamMembers
                       ? null
                       : () {
                           showModalBottomSheet(
@@ -201,7 +198,7 @@ class _TeamSettingsPageState extends State<TeamSettingsPage> {
                             ),
                           );
                         },
-                  inviteCallback: _isLoadingTeamMembers
+                  inviteMembers: _isLoadingTeamMembers
                       ? null
                       : () {
                           showModalBottomSheet(
@@ -574,13 +571,13 @@ class _SettingsMenuButton extends StatelessWidget {
 
 class _AvatarAndTitleRow extends StatelessWidget {
   final String title;
-  final VoidCallback? manageMembersCallback;
-  final VoidCallback? inviteCallback;
+  final VoidCallback? manageMembers;
+  final VoidCallback? inviteMembers;
 
   const _AvatarAndTitleRow({
     required this.title,
-    required this.inviteCallback,
-    this.manageMembersCallback,
+    required this.manageMembers,
+    required this.inviteMembers,
   });
 
   @override
@@ -663,7 +660,7 @@ class _AvatarAndTitleRow extends StatelessWidget {
                       // Adjust for proper vertical alignment
                       top: 12,
                       child: GestureDetector(
-                        onTap: manageMembersCallback,
+                        onTap: manageMembers,
                         child: CircleAvatar(
                           radius: 12,
                           backgroundColor: Colors.blue,
@@ -682,7 +679,7 @@ class _AvatarAndTitleRow extends StatelessWidget {
                       // Align with the team avatars vertically
                       top: -6,
                       child: ElevatedButton(
-                        onPressed: inviteCallback,
+                        onPressed: inviteMembers,
                         style: ElevatedButton.styleFrom(
                           shape: RoundedRectangleBorder(
                               borderRadius: BorderRadius.circular(8)),

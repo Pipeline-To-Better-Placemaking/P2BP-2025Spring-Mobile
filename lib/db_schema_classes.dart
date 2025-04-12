@@ -4287,12 +4287,19 @@ class Member with JsonToString implements FirestoreDocument {
 
   static Future<List<Member>> queryByFullName(String searchText) async {
     try {
+      // Use all uppercase text to get broader/non case-sensitive results.
+      final textAsUppercase = searchText.toUpperCase();
       final queryResult = await converterRef
-          .where('fullName', isGreaterThanOrEqualTo: searchText)
+          .where('fullName', isGreaterThanOrEqualTo: textAsUppercase)
           .get();
 
       final snapshotList = queryResult.docs;
       final memberList = [for (final snapshot in snapshotList) snapshot.data()];
+
+      // Remove remaining members where names don't contain
+      // the search string because query is too broad.
+      memberList.removeWhere(
+          (member) => !member.fullName.toUpperCase().contains(textAsUppercase));
 
       return memberList;
     } catch (e, s) {
@@ -4584,6 +4591,7 @@ class Team with JsonToString implements FirestoreDocument {
     }
   }
 
+  /// Removes current [Member] of [Team] from the [Team].
   void removeMember(Member member) {
     try {
       // Remove references to Team from Member.
@@ -4728,22 +4736,27 @@ class TeamInvite {
     }
   }
 
-  void accept(Member member) {
+  void accept(Member member) async {
     try {
       // Remove this invite and add team to local Member object.
       member.teamInviteRefs.removeWhere((invite) => invite.id == team.id);
       member.teamInvites?.removeWhere((invite) => invite.team.id == team.id);
       member.teamRefs.add(team.ref);
-      if (member.teams == null) member.loadTeamsInfo();
+      member.teams?.add(team);
 
       // Add this Member to local Team object.
       team.memberRefMap[GroupRole.member]!.add(member.ref);
-      if (team.memberMap == null) team.loadMembersInfo();
+      team.memberMap?[GroupRole.member]!.add(member);
 
       // Update Firestore.
-      _firestore.runTransaction((transaction) async {
-        member.update();
-        team.update();
+      await _firestore.runTransaction((transaction) async {
+        await member.update();
+        await team.update();
+      });
+
+      await _firestore.runTransaction((transaction) async {
+        if (member.teams == null) await member.loadTeamsInfo();
+        if (team.memberMap == null) await team.loadMembersInfo();
       });
 
       print('Success in invite.accept!');

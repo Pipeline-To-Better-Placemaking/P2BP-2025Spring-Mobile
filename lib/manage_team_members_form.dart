@@ -2,7 +2,6 @@ import 'dart:ui';
 
 import 'package:flutter/material.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
-import 'package:p2bp_2025spring_mobile/firestore_functions.dart';
 import 'package:p2bp_2025spring_mobile/widgets.dart';
 
 import 'db_schema_classes.dart';
@@ -23,14 +22,6 @@ class ManageTeamMembersForm extends StatefulWidget {
 }
 
 class _ManageTeamMembersFormState extends State<ManageTeamMembersForm> {
-  Future<bool> _showRemoveMemberDialog(Member member) async {
-    return await showDialog(
-      context: context,
-      barrierColor: Colors.black.withValues(alpha: 0.5),
-      builder: (BuildContext context) => _RemoveMemberDialog(member: member),
-    );
-  }
-
   @override
   Widget build(BuildContext context) {
     return SingleChildScrollView(
@@ -98,8 +89,13 @@ class _ManageTeamMembersFormState extends State<ManageTeamMembersForm> {
                             // Delete Icon
                             GestureDetector(
                               onTap: () async {
-                                final didRemove =
-                                    await _showRemoveMemberDialog(thisMember);
+                                final didRemove = await showDialog<bool>(
+                                  context: context,
+                                  barrierColor:
+                                      Colors.black.withValues(alpha: 0.5),
+                                  builder: (BuildContext context) =>
+                                      _RemoveMemberDialog(member: thisMember),
+                                );
 
                                 if (didRemove != true) return;
                                 widget.activeTeam.removeMember(thisMember);

@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:io';
 
 import 'package:flutter/material.dart';
@@ -354,17 +355,19 @@ class CreateTeamWidget extends StatefulWidget {
 }
 
 class _CreateTeamWidgetState extends State<CreateTeamWidget> {
-  List<Member> membersSearch = [];
-  List<Member> invitedMembers = [];
+  List<Member> _searchResults = [];
+  final List<Member> _invitedMembers = [];
   bool _isLoading = false;
-  String teamTitle = '';
-  int itemCount = 0;
+  String _teamTitle = '';
   final _formKey = GlobalKey<FormState>();
-  String teamID = '';
+
+  Timer? _searchDelayTimer;
+  String _searchTextBuffer = '';
 
   @override
-  initState() {
-    super.initState();
+  void dispose() {
+    _searchDelayTimer?.cancel();
+    super.dispose();
   }
 
   @override
@@ -480,7 +483,7 @@ class _CreateTeamWidgetState extends State<CreateTeamWidget> {
                   errorMessage:
                       'Team names must be at least 3 characters long.',
                   onChanged: (teamText) {
-                    teamTitle = teamText;
+                    _teamTitle = teamText;
                   },
                 ),
                 const SizedBox(height: 10.0),
@@ -503,20 +506,34 @@ class _CreateTeamWidgetState extends State<CreateTeamWidget> {
                   maxLines: 1,
                   minLines: 1,
                   icon: const Icon(Icons.search),
-                  onChanged: (memberText) async {
-                    if (memberText.length > 2) {
+                  onChanged: (searchText) async {
+                    if (searchText.length > 2) {
                       setState(() {
                         _isLoading = true;
                       });
 
-                      membersSearch = await Member.queryByFullName(memberText);
-                      itemCount = membersSearch.length;
+                      // Delay after text stops changing before search.
+                      // This delay is to prevent excessive amount of queries
+                      // as user is typing.
+                      _searchDelayTimer?.cancel();
+                      _searchTextBuffer = searchText;
+                      _searchDelayTimer = Timer(Duration(seconds: 1), () async {
+                        // Do search
+                        _searchResults =
+                            await Member.queryByFullName(_searchTextBuffer);
+                        _searchResults.removeWhere(
+                            (member) => member.id == widget.member.id);
 
-                      setState(() {
-                        _isLoading = false;
+                        setState(() {
+                          _isLoading = false;
+                        });
                       });
                     } else {
-                      itemCount = 0;
+                      _searchDelayTimer?.cancel();
+                      setState(() {
+                        _isLoading = false;
+                        _searchResults = [];
+                      });
                     }
                   },
                 ),
@@ -525,29 +542,29 @@ class _CreateTeamWidgetState extends State<CreateTeamWidget> {
                   height: 250,
                   child: _isLoading
                       ? const Center(child: CircularProgressIndicator())
-                      : itemCount > 0
+                      : _searchResults.isNotEmpty
                           ? ListView.separated(
                               shrinkWrap: true,
-                              itemCount: itemCount,
+                              itemCount: _searchResults.length,
                               padding: const EdgeInsets.only(left: 5, right: 5),
                               itemBuilder: (context, index) {
-                                final member = membersSearch[index];
-                                final invited = invitedMembers.contains(member);
+                                final member = _searchResults[index];
+                                final invited =
+                                    _invitedMembers.contains(member);
                                 return MemberInviteCard(
                                   member: member,
                                   invited: invited,
                                   inviteMember: () {
                                     if (!invited) {
                                       setState(() {
-                                        invitedMembers.add(member);
+                                        _invitedMembers.add(member);
                                       });
                                     }
                                   },
                                 );
                               },
-                              separatorBuilder:
-                                  (BuildContext context, int index) =>
-                                      const SizedBox(height: 10),
+                              separatorBuilder: (context, index) =>
+                                  const SizedBox(height: 10),
                             )
                           : const Center(
                               child: Text(
@@ -570,9 +587,9 @@ class _CreateTeamWidgetState extends State<CreateTeamWidget> {
                         );
 
                         await Team.createNew(
-                          teamTitle: teamTitle,
+                          teamTitle: _teamTitle,
                           teamOwner: widget.member,
-                          inviteList: invitedMembers,
+                          inviteList: _invitedMembers,
                         );
 
                         if (!context.mounted) return;

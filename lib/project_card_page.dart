@@ -251,9 +251,9 @@ class _ProjectCardPageState extends State<ProjectCardPage> {
                         child: SingleChildScrollView(
                           physics: AlwaysScrollableScrollPhysics(),
                           child: SizedBox(
-                            height: MediaQuery.sizeOf(context).height * 0.9,
+                            height: MediaQuery.sizeOf(context).height,
                             child: Align(
-                              alignment: Alignment(0, -0.5),
+                              alignment: Alignment(0, -0.4),
                               child: Text(
                                 'You have no projects! Join a team '
                                 'or create a project first.',

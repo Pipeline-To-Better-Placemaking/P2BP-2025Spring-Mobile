@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:p2bp_2025spring_mobile/theme.dart';
 import 'package:p2bp_2025spring_mobile/widgets.dart';
@@ -19,15 +21,17 @@ class InviteUserForm extends StatefulWidget {
 }
 
 class _InviteUserFormState extends State<InviteUserForm> {
-  List<Member> membersSearch = [];
-  List<Member> invitedMembers = [];
-  int itemCount = 0;
+  List<Member> _searchResults = [];
+  final List<Member> _invitedMembers = [];
+  bool _isLoading = false;
 
-  bool _isLoading = true;
+  Timer? _searchDelayTimer;
+  String _searchTextBuffer = '';
 
   @override
-  void initState() {
-    super.initState();
+  void dispose() {
+    _searchDelayTimer?.cancel();
+    super.dispose();
   }
 
   @override
@@ -58,12 +62,12 @@ class _InviteUserFormState extends State<InviteUserForm> {
                   ),
                 ),
               ),
-              SizedBox(height: 12),
+              const SizedBox(height: 12),
               Text(
                 'Search Members',
                 style: TextStyle(color: Colors.white),
               ),
-              SizedBox(height: 8),
+              const SizedBox(height: 8),
               TextFormField(
                 keyboardType: TextInputType.name,
                 decoration: InputDecoration(
@@ -74,33 +78,50 @@ class _InviteUserFormState extends State<InviteUserForm> {
                   labelText: 'Members',
                   floatingLabelBehavior: FloatingLabelBehavior.never,
                 ),
-                onChanged: (memberText) async {
-                  if (memberText.length > 2) {
+                onChanged: (searchText) async {
+                  if (searchText.length > 2) {
                     setState(() {
                       _isLoading = true;
                     });
 
-                    membersSearch = await Member.queryByFullName(memberText);
-                    membersSearch.removeWhere(
-                        (member) => widget.teamMembers.contains(member));
-                    itemCount = membersSearch.length;
+                    // Delay after text stops changing before search.
+                    // This delay is to prevent excessive amount of queries
+                    // as user is typing.
+                    _searchDelayTimer?.cancel();
+                    _searchTextBuffer = searchText;
+                    _searchDelayTimer = Timer(Duration(seconds: 1), () async {
+                      // Do search
+                      _searchResults =
+                          await Member.queryByFullName(_searchTextBuffer);
 
-                    setState(() {
-                      _isLoading = false;
+                      // Remove current team members from results by id.
+                      final List<String> teamMemberIds = [
+                        for (final member in widget.teamMembers) member.id,
+                      ];
+                      _searchResults.removeWhere(
+                          (member) => teamMemberIds.contains(member.id));
+
+                      setState(() {
+                        _isLoading = false;
+                      });
                     });
                   } else {
-                    itemCount = 0;
+                    _searchDelayTimer?.cancel();
+                    setState(() {
+                      _isLoading = false;
+                      _searchResults = [];
+                    });
                   }
                 },
               ),
-              SizedBox(height: 10),
+              const SizedBox(height: 10),
               SizedBox(
                 height: 250,
-                child: itemCount > 0
+                child: _searchResults.isNotEmpty
                     ? ListView.separated(
                         itemBuilder: (context, index) {
-                          final member = membersSearch[index];
-                          final invited = invitedMembers.contains(member);
+                          final member = _searchResults[index];
+                          final invited = _invitedMembers.contains(member);
                           return MemberInviteCard(
                             member: member,
                             invited: invited,
@@ -111,7 +132,7 @@ class _InviteUserFormState extends State<InviteUserForm> {
                                   widget.activeTeam,
                                 );
                                 setState(() {
-                                  invitedMembers.add(member);
+                                  _invitedMembers.add(member);
                                 });
                               }
                             },
@@ -119,7 +140,8 @@ class _InviteUserFormState extends State<InviteUserForm> {
                         },
                         separatorBuilder: (context, index) =>
                             const SizedBox(height: 10),
-                        itemCount: itemCount)
+                        itemCount: _searchResults.length,
+                      )
                     : _isLoading
                         ? const Center(child: CircularProgressIndicator())
                         : const Text(
@@ -128,7 +150,7 @@ class _InviteUserFormState extends State<InviteUserForm> {
                             style: TextStyle(color: Colors.white),
                           ),
               ),
-              SizedBox(height: 20),
+              const SizedBox(height: 20),
               InkWell(
                 child: Padding(
                   padding: const EdgeInsets.all(10),
@@ -139,7 +161,7 @@ class _InviteUserFormState extends State<InviteUserForm> {
                 ),
                 onTap: () => Navigator.pop(context),
               ),
-              SizedBox(height: 30),
+              const SizedBox(height: 30),
             ],
           ),
         ),
