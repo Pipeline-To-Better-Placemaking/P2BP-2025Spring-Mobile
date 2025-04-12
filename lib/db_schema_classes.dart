@@ -260,11 +260,6 @@ abstract class Test<T> with JsonToString implements FirestoreDocument {
   /// for completing that [Test].
   static final Map<Type, Widget Function(Project, Test)> _pageBuilders = {};
 
-  /// Maps from [Type] assumed to extend [Test] to the function used to
-  /// save that [Test] instance to Firestore.
-  static final Map<Type, Future<void> Function(Test)>
-      _saveToFirestoreFunctions = {};
-
   static final Map<Type, String> _testInitialsMap = {};
 
   /// Set used internally to determine whether a [Test] subclass uses
@@ -291,27 +286,43 @@ abstract class Test<T> with JsonToString implements FirestoreDocument {
   /// Utilizes values registered to [Test._newTestConstructors].
   static Test createNew(
       {required String title,
-      required String id,
       required Timestamp scheduledTime,
-      required DocumentReference projectRef,
+      required Project project,
       required String collectionID,
       List? standingPoints,
       int? testDuration,
       int? intervalDuration,
       int? intervalCount}) {
-    final constructor = _newTestConstructors[collectionID];
+    // Generate new ID;
+    final id = _firestore.collection(collectionID).doc().id;
 
+    // Get constructor for appropriate test type.
+    final constructor = _newTestConstructors[collectionID];
     if (constructor != null) {
-      return constructor(
+      final test = constructor(
         title: title,
         id: id,
         scheduledTime: scheduledTime,
-        projectRef: projectRef,
+        projectRef: project.ref,
         standingPoints: standingPoints,
         testDuration: testDuration,
         intervalDuration: intervalDuration,
         intervalCount: intervalCount,
       );
+
+      // Add test to project.
+      project.testRefs.add(test.ref);
+      project.tests?.add(test);
+
+      _firestore.runTransaction((transaction) async {
+        transaction.set(
+          _firestore.collection(test.collectionID).doc(test.id),
+          test.toJson(),
+        );
+        transaction.update(project.ref, project.toJson());
+      });
+
+      return test;
     }
     throw Exception('Unregistered Test type for collection: $collectionID');
   }
@@ -343,15 +354,6 @@ abstract class Test<T> with JsonToString implements FirestoreDocument {
       return pageBuilder(project, this);
     }
     throw Exception('No registered page for test type: $runtimeType');
-  }
-
-  Future<void> saveToFirestore() {
-    final saveFunction = _saveToFirestoreFunctions[runtimeType];
-    if (saveFunction != null) {
-      return saveFunction(this);
-    }
-    throw Exception(
-        'No registered saveToFirestore function for test type: $runtimeType');
   }
 
   /// Returns 2-letter initials for given test type if they are registered.
@@ -390,20 +392,6 @@ abstract class Test<T> with JsonToString implements FirestoreDocument {
       print('Stacktrace: $s');
       throw Exception('Failed to get test because of exception: $e');
     }
-  }
-
-  @override
-  String toString() {
-    return 'This is an instance of $runtimeType\n'
-        'title: ${this.title}\n'
-        'id: ${this.id}\n'
-        'scheduledTime: ${this.scheduledTime}\n'
-        'projectRef: ${this.projectRef}\n'
-        'collectionID: $collectionID\n'
-        'data: ${this.data}\n'
-        'creationTime: ${this.creationTime}\n'
-        'maxResearchers: ${this.maxResearchers}\n'
-        'isComplete: ${this.isComplete}\n';
   }
 
   /// Uploads the data from a completed test to Firestore.
@@ -649,28 +637,19 @@ class LightingProfileTest extends Test<LightingProfileData>
           data: LightingProfileData.empty(),
           testDuration: testDuration ?? -1,
         );
+
     // Register for recreating a Lighting Profile Test from Firestore
     Test._recreateTestConstructors[collectionIDStatic] = (testDoc) {
       return LightingProfileTest.fromJson(testDoc.data()!);
     };
+
     // Register for building a Lighting Profile Test page
     Test._pageBuilders[LightingProfileTest] =
         (project, test) => LightingProfileTestPage(
               activeProject: project,
               activeTest: test as LightingProfileTest,
             );
-    // Register a function for saving to Firestore
-    Test._saveToFirestoreFunctions[LightingProfileTest] = (test) async {
-      final testRef = _firestore
-          .collection(test.collectionID)
-          .doc(test.id)
-          .withConverter<LightingProfileTest>(
-            fromFirestore: (snapshot, _) =>
-                LightingProfileTest.fromJson(snapshot.data()!),
-            toFirestore: (test, _) => test.toJson(),
-          );
-      await testRef.set(test as LightingProfileTest, SetOptions(merge: true));
-    };
+
     Test._testInitialsMap[LightingProfileTest] = 'LP';
     Test._timerTestCollectionIDs.add(collectionIDStatic);
   }
@@ -1050,28 +1029,19 @@ class AbsenceOfOrderTest extends Test<AbsenceOfOrderData>
           data: AbsenceOfOrderData.empty(),
           testDuration: testDuration ?? -1,
         );
+
     // Register for recreating an Absence of Order Test from Firestore
     Test._recreateTestConstructors[collectionIDStatic] = (testDoc) {
       return AbsenceOfOrderTest.fromJson(testDoc.data()!);
     };
+
     // Register for building an Absence of Order Test page
     Test._pageBuilders[AbsenceOfOrderTest] =
         (project, test) => AbsenceOfOrderTestPage(
               activeProject: project,
               activeTest: test as AbsenceOfOrderTest,
             );
-    // Register a function for saving to Firestore
-    Test._saveToFirestoreFunctions[AbsenceOfOrderTest] = (test) async {
-      final testRef = _firestore
-          .collection(test.collectionID)
-          .doc(test.id)
-          .withConverter<AbsenceOfOrderTest>(
-            fromFirestore: (snapshot, _) =>
-                AbsenceOfOrderTest.fromJson(snapshot.data()!),
-            toFirestore: (test, _) => test.toJson(),
-          );
-      await testRef.set(test as AbsenceOfOrderTest, SetOptions(merge: true));
-    };
+
     Test._testInitialsMap[AbsenceOfOrderTest] = 'AO';
     Test._timerTestCollectionIDs.add(collectionIDStatic);
   }
@@ -1539,28 +1509,19 @@ class SpatialBoundariesTest extends Test<SpatialBoundariesData>
           data: SpatialBoundariesData.empty(),
           testDuration: testDuration ?? -1,
         );
+
     // Register for recreating a Spatial Boundaries Test from Firestore
     Test._recreateTestConstructors[collectionIDStatic] = (testDoc) {
       return SpatialBoundariesTest.fromJson(testDoc.data()!);
     };
+
     // Register for building a Spatial Boundaries Test page
     Test._pageBuilders[SpatialBoundariesTest] =
         (project, test) => SpatialBoundariesTestPage(
               activeProject: project,
               activeTest: test as SpatialBoundariesTest,
             );
-    // Register a function for saving to Firestore
-    Test._saveToFirestoreFunctions[SpatialBoundariesTest] = (test) async {
-      final testRef = _firestore
-          .collection(test.collectionID)
-          .doc(test.id)
-          .withConverter<SpatialBoundariesTest>(
-            fromFirestore: (snapshot, _) =>
-                SpatialBoundariesTest.fromJson(snapshot.data()!),
-            toFirestore: (test, _) => test.toJson(),
-          );
-      await testRef.set(test as SpatialBoundariesTest, SetOptions(merge: true));
-    };
+
     Test._testInitialsMap[SpatialBoundariesTest] = 'SB';
     Test._timerTestCollectionIDs.add(collectionIDStatic);
   }
@@ -1715,29 +1676,18 @@ class SectionCutterTest extends Test<Section> with JsonToString {
           data: Section.empty(),
           linePoints: (standingPoints as List<LatLng>?) ?? [],
         );
+
     // Register for Map for Test.recreateFromDoc
     Test._recreateTestConstructors[collectionIDStatic] = (testDoc) {
       return SectionCutterTest.fromJson(testDoc.data()!);
     };
+
     // Register for Map for Test.getPage
     Test._pageBuilders[SectionCutterTest] = (project, test) => SectionCutter(
           activeProject: project,
           activeTest: test as SectionCutterTest,
         );
-    // Register for Map for Test.saveToFirestore
-    // Standing points are saved under line, as they will be made to create
-    // a polyline, instead of displayed as individual points.
-    Test._saveToFirestoreFunctions[SectionCutterTest] = (test) async {
-      final testRef = _firestore
-          .collection(test.collectionID)
-          .doc(test.id)
-          .withConverter<SectionCutterTest>(
-            fromFirestore: (snapshot, _) =>
-                SectionCutterTest.fromJson(snapshot.data()!),
-            toFirestore: (test, _) => test.toJson(),
-          );
-      await testRef.set(test as SectionCutterTest, SetOptions(merge: true));
-    };
+
     Test._standingPointTestCollectionIDs.add(collectionIDStatic);
     Test._testInitialsMap[SectionCutterTest] = 'SC';
   }
@@ -2228,28 +2178,19 @@ class IdentifyingAccessTest extends Test<IdentifyingAccessData>
           projectRef: projectRef,
           data: IdentifyingAccessData.empty(),
         );
+
     // Register for recreating a Identifying Access Test from Firestore
     Test._recreateTestConstructors[collectionIDStatic] = (testDoc) {
       return IdentifyingAccessTest.fromJson(testDoc.data()!);
     };
+
     // Register for building a Identifying Access Test page
     Test._pageBuilders[IdentifyingAccessTest] =
         (project, test) => IdentifyingAccess(
               activeProject: project,
               activeTest: test as IdentifyingAccessTest,
             );
-    // Register a function for saving to Firestore
-    Test._saveToFirestoreFunctions[IdentifyingAccessTest] = (test) async {
-      final testRef = _firestore
-          .collection(test.collectionID)
-          .doc(test.id)
-          .withConverter<IdentifyingAccessTest>(
-            fromFirestore: (snapshot, _) =>
-                IdentifyingAccessTest.fromJson(snapshot.data()!),
-            toFirestore: (test, _) => test.toJson(),
-          );
-      await testRef.set(test as IdentifyingAccessTest, SetOptions(merge: true));
-    };
+
     Test._testInitialsMap[IdentifyingAccessTest] = 'IA';
   }
 
@@ -2972,28 +2913,19 @@ class NaturePrevalenceTest extends Test<NaturePrevalenceData>
           data: NaturePrevalenceData.empty(),
           testDuration: testDuration ?? -1,
         );
+
     // Register for recreating a Nature Prevalence Test from Firestore
     Test._recreateTestConstructors[collectionIDStatic] = (testDoc) {
       return NaturePrevalenceTest.fromJson(testDoc.data()!);
     };
+
     // Register for building a Nature Prevalence Test page
     Test._pageBuilders[NaturePrevalenceTest] =
         (project, test) => NaturePrevalence(
               activeProject: project,
               activeTest: test as NaturePrevalenceTest,
             );
-    // Register a function for saving to Firestore
-    Test._saveToFirestoreFunctions[NaturePrevalenceTest] = (test) async {
-      final testRef = _firestore
-          .collection(test.collectionID)
-          .doc(test.id)
-          .withConverter<NaturePrevalenceTest>(
-            fromFirestore: (snapshot, _) =>
-                NaturePrevalenceTest.fromJson(snapshot.data()!),
-            toFirestore: (test, _) => test.toJson(),
-          );
-      await testRef.set(test as NaturePrevalenceTest, SetOptions(merge: true));
-    };
+
     Test._testInitialsMap[NaturePrevalenceTest] = 'NP';
     Test._timerTestCollectionIDs.add(collectionIDStatic);
   }
@@ -3359,25 +3291,17 @@ class PeopleInPlaceTest extends Test<PeopleInPlaceData>
           standingPoints: (standingPoints as List<StandingPoint>?) ?? [],
           testDuration: testDuration ?? -1,
         );
+
     Test._recreateTestConstructors[collectionIDStatic] = (testDoc) {
       return PeopleInPlaceTest.fromJson(testDoc.data()!);
     };
+
     Test._pageBuilders[PeopleInPlaceTest] =
         (project, test) => PeopleInPlaceTestPage(
               activeProject: project,
               activeTest: test as PeopleInPlaceTest,
             );
-    Test._saveToFirestoreFunctions[PeopleInPlaceTest] = (test) async {
-      final testRef = _firestore
-          .collection(test.collectionID)
-          .doc(test.id)
-          .withConverter<PeopleInPlaceTest>(
-            fromFirestore: (snapshot, _) =>
-                PeopleInPlaceTest.fromJson(snapshot.data()!),
-            toFirestore: (test, _) => test.toJson(),
-          );
-      await testRef.set(test as PeopleInPlaceTest, SetOptions(merge: true));
-    };
+
     Test._testInitialsMap[PeopleInPlaceTest] = 'PP';
     Test._standingPointTestCollectionIDs.add(collectionIDStatic);
     Test._timerTestCollectionIDs.add(collectionIDStatic);
@@ -3671,28 +3595,19 @@ class PeopleInMotionTest extends Test<PeopleInMotionData>
           standingPoints: (standingPoints as List<StandingPoint>?) ?? [],
           testDuration: testDuration ?? -1,
         );
+
     // Register for recreating from Firestore
     Test._recreateTestConstructors[collectionIDStatic] = (testDoc) {
       return PeopleInMotionTest.fromJson(testDoc.data()!);
     };
+
     // Register the test's UI page
     Test._pageBuilders[PeopleInMotionTest] =
         (project, test) => PeopleInMotionTestPage(
               activeProject: project,
               activeTest: test as PeopleInMotionTest,
             );
-    // Register the save function
-    Test._saveToFirestoreFunctions[PeopleInMotionTest] = (test) async {
-      final testRef = _firestore
-          .collection(test.collectionID)
-          .doc(test.id)
-          .withConverter<PeopleInMotionTest>(
-            fromFirestore: (snapshot, _) =>
-                PeopleInMotionTest.fromJson(snapshot.data()!),
-            toFirestore: (test, _) => test.toJson(),
-          );
-      await testRef.set(test as PeopleInMotionTest, SetOptions(merge: true));
-    };
+
     Test._standingPointTestCollectionIDs.add(collectionIDStatic);
     Test._testInitialsMap[PeopleInMotionTest] = 'PM';
     Test._timerTestCollectionIDs.add(collectionIDStatic);
@@ -3953,25 +3868,17 @@ class AcousticProfileTest extends Test<AcousticProfileData>
           intervalDuration: intervalDuration ?? -1,
           intervalCount: intervalCount ?? -1,
         );
+
     Test._recreateTestConstructors[collectionIDStatic] = (testDoc) {
       return AcousticProfileTest.fromJson(testDoc.data()!);
     };
+
     Test._pageBuilders[AcousticProfileTest] =
         (project, test) => AcousticProfileTestPage(
               activeProject: project,
               activeTest: test as AcousticProfileTest,
             );
-    Test._saveToFirestoreFunctions[AcousticProfileTest] = (test) async {
-      final testRef = _firestore
-          .collection(test.collectionID)
-          .doc(test.id)
-          .withConverter<AcousticProfileTest>(
-            fromFirestore: (snapshot, _) =>
-                AcousticProfileTest.fromJson(snapshot.data()!),
-            toFirestore: (test, _) => test.toJson(),
-          );
-      await testRef.set(test as AcousticProfileTest, SetOptions(merge: true));
-    };
+
     Test._testInitialsMap[AcousticProfileTest] = 'AP';
     Test._standingPointTestCollectionIDs.add(collectionIDStatic);
     Test._intervalTimerTestCollectionIDs.add(collectionIDStatic);
@@ -4228,7 +4135,8 @@ class Member with JsonToString implements FirestoreDocument {
         // changing it, which would be the ideal time to update the email
         // in Firestore.
         if (member.email != user.email) {
-          transaction.update(userRef, {'email': user.email});
+          member.email = user.email!;
+          transaction.update(member.ref, member.toJson());
         }
 
         transaction
@@ -4502,7 +4410,7 @@ class Team with JsonToString implements FirestoreDocument {
   Future<bool> delete() async {
     try {
       _firestore.runTransaction((transaction) async {
-        loadProjectsInfo();
+        await loadProjectsInfo();
 
         // Delete each project including all nested elements via builtin method.
         for (final project in projects!) {
@@ -4511,14 +4419,14 @@ class Team with JsonToString implements FirestoreDocument {
 
         // Delete references to this team from every member.
         for (final ref in memberRefMap.toSingleList()) {
-          await ref.update({
+          transaction.update(ref, {
             'teams': FieldValue.arrayRemove([ref]),
           });
           print('deleted ref from user ${ref.id}');
         }
 
         // Delete team.
-        await ref.delete();
+        transaction.delete(ref);
         print('Success in Team.delete()! Deleted team: $title with ID $id');
       });
     } catch (e, s) {
@@ -4566,26 +4474,28 @@ class Team with JsonToString implements FirestoreDocument {
         memberRefMap: memberRefMap,
         memberMap: memberMap,
       );
-      final teamRef = team.ref;
 
       // Update Firestore with new team, add reference to new team to owner's
       // teams list, and send invites to all invited users.
       await _firestore.runTransaction((transaction) async {
-        await teamRef.set(team);
-        await teamOwner.ref.update({
-          'teams': FieldValue.arrayUnion([teamRef]),
-        });
+        // Create team in Firestore.
+        transaction.set(team.ref, team);
+        await team.ref.set(team);
+
+        // Finally, add this new Team to owner's local teams lists and return it.
+        teamOwner.teamRefs.add(team.ref);
+        teamOwner.teams ??= [];
+        teamOwner.teams!.add(team);
+        transaction.update(teamOwner.ref, teamOwner.toJson());
+
+        // Send invites.
         for (final member in inviteList) {
-          await member.ref.update({
-            'invites': FieldValue.arrayUnion([teamRef]),
+          transaction.update(member.ref, {
+            'invites': FieldValue.arrayUnion([team.ref]),
           });
         }
       });
 
-      // Finally, add this new Team to owner's local teams lists and return it.
-      teamOwner.teamRefs.add(teamRef);
-      teamOwner.teams ??= [];
-      teamOwner.teams!.add(team);
       return team;
     } catch (e, s) {
       print('Exception: $e');
@@ -4918,14 +4828,14 @@ class Project with JsonToString implements FirestoreDocument {
       _firestore.runTransaction((transaction) async {
         // Deletes each test belonging to this project.
         for (final testRef in testRefs) {
-          await testRef.delete();
+          transaction.delete(testRef);
           print('deleted test ${testRef.id}');
         }
 
         // Delete reference to this project from the team it belongs to.
         team!.projects?.remove(this);
         team!.projectRefs.removeWhere((ref) => ref.id == id);
-        team!.update();
+        transaction.update(team!.ref, team!.toJson());
 
         // Delete cover photo from storage if present.
         if (coverImageUrl.isNotEmpty) {
@@ -4935,7 +4845,7 @@ class Project with JsonToString implements FirestoreDocument {
         }
 
         // Delete this project.
-        await ref.delete();
+        transaction.delete(ref);
         print('deleted project $id');
       });
     } catch (e, s) {
@@ -5000,15 +4910,12 @@ class Project with JsonToString implements FirestoreDocument {
 
       // Add project to team locally.
       team.projectRefs.add(project.ref);
-      team.projects ??= [];
-      team.projects!.add(project);
+      team.projects?.add(project);
 
       // Add the project and update the team's projects list in Firestore.
       await _firestore.runTransaction((transaction) async {
-        await project.ref.set(project);
-        await team.ref.update({
-          'projects': FieldValue.arrayUnion([project.ref]),
-        });
+        transaction.set(project.ref, project);
+        transaction.update(team.ref, team.toJson());
       });
 
       return project;

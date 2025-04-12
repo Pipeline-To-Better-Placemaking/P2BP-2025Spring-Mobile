@@ -190,7 +190,10 @@ class _SignUpFormState extends State<SignUpForm> {
         if (_passwordController.text
                 .compareTo(_confirmPasswordController.text) !=
             0) {
-          throw Exception('passwords do not match');
+          ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+            content: Text('Failed to register: passwords do not match'),
+          ));
+          return;
         }
 
         final String fullName = _fullNameController.text.trim();

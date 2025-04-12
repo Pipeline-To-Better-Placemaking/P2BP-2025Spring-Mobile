@@ -14,7 +14,6 @@ import 'package:p2bp_2025spring_mobile/theme.dart';
 import 'package:p2bp_2025spring_mobile/widgets.dart';
 
 import 'db_schema_classes.dart';
-import 'firestore_functions.dart';
 import 'mini_map.dart';
 
 class ProjectDetailsPage extends StatefulWidget {
@@ -34,8 +33,6 @@ class ProjectDetailsPage extends StatefulWidget {
   @override
   State<ProjectDetailsPage> createState() => _ProjectDetailsPageState();
 }
-
-final FirebaseFirestore _firestore = FirebaseFirestore.instance;
 
 class _ProjectDetailsPageState extends State<ProjectDetailsPage> {
   int _testCount = 0;
@@ -196,13 +193,13 @@ class _ProjectDetailsPageState extends State<ProjectDetailsPage> {
               ),
             ),
           ),
-          SliverList(delegate: SliverChildListDelegate([_getPageBody()])),
+          SliverList(delegate: SliverChildListDelegate([_buildPageBody()])),
         ],
       ),
     );
   }
 
-  Widget _getPageBody() {
+  Widget _buildPageBody() {
     return Container(
       decoration: BoxDecoration(gradient: defaultGrad),
       child: ConstrainedBox(
@@ -336,7 +333,8 @@ class _ProjectDetailsPageState extends State<ProjectDetailsPage> {
   }
 
   void _showCreateTestModal() async {
-    final Map<String, dynamic>? newTestInfo = await showModalBottomSheet(
+    final Map<String, dynamic>? newTestInfo =
+        await showModalBottomSheet<Map<String, dynamic>>(
       context: context,
       isScrollControlled: true,
       backgroundColor: Colors.transparent,
@@ -362,12 +360,12 @@ class _ProjectDetailsPageState extends State<ProjectDetailsPage> {
         );
       },
     );
+
     if (newTestInfo == null) return;
-    final Test test = await saveTest(
+    Test.createNew(
       title: newTestInfo['title'],
       scheduledTime: newTestInfo['scheduledTime'],
-      projectRef:
-          _firestore.collection('projects').doc(widget.activeProject.id),
+      project: widget.activeProject,
       collectionID: newTestInfo['collectionID'],
       standingPoints: newTestInfo.containsKey('standingPoints')
           ? newTestInfo['standingPoints']
@@ -382,8 +380,9 @@ class _ProjectDetailsPageState extends State<ProjectDetailsPage> {
           ? newTestInfo['intervalCount']
           : null,
     );
+
     setState(() {
-      widget.activeProject.tests?.add(test);
+      // Update in case new test was added.
     });
   }
 

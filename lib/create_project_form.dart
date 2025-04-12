@@ -1,4 +1,7 @@
+import 'dart:io';
+
 import 'package:flutter/material.dart';
+import 'package:image_picker/image_picker.dart';
 import 'package:p2bp_2025spring_mobile/project_map_creation.dart';
 import 'package:p2bp_2025spring_mobile/theme.dart';
 import 'package:p2bp_2025spring_mobile/widgets.dart';
@@ -25,6 +28,25 @@ class _CreateProjectFormState extends State<CreateProjectForm> {
   final TextEditingController _titleController = TextEditingController();
   final TextEditingController _descriptionController = TextEditingController();
   final TextEditingController _addressController = TextEditingController();
+  File? _selectedCoverImage;
+
+  Future<void> _selectImage() async {
+    try {
+      final XFile? imageFile =
+          await ImagePicker().pickImage(source: ImageSource.gallery);
+      if (imageFile != null) {
+        setState(() {
+          _selectedCoverImage = File(imageFile.path);
+        });
+        print('Image selected: ${imageFile.path}');
+      } else {
+        print('No image selected.');
+      }
+    } catch (e, s) {
+      print('Error selecting image: $e');
+      print('Stacktrace: $s');
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -56,17 +78,49 @@ class _CreateProjectFormState extends State<CreateProjectForm> {
                     color: Colors.white,
                   ),
                 ),
-                PhotoUpload(
-                  width: 380,
-                  height: 130,
-                  icon: Icons.add_photo_alternate,
-                  circular: false,
-                  onTap: () {
-                    // TODO: Actual function (Photo Upload)
-                    print('Test');
-                    return;
-                  },
-                ),
+                _selectedCoverImage != null
+                    ? Stack(
+                        children: [
+                          Container(
+                            width: 380,
+                            height: 130,
+                            decoration: BoxDecoration(
+                              borderRadius: BorderRadius.circular(8),
+                              image: DecorationImage(
+                                image: FileImage(_selectedCoverImage!),
+                                fit: BoxFit.cover,
+                              ),
+                            ),
+                          ),
+                          Positioned(
+                            right: 8,
+                            top: 8,
+                            child: Container(
+                              width: 48,
+                              height: 48,
+                              decoration: BoxDecoration(
+                                color: Colors.white,
+                                shape: BoxShape.circle,
+                                border: Border.all(width: 1.5),
+                              ),
+                              child: IconButton(
+                                icon: Icon(Icons.edit, color: Colors.grey),
+                                onPressed: _selectImage,
+                                iconSize: 20,
+                                padding: EdgeInsets.all(8),
+                                constraints: BoxConstraints(),
+                              ),
+                            ),
+                          )
+                        ],
+                      )
+                    : PhotoUpload(
+                        width: 380,
+                        height: 130,
+                        icon: Icons.add_photo_alternate,
+                        circular: false,
+                        onTap: _selectImage,
+                      ),
                 const SizedBox(height: 10.0),
                 Text(
                   'Project Name',
@@ -170,7 +224,7 @@ class _CreateProjectFormState extends State<CreateProjectForm> {
                     onPressed: () {
                       if (!_formKey.currentState!.validate()) return;
 
-                      // TODO add cover image uploading on project creation here
+                      FocusManager.instance.primaryFocus?.unfocus();
                       Navigator.push(
                         context,
                         MaterialPageRoute(
@@ -180,6 +234,7 @@ class _CreateProjectFormState extends State<CreateProjectForm> {
                             title: _titleController.text,
                             description: _descriptionController.text,
                             address: _addressController.text,
+                            coverImage: _selectedCoverImage,
                           ),
                         ),
                       );

@@ -117,6 +117,24 @@ class _CreateProjectWidgetState extends State<CreateProjectWidget> {
   File? _selectedCoverImage;
   final _formKey = GlobalKey<FormState>();
 
+  Future<void> _selectImage() async {
+    try {
+      final XFile? imageFile =
+          await ImagePicker().pickImage(source: ImageSource.gallery);
+      if (imageFile != null) {
+        setState(() {
+          _selectedCoverImage = File(imageFile.path);
+        });
+        print('Image selected: ${imageFile.path}');
+      } else {
+        print('No image selected.');
+      }
+    } catch (e, s) {
+      print('Error selecting image: $e');
+      print('Stacktrace: $s');
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Form(
@@ -321,23 +339,6 @@ class _CreateProjectWidgetState extends State<CreateProjectWidget> {
         ),
       ),
     );
-  }
-
-  Future<void> _selectImage() async {
-    try {
-      final XFile? imageFile =
-          await ImagePicker().pickImage(source: ImageSource.gallery);
-      if (imageFile != null) {
-        setState(() {
-          _selectedCoverImage = File(imageFile.path);
-        });
-        print("Image selected: ${imageFile.path}");
-      } else {
-        print("No image selected.");
-      }
-    } catch (e) {
-      print("Error selecting image: $e");
-    }
   }
 }
 
