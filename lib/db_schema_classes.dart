@@ -4225,21 +4225,60 @@ class Member with JsonToString implements FirestoreDocument {
   Future<Team?> loadSelectedTeamInfo() async {
     try {
       if (teamRefs.isEmpty) {
+        // No teams, selected are both null.
         selectedTeamRef = null;
         selectedTeam = null;
       } else if (selectedTeamRef == null) {
+        // Has teams but none selected, select first team.
+        selectedTeamRef = teamRefs.first;
+        selectedTeam = await Team.get(selectedTeamRef!);
+      } else if (!teamRefs.contains(selectedTeamRef)) {
+        // Selected team is not in teams, select first team.
         selectedTeamRef = teamRefs.first;
         selectedTeam = await Team.get(selectedTeamRef!);
       } else {
+        // Base case, just get the selected team.
         selectedTeam = await Team.get(selectedTeamRef!);
       }
 
-      await update();
+      update();
       return selectedTeam;
     } catch (e, s) {
       print('Exception: $e');
       print('Stacktrace: $s');
       throw Exception('Failed to get selectedTeam because of exception: $e');
+    }
+  }
+
+  Future<List<Team>> loadTeamsInfo() async {
+    try {
+      // If refs list is empty, set teams list to empty and return.
+      if (teamRefs.isEmpty) {
+        if (teams == null) {
+          teams = [];
+          return teams!;
+        }
+
+        teams!.clear();
+        return teams!;
+      }
+
+      // Refs not empty, retrieve info for teams.
+      List<Team> newTeamList = [];
+      for (final ref in teamRefs) {
+        final teamDoc = await Team.converterRef.doc(ref.id).get();
+        if (teamDoc.exists) {
+          newTeamList.add(teamDoc.data()!);
+        }
+      }
+
+      teams?.clear();
+      teams = newTeamList.toList();
+      return teams!;
+    } catch (e, s) {
+      print('Exception: $e');
+      print('Stacktrace: $s');
+      throw Exception('Failed to get teams because of exception: $e');
     }
   }
 
@@ -4285,38 +4324,6 @@ class Member with JsonToString implements FirestoreDocument {
       print('Exception: $e');
       print('Stacktrace: $s');
       throw Exception('Failed to get team invites because of exception: $e');
-    }
-  }
-
-  Future<List<Team>> loadTeamsInfo() async {
-    try {
-      // If refs list is empty, set teams list to empty and return.
-      if (teamRefs.isEmpty) {
-        if (teams == null) {
-          teams = [];
-          return teams!;
-        }
-
-        teams!.clear();
-        return teams!;
-      }
-
-      // Refs not empty, retrieve info for teams.
-      List<Team> newTeamList = [];
-      for (final ref in teamRefs) {
-        final teamDoc = await Team.converterRef.doc(ref.id).get();
-        if (teamDoc.exists) {
-          newTeamList.add(teamDoc.data()!);
-        }
-      }
-
-      teams?.clear();
-      teams = newTeamList.toList();
-      return teams!;
-    } catch (e, s) {
-      print('Exception: $e');
-      print('Stacktrace: $s');
-      throw Exception('Failed to get teams because of exception: $e');
     }
   }
 }
@@ -4409,20 +4416,20 @@ class Team with JsonToString implements FirestoreDocument {
 
   Future<bool> delete() async {
     try {
+      await loadProjectsInfo();
+
+      // Delete each project including all nested elements via builtin method.
+      for (final project in projects!) {
+        await project.delete();
+      }
+
       _firestore.runTransaction((transaction) async {
-        await loadProjectsInfo();
-
-        // Delete each project including all nested elements via builtin method.
-        for (final project in projects!) {
-          await project.delete();
-        }
-
         // Delete references to this team from every member.
-        for (final ref in memberRefMap.toSingleList()) {
-          transaction.update(ref, {
+        for (final memberRef in memberRefMap.toSingleList()) {
+          transaction.update(memberRef, {
             'teams': FieldValue.arrayRemove([ref]),
           });
-          print('deleted ref from user ${ref.id}');
+          print('deleted ref from user ${memberRef.id}');
         }
 
         // Delete team.
@@ -4825,6 +4832,13 @@ class Project with JsonToString implements FirestoreDocument {
 
   Future<bool> delete() async {
     try {
+      // Delete cover photo from storage if present.
+      if (coverImageUrl.isNotEmpty) {
+        final storageRef = FirebaseStorage.instance.ref();
+        final coverImageRef = storageRef.child('project_covers/$id');
+        await coverImageRef.delete();
+      }
+
       _firestore.runTransaction((transaction) async {
         // Deletes each test belonging to this project.
         for (final testRef in testRefs) {
@@ -4836,13 +4850,6 @@ class Project with JsonToString implements FirestoreDocument {
         team!.projects?.remove(this);
         team!.projectRefs.removeWhere((ref) => ref.id == id);
         transaction.update(team!.ref, team!.toJson());
-
-        // Delete cover photo from storage if present.
-        if (coverImageUrl.isNotEmpty) {
-          final storageRef = FirebaseStorage.instance.ref();
-          final coverImageRef = storageRef.child('project_covers/$id');
-          await coverImageRef.delete();
-        }
 
         // Delete this project.
         transaction.delete(ref);
