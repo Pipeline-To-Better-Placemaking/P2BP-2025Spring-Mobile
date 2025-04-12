@@ -356,7 +356,7 @@ class CreateTeamWidget extends StatefulWidget {
 
 class _CreateTeamWidgetState extends State<CreateTeamWidget> {
   List<Member> _searchResults = [];
-  final List<Member> _invitedMembers = [];
+  final Set<Member> _invitedMembers = {};
   bool _isLoading = false;
   String _teamTitle = '';
   final _formKey = GlobalKey<FormState>();
@@ -541,7 +541,10 @@ class _CreateTeamWidgetState extends State<CreateTeamWidget> {
                 SizedBox(
                   height: 250,
                   child: _isLoading
-                      ? const Center(child: CircularProgressIndicator())
+                      ? const Align(
+                          alignment: Alignment.topCenter,
+                          child: CircularProgressIndicator(),
+                        )
                       : _searchResults.isNotEmpty
                           ? ListView.separated(
                               shrinkWrap: true,
@@ -589,7 +592,7 @@ class _CreateTeamWidgetState extends State<CreateTeamWidget> {
                         await Team.createNew(
                           teamTitle: _teamTitle,
                           teamOwner: widget.member,
-                          inviteList: _invitedMembers,
+                          inviteList: _invitedMembers.toList(),
                         );
 
                         if (!context.mounted) return;
@@ -599,13 +602,6 @@ class _CreateTeamWidgetState extends State<CreateTeamWidget> {
                           MaterialPageRoute(
                             builder: (context) =>
                                 HomeScreen(member: widget.member),
-                          ),
-                        );
-                        Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                            builder: (context) =>
-                                TeamsAndInvitesPage(member: widget.member),
                           ),
                         );
                       }

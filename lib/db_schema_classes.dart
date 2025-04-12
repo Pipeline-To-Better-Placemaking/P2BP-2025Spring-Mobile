@@ -4357,10 +4357,21 @@ class Member with JsonToString implements FirestoreDocument {
         final TeamInvite? invite = await TeamInvite.fromTeamRef(ref);
         if (invite != null) {
           newInviteList.add(invite);
-        } else {
-          teamInviteRefs.remove(ref);
         }
       }
+
+      // Remove inviteRefs of teams that no longer exist.
+      // Also updates invites in Firestore if any are removed.
+      bool didChange = false;
+      final List<String> newInviteTeamIDList = [
+        for (final invite in newInviteList) invite.team.id,
+      ];
+      teamInviteRefs.removeWhere((inviteRef) {
+        final test = !newInviteTeamIDList.contains(inviteRef.id);
+        if (test) didChange = true;
+        return test;
+      });
+      if (didChange) update();
 
       teamInvites?.clear();
       teamInvites = newInviteList.toList();
@@ -4391,8 +4402,6 @@ class Member with JsonToString implements FirestoreDocument {
         final teamDoc = await Team.converterRef.doc(ref.id).get();
         if (teamDoc.exists) {
           newTeamList.add(teamDoc.data()!);
-        } else {
-          teamRefs.remove(ref);
         }
       }
 

@@ -22,7 +22,7 @@ class InviteUserForm extends StatefulWidget {
 
 class _InviteUserFormState extends State<InviteUserForm> {
   List<Member> _searchResults = [];
-  final List<Member> _invitedMembers = [];
+  final Set<Member> _invitedMembers = {};
   bool _isLoading = false;
 
   Timer? _searchDelayTimer;
@@ -121,6 +121,12 @@ class _InviteUserFormState extends State<InviteUserForm> {
                     ? ListView.separated(
                         itemBuilder: (context, index) {
                           final member = _searchResults[index];
+
+                          // Check if member already has invite.
+                          if (member.teamInviteRefs
+                              .contains(widget.activeTeam.ref)) {
+                            _invitedMembers.add(member);
+                          }
                           final invited = _invitedMembers.contains(member);
                           return MemberInviteCard(
                             member: member,
@@ -143,7 +149,10 @@ class _InviteUserFormState extends State<InviteUserForm> {
                         itemCount: _searchResults.length,
                       )
                     : _isLoading
-                        ? const Center(child: CircularProgressIndicator())
+                        ? const Align(
+                            alignment: Alignment.topCenter,
+                            child: CircularProgressIndicator(),
+                          )
                         : const Text(
                             'No users matching criteria. '
                             'Enter at least 3 characters to search.',
