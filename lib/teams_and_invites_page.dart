@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
-import 'db_schema_classes.dart';
+import 'db_schema_classes/member_class.dart';
+import 'db_schema_classes/team_class.dart';
+import 'db_schema_classes/team_invite_class.dart';
 import 'team_settings_page.dart';
 import 'theme.dart';
 

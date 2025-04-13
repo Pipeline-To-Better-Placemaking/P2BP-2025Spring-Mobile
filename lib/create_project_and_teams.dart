@@ -5,7 +5,8 @@ import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:p2bp_2025spring_mobile/project_map_creation.dart';
 
-import 'db_schema_classes.dart';
+import 'db_schema_classes/member_class.dart';
+import 'db_schema_classes/team_class.dart';
 import 'home_screen.dart';
 import 'theme.dart';
 import 'widgets.dart';

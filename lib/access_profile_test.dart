@@ -6,27 +6,29 @@ import 'package:p2bp_2025spring_mobile/extensions.dart';
 import 'package:p2bp_2025spring_mobile/theme.dart';
 import 'package:p2bp_2025spring_mobile/widgets.dart';
 
-import 'db_schema_classes.dart';
+import 'db_schema_classes/project_class.dart';
+import 'db_schema_classes/specific_test_classes/access_profile_test_class.dart';
+import 'db_schema_classes/test_class.dart';
 import 'google_maps_functions.dart';
 
-class IdentifyingAccess extends StatefulWidget {
+class AccessProfileTestPage extends StatefulWidget {
   final Project activeProject;
   final Test activeTest;
 
   /// IMPORTANT: When navigating to this page, pass in project details. The
   /// project details page already contains project info, so you should use
   /// that data.
-  const IdentifyingAccess({
+  const AccessProfileTestPage({
     super.key,
     required this.activeProject,
     required this.activeTest,
   });
 
   @override
-  State<IdentifyingAccess> createState() => _IdentifyingAccessState();
+  State<AccessProfileTestPage> createState() => _AccessProfileTestPageState();
 }
 
-class _IdentifyingAccessState extends State<IdentifyingAccess> {
+class _AccessProfileTestPageState extends State<AccessProfileTestPage> {
   bool _polygonMode = false;
   bool _pointMode = false;
   bool _polylineMode = false;
@@ -42,7 +44,7 @@ class _IdentifyingAccessState extends State<IdentifyingAccess> {
   LatLng _location = defaultLocation;
   double _zoom = 18;
 
-  final IdentifyingAccessData _accessData = IdentifyingAccessData.empty();
+  final AccessProfileData _accessData = AccessProfileData.empty();
 
   late final Polygon _projectPolygon;
   Polyline? _currentPolyline;
@@ -91,7 +93,7 @@ class _IdentifyingAccessState extends State<IdentifyingAccess> {
       if (_polygonMode) _polygonTap(point);
       if (_polylineMode) _polylineTap(point);
     } catch (e, stacktrace) {
-      print('Error in identifying_access_test.dart, _togglePoint(): $e');
+      print('Error in access_profile_test.dart, _togglePoint(): $e');
       print('Stacktrace: $stacktrace');
     }
   }

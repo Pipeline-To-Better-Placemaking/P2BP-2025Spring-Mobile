@@ -3,7 +3,7 @@ import 'package:flutter/services.dart';
 import 'package:p2bp_2025spring_mobile/project_card_page.dart';
 
 import 'create_project_and_teams.dart';
-import 'db_schema_classes.dart';
+import 'db_schema_classes/member_class.dart';
 import 'settings_page.dart';
 import 'theme.dart';
 

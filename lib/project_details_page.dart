@@ -13,7 +13,10 @@ import 'package:p2bp_2025spring_mobile/create_test_form.dart';
 import 'package:p2bp_2025spring_mobile/theme.dart';
 import 'package:p2bp_2025spring_mobile/widgets.dart';
 
-import 'db_schema_classes.dart';
+import 'db_schema_classes/member_class.dart';
+import 'db_schema_classes/misc_class_stuff.dart';
+import 'db_schema_classes/project_class.dart';
+import 'db_schema_classes/test_class.dart';
 import 'mini_map.dart';
 
 class ProjectDetailsPage extends StatefulWidget {

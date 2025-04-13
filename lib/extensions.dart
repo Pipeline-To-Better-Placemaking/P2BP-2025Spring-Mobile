@@ -4,7 +4,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:maps_toolkit/maps_toolkit.dart' as mp;
 
-import 'db_schema_classes.dart';
+import 'db_schema_classes/misc_class_stuff.dart';
 import 'google_maps_functions.dart';
 
 extension GeoPointConversion on GeoPoint {

@@ -4,7 +4,9 @@ import 'package:flutter/material.dart';
 import 'package:p2bp_2025spring_mobile/theme.dart';
 import 'package:p2bp_2025spring_mobile/widgets.dart';
 
-import 'db_schema_classes.dart';
+import 'db_schema_classes/member_class.dart';
+import 'db_schema_classes/team_class.dart';
+import 'db_schema_classes/team_invite_class.dart';
 
 class InviteUserForm extends StatefulWidget {
   final Team activeTeam;

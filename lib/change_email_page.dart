@@ -5,7 +5,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:p2bp_2025spring_mobile/theme.dart';
 
-import 'db_schema_classes.dart';
+import 'db_schema_classes/member_class.dart';
 import 'strings.dart';
 
 class ChangeEmailPage extends StatelessWidget {

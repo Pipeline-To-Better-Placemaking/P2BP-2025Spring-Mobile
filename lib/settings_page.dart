@@ -8,7 +8,7 @@ import 'package:p2bp_2025spring_mobile/theme.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 import 'change_password_page.dart';
-import 'db_schema_classes.dart';
+import 'db_schema_classes/member_class.dart';
 import 'strings.dart';
 import 'submit_bug_report_page.dart';
 

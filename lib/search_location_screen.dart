@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
-import 'package:p2bp_2025spring_mobile/db_schema_classes.dart';
 
+import 'db_schema_classes/project_class.dart';
 import 'theme.dart';
 
 class SearchScreen extends StatefulWidget {

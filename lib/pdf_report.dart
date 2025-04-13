@@ -7,11 +7,23 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:intl/intl.dart';
-import 'package:p2bp_2025spring_mobile/db_schema_classes.dart';
 import 'package:p2bp_2025spring_mobile/extensions.dart';
 import 'package:pdf/pdf.dart';
 import 'package:pdf/widgets.dart' as pw;
 import 'package:printing/printing.dart';
+
+import 'db_schema_classes/member_class.dart';
+import 'db_schema_classes/project_class.dart';
+import 'db_schema_classes/specific_test_classes/absence_of_order_test_class.dart';
+import 'db_schema_classes/specific_test_classes/access_profile_test_class.dart';
+import 'db_schema_classes/specific_test_classes/acoustic_profile_test_class.dart';
+import 'db_schema_classes/specific_test_classes/lighting_profile_test_class.dart';
+import 'db_schema_classes/specific_test_classes/nature_prevalence_test_class.dart';
+import 'db_schema_classes/specific_test_classes/people_in_motion_test_class.dart';
+import 'db_schema_classes/specific_test_classes/people_in_place_test_class.dart';
+import 'db_schema_classes/specific_test_classes/section_cutter_test_class.dart';
+import 'db_schema_classes/specific_test_classes/spatial_boundaries_test_class.dart';
+import 'db_schema_classes/test_class.dart';
 
 // Create a storage reference from app
 final storageRef = FirebaseStorage.instance.ref();
@@ -201,10 +213,10 @@ Future<PDFData?> retrievePDFInfo(Test test, Polygon projectPolygon) async {
             time: DateFormat.jmv().format(test.scheduledTime.toDate()));
         pdfPage = (npData);
       }
-    case 'identifying_access_tests':
+    case AccessProfileTest.collectionIDStatic:
       {
         PDFData iaData;
-        IdentifyingAccessData data = (test as IdentifyingAccessTest).data;
+        AccessProfileData data = (test as AccessProfileTest).data;
         Map<String, double> polylineLengths = {
           AccessType.taxiAndRideShare.name: 0,
           AccessType.parking.name: 0,
@@ -262,7 +274,7 @@ Future<PDFData?> retrievePDFInfo(Test test, Polygon projectPolygon) async {
             ),
           ],
           pieGraphData: [],
-          displayName: IdentifyingAccessTest.displayName,
+          displayName: AccessProfileTest.displayName,
           date: DateFormat.yMMMd().format(test.scheduledTime.toDate()),
           time: DateFormat.jmv().format(test.scheduledTime.toDate()),
         );

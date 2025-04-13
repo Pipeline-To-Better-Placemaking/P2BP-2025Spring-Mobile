@@ -4,7 +4,9 @@ import 'package:p2bp_2025spring_mobile/project_details_page.dart';
 import 'package:p2bp_2025spring_mobile/teams_and_invites_page.dart';
 import 'package:p2bp_2025spring_mobile/theme.dart';
 
-import 'db_schema_classes.dart';
+import 'db_schema_classes/member_class.dart';
+import 'db_schema_classes/project_class.dart';
+import 'db_schema_classes/team_class.dart';
 import 'edit_project_form.dart';
 
 const List<String> _bannerImages = [

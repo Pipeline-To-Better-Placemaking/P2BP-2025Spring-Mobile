@@ -7,21 +7,22 @@ import 'package:p2bp_2025spring_mobile/extensions.dart';
 import 'package:p2bp_2025spring_mobile/theme.dart';
 import 'package:p2bp_2025spring_mobile/widgets.dart';
 
-import 'db_schema_classes.dart';
+import 'db_schema_classes/project_class.dart';
+import 'db_schema_classes/specific_test_classes/section_cutter_test_class.dart';
 import 'google_maps_functions.dart';
 
-class SectionCutter extends StatefulWidget {
+class SectionCutterTestPage extends StatefulWidget {
   final Project activeProject;
   final SectionCutterTest activeTest;
 
   /// IMPORTANT: When navigating to this page, pass in project details. The
   /// project details page already contains project info, so you should use
   /// that data.
-  const SectionCutter(
+  const SectionCutterTestPage(
       {super.key, required this.activeProject, required this.activeTest});
 
   @override
-  State<SectionCutter> createState() => _SectionCutterState();
+  State<SectionCutterTestPage> createState() => _SectionCutterTestPageState();
 }
 
 const XTypeGroup acceptedFileTypes = XTypeGroup(
@@ -29,7 +30,7 @@ const XTypeGroup acceptedFileTypes = XTypeGroup(
   extensions: <String>['jpg', 'png', 'pdf'],
 );
 
-class _SectionCutterState extends State<SectionCutter> {
+class _SectionCutterTestPageState extends State<SectionCutterTestPage> {
   bool _isLoadingUpload = false;
   bool _uploaded = false;
   bool _failedToUpload = false;

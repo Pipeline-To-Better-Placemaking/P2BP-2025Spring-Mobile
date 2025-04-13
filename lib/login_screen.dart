@@ -2,7 +2,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
-import 'db_schema_classes.dart';
+import 'db_schema_classes/member_class.dart';
 import 'forgot_password_page.dart';
 import 'home_screen.dart';
 import 'signup_screen.dart';

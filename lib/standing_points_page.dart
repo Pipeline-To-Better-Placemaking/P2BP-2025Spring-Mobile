@@ -6,7 +6,8 @@ import 'package:p2bp_2025spring_mobile/extensions.dart';
 import 'package:p2bp_2025spring_mobile/theme.dart';
 import 'package:p2bp_2025spring_mobile/widgets.dart';
 
-import 'db_schema_classes.dart';
+import 'db_schema_classes/project_class.dart';
+import 'db_schema_classes/standing_point_class.dart';
 import 'google_maps_functions.dart';
 
 class StandingPointsPage extends StatefulWidget {

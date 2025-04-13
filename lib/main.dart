@@ -1,8 +1,16 @@
 import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:p2bp_2025spring_mobile/db_schema_classes.dart';
+import 'package:p2bp_2025spring_mobile/db_schema_classes/specific_test_classes/access_profile_test_class.dart';
 
+import 'db_schema_classes/specific_test_classes/absence_of_order_test_class.dart';
+import 'db_schema_classes/specific_test_classes/acoustic_profile_test_class.dart';
+import 'db_schema_classes/specific_test_classes/lighting_profile_test_class.dart';
+import 'db_schema_classes/specific_test_classes/nature_prevalence_test_class.dart';
+import 'db_schema_classes/specific_test_classes/people_in_motion_test_class.dart';
+import 'db_schema_classes/specific_test_classes/people_in_place_test_class.dart';
+import 'db_schema_classes/specific_test_classes/section_cutter_test_class.dart';
+import 'db_schema_classes/specific_test_classes/spatial_boundaries_test_class.dart';
 import 'login_screen.dart';
 
 /// All [Test] subclass's register methods should be called here.
@@ -10,7 +18,7 @@ void registerTestTypes() {
   LightingProfileTest.register();
   SectionCutterTest.register();
   AbsenceOfOrderTest.register();
-  IdentifyingAccessTest.register();
+  AccessProfileTest.register();
   PeopleInPlaceTest.register();
   PeopleInMotionTest.register();
   NaturePrevalenceTest.register();

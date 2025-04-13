@@ -10,24 +10,26 @@ import 'package:p2bp_2025spring_mobile/extensions.dart';
 import 'package:p2bp_2025spring_mobile/theme.dart';
 import 'package:p2bp_2025spring_mobile/widgets.dart';
 
-import 'db_schema_classes.dart';
+import 'db_schema_classes/project_class.dart';
+import 'db_schema_classes/specific_test_classes/nature_prevalence_test_class.dart';
 import 'google_maps_functions.dart';
 
-class NaturePrevalence extends StatefulWidget {
+class NaturePrevalenceTestPage extends StatefulWidget {
   final Project activeProject;
   final NaturePrevalenceTest activeTest;
 
   /// IMPORTANT: When navigating to this page, pass in project details. The
   /// project details page already contains project info, so you should use
   /// that data.
-  const NaturePrevalence(
+  const NaturePrevalenceTestPage(
       {super.key, required this.activeProject, required this.activeTest});
 
   @override
-  State<NaturePrevalence> createState() => _NaturePrevalenceState();
+  State<NaturePrevalenceTestPage> createState() =>
+      _NaturePrevalenceTestPageState();
 }
 
-class _NaturePrevalenceState extends State<NaturePrevalence> {
+class _NaturePrevalenceTestPageState extends State<NaturePrevalenceTestPage> {
   bool _isTestRunning = false;
   bool _polygonMode = false;
   bool _pointMode = false;

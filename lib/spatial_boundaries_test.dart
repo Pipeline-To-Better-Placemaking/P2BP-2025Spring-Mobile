@@ -9,7 +9,8 @@ import 'package:maps_toolkit/maps_toolkit.dart' as mp;
 import 'package:p2bp_2025spring_mobile/assets.dart';
 import 'package:p2bp_2025spring_mobile/extensions.dart';
 
-import 'db_schema_classes.dart';
+import 'db_schema_classes/project_class.dart';
+import 'db_schema_classes/specific_test_classes/spatial_boundaries_test_class.dart';
 import 'google_maps_functions.dart';
 import 'spatial_boundaries_instructions.dart';
 import 'theme.dart';

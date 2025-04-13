@@ -2,11 +2,23 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:dropdown_button2/dropdown_button2.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:p2bp_2025spring_mobile/db_schema_classes.dart';
 import 'package:p2bp_2025spring_mobile/section_creation_page.dart';
 import 'package:p2bp_2025spring_mobile/standing_points_page.dart';
 import 'package:p2bp_2025spring_mobile/widgets.dart';
 
+import 'db_schema_classes/project_class.dart';
+import 'db_schema_classes/specific_test_classes/absence_of_order_test_class.dart';
+import 'db_schema_classes/specific_test_classes/access_profile_test_class.dart';
+import 'db_schema_classes/specific_test_classes/acoustic_profile_test_class.dart'
+    show AcousticProfileTest;
+import 'db_schema_classes/specific_test_classes/lighting_profile_test_class.dart';
+import 'db_schema_classes/specific_test_classes/nature_prevalence_test_class.dart';
+import 'db_schema_classes/specific_test_classes/people_in_motion_test_class.dart';
+import 'db_schema_classes/specific_test_classes/people_in_place_test_class.dart';
+import 'db_schema_classes/specific_test_classes/section_cutter_test_class.dart';
+import 'db_schema_classes/specific_test_classes/spatial_boundaries_test_class.dart';
+import 'db_schema_classes/standing_point_class.dart';
+import 'db_schema_classes/test_class.dart';
 import 'theme.dart';
 
 class CreateTestForm extends StatefulWidget {
@@ -55,8 +67,8 @@ class _CreateTestFormState extends State<CreateTestForm> {
       text: SectionCutterTest.displayName,
     ),
     (
-      value: IdentifyingAccessTest.collectionIDStatic,
-      text: IdentifyingAccessTest.displayName,
+      value: AccessProfileTest.collectionIDStatic,
+      text: AccessProfileTest.displayName,
     ),
     (
       value: PeopleInPlaceTest.collectionIDStatic,

@@ -4,8 +4,8 @@ import 'package:firebase_storage/firebase_storage.dart';
 import 'package:flutter/material.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:image_picker/image_picker.dart';
-import 'package:p2bp_2025spring_mobile/db_schema_classes.dart';
 
+import 'db_schema_classes/project_class.dart';
 import 'theme.dart';
 import 'widgets.dart';
 
