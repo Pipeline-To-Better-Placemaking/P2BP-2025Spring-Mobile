@@ -4226,19 +4226,25 @@ class Member with JsonToString implements FirestoreDocument {
     try {
       if (teamRefs.isEmpty) {
         // No teams, selected are both null.
-        selectedTeamRef = null;
         selectedTeam = null;
+        teams = [];
+        if (selectedTeamRef == null) return selectedTeam;
+        selectedTeamRef = null;
       } else if (selectedTeamRef == null) {
         // Has teams but none selected, select first team.
         selectedTeamRef = teamRefs.first;
         selectedTeam = await Team.get(selectedTeamRef!);
+        if (selectedTeam != null) teams ??= [selectedTeam!];
       } else if (!teamRefs.contains(selectedTeamRef)) {
         // Selected team is not in teams, select first team.
         selectedTeamRef = teamRefs.first;
         selectedTeam = await Team.get(selectedTeamRef!);
+        if (selectedTeam != null) teams ??= [selectedTeam!];
       } else {
         // Base case, just get the selected team.
         selectedTeam = await Team.get(selectedTeamRef!);
+        if (selectedTeam != null) teams ??= [selectedTeam!];
+        return selectedTeam;
       }
 
       update();
@@ -4551,12 +4557,21 @@ class Team with JsonToString implements FirestoreDocument {
 
       // Refs not empty, actually retrieve project info.
       List<Project> newProjectList = [];
-      for (final ref in projectRefs) {
-        final projectDoc = await Project.converterRef.doc(ref.id).get();
+      List<DocumentReference> refDeleteList = [];
+      for (final projectRef in projectRefs) {
+        final projectDoc = await Project.converterRef.doc(projectRef.id).get();
         if (projectDoc.exists) {
           newProjectList.add(projectDoc.data()!);
           newProjectList.last.team = this;
+        } else {
+          refDeleteList.add(projectRef);
         }
+      }
+      for (final deleteRef in refDeleteList) {
+        projectRefs.removeWhere((projectRef) => projectRef.id == deleteRef.id);
+        ref.update({
+          'projects': FieldValue.arrayRemove([deleteRef]),
+        });
       }
 
       projects?.clear();
@@ -4847,8 +4862,8 @@ class Project with JsonToString implements FirestoreDocument {
         }
 
         // Delete reference to this project from the team it belongs to.
-        team!.projects?.remove(this);
-        team!.projectRefs.removeWhere((ref) => ref.id == id);
+        team!.projects?.removeWhere((project) => project.id == id);
+        team!.projectRefs.removeWhere((projectRef) => projectRef.id == id);
         transaction.update(team!.ref, team!.toJson());
 
         // Delete this project.
@@ -4909,6 +4924,7 @@ class Project with JsonToString implements FirestoreDocument {
         description: description,
         address: address,
         teamRef: team.ref,
+        team: team,
         memberRefMap: memberRefMap,
         polygon: polygon,
         standingPoints: standingPoints,

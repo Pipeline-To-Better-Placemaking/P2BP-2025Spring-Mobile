@@ -107,32 +107,6 @@ class _TeamSettingsPageState extends State<TeamSettingsPage> {
     );
   }
 
-  Widget _deleteTeamDialog() {
-    return GenericConfirmationDialog(
-      titleText: 'Delete This Team?',
-      contentText: 'This will delete the currently selected team as well as '
-          'well as all projects within it, and the tests within those '
-          'projects. This cannot be undone. '
-          'Are you absolutely certain you want to delete this team?',
-      declineText: 'No, go back',
-      confirmText: 'Yes, delete this team',
-      onConfirm: () async {
-        final success = await widget.activeTeam.delete();
-        if (success == true) {
-          widget.member.teams?.remove(widget.activeTeam);
-          widget.member.teamRefs
-              .removeWhere((ref) => ref.id == widget.activeTeam.id);
-          if (!mounted) return;
-          Navigator.pop(context);
-          Navigator.pop(context, true);
-        } else {
-          if (!mounted) return;
-          Navigator.pop(context);
-        }
-      },
-    );
-  }
-
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -167,7 +141,30 @@ class _TeamSettingsPageState extends State<TeamSettingsPage> {
             deleteTeam: () {
               showDialog(
                 context: context,
-                builder: (context) => _deleteTeamDialog(),
+                builder: (context) => GenericConfirmationDialog(
+                  titleText: 'Delete This Team?',
+                  contentText:
+                      'This will delete the currently selected team as well as '
+                      'well as all projects within it, and the tests within those '
+                      'projects. This cannot be undone. '
+                      'Are you absolutely certain you want to delete this team?',
+                  declineText: 'No, go back',
+                  confirmText: 'Yes, delete this team',
+                  onConfirm: () async {
+                    final success = await widget.activeTeam.delete();
+                    if (success == true) {
+                      widget.member.teams?.remove(widget.activeTeam);
+                      widget.member.teamRefs
+                          .removeWhere((ref) => ref.id == widget.activeTeam.id);
+                      if (!context.mounted) return;
+                      Navigator.pop(context);
+                      Navigator.pop(context, true);
+                    } else {
+                      if (!context.mounted) return;
+                      Navigator.pop(context);
+                    }
+                  },
+                ),
               );
             },
           ),
@@ -314,54 +311,59 @@ class _TeamSettingsPageState extends State<TeamSettingsPage> {
                 const CircularProgressIndicator()
               else
                 Expanded(
-                  child: ListView.separated(
-                    itemCount: widget.activeTeam.projects!.length,
-                    itemBuilder: (context, index) {
-                      final project = widget.activeTeam.projects![index];
-                      bool isSelected = _selectedProjects.contains(project);
-                      return _ProjectListTile(
-                        isMultiSelectMode: _isMultiSelectMode,
-                        isSelected: isSelected,
-                        project: project,
-                        toggleProjectSelection: toggleProjectSelection,
-                        onTap: () async {
-                          if (_isMultiSelectMode) {
-                            toggleProjectSelection(project);
-                          } else {
-                            final status = await Navigator.push<String>(
-                              context,
-                              MaterialPageRoute(
-                                builder: (context) => ProjectDetailsPage(
-                                  member: widget.member,
-                                  activeProject: project,
+                  child: RefreshIndicator(
+                    onRefresh: () async {
+                      await _getProjects();
+                    },
+                    child: ListView.separated(
+                      itemCount: widget.activeTeam.projects!.length,
+                      itemBuilder: (context, index) {
+                        final project = widget.activeTeam.projects![index];
+                        bool isSelected = _selectedProjects.contains(project);
+                        return _ProjectListTile(
+                          isMultiSelectMode: _isMultiSelectMode,
+                          isSelected: isSelected,
+                          project: project,
+                          toggleProjectSelection: toggleProjectSelection,
+                          onTap: () async {
+                            if (_isMultiSelectMode) {
+                              toggleProjectSelection(project);
+                            } else {
+                              final status = await Navigator.push<String>(
+                                context,
+                                MaterialPageRoute(
+                                  builder: (context) => ProjectDetailsPage(
+                                    member: widget.member,
+                                    activeProject: project,
+                                  ),
                                 ),
-                              ),
-                            );
-                            if (status == 'deleted') {
-                              setState(() {
-                                widget.activeTeam.projectRefs.removeAt(index);
-                                widget.activeTeam.projects!.removeAt(index);
-                              });
+                              );
+                              if (status == 'deleted') {
+                                setState(() {
+                                  widget.activeTeam.projectRefs.removeAt(index);
+                                  widget.activeTeam.projects!.removeAt(index);
+                                });
+                              }
                             }
-                          }
-                        },
-                      );
-                    },
-                    separatorBuilder: (BuildContext context, int index) {
-                      return _isMultiSelectMode
-                          ? Divider(
-                              color: Colors.white.withValues(alpha: 0.3),
-                              thickness: 1,
-                              indent: 50,
-                              endIndent: 16,
-                            )
-                          : Divider(
-                              color: Colors.white.withValues(alpha: 0.3),
-                              thickness: 1,
-                              indent: 16,
-                              endIndent: 16,
-                            );
-                    },
+                          },
+                        );
+                      },
+                      separatorBuilder: (BuildContext context, int index) {
+                        return _isMultiSelectMode
+                            ? Divider(
+                                color: Colors.white.withValues(alpha: 0.3),
+                                thickness: 1,
+                                indent: 50,
+                                endIndent: 16,
+                              )
+                            : Divider(
+                                color: Colors.white.withValues(alpha: 0.3),
+                                thickness: 1,
+                                indent: 16,
+                                endIndent: 16,
+                              );
+                      },
+                    ),
                   ),
                 ),
               SizedBox(height: 30),

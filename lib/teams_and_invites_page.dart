@@ -28,18 +28,8 @@ class _TeamsAndInvitesPageState extends State<TeamsAndInvitesPage> {
     } else {
       _selectedIndex = -1;
     }
-    if (widget.member.teams == null) {
-      _getTeams();
-    } else {
-      widget.member.teams!;
-      _isLoadingTeams = false;
-    }
-    if (widget.member.teamInvites == null) {
-      _getInvites();
-    } else {
-      widget.member.teamInvites!;
-      _isLoadingInvites = false;
-    }
+    _getTeams();
+    _getInvites();
   }
 
   Future<void> _getTeams() async {

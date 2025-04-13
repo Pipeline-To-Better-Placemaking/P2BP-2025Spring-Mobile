@@ -244,22 +244,14 @@ class _ProjectCardPageState extends State<ProjectCardPage> {
                             const SizedBox(height: 50),
                       )
                     // Else if there are no projects
-                    : RefreshIndicator(
-                        onRefresh: () async {
-                          await _populateProjects();
-                        },
-                        child: SingleChildScrollView(
-                          physics: AlwaysScrollableScrollPhysics(),
-                          child: SizedBox(
-                            height: MediaQuery.sizeOf(context).height,
-                            child: Align(
-                              alignment: Alignment(0, -0.4),
-                              child: Text(
-                                'You have no projects! Join a team '
-                                'or create a project first.',
-                                textAlign: TextAlign.center,
-                              ),
-                            ),
+                    : SizedBox(
+                        height: MediaQuery.sizeOf(context).height,
+                        child: Align(
+                          alignment: Alignment(0, -0.4),
+                          child: Text(
+                            'You have no projects! Join a team '
+                            'or create a project first.',
+                            textAlign: TextAlign.center,
                           ),
                         ),
                       ),
