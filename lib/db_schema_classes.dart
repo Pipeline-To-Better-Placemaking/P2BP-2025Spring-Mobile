@@ -4357,6 +4357,7 @@ class Team with JsonToString implements FirestoreDocument {
   RoleMap<Member>? memberMap;
   List<DocumentReference> projectRefs;
   List<Project>? projects;
+  String coverImageUrl = '';
   final Timestamp creationTime;
 
   Team({
@@ -4366,6 +4367,7 @@ class Team with JsonToString implements FirestoreDocument {
     this.memberMap,
     List<DocumentReference>? projectRefs,
     this.projects,
+    this.coverImageUrl = '',
     Timestamp? creationTime,
   })  : creationTime = creationTime ?? Timestamp.now(),
         projectRefs = projectRefs ?? <DocumentReference>[];
@@ -4376,6 +4378,7 @@ class Team with JsonToString implements FirestoreDocument {
           'id': String id,
           'title': String title,
           'creationTime': Timestamp creationTime,
+          'coverImageUrl': String coverImageUrl,
           'membersByRole': Map<String, Object?> membersByRole,
           'projects': List projects,
         }) {
@@ -4383,6 +4386,7 @@ class Team with JsonToString implements FirestoreDocument {
         id: id,
         title: title,
         creationTime: creationTime,
+        coverImageUrl: coverImageUrl,
         memberRefMap: <GroupRole, List<DocumentReference>>{
           for (final role in membersByRole.keys)
             GroupRole.values.byName(role):
@@ -4402,6 +4406,7 @@ class Team with JsonToString implements FirestoreDocument {
       'membersByRole': memberRefMap.keysEnumToName(),
       'creationTime': creationTime,
       'projects': projectRefs,
+      'coverImageUrl': coverImageUrl,
     };
   }
 
@@ -4427,6 +4432,13 @@ class Team with JsonToString implements FirestoreDocument {
       // Delete each project including all nested elements via builtin method.
       for (final project in projects!) {
         await project.delete();
+      }
+
+      // Delete cover image from storage if present.
+      if (coverImageUrl.isNotEmpty) {
+        final storageRef = FirebaseStorage.instance.ref();
+        final coverImageRef = storageRef.child('team_covers/$id');
+        await coverImageRef.delete();
       }
 
       _firestore.runTransaction((transaction) async {
@@ -4464,7 +4476,10 @@ class Team with JsonToString implements FirestoreDocument {
     required String teamTitle,
     required Member teamOwner,
     required List<Member> inviteList,
+    File? coverImage,
   }) async {
+    String coverImageUrl = '';
+
     try {
       final String teamID = Team.converterRef.doc().id;
 
@@ -4480,12 +4495,21 @@ class Team with JsonToString implements FirestoreDocument {
       };
       memberMap[GroupRole.owner]!.add(teamOwner);
 
+      // Upload and get link for cover image.
+      if (coverImage != null) {
+        final storageRef = FirebaseStorage.instance.ref();
+        final coverImageRef = storageRef.child('team_covers/$teamID');
+        await coverImageRef.putFile(coverImage);
+        coverImageUrl = await coverImageRef.getDownloadURL();
+      }
+
       // Construct Team.
       final Team team = Team(
         id: teamID,
         title: teamTitle,
         memberRefMap: memberRefMap,
         memberMap: memberMap,
+        coverImageUrl: coverImageUrl,
       );
 
       // Update Firestore with new team, add reference to new team to owner's
@@ -4514,6 +4538,24 @@ class Team with JsonToString implements FirestoreDocument {
       print('Exception: $e');
       print('Stacktrace: $s');
       throw Exception('Failed to create team because of exception: $e');
+    }
+  }
+
+  Future<String> addCoverImage(File imageFile) async {
+    try {
+      final coverImageRef = FirebaseStorage.instance.ref('team_covers/$id');
+      await coverImageRef.putFile(imageFile);
+      final downloadUrl = await coverImageRef.getDownloadURL();
+
+      coverImageUrl = downloadUrl;
+      await update();
+
+      print('Cover image uploaded successfully: $coverImageUrl');
+      return coverImageUrl;
+    } catch (e, s) {
+      print('Exception: $e');
+      print('Stacktrace: $s');
+      throw Exception('Failed to add cover image because of exception: $e');
     }
   }
 
@@ -4847,7 +4889,7 @@ class Project with JsonToString implements FirestoreDocument {
 
   Future<bool> delete() async {
     try {
-      // Delete cover photo from storage if present.
+      // Delete cover image from storage if present.
       if (coverImageUrl.isNotEmpty) {
         final storageRef = FirebaseStorage.instance.ref();
         final coverImageRef = storageRef.child('project_covers/$id');
@@ -4958,8 +5000,8 @@ class Project with JsonToString implements FirestoreDocument {
       coverImageUrl = downloadUrl;
       await update();
 
-      print('Cover image uploaded successfully: $downloadUrl');
-      return downloadUrl;
+      print('Cover image uploaded successfully: $coverImageUrl');
+      return coverImageUrl;
     } catch (e, s) {
       print('Exception: $e');
       print('Stacktrace: $s');

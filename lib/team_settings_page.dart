@@ -1,5 +1,8 @@
+import 'dart:io';
+
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:image_picker/image_picker.dart';
 import 'package:p2bp_2025spring_mobile/change_team_name_form.dart';
 import 'package:p2bp_2025spring_mobile/extensions.dart';
 import 'package:p2bp_2025spring_mobile/invite_user_form.dart';
@@ -180,6 +183,20 @@ class _TeamSettingsPageState extends State<TeamSettingsPage> {
                 padding: const EdgeInsets.symmetric(horizontal: 16.0),
                 child: _AvatarAndTitleRow(
                   title: widget.activeTeam.title,
+                  coverImageUrl: widget.activeTeam.coverImageUrl,
+                  changeImage: () async {
+                    // Open image edit functionality
+                    final XFile? pickedFile = await ImagePicker()
+                        .pickImage(source: ImageSource.gallery);
+                    if (pickedFile != null) {
+                      final File imageFile = File(pickedFile.path);
+                      final coverImageUrl =
+                          await widget.activeTeam.addCoverImage(imageFile);
+                      setState(() {
+                        widget.activeTeam.coverImageUrl = coverImageUrl;
+                      });
+                    }
+                  },
                   manageMembers: _isLoadingTeamMembers
                       ? null
                       : () {
@@ -213,7 +230,7 @@ class _TeamSettingsPageState extends State<TeamSettingsPage> {
                         },
                 ),
               ),
-              SizedBox(height: 48),
+              const SizedBox(height: 24),
               Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 16.0),
                 child: Row(
@@ -239,7 +256,7 @@ class _TeamSettingsPageState extends State<TeamSettingsPage> {
                                   fontWeight: FontWeight.bold),
                             ),
                           ),
-                          SizedBox(width: 5),
+                          const SizedBox(width: 5),
                           ElevatedButton(
                             onPressed: _selectedProjects.isEmpty
                                 ? null
@@ -306,7 +323,7 @@ class _TeamSettingsPageState extends State<TeamSettingsPage> {
                   ],
                 ),
               ),
-              SizedBox(height: 16),
+              const SizedBox(height: 16),
               if (_isLoadingProjects)
                 const CircularProgressIndicator()
               else
@@ -366,7 +383,7 @@ class _TeamSettingsPageState extends State<TeamSettingsPage> {
                     ),
                   ),
                 ),
-              SizedBox(height: 30),
+              const SizedBox(height: 30),
             ],
           ),
         ),
@@ -573,14 +590,20 @@ class _SettingsMenuButton extends StatelessWidget {
 
 class _AvatarAndTitleRow extends StatelessWidget {
   final String title;
+  final String coverImageUrl;
+  final VoidCallback? changeImage;
   final VoidCallback? manageMembers;
   final VoidCallback? inviteMembers;
 
   const _AvatarAndTitleRow({
     required this.title,
+    required this.coverImageUrl,
+    required this.changeImage,
     required this.manageMembers,
     required this.inviteMembers,
   });
+
+  static const double _rowHeight = 84;
 
   @override
   Widget build(BuildContext context) {
@@ -593,23 +616,16 @@ class _AvatarAndTitleRow extends StatelessWidget {
           child: Stack(
             alignment: Alignment.bottomRight,
             children: [
-              CircleAvatar(
-                radius: 36,
-                // TODO: Add actual image
-              ),
-              GestureDetector(
-                onTap: () async {
-                  // // Open image edit functionality
-                  // final XFile? pickedFile = await ImagePicker()
-                  //     .pickImage(source: ImageSource.gallery);
-                  // if (pickedFile != null) {
-                  //   final File imageFile = File(pickedFile.path);
-                  //   // TODO: Submit image or something.
-                  //   print("Image selected: ${imageFile.path}");
-                  // } else {
-                  //   print("No image selected.");
-                  // }
-                },
+              coverImageUrl.isNotEmpty
+                  ? CircleAvatar(
+                      radius: _rowHeight / 2,
+                      backgroundImage: NetworkImage(coverImageUrl),
+                    )
+                  : CircleAvatar(
+                      radius: _rowHeight / 2,
+                    ),
+              InkWell(
+                onTap: changeImage,
                 child: CircleAvatar(
                   radius: 16,
                   backgroundColor: Colors.blue,
@@ -625,11 +641,12 @@ class _AvatarAndTitleRow extends StatelessWidget {
         ),
         // Column with Team Name and Team Members Row
         SizedBox(
-          // Height is 72 to match profile avatar on left of row
-          height: 72,
+          // Height is _rowHeight to match profile avatar on left of row
+          height: _rowHeight,
           // Width of 206 is exactly the width used by all the Positioned stuff
           width: 206,
           child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
             children: [
               Text(
                 title,

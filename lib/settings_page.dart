@@ -56,30 +56,6 @@ class _SettingsPageState extends State<SettingsPage> {
     );
   }
 
-  /// Currently does same as _signOutUser, need to implement deletion.
-  ///
-  /// Deletes the account being used along with all references to it from DB.
-  ///
-  /// Sends user back to login screen after deletion.
-  // void _deleteAccount(BuildContext context) async {
-  //   try {
-  //     // TODO: actually delete account and all references to it.
-  //     await FirebaseAuth.instance.signOut();
-  //     if (context.mounted) {
-  //       // Sends to login screen and removes everything else from nav stack
-  //       Navigator.pushNamedAndRemoveUntil(
-  //           context, '/login', (Route route) => false);
-  //     } else {
-  //       throw Exception('context-unmounted');
-  //     }
-  //   } catch (e) {
-  //     print('Error signing out: $e');
-  //     ScaffoldMessenger.of(context).showSnackBar(
-  //       SnackBar(content: Text('Log out failed. Try again.')),
-  //     );
-  //   }
-  // }
-
   /// Builds and displays confirmation dialog for deleting account.
   // Future<void> _deleteAccountConfirmDialogBuilder(BuildContext context) async {
   //   // TODO: better confirmation like user has to type their email or something

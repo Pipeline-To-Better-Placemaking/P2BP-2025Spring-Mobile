@@ -179,7 +179,7 @@ class _CreateProjectWidgetState extends State<CreateProjectWidget> {
                           ),
                           Positioned(
                             right: 8,
-                            top: 8,
+                            bottom: 8,
                             child: Container(
                               width: 48,
                               height: 48,
@@ -359,6 +359,7 @@ class _CreateTeamWidgetState extends State<CreateTeamWidget> {
   final Set<Member> _invitedMembers = {};
   bool _isLoading = false;
   String _teamTitle = '';
+  File? _selectedCoverImage;
   final _formKey = GlobalKey<FormState>();
 
   Timer? _searchDelayTimer;
@@ -368,6 +369,24 @@ class _CreateTeamWidgetState extends State<CreateTeamWidget> {
   void dispose() {
     _searchDelayTimer?.cancel();
     super.dispose();
+  }
+
+  Future<void> _selectImage() async {
+    try {
+      final XFile? imageFile =
+          await ImagePicker().pickImage(source: ImageSource.gallery);
+      if (imageFile != null) {
+        setState(() {
+          _selectedCoverImage = File(imageFile.path);
+        });
+        print('Image selected: ${imageFile.path}');
+      } else {
+        print('No image selected.');
+      }
+    } catch (e, s) {
+      print('Error selecting image: $e');
+      print('Stacktrace: $s');
+    }
   }
 
   @override
@@ -401,17 +420,50 @@ class _CreateTeamWidgetState extends State<CreateTeamWidget> {
                           ),
                         ),
                         SizedBox(height: 5),
-                        PhotoUpload(
-                          width: 75,
-                          height: 75,
-                          icon: Icons.add_photo_alternate,
-                          circular: true,
-                          onTap: () {
-                            // TODO: Actual function (Photo Upload)
-                            print('Test');
-                            return;
-                          },
-                        ),
+                        _selectedCoverImage != null
+                            ? Stack(
+                                children: [
+                                  Container(
+                                    width: 75,
+                                    height: 75,
+                                    decoration: BoxDecoration(
+                                      shape: BoxShape.circle,
+                                      image: DecorationImage(
+                                        image: FileImage(_selectedCoverImage!),
+                                        fit: BoxFit.cover,
+                                      ),
+                                    ),
+                                  ),
+                                  Positioned(
+                                    right: 8,
+                                    bottom: 8,
+                                    child: InkWell(
+                                      onTap: _selectImage,
+                                      child: Container(
+                                        width: 30,
+                                        height: 30,
+                                        decoration: BoxDecoration(
+                                          color: Colors.white,
+                                          shape: BoxShape.circle,
+                                          border: Border.all(width: 1.5),
+                                        ),
+                                        child: Icon(
+                                          Icons.edit,
+                                          color: Colors.grey,
+                                          size: 16,
+                                        ),
+                                      ),
+                                    ),
+                                  )
+                                ],
+                              )
+                            : PhotoUpload(
+                                width: 75,
+                                height: 75,
+                                icon: Icons.add_photo_alternate,
+                                circular: true,
+                                onTap: _selectImage,
+                              ),
                       ],
                     ),
                     // Column(
@@ -593,6 +645,7 @@ class _CreateTeamWidgetState extends State<CreateTeamWidget> {
                           teamTitle: _teamTitle,
                           teamOwner: widget.member,
                           inviteList: _invitedMembers.toList(),
+                          coverImage: _selectedCoverImage,
                         );
 
                         if (!context.mounted) return;
