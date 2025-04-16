@@ -139,7 +139,7 @@ class _ProjectCardPageState extends State<ProjectCardPage> {
                             return defaultGrad.createShader(bounds);
                           },
                           child: Text(
-                            'Hello, \n\t\t\t$_firstName',
+                            'Hello, \n$_firstName',
                             style: TextStyle(
                               fontSize: 36,
                               fontWeight: FontWeight.bold,
