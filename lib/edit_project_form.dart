@@ -31,29 +31,6 @@ class _EditProjectFormState extends State<EditProjectForm> {
         TextEditingController(text: widget.activeProject.description);
   }
 
-  void _saveChanges() async {
-    try {
-      widget.activeProject.title = _nameController.text;
-      widget.activeProject.description = _descriptionController.text;
-
-      if (_imageFile != null) {
-        final coverImageRef = FirebaseStorage.instance
-            .ref('project_covers/${widget.activeProject.id}');
-        await coverImageRef.putFile(_imageFile!);
-        widget.activeProject.coverImageUrl =
-            await coverImageRef.getDownloadURL();
-      }
-
-      await widget.activeProject.update();
-
-      if (!mounted) return;
-      Navigator.pop(context, 'altered');
-    } catch (e, s) {
-      print('Error updating project: $e');
-      print('Stacktrace: $s');
-    }
-  }
-
   @override
   Widget build(BuildContext context) {
     return Form(
@@ -165,10 +142,44 @@ class _EditProjectFormState extends State<EditProjectForm> {
                         iconColor: Colors.black,
                         shape: RoundedRectangleBorder(
                             borderRadius: BorderRadius.circular(8)),
-                        onPressed: () {
+                        onPressed: () async {
                           if (_formKey.currentState!.validate()) {
-                            _saveChanges();
-                            Navigator.pop(context, 'altered');
+                            try {
+                              bool changed = false;
+                              if (widget.activeProject.title
+                                      .compareTo(_nameController.text) !=
+                                  0) {
+                                widget.activeProject.title =
+                                    _nameController.text;
+                                changed = true;
+                              }
+
+                              if (widget.activeProject.description
+                                      .compareTo(_descriptionController.text) !=
+                                  0) {
+                                widget.activeProject.description =
+                                    _descriptionController.text;
+                                changed = true;
+                              }
+
+                              if (_imageFile != null) {
+                                final coverImageRef = FirebaseStorage.instance.ref(
+                                    'project_covers/${widget.activeProject.id}');
+                                await coverImageRef.putFile(_imageFile!);
+                                widget.activeProject.coverImageUrl =
+                                    await coverImageRef.getDownloadURL();
+                                changed = true;
+                              }
+
+                              if (changed) await widget.activeProject.update();
+
+                              if (!context.mounted) return;
+                              Navigator.pop(
+                                  context, changed ? 'altered' : null);
+                            } catch (e, s) {
+                              print('Error updating project: $e');
+                              print('Stacktrace: $s');
+                            }
                           }
                         },
                       ),
