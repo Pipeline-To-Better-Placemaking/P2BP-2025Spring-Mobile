@@ -599,17 +599,20 @@ Future<Uint8List> generateReport(
         return pw.Column(
           mainAxisAlignment: pw.MainAxisAlignment.center,
           children: [
-            pw.Text(activeProject.title,
-                style: const pw.TextStyle(
-                  color: baseColor,
-                  fontSize: 40,
-                )),
+            pw.Text(
+              activeProject.title,
+              style: const pw.TextStyle(
+                color: baseColor,
+                fontSize: 40,
+              ),
+              textAlign: pw.TextAlign.center,
+            ),
             pw.Divider(thickness: 4),
             pw.Flexible(
               child: pw.Text(
                 activeProject.description,
                 style: const pw.TextStyle(fontSize: 16),
-                textAlign: pw.TextAlign.justify,
+                textAlign: pw.TextAlign.center,
               ),
             ),
             pw.Divider(
@@ -622,6 +625,7 @@ Future<Uint8List> generateReport(
               "Project Address: ",
               style: pw.TextStyle(
                   decoration: pw.TextDecoration.underline, fontSize: 16),
+              textAlign: pw.TextAlign.center,
             ),
             pw.Text(activeProject.address),
             pw.SizedBox(height: 10),
@@ -629,6 +633,7 @@ Future<Uint8List> generateReport(
               "Total Project Area (sq. ft):",
               style: pw.TextStyle(
                   decoration: pw.TextDecoration.underline, fontSize: 16),
+              textAlign: pw.TextAlign.center,
             ),
             pw.Text("${activeProject.polygonArea.toStringAsFixed(3)} sq. ft."),
             pw.SizedBox(height: 10),
@@ -668,31 +673,28 @@ Future<Uint8List> generateReport(
       [
         pw.Align(
           alignment: pw.Alignment.topRight,
-          child: pw.Text(
-            pdfData.displayName,
-            style: pw.TextStyle(
-              color: baseColor,
-              fontSize: 12,
-            ),
-          ),
+          child: pw.Text(pdfData.displayName,
+              style: pw.TextStyle(
+                color: baseColor,
+                fontSize: 12,
+              ),
+              textAlign: pw.TextAlign.center),
         ),
         pw.Center(
-          child: pw.Text(
-            pdfData.testTitle,
-            style: pw.TextStyle(
-              color: baseColor,
-              fontSize: 20,
-            ),
-          ),
+          child: pw.Text(pdfData.testTitle,
+              style: pw.TextStyle(
+                color: baseColor,
+                fontSize: 20,
+              ),
+              textAlign: pw.TextAlign.center),
         ),
         pw.Center(
-          child: pw.Text(
-            '${pdfData.date} at ${pdfData.time}',
-            style: pw.TextStyle(
-              color: baseColor,
-              fontSize: 20,
-            ),
-          ),
+          child: pw.Text('${pdfData.date} at ${pdfData.time}',
+              style: pw.TextStyle(
+                color: baseColor,
+                fontSize: 20,
+              ),
+              textAlign: pw.TextAlign.center),
         ),
         pw.Center(
           child: pw.Divider(thickness: 3),
@@ -704,7 +706,9 @@ Future<Uint8List> generateReport(
       widgets.addAll(
         [
           pw.Center(
-            child: pw.Text("Section Image:", style: pw.TextStyle(fontSize: 18)),
+            child: pw.Text("Section Image:",
+                style: pw.TextStyle(fontSize: 18),
+                textAlign: pw.TextAlign.center),
           ),
           pw.Center(
             child: pw.SizedBox(height: 5),
