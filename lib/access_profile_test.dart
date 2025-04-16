@@ -441,7 +441,7 @@ class _AccessProfileTestPageState extends State<AccessProfileTestPage> {
                     SizedBox(height: 5),
                     Center(
                       child: Text(
-                        'Identifying Access',
+                        'Access Profile',
                         style: TextStyle(
                           fontSize: 20,
                           fontWeight: FontWeight.bold,
