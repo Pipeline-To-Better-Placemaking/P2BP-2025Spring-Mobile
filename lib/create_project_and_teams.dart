@@ -624,8 +624,10 @@ class _CreateTeamWidgetState extends State<CreateTeamWidget> {
                             )
                           : const Center(
                               child: Text(
-                                  'No users matching criteria. Enter at least '
-                                  '3 characters to search.'),
+                                'No users matching criteria. Enter at least '
+                                '3 characters to search.',
+                                textAlign: TextAlign.center,
+                              ),
                             ),
                 ),
                 const SizedBox(height: 10.0),
