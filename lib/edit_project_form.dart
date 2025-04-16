@@ -38,7 +38,7 @@ class _EditProjectFormState extends State<EditProjectForm> {
 
       if (_imageFile != null) {
         final coverImageRef = FirebaseStorage.instance
-            .ref('project_covers/${widget.activeProject.id}.jpg');
+            .ref('project_covers/${widget.activeProject.id}');
         await coverImageRef.putFile(_imageFile!);
         widget.activeProject.coverImageUrl =
             await coverImageRef.getDownloadURL();
