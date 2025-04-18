@@ -1,96 +1,63 @@
-import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
-import 'db_schema_classes.dart';
-import 'firestore_functions.dart';
+import 'db_schema_classes/member_class.dart';
+import 'db_schema_classes/team_class.dart';
+import 'db_schema_classes/team_invite_class.dart';
 import 'team_settings_page.dart';
 import 'theme.dart';
 
 class TeamsAndInvitesPage extends StatefulWidget {
-  const TeamsAndInvitesPage({super.key});
+  final Member member;
+
+  const TeamsAndInvitesPage({super.key, required this.member});
 
   @override
   State<TeamsAndInvitesPage> createState() => _TeamsAndInvitesPageState();
 }
 
-final FirebaseFirestore _firestore = FirebaseFirestore.instance;
-
 class _TeamsAndInvitesPageState extends State<TeamsAndInvitesPage> {
-  final User? _loggedInUser = FirebaseAuth.instance.currentUser;
-
-  List<Team> teams = [];
-  List<Team> teamInvites = [];
-  DocumentReference? currentTeam;
   bool _isLoadingTeams = true;
   bool _isLoadingInvites = true;
-  int teamsCount = 0;
-  int invitesCount = 0;
-  int selectedIndex = 0;
+  int _selectedIndex = 0;
 
-  // Gets user info and once that is done gets teams and invites
-  Future<void> _getInvites() async {
-    try {
-      teamInvites = await getInvites();
-      setState(() {
-        _isLoadingInvites = false;
-        invitesCount = teamInvites.length;
-      });
-    } catch (e, stacktrace) {
-      print('Exception retrieving invites: $e');
-      print('Stacktrace: $stacktrace');
+  @override
+  void initState() {
+    super.initState();
+    if (widget.member.selectedTeamRef != null) {
+      _selectedIndex =
+          widget.member.teamRefs.indexOf(widget.member.selectedTeamRef!);
+    } else {
+      _selectedIndex = -1;
     }
+    _getTeams();
+    _getInvites();
   }
 
   Future<void> _getTeams() async {
     try {
-      teams = await getTeamsIDs();
-      currentTeam = await getCurrentTeam();
+      await widget.member.loadTeamsInfo();
 
-      if (currentTeam == null && teams.isNotEmpty) {
-        // No selected team:
-        print("No team selected. Defaulting to first if available.");
-        await _firestore.collection('users').doc(_loggedInUser?.uid).update({
-          'selectedTeam': _firestore.doc('/teams/${teams.first.teamID}'),
-        });
-        setState(() {
-          selectedIndex = 0;
-        });
-      } else if (teams.isNotEmpty) {
-        // A list of teams with a selected team:
-        setState(() {
-          selectedIndex = teams.indexWhere(
-              (team) => team.teamID.compareTo(currentTeam!.id) == 0);
-        });
-      } else if (teams.isEmpty && currentTeam != null) {
-        // No teams but a selected team:
-        _firestore
-            .collection('users')
-            .doc(_loggedInUser?.uid)
-            .update({'selectedTeam': null});
-        setState(() {
-          selectedIndex = -1;
-        });
-      } else {
-        // No teams but a selected team:
-        setState(() {
-          selectedIndex = -1;
-        });
-      }
-      _isLoadingTeams = false;
-      teamsCount = teams.length;
+      setState(() {
+        _isLoadingTeams = false;
+      });
     } catch (e, stacktrace) {
       print('Exception retrieving teams: $e');
       print('Stacktrace: $stacktrace');
     }
   }
 
-  @override
-  void initState() {
-    super.initState();
-    _getTeams();
-    _getInvites();
+  Future<void> _getInvites() async {
+    try {
+      await widget.member.loadTeamInvitesInfo();
+
+      setState(() {
+        _isLoadingInvites = false;
+      });
+    } catch (e, stacktrace) {
+      print('Exception retrieving team invites: $e');
+      print('Stacktrace: $stacktrace');
+    }
   }
 
   @override
@@ -102,7 +69,7 @@ class _TeamsAndInvitesPageState extends State<TeamsAndInvitesPage> {
           appBar: AppBar(
             leading: IconButton(
               icon: Icon(Icons.arrow_back, color: p2bpBlue),
-              onPressed: () => Navigator.of(context).pop(),
+              onPressed: () => Navigator.pop(context),
             ),
             systemOverlayStyle: SystemUiOverlayStyle.dark
                 .copyWith(statusBarColor: Colors.transparent),
@@ -128,215 +95,159 @@ class _TeamsAndInvitesPageState extends State<TeamsAndInvitesPage> {
           ),
           body: TabBarView(
             children: [
-              teamsCount > 0
-                  // If user has teams, display them
-                  ? RefreshIndicator(
-                      onRefresh: () async {
-                        await _getTeams();
-                      },
-                      child: ListView.separated(
-                        padding: const EdgeInsets.only(
-                          left: 35,
-                          right: 35,
-                          top: 50,
-                          bottom: 20,
-                        ),
-                        itemCount: teamsCount,
-                        itemBuilder: (BuildContext context, int index) {
-                          return buildContainer(
-                            index: index,
-                            color: p2bpBlue,
-                            numProjects: teams[index].numProjects,
-                            team: teams[index],
-                          );
-                        },
-                        separatorBuilder: (BuildContext context, int index) =>
-                            const SizedBox(
-                          height: 50,
-                        ),
-                      ),
-                    )
-                  : _isLoadingTeams
-                      // If teams are loading display loading indicator
-                      ? const Center(child: CircularProgressIndicator())
-                      // Else display text to join a team
-                      : RefreshIndicator(
-                          onRefresh: () async {
-                            await _getTeams();
-                          },
-                          child: CustomScrollView(
-                            slivers: <Widget>[
-                              SliverFillRemaining(
-                                child: Center(
-                                  child: Text(
-                                      "You have no teams! Join or create one first."),
-                                ),
-                              ),
-                            ],
+              if (_isLoadingTeams)
+                const Center(child: CircularProgressIndicator())
+              else
+                RefreshIndicator(
+                  onRefresh: () async {
+                    await _getTeams();
+                  },
+                  child: widget.member.teams!.isNotEmpty
+                      ? ListView.separated(
+                          padding: const EdgeInsets.only(
+                            left: 35,
+                            right: 35,
+                            top: 50,
+                            bottom: 20,
                           ),
-                        ),
+                          itemCount: widget.member.teams!.length,
+                          itemBuilder: (context, index) {
+                            return TeamCard(
+                              team: widget.member.teams![index],
+                              selected: _selectedIndex == index,
+                              selectTeam: () async {
+                                widget.member.selectedTeamRef =
+                                    widget.member.teams![index].ref;
+                                widget.member.selectedTeam =
+                                    widget.member.teams![index];
 
-              // Iterate through list of invites, each being a card.
-              // Update variables each time with: color, team name, num of
-              // projects, and members list from database.
-              teamInvites.isNotEmpty
-                  // If user has invites, display them
-                  ? RefreshIndicator(
-                      onRefresh: () async {
-                        await _getInvites();
-                      },
-                      child: ListView.separated(
-                        padding: const EdgeInsets.only(
-                          left: 35,
-                          right: 35,
-                          top: 25,
-                          bottom: 25,
-                        ),
-                        itemCount: teamInvites.length,
-                        itemBuilder: (BuildContext context, int index) {
-                          return buildInviteCard(index);
-                        },
-                        separatorBuilder: (BuildContext context, int index) =>
-                            const SizedBox(
-                          height: 25,
-                        ),
-                      ),
-                    )
-                  // Else if user does not have invites
-                  : _isLoadingInvites
-                      // If invites are loading, display loading indicator
-                      ? const Center(child: CircularProgressIndicator())
-                      // Else display text telling to refresh
-                      : RefreshIndicator(
-                          onRefresh: () async {
-                            await _getInvites();
+                                setState(() {
+                                  _selectedIndex = index;
+                                });
+
+                                await widget.member.update();
+                              },
+                              teamSettings: () async {
+                                final bool? doRefresh = await Navigator.push(
+                                  context,
+                                  MaterialPageRoute(
+                                    builder: (context) => TeamSettingsPage(
+                                      member: widget.member,
+                                      activeTeam: widget.member.teams![index],
+                                    ),
+                                  ),
+                                );
+                                if (doRefresh == true) _getTeams();
+                                setState(() {
+                                  // Just in case something changed.
+                                });
+                              },
+                            );
                           },
-                          child: CustomScrollView(
-                            slivers: <Widget>[
-                              SliverFillRemaining(
-                                child: Center(
-                                  child: Text(
-                                      "You have no invites! Pull down to refresh."),
+                          separatorBuilder: (context, index) =>
+                              const SizedBox(height: 50),
+                        )
+                      : CustomScrollView(
+                          slivers: <Widget>[
+                            SliverFillRemaining(
+                              child: Align(
+                                alignment: Alignment(0, -0.3),
+                                child: Text(
+                                  'You have no teams!\nJoin or create one '
+                                  'first, or pull down to refresh.',
+                                  textAlign: TextAlign.center,
                                 ),
                               ),
-                            ],
-                          ),
+                            ),
+                          ],
                         ),
+                ),
+              if (_isLoadingInvites)
+                const Center(child: CircularProgressIndicator())
+              else
+                RefreshIndicator(
+                  onRefresh: () async {
+                    await _getInvites();
+                  },
+                  child: widget.member.teamInvites!.isNotEmpty
+                      ? ListView.separated(
+                          padding: const EdgeInsets.only(
+                            left: 35,
+                            right: 35,
+                            top: 25,
+                            bottom: 25,
+                          ),
+                          itemCount: widget.member.teamInvites!.length,
+                          itemBuilder: (BuildContext context, int index) {
+                            final invite = widget.member.teamInvites![index];
+                            return InviteCard(
+                              invite: invite,
+                              acceptInvite: () async {
+                                invite.accept(widget.member);
+                                setState(() {
+                                  // Update visible invites after accept.
+                                });
+                              },
+                              declineInvite: () {
+                                invite.decline(widget.member);
+                                setState(() {
+                                  // Update visible invites after decline.
+                                });
+                              },
+                            );
+                          },
+                          separatorBuilder: (BuildContext context, int index) =>
+                              const SizedBox(height: 25),
+                        )
+                      // Else if user does not have invites
+                      : CustomScrollView(
+                          slivers: <Widget>[
+                            SliverFillRemaining(
+                              child: Align(
+                                alignment: Alignment(0, -0.3),
+                                child: Text(
+                                  'You have no invites! Pull down to refresh.',
+                                  textAlign: TextAlign.center,
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                )
             ],
           ),
         ),
       ),
     );
   }
+}
 
-  Container buildInviteCard(int index) {
+class TeamCard extends StatelessWidget {
+  final Team team;
+  final bool selected;
+  final VoidCallback selectTeam;
+  final VoidCallback teamSettings;
+
+  const TeamCard({
+    super.key,
+    required this.team,
+    required this.selected,
+    required this.selectTeam,
+    required this.teamSettings,
+  });
+
+  @override
+  Widget build(BuildContext context) {
     return Container(
       decoration: BoxDecoration(
         color: p2bpBlue,
-        borderRadius: const BorderRadius.all(Radius.circular(15)),
-      ),
-      height: 140,
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.start,
-        crossAxisAlignment: CrossAxisAlignment.center,
-        children: <Widget>[
-          const SizedBox(width: 15),
-          const CircleAvatar(
-            radius: 25,
-          ),
-          const SizedBox(width: 15),
-          Flexible(
-            child: Stack(
-              children: <Widget>[
-                Align(
-                  alignment: Alignment.centerLeft,
-                  child: Text.rich(
-                    overflow: TextOverflow.ellipsis,
-                    maxLines: 2,
-                    style: const TextStyle(
-                      color: Colors.white,
-                    ),
-                    TextSpan(
-                      children: [
-                        TextSpan(
-                          text: teamInvites[index].adminName,
-                          style: const TextStyle(fontWeight: FontWeight.bold),
-                        ),
-                        const TextSpan(text: ' has invited you to join: '),
-                        TextSpan(
-                          text: teamInvites[index].title,
-                          style: const TextStyle(fontWeight: FontWeight.bold),
-                        ),
-                      ],
-                    ),
-                  ),
-                ),
-                Align(
-                  alignment: Alignment.bottomRight,
-                  child: Row(
-                    mainAxisAlignment: MainAxisAlignment.end,
-                    crossAxisAlignment: CrossAxisAlignment.end,
-                    children: <Widget>[
-                      IconButton(
-                        icon: const Icon(Icons.check),
-                        tooltip: 'Accept invitation',
-                        color: Colors.white,
-                        onPressed: () {
-                          // Add to database
-                          addUserToTeam(teamInvites[index].teamID);
-                          // Remove invite from screen
-                          setState(() {
-                            teamInvites.removeWhere((team) =>
-                                team.teamID
-                                    .compareTo(teamInvites[index].teamID) ==
-                                0);
-                            teamsCount = teamInvites.length;
-                          });
-                        },
-                      ),
-                      IconButton(
-                          icon: const Icon(Icons.clear),
-                          tooltip: 'Decline invitation',
-                          color: Colors.white,
-                          onPressed: () {
-                            // Remove invite from database
-                            removeInviteFromUser(teamInvites[index].teamID);
-                            // Remove invite from screen
-                            setState(() {
-                              teamInvites.removeWhere((team) =>
-                                  team.teamID
-                                      .compareTo(teamInvites[index].teamID) ==
-                                  0);
-                              teamsCount = teamInvites.length;
-                            });
-                          }),
-                    ],
-                  ),
-                ),
-              ],
-            ),
-          ),
-          const SizedBox(width: 10.0),
-        ],
-      ),
-    );
-  }
-
-  Container buildContainer({
-    required int index,
-    required Color color,
-    required int numProjects,
-    required Team team,
-  }) {
-    return Container(
-      decoration: BoxDecoration(
-        color: color,
         borderRadius: const BorderRadius.all(Radius.circular(15)),
       ),
       height: 200,
       child: Row(
         children: <Widget>[
           InkWell(
+            onTap: selectTeam,
             child: Align(
               alignment: Alignment.bottomLeft,
               child: Padding(
@@ -344,7 +255,7 @@ class _TeamsAndInvitesPageState extends State<TeamsAndInvitesPage> {
                     left: 10.0, bottom: 10.0, right: 5.0, top: 5.0),
                 child: Tooltip(
                   message: "Select team",
-                  child: selectedIndex == index
+                  child: selected
                       ? const Icon(
                           Icons.radio_button_on,
                           color: placeYellow,
@@ -356,23 +267,8 @@ class _TeamsAndInvitesPageState extends State<TeamsAndInvitesPage> {
                 ),
               ),
             ),
-            onTap: () async {
-              await _firestore
-                  .collection('users')
-                  .doc(_loggedInUser?.uid)
-                  .update({
-                'selectedTeam': _firestore.doc('/teams/${team.teamID}'),
-              });
-              setState(() {
-                selectedIndex = index;
-              });
-              // Debugging print statement:
-              // print("Index: $index, Title: ${teams[index].title}");
-            },
           ),
-          const CircleAvatar(
-            radius: 35,
-          ),
+          const CircleAvatar(radius: 35),
           const SizedBox(width: 20),
           Flexible(
             child: Column(
@@ -404,7 +300,7 @@ class _TeamsAndInvitesPageState extends State<TeamsAndInvitesPage> {
                   TextSpan(
                     children: [
                       TextSpan(
-                        text: '$numProjects ',
+                        text: '${team.projectRefs.length} ',
                         style: const TextStyle(fontWeight: FontWeight.bold),
                       ),
                       const TextSpan(text: 'Projects'),
@@ -432,19 +328,95 @@ class _TeamsAndInvitesPageState extends State<TeamsAndInvitesPage> {
                 color: Colors.white,
               ),
               tooltip: 'Open team settings',
-              onPressed: () async {
-                final bool? doRefresh = await Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                      builder: (context) => TeamSettingsPage(activeTeam: team)),
-                );
-                if (doRefresh == true) _getTeams();
-                setState(() {
-                  // Just in case something changed.
-                });
-              },
+              onPressed: teamSettings,
             ),
           ),
+        ],
+      ),
+    );
+  }
+}
+
+class InviteCard extends StatelessWidget {
+  final TeamInvite invite;
+  final VoidCallback acceptInvite;
+  final VoidCallback declineInvite;
+
+  const InviteCard({
+    super.key,
+    required this.invite,
+    required this.acceptInvite,
+    required this.declineInvite,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      decoration: BoxDecoration(
+        color: p2bpBlue,
+        borderRadius: const BorderRadius.all(Radius.circular(15)),
+      ),
+      height: 140,
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.start,
+        crossAxisAlignment: CrossAxisAlignment.center,
+        children: <Widget>[
+          const SizedBox(width: 15),
+          const CircleAvatar(
+            radius: 25,
+          ),
+          const SizedBox(width: 15),
+          Flexible(
+            child: Stack(
+              children: <Widget>[
+                Align(
+                  alignment: Alignment.centerLeft,
+                  child: Text.rich(
+                    overflow: TextOverflow.ellipsis,
+                    maxLines: 2,
+                    style: const TextStyle(
+                      color: Colors.white,
+                    ),
+                    TextSpan(
+                      children: [
+                        TextSpan(
+                          text: invite.ownerName,
+                          style: const TextStyle(fontWeight: FontWeight.bold),
+                        ),
+                        const TextSpan(text: ' has invited you to join: '),
+                        TextSpan(
+                          text: invite.team.title,
+                          style: const TextStyle(fontWeight: FontWeight.bold),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+                Align(
+                  alignment: Alignment.bottomRight,
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.end,
+                    crossAxisAlignment: CrossAxisAlignment.end,
+                    children: <Widget>[
+                      IconButton(
+                        icon: const Icon(Icons.check),
+                        tooltip: 'Accept invitation',
+                        color: Colors.white,
+                        onPressed: acceptInvite,
+                      ),
+                      IconButton(
+                        icon: const Icon(Icons.clear),
+                        tooltip: 'Decline invitation',
+                        color: Colors.white,
+                        onPressed: declineInvite,
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(width: 10.0),
         ],
       ),
     );

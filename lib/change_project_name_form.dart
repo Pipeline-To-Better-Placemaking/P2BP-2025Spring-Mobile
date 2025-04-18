@@ -80,7 +80,7 @@ class _ChangeProjectNameFormState extends State<ChangeProjectNameForm> {
                     )
                   ],
                 ),
-                SizedBox(height: 10),
+                const SizedBox(height: 10),
                 Padding(
                   padding: const EdgeInsets.symmetric(horizontal: 16),
                   child: TextFormField(
@@ -115,9 +115,9 @@ class _ChangeProjectNameFormState extends State<ChangeProjectNameForm> {
                     },
                   ),
                 ),
-                SizedBox(height: 26),
+                const SizedBox(height: 26),
                 Padding(
-                  padding: EdgeInsets.symmetric(horizontal: 16),
+                  padding: const EdgeInsets.symmetric(horizontal: 16),
                   child: Column(
                     children: [
                       Text(
@@ -143,7 +143,7 @@ class _ChangeProjectNameFormState extends State<ChangeProjectNameForm> {
                     ],
                   ),
                 ),
-                SizedBox(height: 30),
+                const SizedBox(height: 30),
               ],
             ),
           ),

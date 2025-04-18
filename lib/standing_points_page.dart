@@ -2,11 +2,12 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
-import 'package:p2bp_2025spring_mobile/firestore_functions.dart';
+import 'package:p2bp_2025spring_mobile/extensions.dart';
 import 'package:p2bp_2025spring_mobile/theme.dart';
 import 'package:p2bp_2025spring_mobile/widgets.dart';
 
-import 'db_schema_classes.dart';
+import 'db_schema_classes/project_class.dart';
+import 'db_schema_classes/standing_point_class.dart';
 import 'google_maps_functions.dart';
 
 class StandingPointsPage extends StatefulWidget {
@@ -57,7 +58,7 @@ class _StandingPointsPageState extends State<StandingPointsPage> {
   @override
   void initState() {
     super.initState();
-    _polygons.add(getProjectPolygon(widget.activeProject.polygonPoints));
+    _polygons.add(widget.activeProject.polygon.clone());
     _location = getPolygonCentroid(_polygons.first);
     _zoom = getIdealZoom(
           _polygons.first.toMPLatLngList(),

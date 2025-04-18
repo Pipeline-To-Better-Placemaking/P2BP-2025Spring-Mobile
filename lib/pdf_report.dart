@@ -7,13 +7,23 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:intl/intl.dart';
-import 'package:p2bp_2025spring_mobile/db_schema_classes.dart';
-import 'package:p2bp_2025spring_mobile/firestore_functions.dart';
+import 'package:p2bp_2025spring_mobile/extensions.dart';
 import 'package:pdf/pdf.dart';
 import 'package:pdf/widgets.dart' as pw;
 import 'package:printing/printing.dart';
 
-import 'google_maps_functions.dart';
+import 'db_schema_classes/member_class.dart';
+import 'db_schema_classes/project_class.dart';
+import 'db_schema_classes/specific_test_classes/absence_of_order_test_class.dart';
+import 'db_schema_classes/specific_test_classes/access_profile_test_class.dart';
+import 'db_schema_classes/specific_test_classes/acoustic_profile_test_class.dart';
+import 'db_schema_classes/specific_test_classes/lighting_profile_test_class.dart';
+import 'db_schema_classes/specific_test_classes/nature_prevalence_test_class.dart';
+import 'db_schema_classes/specific_test_classes/people_in_motion_test_class.dart';
+import 'db_schema_classes/specific_test_classes/people_in_place_test_class.dart';
+import 'db_schema_classes/specific_test_classes/section_cutter_test_class.dart';
+import 'db_schema_classes/specific_test_classes/spatial_boundaries_test_class.dart';
+import 'db_schema_classes/test_class.dart';
 
 // Create a storage reference from app
 final storageRef = FirebaseStorage.instance.ref();
@@ -203,10 +213,10 @@ Future<PDFData?> retrievePDFInfo(Test test, Polygon projectPolygon) async {
             time: DateFormat.jmv().format(test.scheduledTime.toDate()));
         pdfPage = (npData);
       }
-    case 'identifying_access_tests':
+    case AccessProfileTest.collectionIDStatic:
       {
         PDFData iaData;
-        IdentifyingAccessData data = (test as IdentifyingAccessTest).data;
+        AccessProfileData data = (test as AccessProfileTest).data;
         Map<String, double> polylineLengths = {
           AccessType.taxiAndRideShare.name: 0,
           AccessType.parking.name: 0,
@@ -264,7 +274,7 @@ Future<PDFData?> retrievePDFInfo(Test test, Polygon projectPolygon) async {
             ),
           ],
           pieGraphData: [],
-          displayName: IdentifyingAccessTest.displayName,
+          displayName: AccessProfileTest.displayName,
           date: DateFormat.yMMMd().format(test.scheduledTime.toDate()),
           time: DateFormat.jmv().format(test.scheduledTime.toDate()),
         );
@@ -573,9 +583,10 @@ Future<Uint8List> generateReport(
   );
 
   if (activeProject.tests == null || activeProject.tests!.isEmpty) {
-    await activeProject.loadAllTestData();
+    await activeProject.loadAllTestInfo();
   }
-  contributors = await getTeamMembers(activeProject.teamRef!.id);
+  final roleMap = await activeProject.team?.loadMembersInfo();
+  contributors = roleMap!.toSingleList();
   for (Member contributor in contributors) {
     contributorsNames.add(contributor.fullName);
   }
@@ -588,17 +599,20 @@ Future<Uint8List> generateReport(
         return pw.Column(
           mainAxisAlignment: pw.MainAxisAlignment.center,
           children: [
-            pw.Text(activeProject.title,
-                style: const pw.TextStyle(
-                  color: baseColor,
-                  fontSize: 40,
-                )),
+            pw.Text(
+              activeProject.title,
+              style: const pw.TextStyle(
+                color: baseColor,
+                fontSize: 40,
+              ),
+              textAlign: pw.TextAlign.center,
+            ),
             pw.Divider(thickness: 4),
             pw.Flexible(
               child: pw.Text(
                 activeProject.description,
                 style: const pw.TextStyle(fontSize: 16),
-                textAlign: pw.TextAlign.justify,
+                textAlign: pw.TextAlign.center,
               ),
             ),
             pw.Divider(
@@ -611,6 +625,7 @@ Future<Uint8List> generateReport(
               "Project Address: ",
               style: pw.TextStyle(
                   decoration: pw.TextDecoration.underline, fontSize: 16),
+              textAlign: pw.TextAlign.center,
             ),
             pw.Text(activeProject.address),
             pw.SizedBox(height: 10),
@@ -618,6 +633,7 @@ Future<Uint8List> generateReport(
               "Total Project Area (sq. ft):",
               style: pw.TextStyle(
                   decoration: pw.TextDecoration.underline, fontSize: 16),
+              textAlign: pw.TextAlign.center,
             ),
             pw.Text("${activeProject.polygonArea.toStringAsFixed(3)} sq. ft."),
             pw.SizedBox(height: 10),
@@ -642,7 +658,7 @@ Future<Uint8List> generateReport(
     ),
   );
 
-  projectPolygon = getProjectPolygon(activeProject.polygonPoints);
+  projectPolygon = activeProject.polygon.clone();
   rawTests = activeProject.tests ?? [];
   for (Test currentTest in rawTests) {
     // If a test isn't complete, skip it
@@ -657,31 +673,28 @@ Future<Uint8List> generateReport(
       [
         pw.Align(
           alignment: pw.Alignment.topRight,
-          child: pw.Text(
-            pdfData.displayName,
-            style: pw.TextStyle(
-              color: baseColor,
-              fontSize: 12,
-            ),
-          ),
+          child: pw.Text(pdfData.displayName,
+              style: pw.TextStyle(
+                color: baseColor,
+                fontSize: 12,
+              ),
+              textAlign: pw.TextAlign.center),
         ),
         pw.Center(
-          child: pw.Text(
-            pdfData.testTitle,
-            style: pw.TextStyle(
-              color: baseColor,
-              fontSize: 20,
-            ),
-          ),
+          child: pw.Text(pdfData.testTitle,
+              style: pw.TextStyle(
+                color: baseColor,
+                fontSize: 20,
+              ),
+              textAlign: pw.TextAlign.center),
         ),
         pw.Center(
-          child: pw.Text(
-            '${pdfData.date} at ${pdfData.time}',
-            style: pw.TextStyle(
-              color: baseColor,
-              fontSize: 20,
-            ),
-          ),
+          child: pw.Text('${pdfData.date} at ${pdfData.time}',
+              style: pw.TextStyle(
+                color: baseColor,
+                fontSize: 20,
+              ),
+              textAlign: pw.TextAlign.center),
         ),
         pw.Center(
           child: pw.Divider(thickness: 3),
@@ -693,7 +706,9 @@ Future<Uint8List> generateReport(
       widgets.addAll(
         [
           pw.Center(
-            child: pw.Text("Section Image:", style: pw.TextStyle(fontSize: 18)),
+            child: pw.Text("Section Image:",
+                style: pw.TextStyle(fontSize: 18),
+                textAlign: pw.TextAlign.center),
           ),
           pw.Center(
             child: pw.SizedBox(height: 5),

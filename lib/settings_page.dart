@@ -1,50 +1,27 @@
 import 'dart:io';
 
-import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:firebase_auth/firebase_auth.dart';
-import 'package:firebase_storage/firebase_storage.dart';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:p2bp_2025spring_mobile/change_email_page.dart';
 import 'package:p2bp_2025spring_mobile/change_name_page.dart';
-import 'package:p2bp_2025spring_mobile/login_screen.dart';
 import 'package:p2bp_2025spring_mobile/theme.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 import 'change_password_page.dart';
-import 'firestore_functions.dart';
+import 'db_schema_classes/member_class.dart';
 import 'strings.dart';
 import 'submit_bug_report_page.dart';
 
 class SettingsPage extends StatefulWidget {
-  const SettingsPage({super.key});
+  final Member member;
+
+  const SettingsPage({super.key, required this.member});
 
   @override
   State<StatefulWidget> createState() => _SettingsPageState();
 }
 
 class _SettingsPageState extends State<SettingsPage> {
-  /// Signs out of this account and returns to login screen.
-  void _signOutUser(BuildContext context) async {
-    try {
-      await FirebaseAuth.instance.signOut();
-      if (context.mounted) {
-        // Sends to login screen and removes everything else from nav stack
-        Navigator.pushAndRemoveUntil(
-            context,
-            MaterialPageRoute(builder: (context) => LoginScreen()),
-            (Route route) => false);
-      } else {
-        throw Exception('context-unmounted');
-      }
-    } catch (e) {
-      print('Error signing out: $e');
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Log out failed. Try again.')),
-      );
-    }
-  }
-
   /// Builds and displays confirmation dialog for signing out of account.
   Future<void> _signOutConfirmDialogBuilder(BuildContext context) async {
     return showDialog<void>(
@@ -69,7 +46,7 @@ class _SettingsPageState extends State<SettingsPage> {
             child: const Text('No, go back'),
           ),
           TextButton(
-            onPressed: () => _signOutUser(context),
+            onPressed: () => Member.logOut(context),
             child: const Text('Yes, log me out'),
           ),
         ],
@@ -78,30 +55,6 @@ class _SettingsPageState extends State<SettingsPage> {
       ),
     );
   }
-
-  /// Currently does same as _signOutUser, need to implement deletion.
-  ///
-  /// Deletes the account being used along with all references to it from DB.
-  ///
-  /// Sends user back to login screen after deletion.
-  // void _deleteAccount(BuildContext context) async {
-  //   try {
-  //     // TODO: actually delete account and all references to it.
-  //     await FirebaseAuth.instance.signOut();
-  //     if (context.mounted) {
-  //       // Sends to login screen and removes everything else from nav stack
-  //       Navigator.pushNamedAndRemoveUntil(
-  //           context, '/login', (Route route) => false);
-  //     } else {
-  //       throw Exception('context-unmounted');
-  //     }
-  //   } catch (e) {
-  //     print('Error signing out: $e');
-  //     ScaffoldMessenger.of(context).showSnackBar(
-  //       SnackBar(content: Text('Log out failed. Try again.')),
-  //     );
-  //   }
-  // }
 
   /// Builds and displays confirmation dialog for deleting account.
   // Future<void> _deleteAccountConfirmDialogBuilder(BuildContext context) async {
@@ -156,7 +109,7 @@ class _SettingsPageState extends State<SettingsPage> {
           children: <Widget>[
             Column(
               children: <Widget>[
-                ProfileIconEditStack(),
+                ProfileIconEditStack(member: widget.member),
                 const SizedBox(height: 8),
               ],
             ),
@@ -187,13 +140,16 @@ class _SettingsPageState extends State<SettingsPage> {
                   topRight: Radius.circular(10),
                 ),
               ),
-              onTap: () {
-                Navigator.push(
+              onTap: () async {
+                await Navigator.push(
                   context,
                   MaterialPageRoute(
-                    builder: (context) => const ChangeNamePage(),
+                    builder: (context) => ChangeNamePage(member: widget.member),
                   ),
                 );
+                setState(() {
+                  // Update name.
+                });
               },
             ),
             ListTile(
@@ -203,11 +159,12 @@ class _SettingsPageState extends State<SettingsPage> {
               shape: RoundedRectangleBorder(
                 borderRadius: BorderRadius.zero,
               ),
-              onTap: () {
-                Navigator.push(
+              onTap: () async {
+                await Navigator.push(
                   context,
                   MaterialPageRoute(
-                    builder: (context) => const ChangeEmailPage(),
+                    builder: (context) =>
+                        ChangeEmailPage(member: widget.member),
                   ),
                 );
               },
@@ -347,139 +304,73 @@ class _DarkModeSwitchListTileState extends State<DarkModeSwitchListTile> {
 }
 
 class ProfileIconEditStack extends StatefulWidget {
-  const ProfileIconEditStack({super.key});
+  final Member member;
+
+  const ProfileIconEditStack({super.key, required this.member});
 
   @override
   State<ProfileIconEditStack> createState() => _ProfileIconEditStackState();
 }
 
 class _ProfileIconEditStackState extends State<ProfileIconEditStack> {
-  final User? _currentUser = FirebaseAuth.instance.currentUser;
-  late Future<String> _initials;
-  String _profileImageUrl = '';
+  late String _initials;
 
   @override
   void initState() {
     super.initState();
-    _initials = _getUserInitials();
-    _loadUserProfileImage();
+    _initials = _getInitialsFromName();
   }
 
-  // TODO save user info once after logging in instead having to db call everytime
-  // Gets the user's initials via their full name from firebase
-  Future<String> _getUserInitials() async {
+  /// Get initials from fullName for fallback profile icon.
+  String _getInitialsFromName() {
     String result = '';
 
-    try {
-      // Get user's full name from firebase
-      final String fullName = await getUserFullName(_currentUser?.uid);
-
-      // Adds the first letter of each word of the full name to result string
-      final splitFullNameList = fullName.split(' ');
-      for (var word in splitFullNameList) {
-        result += word.substring(0, 1).toUpperCase();
-      }
-      return result;
-    } catch (e) {
-      if (!mounted) return result;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(
-            'An error occurred while trying to load your profile icon: $e',
-          ),
-        ),
-      );
-      return 'Err';
+    final splitFullNameList = widget.member.fullName.split(' ');
+    for (var word in splitFullNameList) {
+      result += word.substring(0, 1).toUpperCase();
     }
-  }
 
-  Future<void> _loadUserProfileImage() async {
-    try {
-      final userDoc = await FirebaseFirestore.instance
-          .collection('users')
-          .doc(_currentUser?.uid)
-          .get();
-
-      if (userDoc.exists && userDoc.data()!.containsKey('profileImageUrl')) {
-        setState(() {
-          _profileImageUrl = userDoc.data()!['profileImageUrl'];
-        });
-      }
-    } catch (e) {
-      print('Error loading profile image: $e');
-    }
-  }
-
-  Future<void> _uploadProfileImage(File imageFile) async {
-    try {
-      final storageRef = FirebaseStorage.instance.ref();
-
-      final profileImageRef =
-          storageRef.child('profile_images/${_currentUser?.uid}.jpg');
-      await profileImageRef.putFile(imageFile);
-      final downloadUrl = await profileImageRef.getDownloadURL();
-
-      await FirebaseFirestore.instance
-          .collection('users')
-          .doc(_currentUser?.uid)
-          .update({'profileImageUrl': downloadUrl});
-      setState(() {
-        _profileImageUrl = downloadUrl;
-      });
-      print('Profile image uploaded successfully: $downloadUrl');
-    } catch (e) {
-      print('Error uploading profile image: $e');
-    }
+    return result;
   }
 
   Future<void> _selectAndUploadImage() async {
-    final ImagePicker picker = ImagePicker();
-
     try {
-      final XFile? image = await picker.pickImage(source: ImageSource.gallery);
+      final XFile? image =
+          await ImagePicker().pickImage(source: ImageSource.gallery);
 
+      String? profileImageUrl;
       if (image != null) {
-        _uploadProfileImage(File(image.path));
+        final File imageFile = File(image.path);
+        profileImageUrl = await widget.member.addProfileImage(imageFile);
       }
-    } catch (e) {
+
+      if (profileImageUrl != null) {
+        setState(() {
+          // Update if image was given.
+        });
+      }
+    } catch (e, s) {
       print('Error selecting image $e');
+      print('Stacktrace: $s');
     }
   }
 
   @override
   Widget build(BuildContext context) {
+    _initials = _getInitialsFromName();
     return Stack(
       children: <Widget>[
-        // TODO: modify below FutureBuilder for profile icon uploaded by user
-        // Shows profile icon based on state of Future.
-        // Gets user's initials and has fallback. Planned to get image
-        // previously uploaded by user if there is one.
-        _profileImageUrl.isNotEmpty
+        widget.member.profileImageUrl.isNotEmpty
             ? CircleAvatar(
                 backgroundColor: Colors.black12,
                 radius: 32,
-                backgroundImage: NetworkImage(_profileImageUrl),
+                backgroundImage: NetworkImage(widget.member.profileImageUrl),
               )
-            : FutureBuilder<String>(
-                future: _initials,
-                builder:
-                    (BuildContext context, AsyncSnapshot<String> snapshot) {
-                  if (snapshot.hasData) {
-                    return CircleAvatar(
-                      backgroundColor: Colors.black12,
-                      radius: 32,
-                      // Initials of account holder example
-                      child: Text(snapshot.data!),
-                    );
-                  } else {
-                    return CircleAvatar(
-                      backgroundColor: Colors.black12,
-                      radius: 32,
-                      // Initials of account holder example
-                      child: Text('...'),
-                    );
-                  }
-                },
+            : CircleAvatar(
+                backgroundColor: Colors.black12,
+                radius: 32,
+                // Initials of account holder example
+                child: Text(_initials),
               ),
         Positioned(
           bottom: 1,

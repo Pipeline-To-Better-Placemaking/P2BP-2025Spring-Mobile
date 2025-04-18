@@ -2,11 +2,23 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:dropdown_button2/dropdown_button2.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:p2bp_2025spring_mobile/db_schema_classes.dart';
 import 'package:p2bp_2025spring_mobile/section_creation_page.dart';
 import 'package:p2bp_2025spring_mobile/standing_points_page.dart';
 import 'package:p2bp_2025spring_mobile/widgets.dart';
 
+import 'db_schema_classes/project_class.dart';
+import 'db_schema_classes/specific_test_classes/absence_of_order_test_class.dart';
+import 'db_schema_classes/specific_test_classes/access_profile_test_class.dart';
+import 'db_schema_classes/specific_test_classes/acoustic_profile_test_class.dart'
+    show AcousticProfileTest;
+import 'db_schema_classes/specific_test_classes/lighting_profile_test_class.dart';
+import 'db_schema_classes/specific_test_classes/nature_prevalence_test_class.dart';
+import 'db_schema_classes/specific_test_classes/people_in_motion_test_class.dart';
+import 'db_schema_classes/specific_test_classes/people_in_place_test_class.dart';
+import 'db_schema_classes/specific_test_classes/section_cutter_test_class.dart';
+import 'db_schema_classes/specific_test_classes/spatial_boundaries_test_class.dart';
+import 'db_schema_classes/standing_point_class.dart';
+import 'db_schema_classes/test_class.dart';
 import 'theme.dart';
 
 class CreateTestForm extends StatefulWidget {
@@ -55,8 +67,8 @@ class _CreateTestFormState extends State<CreateTestForm> {
       text: SectionCutterTest.displayName,
     ),
     (
-      value: IdentifyingAccessTest.collectionIDStatic,
-      text: IdentifyingAccessTest.displayName,
+      value: AccessProfileTest.collectionIDStatic,
+      text: AccessProfileTest.displayName,
     ),
     (
       value: PeopleInPlaceTest.collectionIDStatic,
@@ -495,41 +507,6 @@ class _CreateTestFormState extends State<CreateTestForm> {
           ),
         ],
       ),
-    );
-  }
-
-  Route _customRoute() {
-    return PageRouteBuilder(
-      pageBuilder: (context, animation, secondaryAnimation) {
-        // Conditional navigation based on _selectedTest
-        if (_selectedTest?.compareTo(SectionCutterTest.collectionIDStatic) ==
-            0) {
-          return SectionCreationPage(
-            activeProject: widget.activeProject,
-            currentSection: _standingPoints.isNotEmpty ? _standingPoints : null,
-          );
-        } else {
-          return StandingPointsPage(
-            activeProject: widget.activeProject,
-            currentStandingPoints: _standingPoints.isNotEmpty
-                ? _standingPoints as List<StandingPoint>
-                : null,
-          );
-        }
-      },
-      transitionsBuilder: (context, animation, secondaryAnimation, child) {
-        const begin = Offset(0.0, 1.0); // Start from bottom of screen
-        const end = Offset.zero; // End at original position
-        const curve = Curves.easeInOut;
-        var tween =
-            Tween(begin: begin, end: end).chain(CurveTween(curve: curve));
-        var offsetAnimation = animation.drive(tween);
-
-        return SlideTransition(
-          position: offsetAnimation,
-          child: child,
-        );
-      },
     );
   }
 }

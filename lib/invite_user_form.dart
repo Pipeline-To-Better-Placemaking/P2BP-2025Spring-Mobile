@@ -1,9 +1,12 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:p2bp_2025spring_mobile/theme.dart';
 import 'package:p2bp_2025spring_mobile/widgets.dart';
 
-import 'db_schema_classes.dart';
-import 'firestore_functions.dart';
+import 'db_schema_classes/member_class.dart';
+import 'db_schema_classes/team_class.dart';
+import 'db_schema_classes/team_invite_class.dart';
 
 class InviteUserForm extends StatefulWidget {
   final Team activeTeam;
@@ -20,34 +23,17 @@ class InviteUserForm extends StatefulWidget {
 }
 
 class _InviteUserFormState extends State<InviteUserForm> {
-  late final List<Member> membersList;
-  List<Member> membersSearch = [];
-  int itemCount = 0;
+  List<Member> _searchResults = [];
+  final Set<Member> _invitedMembers = {};
+  bool _isLoading = false;
 
-  bool _isLoading = true;
+  Timer? _searchDelayTimer;
+  String _searchTextBuffer = '';
 
   @override
-  void initState() {
-    super.initState();
-    _getMembersList();
-  }
-
-  // Retrieves all members and removes ones already in the team and sets membersList
-  Future<void> _getMembersList() async {
-    try {
-      final allMemberList = await getMembersList();
-      final teamMemberList = widget.teamMembers;
-      membersList = allMemberList
-          .where((member) => !(teamMemberList
-              .any((teamMember) => teamMember.userID == member.userID)))
-          .toList();
-      setState(() {
-        _isLoading = false;
-      });
-    } catch (e, stacktrace) {
-      print("Error in create_project_and_teams, _getMembersList(): $e");
-      print("Stacktrace: $stacktrace");
-    }
+  void dispose() {
+    _searchDelayTimer?.cancel();
+    super.dispose();
   }
 
   @override
@@ -78,12 +64,12 @@ class _InviteUserFormState extends State<InviteUserForm> {
                   ),
                 ),
               ),
-              SizedBox(height: 12),
+              const SizedBox(height: 12),
               Text(
                 'Search Members',
                 style: TextStyle(color: Colors.white),
               ),
-              SizedBox(height: 8),
+              const SizedBox(height: 8),
               TextFormField(
                 keyboardType: TextInputType.name,
                 decoration: InputDecoration(
@@ -94,36 +80,88 @@ class _InviteUserFormState extends State<InviteUserForm> {
                   labelText: 'Members',
                   floatingLabelBehavior: FloatingLabelBehavior.never,
                 ),
-                onChanged: (memberText) {
-                  setState(() {
-                    if (memberText.length > 2) {
-                      membersSearch = searchMembers(membersList, memberText);
-                      itemCount = membersSearch.length;
-                    } else {
-                      itemCount = 0;
-                    }
-                  });
+                onChanged: (searchText) async {
+                  if (searchText.length > 2) {
+                    setState(() {
+                      _isLoading = true;
+                    });
+
+                    // Delay after text stops changing before search.
+                    // This delay is to prevent excessive amount of queries
+                    // as user is typing.
+                    _searchDelayTimer?.cancel();
+                    _searchTextBuffer = searchText;
+                    _searchDelayTimer = Timer(Duration(seconds: 1), () async {
+                      // Do search
+                      _searchResults =
+                          await Member.queryByFullName(_searchTextBuffer);
+
+                      // Remove current team members from results by id.
+                      final List<String> teamMemberIds = [
+                        for (final member in widget.teamMembers) member.id,
+                      ];
+                      _searchResults.removeWhere(
+                          (member) => teamMemberIds.contains(member.id));
+
+                      setState(() {
+                        _isLoading = false;
+                      });
+                    });
+                  } else {
+                    _searchDelayTimer?.cancel();
+                    setState(() {
+                      _isLoading = false;
+                      _searchResults = [];
+                    });
+                  }
                 },
               ),
-              SizedBox(height: 10),
+              const SizedBox(height: 10),
               SizedBox(
                 height: 250,
-                child: itemCount > 0
+                child: _searchResults.isNotEmpty
                     ? ListView.separated(
-                        itemBuilder: (context, index) => buildInviteCard(
-                            member: membersSearch[index], index: index),
+                        itemBuilder: (context, index) {
+                          final member = _searchResults[index];
+
+                          // Check if member already has invite.
+                          if (member.teamInviteRefs
+                              .contains(widget.activeTeam.ref)) {
+                            _invitedMembers.add(member);
+                          }
+                          final invited = _invitedMembers.contains(member);
+                          return MemberInviteCard(
+                            member: member,
+                            invited: invited,
+                            inviteMember: () {
+                              if (!invited) {
+                                TeamInvite.sendToUser(
+                                  member,
+                                  widget.activeTeam,
+                                );
+                                setState(() {
+                                  _invitedMembers.add(member);
+                                });
+                              }
+                            },
+                          );
+                        },
                         separatorBuilder: (context, index) =>
                             const SizedBox(height: 10),
-                        itemCount: itemCount)
+                        itemCount: _searchResults.length,
+                      )
                     : _isLoading
-                        ? const Center(child: CircularProgressIndicator())
+                        ? const Align(
+                            alignment: Alignment.topCenter,
+                            child: CircularProgressIndicator(),
+                          )
                         : const Text(
                             'No users matching criteria. '
                             'Enter at least 3 characters to search.',
                             style: TextStyle(color: Colors.white),
                           ),
               ),
-              SizedBox(height: 20),
+              const SizedBox(height: 20),
               InkWell(
                 child: Padding(
                   padding: const EdgeInsets.all(10),
@@ -134,46 +172,11 @@ class _InviteUserFormState extends State<InviteUserForm> {
                 ),
                 onTap: () => Navigator.pop(context),
               ),
-              SizedBox(height: 30),
+              const SizedBox(height: 30),
             ],
           ),
         ),
       ),
-    );
-  }
-
-  Card buildInviteCard({required Member member, required int index}) {
-    return Card(
-      child: Padding(
-        padding: const EdgeInsets.all(8.0),
-        child: Row(
-          children: <Widget>[
-            CircleAvatar(),
-            SizedBox(width: 15),
-            Expanded(
-              child: Text(member.fullName),
-            ),
-            Align(
-              alignment: Alignment.centerRight,
-              child: memberInviteButton(index: index, member: member),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  InkWell memberInviteButton({required int index, required Member member}) {
-    return InkWell(
-      child: Text(member.invited ? "Invite sent!" : "Invite"),
-      onTap: () {
-        setState(() {
-          if (!member.invited) {
-            sendInviteToUser(member.userID, widget.activeTeam.teamID);
-            member.invited = true;
-          }
-        });
-      },
     );
   }
 }

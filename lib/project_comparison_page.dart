@@ -98,7 +98,7 @@ class _DropdownRowForm extends StatefulWidget {
   /// setState() here would not update anything outside this Form.
   final Function pageChangeCallback;
 
-  const _DropdownRowForm(this.pageChangeCallback, {super.key});
+  const _DropdownRowForm(this.pageChangeCallback);
 
   @override
   State<_DropdownRowForm> createState() => _DropdownRowFormState();
@@ -163,7 +163,7 @@ class _DropdownRowFormState extends State<_DropdownRowForm> {
 class _ProjectDropdown extends StatefulWidget {
   final TextEditingController? controller;
 
-  const _ProjectDropdown({super.key, this.controller});
+  const _ProjectDropdown({this.controller});
 
   @override
   State<_ProjectDropdown> createState() => _ProjectDropdownState();
@@ -258,7 +258,7 @@ class _ProjectDropdownState extends State<_ProjectDropdown> {
 
 /// Default lower/middle section of page with text instructions on how to use.
 class _TextPage extends StatelessWidget {
-  const _TextPage({super.key});
+  const _TextPage();
 
   @override
   Widget build(BuildContext context) {
@@ -274,7 +274,7 @@ class _TextPage extends StatelessWidget {
 
 /// Page displaying data from tests common to both selected projects.
 class _CompareDataPage extends StatefulWidget {
-  const _CompareDataPage({super.key});
+  const _CompareDataPage();
 
   @override
   State<_CompareDataPage> createState() => _CompareDataPageState();
@@ -317,7 +317,7 @@ class _CompareDataPageState extends State<_CompareDataPage>
 class _TestNavigationTabBar extends StatefulWidget {
   final TabController tabController;
 
-  const _TestNavigationTabBar({super.key, required this.tabController});
+  const _TestNavigationTabBar({required this.tabController});
 
   @override
   State<_TestNavigationTabBar> createState() => _TestNavigationTabBarState();
@@ -396,7 +396,7 @@ class _TestNavigationTabBarState extends State<_TestNavigationTabBar> {
 class _TestTabBarView extends StatefulWidget {
   final TabController tabController;
 
-  const _TestTabBarView({super.key, required this.tabController});
+  const _TestTabBarView({required this.tabController});
 
   @override
   State<_TestTabBarView> createState() => _TestTabBarViewState();

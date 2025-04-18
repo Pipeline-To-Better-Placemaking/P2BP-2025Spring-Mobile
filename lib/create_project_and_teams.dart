@@ -1,21 +1,20 @@
+import 'dart:async';
 import 'dart:io';
 
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:p2bp_2025spring_mobile/project_map_creation.dart';
-import 'package:p2bp_2025spring_mobile/teams_and_invites_page.dart';
 
-import 'db_schema_classes.dart';
-import 'firestore_functions.dart';
+import 'db_schema_classes/member_class.dart';
+import 'db_schema_classes/team_class.dart';
 import 'home_screen.dart';
 import 'theme.dart';
 import 'widgets.dart';
 
-// For page selection switch. 0 = project, 1 = team.
-enum PageView { project, team }
-
 class CreateProjectAndTeamsPage extends StatefulWidget {
-  const CreateProjectAndTeamsPage({super.key});
+  final Member member;
+
+  const CreateProjectAndTeamsPage({super.key, required this.member});
 
   @override
   State<CreateProjectAndTeamsPage> createState() =>
@@ -23,12 +22,18 @@ class CreateProjectAndTeamsPage extends StatefulWidget {
 }
 
 class _CreateProjectAndTeamsPageState extends State<CreateProjectAndTeamsPage> {
-  PageView page = PageView.project;
-  PageView pageSelection = PageView.project;
-  final pages = [
-    const CreateProjectWidget(),
-    const CreateTeamWidget(),
-  ];
+  late final List<Widget> pages;
+  late Widget pageSelection;
+
+  @override
+  void initState() {
+    super.initState();
+    pages = [
+      CreateProjectWidget(member: widget.member),
+      CreateTeamWidget(member: widget.member),
+    ];
+    pageSelection = pages[0];
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -55,15 +60,17 @@ class _CreateProjectAndTeamsPageState extends State<CreateProjectAndTeamsPage> {
                   visualDensity:
                       const VisualDensity(vertical: 1, horizontal: 1),
                 ),
-                segments: const <ButtonSegment>[
+                segments: <ButtonSegment>[
                   ButtonSegment(
-                      value: PageView.project,
-                      label: Text('Project'),
-                      icon: Icon(Icons.developer_board)),
+                    value: pages[0],
+                    label: const Text('Project'),
+                    icon: const Icon(Icons.developer_board),
+                  ),
                   ButtonSegment(
-                      value: PageView.team,
-                      label: Text('Team'),
-                      icon: Icon(Icons.people)),
+                    value: pages[1],
+                    label: const Text('Team'),
+                    icon: const Icon(Icons.people),
+                  ),
                 ],
                 selected: {pageSelection},
                 onSelectionChanged: (Set newSelection) {
@@ -76,16 +83,14 @@ class _CreateProjectAndTeamsPageState extends State<CreateProjectAndTeamsPage> {
                 },
               ),
             ),
-
-            // Spacing between button and container w/ pages.
-            SizedBox(height: 10),
+            const SizedBox(height: 10),
 
             // Changes page between two widgets: The CreateProjectWidget and
             // CreateTeamWidget. These widgets display their respective
             // screens to create either a project or team.
-            pages[pageSelection.index],
+            pageSelection,
 
-            SizedBox(height: 100),
+            const SizedBox(height: 100),
           ],
         ),
       ),
@@ -94,8 +99,11 @@ class _CreateProjectAndTeamsPageState extends State<CreateProjectAndTeamsPage> {
 }
 
 class CreateProjectWidget extends StatefulWidget {
+  final Member member;
+
   const CreateProjectWidget({
     super.key,
+    required this.member,
   });
 
   @override
@@ -109,6 +117,24 @@ class _CreateProjectWidgetState extends State<CreateProjectWidget> {
   String projectAddress = '';
   File? _selectedCoverImage;
   final _formKey = GlobalKey<FormState>();
+
+  Future<void> _selectImage() async {
+    try {
+      final XFile? imageFile =
+          await ImagePicker().pickImage(source: ImageSource.gallery);
+      if (imageFile != null) {
+        setState(() {
+          _selectedCoverImage = File(imageFile.path);
+        });
+        print('Image selected: ${imageFile.path}');
+      } else {
+        print('No image selected.');
+      }
+    } catch (e, s) {
+      print('Error selecting image: $e');
+      print('Stacktrace: $s');
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -154,11 +180,14 @@ class _CreateProjectWidgetState extends State<CreateProjectWidget> {
                           ),
                           Positioned(
                             right: 8,
-                            top: 8,
+                            bottom: 8,
                             child: Container(
+                              width: 48,
+                              height: 48,
                               decoration: BoxDecoration(
-                                color: Colors.white.withValues(alpha: 0.8),
+                                color: Colors.white,
                                 shape: BoxShape.circle,
+                                border: Border.all(width: 1.5),
                               ),
                               child: IconButton(
                                 icon: Icon(Icons.edit, color: Colors.grey),
@@ -279,28 +308,28 @@ class _CreateProjectWidgetState extends State<CreateProjectWidget> {
                     foregroundColor: Colors.white,
                     backgroundColor: p2bpBlue,
                     icon: const Icon(Icons.chevron_right),
-                    onPressed: () async {
-                      if (await getCurrentTeam() == null) {
-                        if (!context.mounted) return;
+                    onPressed: () {
+                      if (widget.member.selectedTeamRef == null) {
                         ScaffoldMessenger.of(context).showSnackBar(
                           const SnackBar(
                               content: Text(
                                   'You are not in a team! Join a team first.')),
                         );
                       } else if (_formKey.currentState!.validate()) {
-                        Project partialProject = Project.partialProject(
-                          title: projectTitle,
-                          description: projectDescription,
-                          address: projectAddress,
-                        );
-                        if (!context.mounted) return;
                         FocusManager.instance.primaryFocus?.unfocus();
                         Navigator.push(
-                            context,
-                            MaterialPageRoute(
-                                builder: (context) => ProjectMapCreation(
-                                    partialProjectData: partialProject,
-                                    coverImage: _selectedCoverImage)));
+                          context,
+                          MaterialPageRoute(
+                            builder: (context) => ProjectMapCreation(
+                              member: widget.member,
+                              team: widget.member.selectedTeam!,
+                              title: projectTitle,
+                              description: projectDescription,
+                              address: projectAddress,
+                              coverImage: _selectedCoverImage,
+                            ),
+                          ),
+                        );
                       } // function
                     },
                   ),
@@ -312,6 +341,36 @@ class _CreateProjectWidgetState extends State<CreateProjectWidget> {
       ),
     );
   }
+}
+
+class CreateTeamWidget extends StatefulWidget {
+  final Member member;
+
+  const CreateTeamWidget({
+    super.key,
+    required this.member,
+  });
+
+  @override
+  State<CreateTeamWidget> createState() => _CreateTeamWidgetState();
+}
+
+class _CreateTeamWidgetState extends State<CreateTeamWidget> {
+  List<Member> _searchResults = [];
+  final Set<Member> _invitedMembers = {};
+  bool _isLoading = false;
+  String _teamTitle = '';
+  File? _selectedCoverImage;
+  final _formKey = GlobalKey<FormState>();
+
+  Timer? _searchDelayTimer;
+  String _searchTextBuffer = '';
+
+  @override
+  void dispose() {
+    _searchDelayTimer?.cancel();
+    super.dispose();
+  }
 
   Future<void> _selectImage() async {
     try {
@@ -321,65 +380,14 @@ class _CreateProjectWidgetState extends State<CreateProjectWidget> {
         setState(() {
           _selectedCoverImage = File(imageFile.path);
         });
-        print("Image selected: ${imageFile.path}");
+        print('Image selected: ${imageFile.path}');
       } else {
-        print("No image selected.");
+        print('No image selected.');
       }
-    } catch (e) {
-      print("Error selecting image: $e");
+    } catch (e, s) {
+      print('Error selecting image: $e');
+      print('Stacktrace: $s');
     }
-  }
-}
-
-class CreateTeamWidget extends StatefulWidget {
-  const CreateTeamWidget({
-    super.key,
-  });
-
-  @override
-  State<CreateTeamWidget> createState() => _CreateTeamWidgetState();
-}
-
-class _CreateTeamWidgetState extends State<CreateTeamWidget> {
-  List<Member> _membersList = [];
-  List<Member> membersSearch = [];
-  List<Member> invitedMembers = [];
-  bool _isLoading = false;
-  String teamName = '';
-  int itemCount = 0;
-  final _formKey = GlobalKey<FormState>();
-  String teamID = '';
-
-  @override
-  initState() {
-    super.initState();
-    _getMembersList();
-  }
-
-  // Retrieves membersList and puts it in variable
-  Future<void> _getMembersList() async {
-    try {
-      _membersList = await getMembersList();
-    } catch (e, stacktrace) {
-      print("Error in create_project_and_teams, _getMembersList(): $e");
-      print("Stacktrace: $stacktrace");
-    }
-  }
-
-  // Searches member list for given String
-  List<Member> searchMembers(List<Member> membersList, String text) {
-    setState(() {
-      _isLoading = true;
-
-      membersList = membersList
-          .where((member) =>
-              member.fullName.toLowerCase().startsWith(text.toLowerCase()))
-          .toList();
-
-      _isLoading = false;
-    });
-
-    return membersList.isNotEmpty ? membersList : [];
   }
 
   @override
@@ -413,17 +421,50 @@ class _CreateTeamWidgetState extends State<CreateTeamWidget> {
                           ),
                         ),
                         SizedBox(height: 5),
-                        PhotoUpload(
-                          width: 75,
-                          height: 75,
-                          icon: Icons.add_photo_alternate,
-                          circular: true,
-                          onTap: () {
-                            // TODO: Actual function (Photo Upload)
-                            print('Test');
-                            return;
-                          },
-                        ),
+                        _selectedCoverImage != null
+                            ? Stack(
+                                children: [
+                                  Container(
+                                    width: 75,
+                                    height: 75,
+                                    decoration: BoxDecoration(
+                                      shape: BoxShape.circle,
+                                      image: DecorationImage(
+                                        image: FileImage(_selectedCoverImage!),
+                                        fit: BoxFit.cover,
+                                      ),
+                                    ),
+                                  ),
+                                  Positioned(
+                                    right: 8,
+                                    bottom: 8,
+                                    child: InkWell(
+                                      onTap: _selectImage,
+                                      child: Container(
+                                        width: 30,
+                                        height: 30,
+                                        decoration: BoxDecoration(
+                                          color: Colors.white,
+                                          shape: BoxShape.circle,
+                                          border: Border.all(width: 1.5),
+                                        ),
+                                        child: Icon(
+                                          Icons.edit,
+                                          color: Colors.grey,
+                                          size: 16,
+                                        ),
+                                      ),
+                                    ),
+                                  )
+                                ],
+                              )
+                            : PhotoUpload(
+                                width: 75,
+                                height: 75,
+                                icon: Icons.add_photo_alternate,
+                                circular: true,
+                                onTap: _selectImage,
+                              ),
                       ],
                     ),
                     // Column(
@@ -495,7 +536,7 @@ class _CreateTeamWidgetState extends State<CreateTeamWidget> {
                   errorMessage:
                       'Team names must be at least 3 characters long.',
                   onChanged: (teamText) {
-                    teamName = teamText;
+                    _teamTitle = teamText;
                   },
                 ),
                 const SizedBox(height: 10.0),
@@ -518,42 +559,75 @@ class _CreateTeamWidgetState extends State<CreateTeamWidget> {
                   maxLines: 1,
                   minLines: 1,
                   icon: const Icon(Icons.search),
-                  onChanged: (memberText) {
-                    setState(() {
-                      if (memberText.length > 2) {
-                        membersSearch = searchMembers(_membersList, memberText);
-                        itemCount = membersSearch.length;
-                      } else {
-                        itemCount = 0;
-                      }
-                    });
+                  onChanged: (searchText) async {
+                    if (searchText.length > 2) {
+                      setState(() {
+                        _isLoading = true;
+                      });
+
+                      // Delay after text stops changing before search.
+                      // This delay is to prevent excessive amount of queries
+                      // as user is typing.
+                      _searchDelayTimer?.cancel();
+                      _searchTextBuffer = searchText;
+                      _searchDelayTimer = Timer(Duration(seconds: 1), () async {
+                        // Do search
+                        _searchResults =
+                            await Member.queryByFullName(_searchTextBuffer);
+                        _searchResults.removeWhere(
+                            (member) => member.id == widget.member.id);
+
+                        setState(() {
+                          _isLoading = false;
+                        });
+                      });
+                    } else {
+                      _searchDelayTimer?.cancel();
+                      setState(() {
+                        _isLoading = false;
+                        _searchResults = [];
+                      });
+                    }
                   },
                 ),
                 const SizedBox(height: 10.0),
                 SizedBox(
                   height: 250,
-                  child: itemCount > 0
-                      ? ListView.separated(
-                          shrinkWrap: true,
-                          itemCount: itemCount,
-                          padding: const EdgeInsets.only(
-                            left: 5,
-                            right: 5,
-                          ),
-                          itemBuilder: (BuildContext context, int index) {
-                            return buildInviteCard(
-                                member: membersSearch[index], index: index);
-                          },
-                          separatorBuilder: (BuildContext context, int index) =>
-                              const SizedBox(
-                            height: 10,
-                          ),
+                  child: _isLoading
+                      ? const Align(
+                          alignment: Alignment.topCenter,
+                          child: CircularProgressIndicator(),
                         )
-                      : _isLoading == true
-                          ? const Center(child: CircularProgressIndicator())
+                      : _searchResults.isNotEmpty
+                          ? ListView.separated(
+                              shrinkWrap: true,
+                              itemCount: _searchResults.length,
+                              padding: const EdgeInsets.only(left: 5, right: 5),
+                              itemBuilder: (context, index) {
+                                final member = _searchResults[index];
+                                final invited =
+                                    _invitedMembers.contains(member);
+                                return MemberInviteCard(
+                                  member: member,
+                                  invited: invited,
+                                  inviteMember: () {
+                                    if (!invited) {
+                                      setState(() {
+                                        _invitedMembers.add(member);
+                                      });
+                                    }
+                                  },
+                                );
+                              },
+                              separatorBuilder: (context, index) =>
+                                  const SizedBox(height: 10),
+                            )
                           : const Center(
                               child: Text(
-                                  'No users matching criteria. Enter at least 3 characters to search.'),
+                                'No users matching criteria. Enter at least '
+                                '3 characters to search.',
+                                textAlign: TextAlign.center,
+                              ),
                             ),
                 ),
                 const SizedBox(height: 10.0),
@@ -569,20 +643,21 @@ class _CreateTeamWidgetState extends State<CreateTeamWidget> {
                         ScaffoldMessenger.of(context).showSnackBar(
                           const SnackBar(content: Text('Saving data...')),
                         );
-                        await saveTeam(
-                            membersList: invitedMembers, teamName: teamName);
+
+                        await Team.createNew(
+                          teamTitle: _teamTitle,
+                          teamOwner: widget.member,
+                          inviteList: _invitedMembers.toList(),
+                          coverImage: _selectedCoverImage,
+                        );
+
                         if (!context.mounted) return;
                         FocusManager.instance.primaryFocus?.unfocus();
                         Navigator.pushReplacement(
                           context,
                           MaterialPageRoute(
-                            builder: (context) => const HomeScreen(),
-                          ),
-                        );
-                        Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                            builder: (context) => TeamsAndInvitesPage(),
+                            builder: (context) =>
+                                HomeScreen(member: widget.member),
                           ),
                         );
                       }
@@ -594,43 +669,6 @@ class _CreateTeamWidgetState extends State<CreateTeamWidget> {
           ),
         ),
       ),
-    );
-  }
-
-  Card buildInviteCard({required Member member, required int index}) {
-    return Card(
-      child: Padding(
-        padding: const EdgeInsets.all(8.0),
-        child: Row(
-          children: <Widget>[
-            CircleAvatar(),
-            SizedBox(width: 15),
-            Expanded(
-              child: Text(member.fullName),
-            ),
-            Align(
-              alignment: Alignment.centerRight,
-              child: memberInviteButton(
-                  teamID: teamID, index: index, member: member),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  InkWell memberInviteButton(
-      {required int index, required String teamID, required Member member}) {
-    return InkWell(
-      child: Text(member.invited ? "Invite sent!" : "Invite"),
-      onTap: () {
-        setState(() {
-          if (!member.invited) {
-            member.invited = true;
-            invitedMembers.add(member);
-          }
-        });
-      },
     );
   }
 }

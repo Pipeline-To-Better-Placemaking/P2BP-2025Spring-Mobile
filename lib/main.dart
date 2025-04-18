@@ -1,27 +1,24 @@
 import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:p2bp_2025spring_mobile/db_schema_classes.dart';
+import 'package:p2bp_2025spring_mobile/db_schema_classes/specific_test_classes/access_profile_test_class.dart';
 
-import 'create_project_and_teams.dart';
-import 'forgot_password_page.dart';
-import 'home_screen.dart';
+import 'db_schema_classes/specific_test_classes/absence_of_order_test_class.dart';
+import 'db_schema_classes/specific_test_classes/acoustic_profile_test_class.dart';
+import 'db_schema_classes/specific_test_classes/lighting_profile_test_class.dart';
+import 'db_schema_classes/specific_test_classes/nature_prevalence_test_class.dart';
+import 'db_schema_classes/specific_test_classes/people_in_motion_test_class.dart';
+import 'db_schema_classes/specific_test_classes/people_in_place_test_class.dart';
+import 'db_schema_classes/specific_test_classes/section_cutter_test_class.dart';
+import 'db_schema_classes/specific_test_classes/spatial_boundaries_test_class.dart';
 import 'login_screen.dart';
-import 'new_home_page.dart';
-import 'project_comparison_page.dart';
-import 'project_details_page.dart';
-import 'reset_password_page.dart';
-import 'results_panel.dart';
-import 'settings_page.dart';
-import 'signup_screen.dart';
-import 'teams_and_invites_page.dart';
 
 /// All [Test] subclass's register methods should be called here.
 void registerTestTypes() {
   LightingProfileTest.register();
   SectionCutterTest.register();
   AbsenceOfOrderTest.register();
-  IdentifyingAccessTest.register();
+  AccessProfileTest.register();
   PeopleInPlaceTest.register();
   PeopleInMotionTest.register();
   NaturePrevalenceTest.register();
@@ -64,30 +61,30 @@ class MyApp extends StatelessWidget {
       ),
       debugShowCheckedModeBanner: false,
       home: LoginScreen(),
-      routes: {
-        '/results': (context) => const ResultsPanel(),
-        // '/edit_project': (context) => const EditProjectPanel(),
-        '/forgot_password': (context) => const ForgotPasswordPage(),
-        '/reset_password': (context) => const ResetPasswordPage(),
-        '/create_project_and_teams': (context) =>
-            const CreateProjectAndTeamsPage(),
-        '/settings': (context) => const SettingsPage(),
-        '/teams_and_invites': (context) => const TeamsAndInvitesPage(),
-        '/create_project_details': (context) => ProjectDetailsPage(
-              activeProject: Project.partialProject(
-                  title: 'No data sent',
-                  description: 'Accessed without project data',
-                  address: 'No address set'),
-            ),
-        '/login': (context) => const LoginScreen(),
-        '/signup': (context) => const SignUpScreen(),
-        '/home': (context) => const HomeScreen(),
-        '/new_home': (context) => const BottomFloatingNavBar(),
-        '/compare_projects': (context) => const ProjectComparisonPage(),
-        // Commented out since you need project data to create page.
-        // '/search': (context) => const SearchScreen(),
-        // '/teams_settings': (context) => TeamSettingsScreen(),
-      },
+      // routes: {
+      //   '/results': (context) => const ResultsPanel(),
+      //   // '/edit_project': (context) => const EditProjectPanel(),
+      //   '/forgot_password': (context) => const ForgotPasswordPage(),
+      //   '/reset_password': (context) => const ResetPasswordPage(),
+      //   '/create_project_and_teams': (context) =>
+      //       const CreateProjectAndTeamsPage(),
+      //   '/settings': (context) => const SettingsPage(),
+      //   '/teams_and_invites': (context) => const TeamsAndInvitesPage(),
+      //   '/create_project_details': (context) => ProjectDetailsPage(
+      //         activeProject: Project.partialProject(
+      //             title: 'No data sent',
+      //             description: 'Accessed without project data',
+      //             address: 'No address set'),
+      //       ),
+      //   '/login': (context) => const LoginScreen(),
+      //   '/signup': (context) => const SignUpScreen(),
+      //   // '/home': (context) => const HomeScreen(),
+      //   // '/new_home': (context) => const BottomFloatingNavBar(),
+      //   '/compare_projects': (context) => const ProjectComparisonPage(),
+      //   // Commented out since you need project data to create page.
+      //   // '/search': (context) => const SearchScreen(),
+      //   // '/teams_settings': (context) => TeamSettingsScreen(),
+      // },
     );
   }
 }
