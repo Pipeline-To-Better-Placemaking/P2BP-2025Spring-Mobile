@@ -547,16 +547,12 @@ List<pw.Padding> getPDFDataGraphs(PDFData testData) {
 Future<Uint8List> generateReport(
     PdfPageFormat pageFormat, Project activeProject) async {
   List<pw.Widget> widgets = [];
-  late pw.Widget explainerPage;
-  bool newTestType = false;
   PDFData? pdfData;
   List<Member> contributors;
   List<String> contributorsNames = [];
   const baseColor = PdfColors.black;
   String currentCollectionID = '';
-  List<Test> sortedTests =
-      activeProject.tests != null ? activeProject.tests!.toList() : [];
-  sortedTests.sort((a, b) => a.collectionID.compareTo(b.collectionID));
+  List<Test> sortedTests = [];
 
   // Actually launches the pdf builder
   final document = pw.Document();
@@ -645,6 +641,8 @@ Future<Uint8List> generateReport(
   );
 
   projectPolygon = activeProject.polygon.clone();
+  sortedTests = activeProject.tests!.toList();
+  sortedTests.sort((a, b) => a.collectionID.compareTo(b.collectionID));
 
   for (Test currentTest in sortedTests) {
     // If a test isn't complete, skip it
@@ -654,30 +652,6 @@ Future<Uint8List> generateReport(
 
     if (pdfData == null) continue;
     if (pdfData.sectionImageLink != null) await pdfData.loadImage();
-
-    // Add one page for an explainer for each test type.
-    if (currentTest.collectionID != currentCollectionID) {
-      newTestType = true;
-      currentCollectionID = currentTest.collectionID;
-      explainerPage = pw.Column(
-        mainAxisAlignment: pw.MainAxisAlignment.center,
-        children: [
-          pw.Text(
-            pdfData.displayName,
-            style: const pw.TextStyle(
-              color: baseColor,
-              fontSize: 28,
-            ),
-            textAlign: pw.TextAlign.center,
-          ),
-          pw.Divider(thickness: 2),
-          collectionIDToDescription[currentCollectionID]!,
-          pw.Divider(
-            thickness: 0.5,
-          ),
-        ],
-      );
-    }
 
     widgets.addAll(
       [
@@ -710,6 +684,25 @@ Future<Uint8List> generateReport(
           child: pw.Divider(thickness: 3),
         ),
       ],
+    );
+
+    // Add blank space for potential images to be added in post.
+    widgets.add(
+      pw.Padding(
+        padding: pw.EdgeInsets.all(20),
+        child: pw.Center(
+          child: pw.SizedBox(
+            height: 200,
+            width: 350,
+            child: pw.Container(
+              color: PdfColors.grey100,
+              child: pw.Center(
+                child: pw.Text("<Placeholder Space>"),
+              ),
+            ),
+          ),
+        ),
+      ),
     );
 
     if (pdfData.sectionImageLink != null && pdfData.sectionImage != null) {
@@ -746,19 +739,36 @@ Future<Uint8List> generateReport(
       getPDFDataGraphs(pdfData),
     );
 
-    if (newTestType) {
+    // Add one page for an explainer for each test type.
+    if (currentTest.collectionID != currentCollectionID) {
+      currentCollectionID = currentTest.collectionID;
       document.addPage(
-        pw.Page(
+        pw.MultiPage(
           pageFormat: pageFormat,
           theme: theme,
+          mainAxisAlignment: pw.MainAxisAlignment.center,
           build: (context) {
-            return explainerPage;
+            return <pw.Widget>[
+              pw.Center(
+                child: pw.Text(
+                  pdfData!.displayName,
+                  style: const pw.TextStyle(
+                    color: baseColor,
+                    fontSize: 28,
+                  ),
+                  textAlign: pw.TextAlign.center,
+                ),
+              ),
+              pw.Divider(thickness: 2),
+              collectionIDToDescription[currentCollectionID]!,
+              pw.Divider(
+                thickness: 0.5,
+              ),
+            ];
           },
         ),
       );
     }
-
-    newTestType = false;
 
     document.addPage(
       pw.MultiPage(
@@ -964,37 +974,46 @@ Map<String, pw.Column> collectionIDToDescription = {
       pw.RichText(
         text: pw.TextSpan(
           children: <pw.TextSpan>[
-            pw.TextSpan(text: "1."),
+            pw.TextSpan(text: "1. "),
             pw.TextSpan(text: AbsenceOfOrderTest.displayName),
           ],
         ),
       ),
-      pw.RichText(
-        text: pw.TextSpan(
-          children: <pw.TextSpan>[
-            pw.TextSpan(text: "a."),
-            pw.TextSpan(
-                text:
-                    "Surveyors will identify where and what elements from the "
-                    "built environment show signs of disorder during the "
-                    "survey time slots."),
-          ],
+      pw.Padding(
+        padding: pw.EdgeInsets.only(left: 20),
+        child: pw.RichText(
+          text: pw.TextSpan(
+            children: <pw.TextSpan>[
+              pw.TextSpan(text: "a. "),
+              pw.TextSpan(
+                  text:
+                      "Surveyors will identify where and what elements from the "
+                      "built environment show signs of disorder during the "
+                      "survey time slots."),
+            ],
+          ),
         ),
       ),
-      pw.RichText(
-        text: pw.TextSpan(
-          children: <pw.TextSpan>[
-            pw.TextSpan(text: "i. "),
-            pw.TextSpan(text: "Behavior"),
-          ],
+      pw.Padding(
+        padding: pw.EdgeInsets.only(left: 40),
+        child: pw.RichText(
+          text: pw.TextSpan(
+            children: <pw.TextSpan>[
+              pw.TextSpan(text: "i. "),
+              pw.TextSpan(text: "Behavior"),
+            ],
+          ),
         ),
       ),
-      pw.RichText(
-        text: pw.TextSpan(
-          children: <pw.TextSpan>[
-            pw.TextSpan(text: "ii. "),
-            pw.TextSpan(text: "Maintenance"),
-          ],
+      pw.Padding(
+        padding: pw.EdgeInsets.only(left: 40),
+        child: pw.RichText(
+          text: pw.TextSpan(
+            children: <pw.TextSpan>[
+              pw.TextSpan(text: "ii. "),
+              pw.TextSpan(text: "Maintenance"),
+            ],
+          ),
         ),
       ),
     ],
@@ -1005,38 +1024,47 @@ Map<String, pw.Column> collectionIDToDescription = {
       pw.RichText(
         text: pw.TextSpan(
           children: <pw.TextSpan>[
-            pw.TextSpan(text: "2."),
+            pw.TextSpan(text: "2. "),
             pw.TextSpan(text: AccessProfileTest.displayName),
           ],
         ),
       ),
-      pw.RichText(
-        text: pw.TextSpan(
-          children: <pw.TextSpan>[
-            pw.TextSpan(text: "a."),
-            pw.TextSpan(
-                text:
-                    "This part of the research locates the arrival points for "
-                    "the public and how far to the project site that is. "),
-          ],
+      pw.Padding(
+        padding: pw.EdgeInsets.only(left: 20),
+        child: pw.RichText(
+          text: pw.TextSpan(
+            children: <pw.TextSpan>[
+              pw.TextSpan(text: "a. "),
+              pw.TextSpan(
+                  text:
+                      "This part of the research locates the arrival points for "
+                      "the public and how far to the project site that is. "),
+            ],
+          ),
         ),
       ),
-      pw.RichText(
-        text: pw.TextSpan(
-          children: <pw.TextSpan>[
-            pw.TextSpan(text: "i. "),
-            pw.TextSpan(text: "Mode of arrival (Bike/Bus/Car)"),
-          ],
+      pw.Padding(
+        padding: pw.EdgeInsets.only(left: 40),
+        child: pw.RichText(
+          text: pw.TextSpan(
+            children: <pw.TextSpan>[
+              pw.TextSpan(text: "i. "),
+              pw.TextSpan(text: "Mode of arrival (Bike/Bus/Car)"),
+            ],
+          ),
         ),
       ),
-      pw.RichText(
-        text: pw.TextSpan(
-          children: <pw.TextSpan>[
-            pw.TextSpan(text: "ii. "),
-            pw.TextSpan(
-                text:
-                    "Capacity of the arrival points (# of parking spaces, racks)"),
-          ],
+      pw.Padding(
+        padding: pw.EdgeInsets.only(left: 40),
+        child: pw.RichText(
+          text: pw.TextSpan(
+            children: <pw.TextSpan>[
+              pw.TextSpan(text: "ii. "),
+              pw.TextSpan(
+                  text:
+                      "Capacity of the arrival points (# of parking spaces, racks)"),
+            ],
+          ),
         ),
       ),
     ],
@@ -1047,37 +1075,46 @@ Map<String, pw.Column> collectionIDToDescription = {
       pw.RichText(
         text: pw.TextSpan(
           children: <pw.TextSpan>[
-            pw.TextSpan(text: "3."),
+            pw.TextSpan(text: "3. "),
             pw.TextSpan(text: AcousticProfileTest.displayName),
           ],
         ),
       ),
-      pw.RichText(
-        text: pw.TextSpan(
-          children: <pw.TextSpan>[
-            pw.TextSpan(text: "a."),
-            pw.TextSpan(
-                text:
-                    "This part of the research, the loudness of decibels will "
-                    "be analyzed, and the role that noise and acoustics play "
-                    "in our security."),
-          ],
+      pw.Padding(
+        padding: pw.EdgeInsets.only(left: 20),
+        child: pw.RichText(
+          text: pw.TextSpan(
+            children: <pw.TextSpan>[
+              pw.TextSpan(text: "a. "),
+              pw.TextSpan(
+                  text:
+                      "This part of the research, the loudness of decibels will "
+                      "be analyzed, and the role that noise and acoustics play "
+                      "in our security."),
+            ],
+          ),
         ),
       ),
-      pw.RichText(
-        text: pw.TextSpan(
-          children: <pw.TextSpan>[
-            pw.TextSpan(text: "i. "),
-            pw.TextSpan(text: "Loudness"),
-          ],
+      pw.Padding(
+        padding: pw.EdgeInsets.only(left: 40),
+        child: pw.RichText(
+          text: pw.TextSpan(
+            children: <pw.TextSpan>[
+              pw.TextSpan(text: "i. "),
+              pw.TextSpan(text: "Loudness"),
+            ],
+          ),
         ),
       ),
-      pw.RichText(
-        text: pw.TextSpan(
-          children: <pw.TextSpan>[
-            pw.TextSpan(text: "ii. "),
-            pw.TextSpan(text: "Sources"),
-          ],
+      pw.Padding(
+        padding: pw.EdgeInsets.only(left: 40),
+        child: pw.RichText(
+          text: pw.TextSpan(
+            children: <pw.TextSpan>[
+              pw.TextSpan(text: "ii. "),
+              pw.TextSpan(text: "Sources"),
+            ],
+          ),
         ),
       ),
     ],
@@ -1088,44 +1125,56 @@ Map<String, pw.Column> collectionIDToDescription = {
       pw.RichText(
         text: pw.TextSpan(
           children: <pw.TextSpan>[
-            pw.TextSpan(text: "4."),
+            pw.TextSpan(text: "4. "),
             pw.TextSpan(text: LightingProfileTest.displayName),
           ],
         ),
       ),
-      pw.RichText(
-        text: pw.TextSpan(
-          children: <pw.TextSpan>[
-            pw.TextSpan(text: "a."),
-            pw.TextSpan(
-                text: "Surveyors will identify what elements from the built "
-                    "environment make up the lighting profile of the place."),
-          ],
+      pw.Padding(
+        padding: pw.EdgeInsets.only(left: 20),
+        child: pw.RichText(
+          text: pw.TextSpan(
+            children: <pw.TextSpan>[
+              pw.TextSpan(text: "a. "),
+              pw.TextSpan(
+                  text: "Surveyors will identify what elements from the built "
+                      "environment make up the lighting profile of the place."),
+            ],
+          ),
         ),
       ),
-      pw.RichText(
-        text: pw.TextSpan(
-          children: <pw.TextSpan>[
-            pw.TextSpan(text: "i. "),
-            pw.TextSpan(
-                text: "Existence of light within the built environment."),
-          ],
+      pw.Padding(
+        padding: pw.EdgeInsets.only(left: 40),
+        child: pw.RichText(
+          text: pw.TextSpan(
+            children: <pw.TextSpan>[
+              pw.TextSpan(text: "i. "),
+              pw.TextSpan(
+                  text: "Existence of light within the built environment."),
+            ],
+          ),
         ),
       ),
-      pw.RichText(
-        text: pw.TextSpan(
-          children: <pw.TextSpan>[
-            pw.TextSpan(text: "ii. "),
-            pw.TextSpan(text: "How it is being used within the space."),
-          ],
+      pw.Padding(
+        padding: pw.EdgeInsets.only(left: 40),
+        child: pw.RichText(
+          text: pw.TextSpan(
+            children: <pw.TextSpan>[
+              pw.TextSpan(text: "ii. "),
+              pw.TextSpan(text: "How it is being used within the space."),
+            ],
+          ),
         ),
       ),
-      pw.RichText(
-        text: pw.TextSpan(
-          children: <pw.TextSpan>[
-            pw.TextSpan(text: "iii. "),
-            pw.TextSpan(text: "the consistency of it."),
-          ],
+      pw.Padding(
+        padding: pw.EdgeInsets.only(left: 40),
+        child: pw.RichText(
+          text: pw.TextSpan(
+            children: <pw.TextSpan>[
+              pw.TextSpan(text: "iii. "),
+              pw.TextSpan(text: "the consistency of it."),
+            ],
+          ),
         ),
       ),
     ],
@@ -1136,43 +1185,55 @@ Map<String, pw.Column> collectionIDToDescription = {
       pw.RichText(
         text: pw.TextSpan(
           children: <pw.TextSpan>[
-            pw.TextSpan(text: "5."),
+            pw.TextSpan(text: "5. "),
             pw.TextSpan(text: NaturePrevalenceTest.displayName),
           ],
         ),
       ),
-      pw.RichText(
-        text: pw.TextSpan(
-          children: <pw.TextSpan>[
-            pw.TextSpan(text: "a."),
-            pw.TextSpan(
-                text: "Surveyors will identify where and what elements from "
-                    "the built environment embrace the natural tools of place."),
-          ],
+      pw.Padding(
+        padding: pw.EdgeInsets.only(left: 20),
+        child: pw.RichText(
+          text: pw.TextSpan(
+            children: <pw.TextSpan>[
+              pw.TextSpan(text: "a. "),
+              pw.TextSpan(
+                  text: "Surveyors will identify where and what elements from "
+                      "the built environment embrace the natural tools of place."),
+            ],
+          ),
         ),
       ),
-      pw.RichText(
-        text: pw.TextSpan(
-          children: <pw.TextSpan>[
-            pw.TextSpan(text: "i. "),
-            pw.TextSpan(text: "Natural"),
-          ],
+      pw.Padding(
+        padding: pw.EdgeInsets.only(left: 40),
+        child: pw.RichText(
+          text: pw.TextSpan(
+            children: <pw.TextSpan>[
+              pw.TextSpan(text: "i. "),
+              pw.TextSpan(text: "Natural"),
+            ],
+          ),
         ),
       ),
-      pw.RichText(
-        text: pw.TextSpan(
-          children: <pw.TextSpan>[
-            pw.TextSpan(text: "ii. "),
-            pw.TextSpan(text: "Designed"),
-          ],
+      pw.Padding(
+        padding: pw.EdgeInsets.only(left: 40),
+        child: pw.RichText(
+          text: pw.TextSpan(
+            children: <pw.TextSpan>[
+              pw.TextSpan(text: "ii. "),
+              pw.TextSpan(text: "Designed"),
+            ],
+          ),
         ),
       ),
-      pw.RichText(
-        text: pw.TextSpan(
-          children: <pw.TextSpan>[
-            pw.TextSpan(text: "iii. "),
-            pw.TextSpan(text: "Open Field"),
-          ],
+      pw.Padding(
+        padding: pw.EdgeInsets.only(left: 40),
+        child: pw.RichText(
+          text: pw.TextSpan(
+            children: <pw.TextSpan>[
+              pw.TextSpan(text: "iii. "),
+              pw.TextSpan(text: "Open Field"),
+            ],
+          ),
         ),
       ),
     ],
@@ -1182,17 +1243,17 @@ Map<String, pw.Column> collectionIDToDescription = {
       pw.RichText(
         text: pw.TextSpan(
           children: <pw.TextSpan>[
-            pw.TextSpan(text: "6."),
+            pw.TextSpan(text: "6. "),
             pw.TextSpan(text: PeopleInMotionTest.displayName),
           ],
         ),
       ),
       pw.Padding(
-        padding: pw.EdgeInsets.only(left: 10),
+        padding: pw.EdgeInsets.only(left: 20),
         child: pw.RichText(
           text: pw.TextSpan(
             children: <pw.TextSpan>[
-              pw.TextSpan(text: "a."),
+              pw.TextSpan(text: "a. "),
               pw.TextSpan(
                   text:
                       "The app will present research team members with a map to note "),
@@ -1210,28 +1271,37 @@ Map<String, pw.Column> collectionIDToDescription = {
           ),
         ),
       ),
-      pw.RichText(
-        text: pw.TextSpan(
-          children: <pw.TextSpan>[
-            pw.TextSpan(text: "i. "),
-            pw.TextSpan(text: "Located"),
-          ],
+      pw.Padding(
+        padding: pw.EdgeInsets.only(left: 40),
+        child: pw.RichText(
+          text: pw.TextSpan(
+            children: <pw.TextSpan>[
+              pw.TextSpan(text: "i. "),
+              pw.TextSpan(text: "Located"),
+            ],
+          ),
         ),
       ),
-      pw.RichText(
-        text: pw.TextSpan(
-          children: <pw.TextSpan>[
-            pw.TextSpan(text: "ii. "),
-            pw.TextSpan(text: "Their Path"),
-          ],
+      pw.Padding(
+        padding: pw.EdgeInsets.only(left: 40),
+        child: pw.RichText(
+          text: pw.TextSpan(
+            children: <pw.TextSpan>[
+              pw.TextSpan(text: "ii. "),
+              pw.TextSpan(text: "Their Path"),
+            ],
+          ),
         ),
       ),
-      pw.RichText(
-        text: pw.TextSpan(
-          children: <pw.TextSpan>[
-            pw.TextSpan(text: "iii. "),
-            pw.TextSpan(text: "Mode of Transportation"),
-          ],
+      pw.Padding(
+        padding: pw.EdgeInsets.only(left: 40),
+        child: pw.RichText(
+          text: pw.TextSpan(
+            children: <pw.TextSpan>[
+              pw.TextSpan(text: "iii. "),
+              pw.TextSpan(text: "Mode of Transportation"),
+            ],
+          ),
         ),
       ),
     ],
@@ -1241,17 +1311,17 @@ Map<String, pw.Column> collectionIDToDescription = {
       pw.RichText(
         text: pw.TextSpan(
           children: <pw.TextSpan>[
-            pw.TextSpan(text: "7."),
+            pw.TextSpan(text: "7. "),
             pw.TextSpan(text: PeopleInPlaceTest.displayName),
           ],
         ),
       ),
       pw.Padding(
-        padding: pw.EdgeInsets.only(left: 10),
+        padding: pw.EdgeInsets.only(left: 20),
         child: pw.RichText(
           text: pw.TextSpan(
             children: <pw.TextSpan>[
-              pw.TextSpan(text: "a."),
+              pw.TextSpan(text: "a. "),
               pw.TextSpan(
                   text:
                       "The app will present research team members with a map to "
@@ -1270,36 +1340,48 @@ Map<String, pw.Column> collectionIDToDescription = {
           ),
         ),
       ),
-      pw.RichText(
-        text: pw.TextSpan(
-          children: <pw.TextSpan>[
-            pw.TextSpan(text: "i. "),
-            pw.TextSpan(text: "Located"),
-          ],
+      pw.Padding(
+        padding: pw.EdgeInsets.only(left: 40),
+        child: pw.RichText(
+          text: pw.TextSpan(
+            children: <pw.TextSpan>[
+              pw.TextSpan(text: "i. "),
+              pw.TextSpan(text: "Located"),
+            ],
+          ),
         ),
       ),
-      pw.RichText(
-        text: pw.TextSpan(
-          children: <pw.TextSpan>[
-            pw.TextSpan(text: "ii. "),
-            pw.TextSpan(text: "General Profile"),
-          ],
+      pw.Padding(
+        padding: pw.EdgeInsets.only(left: 40),
+        child: pw.RichText(
+          text: pw.TextSpan(
+            children: <pw.TextSpan>[
+              pw.TextSpan(text: "ii. "),
+              pw.TextSpan(text: "General Profile"),
+            ],
+          ),
         ),
       ),
-      pw.RichText(
-        text: pw.TextSpan(
-          children: <pw.TextSpan>[
-            pw.TextSpan(text: "iii. "),
-            pw.TextSpan(text: "Activity"),
-          ],
+      pw.Padding(
+        padding: pw.EdgeInsets.only(left: 40),
+        child: pw.RichText(
+          text: pw.TextSpan(
+            children: <pw.TextSpan>[
+              pw.TextSpan(text: "iii. "),
+              pw.TextSpan(text: "Activity"),
+            ],
+          ),
         ),
       ),
-      pw.RichText(
-        text: pw.TextSpan(
-          children: <pw.TextSpan>[
-            pw.TextSpan(text: "iv. "),
-            pw.TextSpan(text: "Posture"),
-          ],
+      pw.Padding(
+        padding: pw.EdgeInsets.only(left: 40),
+        child: pw.RichText(
+          text: pw.TextSpan(
+            children: <pw.TextSpan>[
+              pw.TextSpan(text: "iv. "),
+              pw.TextSpan(text: "Posture"),
+            ],
+          ),
         ),
       ),
     ],
@@ -1310,35 +1392,44 @@ Map<String, pw.Column> collectionIDToDescription = {
       pw.RichText(
         text: pw.TextSpan(
           children: <pw.TextSpan>[
-            pw.TextSpan(text: "8."),
+            pw.TextSpan(text: "8. "),
             pw.TextSpan(text: SectionCutterTest.displayName),
           ],
         ),
       ),
-      pw.RichText(
-        text: pw.TextSpan(
-          children: <pw.TextSpan>[
-            pw.TextSpan(text: "a."),
-            pw.TextSpan(
-                text: "The part of the research has the surveyor create "
-                    "architecture cross section through the site to gather."),
-          ],
+      pw.Padding(
+        padding: pw.EdgeInsets.only(left: 20),
+        child: pw.RichText(
+          text: pw.TextSpan(
+            children: <pw.TextSpan>[
+              pw.TextSpan(text: "a. "),
+              pw.TextSpan(
+                  text: "The part of the research has the surveyor create "
+                      "architecture cross section through the site to gather."),
+            ],
+          ),
         ),
       ),
-      pw.RichText(
-        text: pw.TextSpan(
-          children: <pw.TextSpan>[
-            pw.TextSpan(text: "i. "),
-            pw.TextSpan(text: "Human scale"),
-          ],
+      pw.Padding(
+        padding: pw.EdgeInsets.only(left: 40),
+        child: pw.RichText(
+          text: pw.TextSpan(
+            children: <pw.TextSpan>[
+              pw.TextSpan(text: "i. "),
+              pw.TextSpan(text: "Human scale"),
+            ],
+          ),
         ),
       ),
-      pw.RichText(
-        text: pw.TextSpan(
-          children: <pw.TextSpan>[
-            pw.TextSpan(text: "ii. "),
-            pw.TextSpan(text: "Vertical dimensions"),
-          ],
+      pw.Padding(
+        padding: pw.EdgeInsets.only(left: 40),
+        child: pw.RichText(
+          text: pw.TextSpan(
+            children: <pw.TextSpan>[
+              pw.TextSpan(text: "ii. "),
+              pw.TextSpan(text: "Vertical dimensions"),
+            ],
+          ),
         ),
       ),
     ],
@@ -1349,44 +1440,56 @@ Map<String, pw.Column> collectionIDToDescription = {
       pw.RichText(
         text: pw.TextSpan(
           children: <pw.TextSpan>[
-            pw.TextSpan(text: "9."),
+            pw.TextSpan(text: "9. "),
             pw.TextSpan(text: SpatialBoundariesTest.displayName),
           ],
         ),
       ),
-      pw.RichText(
-        text: pw.TextSpan(
-          children: <pw.TextSpan>[
-            pw.TextSpan(text: "a."),
-            pw.TextSpan(
-                text: "Surveyors will identify what elements from the built "
-                    "environment allow activity to take place or separate that "
-                    "activity from the overall place."),
-          ],
+      pw.Padding(
+        padding: pw.EdgeInsets.only(left: 20),
+        child: pw.RichText(
+          text: pw.TextSpan(
+            children: <pw.TextSpan>[
+              pw.TextSpan(text: "a. "),
+              pw.TextSpan(
+                  text: "Surveyors will identify what elements from the built "
+                      "environment allow activity to take place or separate that "
+                      "activity from the overall place."),
+            ],
+          ),
         ),
       ),
-      pw.RichText(
-        text: pw.TextSpan(
-          children: <pw.TextSpan>[
-            pw.TextSpan(text: "i. "),
-            pw.TextSpan(text: "Constructed (buildings, planters, fences)"),
-          ],
+      pw.Padding(
+        padding: pw.EdgeInsets.only(left: 40),
+        child: pw.RichText(
+          text: pw.TextSpan(
+            children: <pw.TextSpan>[
+              pw.TextSpan(text: "i. "),
+              pw.TextSpan(text: "Constructed (buildings, planters, fences)"),
+            ],
+          ),
         ),
       ),
-      pw.RichText(
-        text: pw.TextSpan(
-          children: <pw.TextSpan>[
-            pw.TextSpan(text: "ii. "),
-            pw.TextSpan(text: "Material (brick, paver, concrete, natural)"),
-          ],
+      pw.Padding(
+        padding: pw.EdgeInsets.only(left: 40),
+        child: pw.RichText(
+          text: pw.TextSpan(
+            children: <pw.TextSpan>[
+              pw.TextSpan(text: "ii. "),
+              pw.TextSpan(text: "Material (brick, paver, concrete, natural)"),
+            ],
+          ),
         ),
       ),
-      pw.RichText(
-        text: pw.TextSpan(
-          children: <pw.TextSpan>[
-            pw.TextSpan(text: "iii. "),
-            pw.TextSpan(text: "Shelter (canopies built & natural)"),
-          ],
+      pw.Padding(
+        padding: pw.EdgeInsets.only(left: 40),
+        child: pw.RichText(
+          text: pw.TextSpan(
+            children: <pw.TextSpan>[
+              pw.TextSpan(text: "iii. "),
+              pw.TextSpan(text: "Shelter (canopies built & natural)"),
+            ],
+          ),
         ),
       ),
     ],
