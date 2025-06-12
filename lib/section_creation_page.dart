@@ -1,12 +1,13 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
+import 'package:maps_toolkit/maps_toolkit.dart' as mp;
+import 'package:p2bp_2025spring_mobile/extensions.dart';
 import 'package:p2bp_2025spring_mobile/theme.dart';
 import 'package:p2bp_2025spring_mobile/widgets.dart';
+
+import 'db_schema_classes/project_class.dart';
 import 'google_maps_functions.dart';
-import 'db_schema_classes.dart';
-import 'firestore_functions.dart';
-import 'package:maps_toolkit/maps_toolkit.dart' as mp;
 
 class SectionCreationPage extends StatefulWidget {
   final Project activeProject;
@@ -40,7 +41,7 @@ class _SectionCreationPageState extends State<SectionCreationPage> {
   @override
   void initState() {
     super.initState();
-    _polygons.add(getProjectPolygon(widget.activeProject.polygonPoints));
+    _polygons.add(widget.activeProject.polygon.clone());
     _location = getPolygonCentroid(_polygons.first);
     _projectArea = _polygons.first.toMPLatLngList();
     _zoom = getIdealZoom(_projectArea, _location.toMPLatLng()) - 0.2;

@@ -1,20 +1,29 @@
 import 'dart:math';
 import 'dart:typed_data';
+
 import 'package:collection/collection.dart';
 import 'package:firebase_storage/firebase_storage.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:intl/intl.dart';
-import 'package:p2bp_2025spring_mobile/db_schema_classes.dart';
-import 'package:p2bp_2025spring_mobile/firestore_functions.dart';
+import 'package:p2bp_2025spring_mobile/extensions.dart';
 import 'package:pdf/pdf.dart';
 import 'package:pdf/widgets.dart' as pw;
 import 'package:printing/printing.dart';
-import 'google_maps_functions.dart';
 
-// Create a storage reference from app
-final storageRef = FirebaseStorage.instance.ref();
+import 'db_schema_classes/member_class.dart';
+import 'db_schema_classes/project_class.dart';
+import 'db_schema_classes/specific_test_classes/absence_of_order_test_class.dart';
+import 'db_schema_classes/specific_test_classes/access_profile_test_class.dart';
+import 'db_schema_classes/specific_test_classes/acoustic_profile_test_class.dart';
+import 'db_schema_classes/specific_test_classes/lighting_profile_test_class.dart';
+import 'db_schema_classes/specific_test_classes/nature_prevalence_test_class.dart';
+import 'db_schema_classes/specific_test_classes/people_in_motion_test_class.dart';
+import 'db_schema_classes/specific_test_classes/people_in_place_test_class.dart';
+import 'db_schema_classes/specific_test_classes/section_cutter_test_class.dart';
+import 'db_schema_classes/specific_test_classes/spatial_boundaries_test_class.dart';
+import 'db_schema_classes/test_class.dart';
 
 // Allows user to see the pdf in browser so they know what they are getting
 class PdfReportPage extends StatelessWidget {
@@ -63,24 +72,10 @@ class PdfReportPage extends StatelessWidget {
   }
 }
 
-Future<List<PDFData>> retrieveAllPDFInfo(
-    List<Test> tests, Polygon projectPolygon) async {
-  List<PDFData> pdfDataList = [];
-  PDFData? pdfData;
-  for (final Test test in tests) {
-    pdfData = await retrievePDFInfo(test, projectPolygon);
-    if (pdfData != null) {
-      pdfDataList.add(pdfData);
-    }
-  }
-  return pdfDataList;
-}
-
 Future<PDFData?> retrievePDFInfo(Test test, Polygon projectPolygon) async {
   PDFData? pdfPage;
-  print(test.collectionID);
   switch (test.collectionID) {
-    case 'lighting_profile_tests':
+    case LightingProfileTest.collectionIDStatic:
       {
         PDFData lpData;
         Set<Marker> lpMarkers = {};
@@ -111,7 +106,7 @@ Future<PDFData?> retrievePDFInfo(Test test, Polygon projectPolygon) async {
             time: DateFormat.jmv().format(test.scheduledTime.toDate()));
         pdfPage = (lpData);
       }
-    case 'absence_of_order_tests':
+    case AbsenceOfOrderTest.collectionIDStatic:
       {
         PDFData aoData;
         AbsenceOfOrderData data = (test as AbsenceOfOrderTest).data;
@@ -134,7 +129,7 @@ Future<PDFData?> retrievePDFInfo(Test test, Polygon projectPolygon) async {
             time: DateFormat.jmv().format(test.scheduledTime.toDate()));
         pdfPage = (aoData);
       }
-    case 'nature_prevalence_tests':
+    case NaturePrevalenceTest.collectionIDStatic:
       {
         PDFData npData;
         NaturePrevalenceData data = (test as NaturePrevalenceTest).data;
@@ -201,10 +196,10 @@ Future<PDFData?> retrievePDFInfo(Test test, Polygon projectPolygon) async {
             time: DateFormat.jmv().format(test.scheduledTime.toDate()));
         pdfPage = (npData);
       }
-    case 'identifying_access_tests':
+    case AccessProfileTest.collectionIDStatic:
       {
         PDFData iaData;
-        IdentifyingAccessData data = (test as IdentifyingAccessTest).data;
+        AccessProfileData data = (test as AccessProfileTest).data;
         Map<String, double> polylineLengths = {
           AccessType.taxiAndRideShare.name: 0,
           AccessType.parking.name: 0,
@@ -262,13 +257,13 @@ Future<PDFData?> retrievePDFInfo(Test test, Polygon projectPolygon) async {
             ),
           ],
           pieGraphData: [],
-          displayName: IdentifyingAccessTest.displayName,
+          displayName: AccessProfileTest.displayName,
           date: DateFormat.yMMMd().format(test.scheduledTime.toDate()),
           time: DateFormat.jmv().format(test.scheduledTime.toDate()),
         );
         pdfPage = (iaData);
       }
-    case 'people_in_place_tests':
+    case PeopleInPlaceTest.collectionIDStatic:
       {
         PDFData ppData;
         PeopleInPlaceData data = (test as PeopleInPlaceTest).data;
@@ -298,7 +293,7 @@ Future<PDFData?> retrievePDFInfo(Test test, Polygon projectPolygon) async {
         );
         pdfPage = (ppData);
       }
-    case 'people_in_motion_tests':
+    case PeopleInMotionTest.collectionIDStatic:
       {
         PDFData pmData;
         PeopleInMotionData data = (test as PeopleInMotionTest).data;
@@ -337,7 +332,7 @@ Future<PDFData?> retrievePDFInfo(Test test, Polygon projectPolygon) async {
         );
         pdfPage = (pmData);
       }
-    case 'acoustic_profile_tests':
+    case AcousticProfileTest.collectionIDStatic:
       {
         AcousticProfileData data = (test as AcousticProfileTest).data;
         PDFData apData;
@@ -376,7 +371,7 @@ Future<PDFData?> retrievePDFInfo(Test test, Polygon projectPolygon) async {
         );
         pdfPage = (apData);
       }
-    case 'spatial_boundaries_tests':
+    case SpatialBoundariesTest.collectionIDStatic:
       {
         PDFData sbData;
         SpatialBoundariesData data = (test as SpatialBoundariesTest).data;
@@ -465,7 +460,7 @@ Future<PDFData?> retrievePDFInfo(Test test, Polygon projectPolygon) async {
             time: DateFormat.jmv().format(test.scheduledTime.toDate()));
         pdfPage = (sbData);
       }
-    case 'section_cutter_tests':
+    case SectionCutterTest.collectionIDStatic:
       {
         PDFData scData;
         Section data = (test as SectionCutterTest).data;
@@ -552,13 +547,12 @@ List<pw.Padding> getPDFDataGraphs(PDFData testData) {
 Future<Uint8List> generateReport(
     PdfPageFormat pageFormat, Project activeProject) async {
   List<pw.Widget> widgets = [];
-  List<Test> rawTests = [];
   PDFData? pdfData;
   List<Member> contributors;
   List<String> contributorsNames = [];
-  // Load images data before building the PDF, but was not implemented
-  // final imageData = await _loadImage(data.mapImagePath);
   const baseColor = PdfColors.black;
+  String currentCollectionID = '';
+  List<Test> sortedTests = [];
 
   // Actually launches the pdf builder
   final document = pw.Document();
@@ -571,9 +565,10 @@ Future<Uint8List> generateReport(
   );
 
   if (activeProject.tests == null || activeProject.tests!.isEmpty) {
-    await activeProject.loadAllTestData();
+    await activeProject.loadAllTestInfo();
   }
-  contributors = await getTeamMembers(activeProject.teamRef!.id);
+  final roleMap = await activeProject.team?.loadMembersInfo();
+  contributors = roleMap!.toSingleList();
   for (Member contributor in contributors) {
     contributorsNames.add(contributor.fullName);
   }
@@ -586,17 +581,20 @@ Future<Uint8List> generateReport(
         return pw.Column(
           mainAxisAlignment: pw.MainAxisAlignment.center,
           children: [
-            pw.Text(activeProject.title,
-                style: const pw.TextStyle(
-                  color: baseColor,
-                  fontSize: 40,
-                )),
+            pw.Text(
+              activeProject.title,
+              style: const pw.TextStyle(
+                color: baseColor,
+                fontSize: 40,
+              ),
+              textAlign: pw.TextAlign.center,
+            ),
             pw.Divider(thickness: 4),
             pw.Flexible(
               child: pw.Text(
                 activeProject.description,
                 style: const pw.TextStyle(fontSize: 16),
-                textAlign: pw.TextAlign.justify,
+                textAlign: pw.TextAlign.center,
               ),
             ),
             pw.Divider(
@@ -609,6 +607,7 @@ Future<Uint8List> generateReport(
               "Project Address: ",
               style: pw.TextStyle(
                   decoration: pw.TextDecoration.underline, fontSize: 16),
+              textAlign: pw.TextAlign.center,
             ),
             pw.Text(activeProject.address),
             pw.SizedBox(height: 10),
@@ -616,6 +615,7 @@ Future<Uint8List> generateReport(
               "Total Project Area (sq. ft):",
               style: pw.TextStyle(
                   decoration: pw.TextDecoration.underline, fontSize: 16),
+              textAlign: pw.TextAlign.center,
             ),
             pw.Text("${activeProject.polygonArea.toStringAsFixed(3)} sq. ft."),
             pw.SizedBox(height: 10),
@@ -625,7 +625,7 @@ Future<Uint8List> generateReport(
                   decoration: pw.TextDecoration.underline, fontSize: 16),
               textAlign: pw.TextAlign.center,
             ),
-            pw.Text('${contributorsNames.join(', ')}'),
+            pw.Text(contributorsNames.join(', ')),
             pw.SizedBox(height: 10),
             pw.Text(
               'Sponsor: ',
@@ -640,46 +640,45 @@ Future<Uint8List> generateReport(
     ),
   );
 
-  projectPolygon = getProjectPolygon(activeProject.polygonPoints);
-  rawTests = activeProject.tests ?? [];
-  for (Test currentTest in rawTests) {
+  projectPolygon = activeProject.polygon.clone();
+  sortedTests = activeProject.tests!.toList();
+  sortedTests.sort((a, b) => a.collectionID.compareTo(b.collectionID));
+
+  for (Test currentTest in sortedTests) {
     // If a test isn't complete, skip it
     if (!currentTest.isComplete) continue;
+
     pdfData = await retrievePDFInfo(currentTest, projectPolygon);
 
     if (pdfData == null) continue;
     if (pdfData.sectionImageLink != null) await pdfData.loadImage();
-    // TODO: Add one page for an explainer for each test type.
 
     widgets.addAll(
       [
         pw.Align(
           alignment: pw.Alignment.topRight,
-          child: pw.Text(
-            pdfData.displayName,
-            style: pw.TextStyle(
-              color: baseColor,
-              fontSize: 12,
-            ),
-          ),
+          child: pw.Text(pdfData.displayName,
+              style: pw.TextStyle(
+                color: baseColor,
+                fontSize: 12,
+              ),
+              textAlign: pw.TextAlign.center),
         ),
         pw.Center(
-          child: pw.Text(
-            pdfData.testTitle,
-            style: pw.TextStyle(
-              color: baseColor,
-              fontSize: 20,
-            ),
-          ),
+          child: pw.Text(pdfData.testTitle,
+              style: pw.TextStyle(
+                color: baseColor,
+                fontSize: 20,
+              ),
+              textAlign: pw.TextAlign.center),
         ),
         pw.Center(
-          child: pw.Text(
-            '${pdfData.date} at ${pdfData.time}',
-            style: pw.TextStyle(
-              color: baseColor,
-              fontSize: 20,
-            ),
-          ),
+          child: pw.Text('${pdfData.date} at ${pdfData.time}',
+              style: pw.TextStyle(
+                color: baseColor,
+                fontSize: 20,
+              ),
+              textAlign: pw.TextAlign.center),
         ),
         pw.Center(
           child: pw.Divider(thickness: 3),
@@ -687,11 +686,32 @@ Future<Uint8List> generateReport(
       ],
     );
 
+    // Add blank space for potential images to be added in post.
+    widgets.add(
+      pw.Padding(
+        padding: pw.EdgeInsets.all(20),
+        child: pw.Center(
+          child: pw.SizedBox(
+            height: 200,
+            width: 350,
+            child: pw.Container(
+              color: PdfColors.grey100,
+              child: pw.Center(
+                child: pw.Text("<Placeholder Space>"),
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+
     if (pdfData.sectionImageLink != null && pdfData.sectionImage != null) {
       widgets.addAll(
         [
           pw.Center(
-            child: pw.Text("Section Image:", style: pw.TextStyle(fontSize: 18)),
+            child: pw.Text("Section Image:",
+                style: pw.TextStyle(fontSize: 18),
+                textAlign: pw.TextAlign.center),
           ),
           pw.Center(
             child: pw.SizedBox(height: 5),
@@ -719,6 +739,37 @@ Future<Uint8List> generateReport(
       getPDFDataGraphs(pdfData),
     );
 
+    // Add one page for an explainer for each test type.
+    if (currentTest.collectionID != currentCollectionID) {
+      currentCollectionID = currentTest.collectionID;
+      document.addPage(
+        pw.MultiPage(
+          pageFormat: pageFormat,
+          theme: theme,
+          mainAxisAlignment: pw.MainAxisAlignment.center,
+          build: (context) {
+            return <pw.Widget>[
+              pw.Center(
+                child: pw.Text(
+                  pdfData!.displayName,
+                  style: const pw.TextStyle(
+                    color: baseColor,
+                    fontSize: 28,
+                  ),
+                  textAlign: pw.TextAlign.center,
+                ),
+              ),
+              pw.Divider(thickness: 2),
+              collectionIDToDescription[currentCollectionID]!,
+              pw.Divider(
+                thickness: 0.5,
+              ),
+            ];
+          },
+        ),
+      );
+    }
+
     document.addPage(
       pw.MultiPage(
         pageFormat: pageFormat,
@@ -728,6 +779,7 @@ Future<Uint8List> generateReport(
         },
       ),
     );
+
     widgets = [];
   }
   return document.save();
@@ -847,6 +899,8 @@ class PDFData {
   });
 
   Future<void> loadImage() async {
+    // Create a storage reference from app
+    final storageRef = FirebaseStorage.instance.ref();
     final Reference firebaseImageRef;
     const tenMegabytes = 10240 * 10240;
     try {
@@ -912,3 +966,532 @@ const defaultChartColors = [
   PdfColors.purple300,
   PdfColors.lime300,
 ];
+
+Map<String, pw.Column> collectionIDToDescription = {
+  AbsenceOfOrderTest.collectionIDStatic: pw.Column(
+    crossAxisAlignment: pw.CrossAxisAlignment.start,
+    children: <pw.Widget>[
+      pw.RichText(
+        text: pw.TextSpan(
+          children: <pw.TextSpan>[
+            pw.TextSpan(text: "1. "),
+            pw.TextSpan(text: AbsenceOfOrderTest.displayName),
+          ],
+        ),
+      ),
+      pw.Padding(
+        padding: pw.EdgeInsets.only(left: 20),
+        child: pw.RichText(
+          text: pw.TextSpan(
+            children: <pw.TextSpan>[
+              pw.TextSpan(text: "a. "),
+              pw.TextSpan(
+                  text:
+                      "Surveyors will identify where and what elements from the "
+                      "built environment show signs of disorder during the "
+                      "survey time slots."),
+            ],
+          ),
+        ),
+      ),
+      pw.Padding(
+        padding: pw.EdgeInsets.only(left: 40),
+        child: pw.RichText(
+          text: pw.TextSpan(
+            children: <pw.TextSpan>[
+              pw.TextSpan(text: "i. "),
+              pw.TextSpan(text: "Behavior"),
+            ],
+          ),
+        ),
+      ),
+      pw.Padding(
+        padding: pw.EdgeInsets.only(left: 40),
+        child: pw.RichText(
+          text: pw.TextSpan(
+            children: <pw.TextSpan>[
+              pw.TextSpan(text: "ii. "),
+              pw.TextSpan(text: "Maintenance"),
+            ],
+          ),
+        ),
+      ),
+    ],
+  ),
+  AccessProfileTest.collectionIDStatic: pw.Column(
+    crossAxisAlignment: pw.CrossAxisAlignment.start,
+    children: <pw.Widget>[
+      pw.RichText(
+        text: pw.TextSpan(
+          children: <pw.TextSpan>[
+            pw.TextSpan(text: "2. "),
+            pw.TextSpan(text: AccessProfileTest.displayName),
+          ],
+        ),
+      ),
+      pw.Padding(
+        padding: pw.EdgeInsets.only(left: 20),
+        child: pw.RichText(
+          text: pw.TextSpan(
+            children: <pw.TextSpan>[
+              pw.TextSpan(text: "a. "),
+              pw.TextSpan(
+                  text:
+                      "This part of the research locates the arrival points for "
+                      "the public and how far to the project site that is. "),
+            ],
+          ),
+        ),
+      ),
+      pw.Padding(
+        padding: pw.EdgeInsets.only(left: 40),
+        child: pw.RichText(
+          text: pw.TextSpan(
+            children: <pw.TextSpan>[
+              pw.TextSpan(text: "i. "),
+              pw.TextSpan(text: "Mode of arrival (Bike/Bus/Car)"),
+            ],
+          ),
+        ),
+      ),
+      pw.Padding(
+        padding: pw.EdgeInsets.only(left: 40),
+        child: pw.RichText(
+          text: pw.TextSpan(
+            children: <pw.TextSpan>[
+              pw.TextSpan(text: "ii. "),
+              pw.TextSpan(
+                  text:
+                      "Capacity of the arrival points (# of parking spaces, racks)"),
+            ],
+          ),
+        ),
+      ),
+    ],
+  ),
+  AcousticProfileTest.collectionIDStatic: pw.Column(
+    crossAxisAlignment: pw.CrossAxisAlignment.start,
+    children: <pw.Widget>[
+      pw.RichText(
+        text: pw.TextSpan(
+          children: <pw.TextSpan>[
+            pw.TextSpan(text: "3. "),
+            pw.TextSpan(text: AcousticProfileTest.displayName),
+          ],
+        ),
+      ),
+      pw.Padding(
+        padding: pw.EdgeInsets.only(left: 20),
+        child: pw.RichText(
+          text: pw.TextSpan(
+            children: <pw.TextSpan>[
+              pw.TextSpan(text: "a. "),
+              pw.TextSpan(
+                  text:
+                      "This part of the research, the loudness of decibels will "
+                      "be analyzed, and the role that noise and acoustics play "
+                      "in our security."),
+            ],
+          ),
+        ),
+      ),
+      pw.Padding(
+        padding: pw.EdgeInsets.only(left: 40),
+        child: pw.RichText(
+          text: pw.TextSpan(
+            children: <pw.TextSpan>[
+              pw.TextSpan(text: "i. "),
+              pw.TextSpan(text: "Loudness"),
+            ],
+          ),
+        ),
+      ),
+      pw.Padding(
+        padding: pw.EdgeInsets.only(left: 40),
+        child: pw.RichText(
+          text: pw.TextSpan(
+            children: <pw.TextSpan>[
+              pw.TextSpan(text: "ii. "),
+              pw.TextSpan(text: "Sources"),
+            ],
+          ),
+        ),
+      ),
+    ],
+  ),
+  LightingProfileTest.collectionIDStatic: pw.Column(
+    crossAxisAlignment: pw.CrossAxisAlignment.start,
+    children: <pw.Widget>[
+      pw.RichText(
+        text: pw.TextSpan(
+          children: <pw.TextSpan>[
+            pw.TextSpan(text: "4. "),
+            pw.TextSpan(text: LightingProfileTest.displayName),
+          ],
+        ),
+      ),
+      pw.Padding(
+        padding: pw.EdgeInsets.only(left: 20),
+        child: pw.RichText(
+          text: pw.TextSpan(
+            children: <pw.TextSpan>[
+              pw.TextSpan(text: "a. "),
+              pw.TextSpan(
+                  text: "Surveyors will identify what elements from the built "
+                      "environment make up the lighting profile of the place."),
+            ],
+          ),
+        ),
+      ),
+      pw.Padding(
+        padding: pw.EdgeInsets.only(left: 40),
+        child: pw.RichText(
+          text: pw.TextSpan(
+            children: <pw.TextSpan>[
+              pw.TextSpan(text: "i. "),
+              pw.TextSpan(
+                  text: "Existence of light within the built environment."),
+            ],
+          ),
+        ),
+      ),
+      pw.Padding(
+        padding: pw.EdgeInsets.only(left: 40),
+        child: pw.RichText(
+          text: pw.TextSpan(
+            children: <pw.TextSpan>[
+              pw.TextSpan(text: "ii. "),
+              pw.TextSpan(text: "How it is being used within the space."),
+            ],
+          ),
+        ),
+      ),
+      pw.Padding(
+        padding: pw.EdgeInsets.only(left: 40),
+        child: pw.RichText(
+          text: pw.TextSpan(
+            children: <pw.TextSpan>[
+              pw.TextSpan(text: "iii. "),
+              pw.TextSpan(text: "the consistency of it."),
+            ],
+          ),
+        ),
+      ),
+    ],
+  ),
+  NaturePrevalenceTest.collectionIDStatic: pw.Column(
+    crossAxisAlignment: pw.CrossAxisAlignment.start,
+    children: <pw.Widget>[
+      pw.RichText(
+        text: pw.TextSpan(
+          children: <pw.TextSpan>[
+            pw.TextSpan(text: "5. "),
+            pw.TextSpan(text: NaturePrevalenceTest.displayName),
+          ],
+        ),
+      ),
+      pw.Padding(
+        padding: pw.EdgeInsets.only(left: 20),
+        child: pw.RichText(
+          text: pw.TextSpan(
+            children: <pw.TextSpan>[
+              pw.TextSpan(text: "a. "),
+              pw.TextSpan(
+                  text: "Surveyors will identify where and what elements from "
+                      "the built environment embrace the natural tools of place."),
+            ],
+          ),
+        ),
+      ),
+      pw.Padding(
+        padding: pw.EdgeInsets.only(left: 40),
+        child: pw.RichText(
+          text: pw.TextSpan(
+            children: <pw.TextSpan>[
+              pw.TextSpan(text: "i. "),
+              pw.TextSpan(text: "Natural"),
+            ],
+          ),
+        ),
+      ),
+      pw.Padding(
+        padding: pw.EdgeInsets.only(left: 40),
+        child: pw.RichText(
+          text: pw.TextSpan(
+            children: <pw.TextSpan>[
+              pw.TextSpan(text: "ii. "),
+              pw.TextSpan(text: "Designed"),
+            ],
+          ),
+        ),
+      ),
+      pw.Padding(
+        padding: pw.EdgeInsets.only(left: 40),
+        child: pw.RichText(
+          text: pw.TextSpan(
+            children: <pw.TextSpan>[
+              pw.TextSpan(text: "iii. "),
+              pw.TextSpan(text: "Open Field"),
+            ],
+          ),
+        ),
+      ),
+    ],
+  ),
+  PeopleInMotionTest.collectionIDStatic: pw.Column(
+    children: <pw.Widget>[
+      pw.RichText(
+        text: pw.TextSpan(
+          children: <pw.TextSpan>[
+            pw.TextSpan(text: "6. "),
+            pw.TextSpan(text: PeopleInMotionTest.displayName),
+          ],
+        ),
+      ),
+      pw.Padding(
+        padding: pw.EdgeInsets.only(left: 20),
+        child: pw.RichText(
+          text: pw.TextSpan(
+            children: <pw.TextSpan>[
+              pw.TextSpan(text: "a. "),
+              pw.TextSpan(
+                  text:
+                      "The app will present research team members with a map to note "),
+              pw.TextSpan(
+                text: "where ",
+                style: pw.TextStyle(fontWeight: pw.FontWeight.bold),
+              ),
+              pw.TextSpan(text: "and "),
+              pw.TextSpan(
+                text: "how ",
+                style: pw.TextStyle(fontWeight: pw.FontWeight.bold),
+              ),
+              pw.TextSpan(text: "in the area of interest people are: "),
+            ],
+          ),
+        ),
+      ),
+      pw.Padding(
+        padding: pw.EdgeInsets.only(left: 40),
+        child: pw.RichText(
+          text: pw.TextSpan(
+            children: <pw.TextSpan>[
+              pw.TextSpan(text: "i. "),
+              pw.TextSpan(text: "Located"),
+            ],
+          ),
+        ),
+      ),
+      pw.Padding(
+        padding: pw.EdgeInsets.only(left: 40),
+        child: pw.RichText(
+          text: pw.TextSpan(
+            children: <pw.TextSpan>[
+              pw.TextSpan(text: "ii. "),
+              pw.TextSpan(text: "Their Path"),
+            ],
+          ),
+        ),
+      ),
+      pw.Padding(
+        padding: pw.EdgeInsets.only(left: 40),
+        child: pw.RichText(
+          text: pw.TextSpan(
+            children: <pw.TextSpan>[
+              pw.TextSpan(text: "iii. "),
+              pw.TextSpan(text: "Mode of Transportation"),
+            ],
+          ),
+        ),
+      ),
+    ],
+  ),
+  PeopleInPlaceTest.collectionIDStatic: pw.Column(
+    children: <pw.Widget>[
+      pw.RichText(
+        text: pw.TextSpan(
+          children: <pw.TextSpan>[
+            pw.TextSpan(text: "7. "),
+            pw.TextSpan(text: PeopleInPlaceTest.displayName),
+          ],
+        ),
+      ),
+      pw.Padding(
+        padding: pw.EdgeInsets.only(left: 20),
+        child: pw.RichText(
+          text: pw.TextSpan(
+            children: <pw.TextSpan>[
+              pw.TextSpan(text: "a. "),
+              pw.TextSpan(
+                  text:
+                      "The app will present research team members with a map to "
+                      "note "),
+              pw.TextSpan(
+                text: "where ",
+                style: pw.TextStyle(fontWeight: pw.FontWeight.bold),
+              ),
+              pw.TextSpan(text: "and "),
+              pw.TextSpan(
+                text: "what ",
+                style: pw.TextStyle(fontWeight: pw.FontWeight.bold),
+              ),
+              pw.TextSpan(text: "in the area of interest people are: "),
+            ],
+          ),
+        ),
+      ),
+      pw.Padding(
+        padding: pw.EdgeInsets.only(left: 40),
+        child: pw.RichText(
+          text: pw.TextSpan(
+            children: <pw.TextSpan>[
+              pw.TextSpan(text: "i. "),
+              pw.TextSpan(text: "Located"),
+            ],
+          ),
+        ),
+      ),
+      pw.Padding(
+        padding: pw.EdgeInsets.only(left: 40),
+        child: pw.RichText(
+          text: pw.TextSpan(
+            children: <pw.TextSpan>[
+              pw.TextSpan(text: "ii. "),
+              pw.TextSpan(text: "General Profile"),
+            ],
+          ),
+        ),
+      ),
+      pw.Padding(
+        padding: pw.EdgeInsets.only(left: 40),
+        child: pw.RichText(
+          text: pw.TextSpan(
+            children: <pw.TextSpan>[
+              pw.TextSpan(text: "iii. "),
+              pw.TextSpan(text: "Activity"),
+            ],
+          ),
+        ),
+      ),
+      pw.Padding(
+        padding: pw.EdgeInsets.only(left: 40),
+        child: pw.RichText(
+          text: pw.TextSpan(
+            children: <pw.TextSpan>[
+              pw.TextSpan(text: "iv. "),
+              pw.TextSpan(text: "Posture"),
+            ],
+          ),
+        ),
+      ),
+    ],
+  ),
+  SectionCutterTest.collectionIDStatic: pw.Column(
+    crossAxisAlignment: pw.CrossAxisAlignment.start,
+    children: <pw.Widget>[
+      pw.RichText(
+        text: pw.TextSpan(
+          children: <pw.TextSpan>[
+            pw.TextSpan(text: "8. "),
+            pw.TextSpan(text: SectionCutterTest.displayName),
+          ],
+        ),
+      ),
+      pw.Padding(
+        padding: pw.EdgeInsets.only(left: 20),
+        child: pw.RichText(
+          text: pw.TextSpan(
+            children: <pw.TextSpan>[
+              pw.TextSpan(text: "a. "),
+              pw.TextSpan(
+                  text: "The part of the research has the surveyor create "
+                      "architecture cross section through the site to gather."),
+            ],
+          ),
+        ),
+      ),
+      pw.Padding(
+        padding: pw.EdgeInsets.only(left: 40),
+        child: pw.RichText(
+          text: pw.TextSpan(
+            children: <pw.TextSpan>[
+              pw.TextSpan(text: "i. "),
+              pw.TextSpan(text: "Human scale"),
+            ],
+          ),
+        ),
+      ),
+      pw.Padding(
+        padding: pw.EdgeInsets.only(left: 40),
+        child: pw.RichText(
+          text: pw.TextSpan(
+            children: <pw.TextSpan>[
+              pw.TextSpan(text: "ii. "),
+              pw.TextSpan(text: "Vertical dimensions"),
+            ],
+          ),
+        ),
+      ),
+    ],
+  ),
+  SpatialBoundariesTest.collectionIDStatic: pw.Column(
+    crossAxisAlignment: pw.CrossAxisAlignment.start,
+    children: <pw.Widget>[
+      pw.RichText(
+        text: pw.TextSpan(
+          children: <pw.TextSpan>[
+            pw.TextSpan(text: "9. "),
+            pw.TextSpan(text: SpatialBoundariesTest.displayName),
+          ],
+        ),
+      ),
+      pw.Padding(
+        padding: pw.EdgeInsets.only(left: 20),
+        child: pw.RichText(
+          text: pw.TextSpan(
+            children: <pw.TextSpan>[
+              pw.TextSpan(text: "a. "),
+              pw.TextSpan(
+                  text: "Surveyors will identify what elements from the built "
+                      "environment allow activity to take place or separate that "
+                      "activity from the overall place."),
+            ],
+          ),
+        ),
+      ),
+      pw.Padding(
+        padding: pw.EdgeInsets.only(left: 40),
+        child: pw.RichText(
+          text: pw.TextSpan(
+            children: <pw.TextSpan>[
+              pw.TextSpan(text: "i. "),
+              pw.TextSpan(text: "Constructed (buildings, planters, fences)"),
+            ],
+          ),
+        ),
+      ),
+      pw.Padding(
+        padding: pw.EdgeInsets.only(left: 40),
+        child: pw.RichText(
+          text: pw.TextSpan(
+            children: <pw.TextSpan>[
+              pw.TextSpan(text: "ii. "),
+              pw.TextSpan(text: "Material (brick, paver, concrete, natural)"),
+            ],
+          ),
+        ),
+      ),
+      pw.Padding(
+        padding: pw.EdgeInsets.only(left: 40),
+        child: pw.RichText(
+          text: pw.TextSpan(
+            children: <pw.TextSpan>[
+              pw.TextSpan(text: "iii. "),
+              pw.TextSpan(text: "Shelter (canopies built & natural)"),
+            ],
+          ),
+        ),
+      ),
+    ],
+  ),
+};

@@ -7,9 +7,10 @@ import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:maps_toolkit/maps_toolkit.dart' as mp;
 import 'package:p2bp_2025spring_mobile/assets.dart';
+import 'package:p2bp_2025spring_mobile/extensions.dart';
 
-import 'db_schema_classes.dart';
-import 'firestore_functions.dart';
+import 'db_schema_classes/project_class.dart';
+import 'db_schema_classes/specific_test_classes/spatial_boundaries_test_class.dart';
 import 'google_maps_functions.dart';
 import 'spatial_boundaries_instructions.dart';
 import 'theme.dart';
@@ -34,7 +35,7 @@ class _SpatialBoundariesTestPageState extends State<SpatialBoundariesTestPage> {
   bool _polygonMode = false;
   bool _polylineMode = false;
   bool _outsidePoint = false;
-  bool _boundariesVisible = true;
+  bool _areBoundariesVisible = true;
   bool _isTestRunning = false;
   bool _directionsVisible = true;
 
@@ -74,7 +75,7 @@ class _SpatialBoundariesTestPageState extends State<SpatialBoundariesTestPage> {
   @override
   void initState() {
     super.initState();
-    _projectPolygon = getProjectPolygon(widget.activeProject.polygonPoints);
+    _projectPolygon = widget.activeProject.polygon.clone();
     _location = getPolygonCentroid(_projectPolygon);
     _projectArea = _projectPolygon.toMPLatLngList();
     _zoom = getIdealZoom(_projectArea, _location.toMPLatLng());
@@ -435,9 +436,9 @@ class _SpatialBoundariesTestPageState extends State<SpatialBoundariesTestPage> {
                 markers: {..._polygonMarkers, ..._polylineMarkers},
                 polygons: {
                   _projectPolygon,
-                  if (_boundariesVisible) ..._polygons,
+                  if (_areBoundariesVisible) ..._polygons,
                 },
-                polylines: _boundariesVisible ? _polylines : <Polyline>{},
+                polylines: _areBoundariesVisible ? _polylines : <Polyline>{},
                 onTap: (_polygonMode || _polylineMode) ? _togglePoint : null,
                 mapType: _currentMapType,
                 myLocationButtonEnabled: false,
@@ -511,11 +512,11 @@ class _SpatialBoundariesTestPageState extends State<SpatialBoundariesTestPage> {
                           borderColor: Color(0xFF4A5D75),
                           onPressed: () {
                             setState(() {
-                              _boundariesVisible = !_boundariesVisible;
+                              _areBoundariesVisible = !_areBoundariesVisible;
                             });
                           },
                           icon: Icon(
-                            _boundariesVisible
+                            !_areBoundariesVisible
                                 ? Icons.visibility_off
                                 : Icons.visibility,
                             size: 30,

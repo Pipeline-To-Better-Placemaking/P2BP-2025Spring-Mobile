@@ -1,8 +1,11 @@
+import 'dart:io';
+
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
+import 'package:image_picker/image_picker.dart';
 import 'package:intl/intl.dart';
 import 'package:p2bp_2025spring_mobile/change_project_description_form.dart';
 import 'package:p2bp_2025spring_mobile/change_project_name_form.dart';
@@ -10,30 +13,36 @@ import 'package:p2bp_2025spring_mobile/create_test_form.dart';
 import 'package:p2bp_2025spring_mobile/theme.dart';
 import 'package:p2bp_2025spring_mobile/widgets.dart';
 
-import 'db_schema_classes.dart';
-import 'firestore_functions.dart';
+import 'db_schema_classes/member_class.dart';
+import 'db_schema_classes/misc_class_stuff.dart';
+import 'db_schema_classes/project_class.dart';
+import 'db_schema_classes/test_class.dart';
 import 'mini_map.dart';
 
 class ProjectDetailsPage extends StatefulWidget {
+  final Member member;
   final Project activeProject;
 
   /// IMPORTANT: When navigating to this page, pass in project details. Use
   /// `getProjectInfo()` from firestore_functions.dart to retrieve project
   /// object w/ data.
   /// <br/>Note: project is returned as future, await return before passing.
-  const ProjectDetailsPage({super.key, required this.activeProject});
+  const ProjectDetailsPage({
+    super.key,
+    required this.member,
+    required this.activeProject,
+  });
 
   @override
   State<ProjectDetailsPage> createState() => _ProjectDetailsPageState();
 }
 
-final FirebaseFirestore _firestore = FirebaseFirestore.instance;
-User? loggedInUser = FirebaseAuth.instance.currentUser;
-
 class _ProjectDetailsPageState extends State<ProjectDetailsPage> {
   int _testCount = 0;
   bool _isLoading = true;
   late GoogleMapController mapController;
+  String _coverImageUrl = '';
+  late final bool _isAdmin;
 
   @override
   void initState() {
@@ -43,31 +52,16 @@ class _ProjectDetailsPageState extends State<ProjectDetailsPage> {
     } else {
       _isLoading = false;
     }
+    _isAdmin = widget.activeProject.memberRefMap[GroupRole.owner]!.any(
+        (memberRef) => memberRef.id == FirebaseAuth.instance.currentUser!.uid);
+    _coverImageUrl = widget.activeProject.coverImageUrl;
   }
 
   void _loadTests() async {
-    await widget.activeProject.loadAllTestData();
+    await widget.activeProject.loadAllTestInfo();
     setState(() {
       _isLoading = false;
     });
-  }
-
-  Widget _deleteProjectDialog() {
-    return GenericConfirmationDialog(
-      titleText: 'Delete Project?',
-      contentText:
-          'This will delete the selected project and all the tests within it. '
-          'This cannot be undone. '
-          'Are you absolutely certain you want to delete this project?',
-      declineText: 'No, go back',
-      confirmText: 'Yes, delete it',
-      onConfirm: () async {
-        await deleteProject(widget.activeProject);
-
-        if (!mounted) return;
-        Navigator.pop(context, true);
-      },
-    );
   }
 
   @override
@@ -80,7 +74,7 @@ class _ProjectDetailsPageState extends State<ProjectDetailsPage> {
       body: CustomScrollView(
         slivers: <Widget>[
           SliverAppBar(
-            expandedHeight: 100,
+            expandedHeight: MediaQuery.sizeOf(context).height * 0.2,
             pinned: true,
             automaticallyImplyLeading: false,
             leadingWidth: 60,
@@ -93,8 +87,9 @@ class _ProjectDetailsPageState extends State<ProjectDetailsPage> {
                 // Opaque circle container for visibility
                 alignment: Alignment.center,
                 decoration: BoxDecoration(
-                  color: Colors.white.withValues(alpha: 0.3),
+                  color: Colors.white.withValues(alpha: 0.8),
                   shape: BoxShape.circle,
+                  border: Border.all(width: 1.5),
                 ),
                 child: IconButton(
                   padding: EdgeInsets.zero,
@@ -106,11 +101,23 @@ class _ProjectDetailsPageState extends State<ProjectDetailsPage> {
                 ),
               ),
             ),
-            actionsPadding: EdgeInsets.only(right: 12),
+            actionsPadding: const EdgeInsets.only(right: 12),
             // 'Edit Options' button overlaid on right side of cover photo
             actions: [
               _SettingsMenuButton(
-                editNameCallback: () async {
+                changePhoto: () async {
+                  final XFile? pickedFile = await ImagePicker()
+                      .pickImage(source: ImageSource.gallery);
+                  if (pickedFile != null) {
+                    final File imageFile = File(pickedFile.path);
+                    final coverImageUrl =
+                        await widget.activeProject.addCoverImage(imageFile);
+                    setState(() {
+                      _coverImageUrl = coverImageUrl;
+                    });
+                  }
+                },
+                editName: () async {
                   final newName = await showModalBottomSheet<String>(
                     useSafeArea: true,
                     backgroundColor: Colors.transparent,
@@ -125,15 +132,13 @@ class _ProjectDetailsPageState extends State<ProjectDetailsPage> {
                       newName == widget.activeProject.title) {
                     return;
                   }
-                  _firestore
-                      .collection('projects')
-                      .doc(widget.activeProject.projectID)
-                      .update({'title': newName});
+
                   setState(() {
                     widget.activeProject.title = newName;
                   });
+                  widget.activeProject.update();
                 },
-                editDescriptionCallback: () async {
+                editDescription: () async {
                   final newDescription = await showModalBottomSheet(
                     useSafeArea: true,
                     backgroundColor: Colors.transparent,
@@ -148,18 +153,16 @@ class _ProjectDetailsPageState extends State<ProjectDetailsPage> {
                       newDescription == widget.activeProject.description) {
                     return;
                   }
-                  _firestore
-                      .collection('projects')
-                      .doc(widget.activeProject.projectID)
-                      .update({'description': newDescription});
+
                   setState(() {
                     widget.activeProject.description = newDescription;
                   });
+                  widget.activeProject.update();
                 },
-                deleteCallback: () async {
-                  final didDelete = await showDialog<bool>(
+                delete: () async {
+                  final didDelete = await showDeleteProjectDialog(
                     context: context,
-                    builder: (context) => _deleteProjectDialog(),
+                    project: widget.activeProject,
                   );
 
                   if (!context.mounted) return;
@@ -169,33 +172,42 @@ class _ProjectDetailsPageState extends State<ProjectDetailsPage> {
                 },
               ),
             ],
-            flexibleSpace: FlexibleSpaceBar(
-              background: Stack(children: <Widget>[
-                // Banner image
-                Container(
-                  width: double.infinity,
-                  decoration: BoxDecoration(
-                    border: Border(
-                      bottom: BorderSide(color: Colors.white, width: .5),
+            flexibleSpace: DecoratedBox(
+              decoration: BoxDecoration(
+                color: Colors.grey,
+                image: _coverImageUrl.isNotEmpty
+                    ? DecorationImage(
+                        image: NetworkImage(_coverImageUrl), fit: BoxFit.cover)
+                    : null,
+              ),
+              child: FlexibleSpaceBar(
+                background: ClipRRect(
+                  child: Container(
+                    decoration: BoxDecoration(
+                      color: Colors.grey,
+                      image: _coverImageUrl.isNotEmpty
+                          ? DecorationImage(
+                              image: NetworkImage(_coverImageUrl),
+                              fit: BoxFit.cover)
+                          : null,
                     ),
-                    color: Color(0xFFAAAAAA),
                   ),
                 ),
-              ]),
+              ),
             ),
           ),
-          SliverList(delegate: SliverChildListDelegate([_getPageBody()])),
+          SliverList(delegate: SliverChildListDelegate([_buildPageBody()])),
         ],
       ),
     );
   }
 
-  Widget _getPageBody() {
+  Widget _buildPageBody() {
     return Container(
       decoration: BoxDecoration(gradient: defaultGrad),
       child: ConstrainedBox(
         constraints: BoxConstraints(
-          minHeight: MediaQuery.of(context).size.height,
+          minHeight: MediaQuery.sizeOf(context).height,
         ),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -278,8 +290,7 @@ class _ProjectDetailsPageState extends State<ProjectDetailsPage> {
                       fontWeight: FontWeight.bold,
                     ),
                   ),
-                  if (widget.activeProject.projectAdmin!.id ==
-                      loggedInUser!.uid)
+                  if (_isAdmin)
                     FilledButton.icon(
                       style: FilledButton.styleFrom(
                         padding: const EdgeInsets.only(left: 15, right: 15),
@@ -325,7 +336,8 @@ class _ProjectDetailsPageState extends State<ProjectDetailsPage> {
   }
 
   void _showCreateTestModal() async {
-    final Map<String, dynamic>? newTestInfo = await showModalBottomSheet(
+    final Map<String, dynamic>? newTestInfo =
+        await showModalBottomSheet<Map<String, dynamic>>(
       context: context,
       isScrollControlled: true,
       backgroundColor: Colors.transparent,
@@ -351,12 +363,12 @@ class _ProjectDetailsPageState extends State<ProjectDetailsPage> {
         );
       },
     );
+
     if (newTestInfo == null) return;
-    final Test test = await saveTest(
+    Test.createNew(
       title: newTestInfo['title'],
       scheduledTime: newTestInfo['scheduledTime'],
-      projectRef:
-          _firestore.collection('projects').doc(widget.activeProject.projectID),
+      project: widget.activeProject,
       collectionID: newTestInfo['collectionID'],
       standingPoints: newTestInfo.containsKey('standingPoints')
           ? newTestInfo['standingPoints']
@@ -371,8 +383,9 @@ class _ProjectDetailsPageState extends State<ProjectDetailsPage> {
           ? newTestInfo['intervalCount']
           : null,
     );
+
     setState(() {
-      widget.activeProject.tests?.add(test);
+      // Update in case new test was added.
     });
   }
 
@@ -407,18 +420,18 @@ class _ProjectDetailsPageState extends State<ProjectDetailsPage> {
 //  style with different label names and callbacks and whatnot, probably
 //  copy MenuBar flutter.dev example somewhat
 class _SettingsMenuButton extends StatelessWidget {
-  // final VoidCallback? changePhotoCallback;
-  final VoidCallback? editNameCallback;
-  final VoidCallback? editDescriptionCallback;
+  final VoidCallback? changePhoto;
+  final VoidCallback? editName;
+  final VoidCallback? editDescription;
   // final VoidCallback? archiveCallback;
-  final VoidCallback? deleteCallback;
+  final VoidCallback? delete;
 
   const _SettingsMenuButton({
-    // this.changePhotoCallback,
-    this.editNameCallback,
-    this.editDescriptionCallback,
+    this.changePhoto,
+    this.editName,
+    this.editDescription,
     // this.archiveCallback,
-    this.deleteCallback,
+    this.delete,
   });
 
   static const ButtonStyle paddingButtonStyle = ButtonStyle(
@@ -432,9 +445,10 @@ class _SettingsMenuButton extends StatelessWidget {
         padding: WidgetStatePropertyAll(EdgeInsets.zero),
         shape: WidgetStatePropertyAll(RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(100),
+          side: BorderSide(width: 1.5),
         )),
         backgroundColor:
-            WidgetStatePropertyAll(Colors.white.withValues(alpha: 0.3)),
+            WidgetStatePropertyAll(Colors.white.withValues(alpha: 0.8)),
         shadowColor: WidgetStatePropertyAll(Colors.transparent),
       ),
       children: <Widget>[
@@ -457,26 +471,26 @@ class _SettingsMenuButton extends StatelessWidget {
             ),
           ),
           menuChildren: [
-            // MenuItemButton(
-            //   style: paddingButtonStyle,
-            //   trailingIcon: Icon(
-            //     Icons.palette_outlined,
-            //     color: Colors.white,
-            //   ),
-            //   onPressed: changePhotoCallback,
-            //   child: Text(
-            //     'Change Project Photo',
-            //     style: whiteText,
-            //   ),
-            // ),
-            // Divider(color: Colors.white54, height: 1),
+            MenuItemButton(
+              style: paddingButtonStyle,
+              trailingIcon: Icon(
+                Icons.palette_outlined,
+                color: Colors.white,
+              ),
+              onPressed: changePhoto,
+              child: Text(
+                'Change Project Photo',
+                style: whiteText,
+              ),
+            ),
+            Divider(color: Colors.white54, height: 1),
             MenuItemButton(
               style: paddingButtonStyle,
               trailingIcon: Icon(
                 Icons.edit_outlined,
                 color: Colors.white,
               ),
-              onPressed: editNameCallback,
+              onPressed: editName,
               child: Text(
                 'Edit Project Name',
                 style: whiteText,
@@ -489,7 +503,7 @@ class _SettingsMenuButton extends StatelessWidget {
                 Icons.description,
                 color: Colors.white,
               ),
-              onPressed: editDescriptionCallback,
+              onPressed: editDescription,
               child: Text(
                 'Edit Project Description',
                 style: whiteText,
@@ -513,7 +527,7 @@ class _SettingsMenuButton extends StatelessWidget {
               style: paddingButtonStyle,
               trailingIcon:
                   Icon(Icons.delete_outlined, color: Color(0xFFFD6265)),
-              onPressed: deleteCallback,
+              onPressed: delete,
               child: Text(
                 'Delete Project',
                 style: TextStyle(color: Color(0xFFFD6265)),

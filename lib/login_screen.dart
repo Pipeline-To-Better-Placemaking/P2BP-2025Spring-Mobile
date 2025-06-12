@@ -1,8 +1,8 @@
-import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
+import 'db_schema_classes/member_class.dart';
 import 'forgot_password_page.dart';
 import 'home_screen.dart';
 import 'signup_screen.dart';
@@ -152,9 +152,7 @@ class _LoginFormState extends State<LoginForm> {
   final _formKey = GlobalKey<FormState>();
   final TextEditingController _emailController = TextEditingController(),
       _passwordController = TextEditingController();
-  final FirebaseFirestore _firestore = FirebaseFirestore.instance;
   bool _obscureText = true;
-  String _fullName = '';
 
   @override
   void dispose() {
@@ -192,57 +190,17 @@ class _LoginFormState extends State<LoginForm> {
         return;
       }
 
-      // Add/Update last login time in Firestore
-      await _firestore.collection('users').doc(userCredential.user?.uid).set({
-        'lastLogin': FieldValue.serverTimestamp(), // Add last login timestamp
-      }, SetOptions(merge: true)); // Merge data to avoid overwriting
+      final member = await Member.login(user!);
 
-      // Fetch the user's full name from Firestore
-      String userId = userCredential.user!.uid;
-      var userDoc = await FirebaseFirestore.instance
-          .collection('users')
-          .doc(userId)
-          .get();
-
-      // Update email in Firestore to new email in Auth if they are different
-      /* This is done on login because there does not seem to be a way to listen
-          for when the user has verified their new email address after changing
-          it in order to only change email in Firestore after verification
-       */
-      if (emailText != userDoc['email']) {
-        print(userDoc['email']);
-        await _firestore
-            .collection('users')
-            .doc(userCredential.user?.uid)
-            .update({'email': emailText});
-      }
-
-      if (userDoc.exists) {
-        // Retrieve full name from Firestore if available
-        String fullName = userDoc['fullName'] ?? 'User';
-        setState(() {
-          _fullName = fullName;
-        });
-
-        // Successfully logged in, navigate to the home screen
-        if (!mounted) return;
-        ScaffoldMessenger.of(context).clearSnackBars();
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Welcome, $_fullName!')),
-        );
-
-        Navigator.pushReplacement(
-          context,
-          MaterialPageRoute(builder: (context) => HomeScreen()),
-        );
-      } else {
-        // Handle case where user data does not exist in Firestore (shouldn't happen if user data is properly saved)
-        if (!mounted) return;
-        ScaffoldMessenger.of(context).clearSnackBars();
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('User data not found in Firestore')),
-        );
-      }
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).clearSnackBars();
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Welcome, ${member.fullName}!')),
+      );
+      Navigator.pushReplacement(
+        context,
+        MaterialPageRoute(builder: (context) => HomeScreen(member: member)),
+      );
     } on FirebaseAuthException catch (e) {
       String errorMessage;
 
@@ -343,7 +301,7 @@ class _LoginFormState extends State<LoginForm> {
               filled: false,
               suffixIcon: IconButton(
                 icon: Icon(
-                  Icons.visibility,
+                  !_obscureText ? Icons.visibility : Icons.visibility_off,
                   color: Colors.grey[400],
                 ),
                 onPressed: () {

@@ -2,35 +2,37 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
-import 'package:p2bp_2025spring_mobile/firestore_functions.dart';
+import 'package:p2bp_2025spring_mobile/extensions.dart';
 import 'package:p2bp_2025spring_mobile/theme.dart';
 import 'package:p2bp_2025spring_mobile/widgets.dart';
 
-import 'db_schema_classes.dart';
+import 'db_schema_classes/project_class.dart';
+import 'db_schema_classes/specific_test_classes/access_profile_test_class.dart';
+import 'db_schema_classes/test_class.dart';
 import 'google_maps_functions.dart';
 
-class IdentifyingAccess extends StatefulWidget {
+class AccessProfileTestPage extends StatefulWidget {
   final Project activeProject;
   final Test activeTest;
 
   /// IMPORTANT: When navigating to this page, pass in project details. The
   /// project details page already contains project info, so you should use
   /// that data.
-  const IdentifyingAccess({
+  const AccessProfileTestPage({
     super.key,
     required this.activeProject,
     required this.activeTest,
   });
 
   @override
-  State<IdentifyingAccess> createState() => _IdentifyingAccessState();
+  State<AccessProfileTestPage> createState() => _AccessProfileTestPageState();
 }
 
-class _IdentifyingAccessState extends State<IdentifyingAccess> {
+class _AccessProfileTestPageState extends State<AccessProfileTestPage> {
   bool _polygonMode = false;
   bool _pointMode = false;
   bool _polylineMode = false;
-  bool _oldPolylinesToggle = true;
+  bool _areOldPolylinesVisible = true;
 
   int? _currentSpotsOrRoute;
   bool _deleteMode = false;
@@ -42,7 +44,7 @@ class _IdentifyingAccessState extends State<IdentifyingAccess> {
   LatLng _location = defaultLocation;
   double _zoom = 18;
 
-  final IdentifyingAccessData _accessData = IdentifyingAccessData.empty();
+  final AccessProfileData _accessData = AccessProfileData.empty();
 
   late final Polygon _projectPolygon;
   Polyline? _currentPolyline;
@@ -63,7 +65,7 @@ class _IdentifyingAccessState extends State<IdentifyingAccess> {
   @override
   void initState() {
     super.initState();
-    _projectPolygon = getProjectPolygon(widget.activeProject.polygonPoints);
+    _projectPolygon = widget.activeProject.polygon.clone();
     _location = getPolygonCentroid(_projectPolygon);
     _zoom = getIdealZoom(
           _projectPolygon.toMPLatLngList(),
@@ -91,7 +93,7 @@ class _IdentifyingAccessState extends State<IdentifyingAccess> {
       if (_polygonMode) _polygonTap(point);
       if (_polylineMode) _polylineTap(point);
     } catch (e, stacktrace) {
-      print('Error in identifying_access_test.dart, _togglePoint(): $e');
+      print('Error in access_profile_test.dart, _togglePoint(): $e');
       print('Stacktrace: $stacktrace');
     }
   }
@@ -303,15 +305,15 @@ class _IdentifyingAccessState extends State<IdentifyingAccess> {
               height: MediaQuery.sizeOf(context).height,
               child: GoogleMap(
                 polylines: _currentPolyline == null
-                    ? (_oldPolylinesToggle ? _polylines : {})
-                    : (_oldPolylinesToggle
+                    ? (_areOldPolylinesVisible ? _polylines : {})
+                    : (_areOldPolylinesVisible
                         ? {..._polylines, _currentPolyline!}
                         : {_currentPolyline!}),
                 padding: EdgeInsets.only(bottom: _bottomSheetHeight),
                 onMapCreated: _onMapCreated,
                 initialCameraPosition:
                     CameraPosition(target: _location, zoom: _zoom),
-                polygons: _oldPolylinesToggle
+                polygons: _areOldPolylinesVisible
                     ? {
                         _projectPolygon,
                         ..._polygons,
@@ -387,11 +389,12 @@ class _IdentifyingAccessState extends State<IdentifyingAccess> {
                           borderColor: Color(0xFF4A5D75),
                           onPressed: () {
                             setState(() {
-                              _oldPolylinesToggle = !_oldPolylinesToggle;
+                              _areOldPolylinesVisible =
+                                  !_areOldPolylinesVisible;
                             });
                           },
                           icon: Icon(
-                            _oldPolylinesToggle
+                            !_areOldPolylinesVisible
                                 ? Icons.visibility_off
                                 : Icons.visibility,
                             size: 30,
@@ -438,7 +441,7 @@ class _IdentifyingAccessState extends State<IdentifyingAccess> {
                     SizedBox(height: 5),
                     Center(
                       child: Text(
-                        'Identifying Access',
+                        'Access Profile',
                         style: TextStyle(
                           fontSize: 20,
                           fontWeight: FontWeight.bold,

@@ -2,15 +2,16 @@ import 'dart:ui';
 
 import 'package:flutter/material.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
-import 'package:p2bp_2025spring_mobile/firestore_functions.dart';
 import 'package:p2bp_2025spring_mobile/widgets.dart';
 
-import 'db_schema_classes.dart';
+import 'db_schema_classes/member_class.dart';
+import 'db_schema_classes/misc_class_stuff.dart';
+import 'db_schema_classes/team_class.dart';
 import 'theme.dart';
 
 class ManageTeamMembersForm extends StatefulWidget {
   final Team activeTeam;
-  final List<Member> teamMembers;
+  final RoleMap<Member> teamMembers;
 
   const ManageTeamMembersForm({
     super.key,
@@ -23,14 +24,6 @@ class ManageTeamMembersForm extends StatefulWidget {
 }
 
 class _ManageTeamMembersFormState extends State<ManageTeamMembersForm> {
-  Future<bool> _showRemoveMemberDialog(Member member) async {
-    return await showDialog(
-      context: context,
-      barrierColor: Colors.black.withValues(alpha: 0.5),
-      builder: (BuildContext context) => _RemoveMemberDialog(member: member),
-    );
-  }
-
   @override
   Widget build(BuildContext context) {
     return SingleChildScrollView(
@@ -66,7 +59,7 @@ class _ManageTeamMembersFormState extends State<ManageTeamMembersForm> {
                   contentPadding: EdgeInsets.zero,
                   leading: CircleAvatar(),
                   title: Text(
-                    widget.teamMembers.first.fullName,
+                    widget.teamMembers[GroupRole.owner]!.first.fullName,
                     style: TextStyle(
                         color: Colors.white, fontWeight: FontWeight.bold),
                   ),
@@ -86,9 +79,10 @@ class _ManageTeamMembersFormState extends State<ManageTeamMembersForm> {
                 SizedBox(
                   height: MediaQuery.sizeOf(context).height * 0.4,
                   child: ListView.separated(
-                    itemCount: widget.teamMembers.length - 1,
+                    itemCount: widget.teamMembers[GroupRole.member]!.length,
                     itemBuilder: (context, index) {
-                      final thisMember = widget.teamMembers[index + 1];
+                      final thisMember =
+                          widget.teamMembers[GroupRole.member]![index];
                       return ListTile(
                         contentPadding: EdgeInsets.zero,
                         leading: Row(
@@ -97,16 +91,18 @@ class _ManageTeamMembersFormState extends State<ManageTeamMembersForm> {
                             // Delete Icon
                             GestureDetector(
                               onTap: () async {
-                                final didRemove =
-                                    await _showRemoveMemberDialog(thisMember);
+                                final didRemove = await showDialog<bool>(
+                                  context: context,
+                                  barrierColor:
+                                      Colors.black.withValues(alpha: 0.5),
+                                  builder: (BuildContext context) =>
+                                      _RemoveMemberDialog(member: thisMember),
+                                );
 
                                 if (didRemove != true) return;
-                                await removeUserFromTeam(
-                                  thisMember.userID,
-                                  widget.activeTeam.teamID,
-                                );
+                                widget.activeTeam.removeMember(thisMember);
                                 setState(() {
-                                  widget.teamMembers.remove(thisMember);
+                                  // Update member list after removal.
                                 });
                               },
                               child: Container(

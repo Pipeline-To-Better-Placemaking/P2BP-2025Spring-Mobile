@@ -1,26 +1,30 @@
 import 'dart:io';
 
-import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:p2bp_2025spring_mobile/change_team_name_form.dart';
-import 'package:p2bp_2025spring_mobile/firestore_functions.dart';
+import 'package:p2bp_2025spring_mobile/extensions.dart';
 import 'package:p2bp_2025spring_mobile/invite_user_form.dart';
 import 'package:p2bp_2025spring_mobile/manage_team_members_form.dart';
 import 'package:p2bp_2025spring_mobile/widgets.dart';
 
 import 'create_project_form.dart';
-import 'db_schema_classes.dart';
+import 'db_schema_classes/member_class.dart';
+import 'db_schema_classes/project_class.dart';
+import 'db_schema_classes/team_class.dart';
 import 'project_details_page.dart';
 import 'theme.dart';
 
-final FirebaseFirestore _firestore = FirebaseFirestore.instance;
-
 class TeamSettingsPage extends StatefulWidget {
+  final Member member;
   final Team activeTeam;
 
-  const TeamSettingsPage({super.key, required this.activeTeam});
+  const TeamSettingsPage({
+    super.key,
+    required this.member,
+    required this.activeTeam,
+  });
 
   @override
   State<TeamSettingsPage> createState() => _TeamSettingsPageState();
@@ -31,26 +35,31 @@ class _TeamSettingsPageState extends State<TeamSettingsPage> {
   bool _isLoadingTeamMembers = true;
   bool _isMultiSelectMode = false;
   final Set<Project> _selectedProjects = {};
-  late final List<Project> _projects;
-  late final List<Member> _teamMembers;
 
   @override
   void initState() {
     super.initState();
-    _getProjects();
-    _getTeamMembers();
+    if (widget.activeTeam.projects == null) {
+      _getProjects();
+    } else {
+      _isLoadingProjects = false;
+    }
+    if (widget.activeTeam.memberMap == null) {
+      _getTeamMembers();
+    } else {
+      _isLoadingTeamMembers = false;
+    }
   }
 
   Future<void> _getProjects() async {
-    _projects = await getTeamProjects(
-        _firestore.collection('teams').doc(widget.activeTeam.teamID));
+    await widget.activeTeam.loadProjectsInfo();
     setState(() {
       _isLoadingProjects = false;
     });
   }
 
   void _getTeamMembers() async {
-    _teamMembers = await getTeamMembers(widget.activeTeam.teamID);
+    await widget.activeTeam.loadMembersInfo();
     setState(() {
       _isLoadingTeamMembers = false;
     });
@@ -87,15 +96,11 @@ class _TeamSettingsPageState extends State<TeamSettingsPage> {
       confirmText: 'Yes, delete them',
       onConfirm: () async {
         for (final project in _selectedProjects) {
-          await deleteProject(project);
-          _projects.remove(project);
-          widget.activeTeam.projects.removeWhere((projectRef) {
-            final bool test = projectRef.id == project.projectID;
-            if (test) {
-              widget.activeTeam.numProjects--; // dumb that I had to do this
-            }
-            return test;
-          });
+          await project.delete();
+          // the 2 statements below might not be needed because it is handled in project.delete
+          widget.activeTeam.projectRefs
+              .removeWhere((ref) => ref.id == project.id);
+          widget.activeTeam.projects!.remove(project);
         }
 
         if (!mounted) return;
@@ -103,29 +108,6 @@ class _TeamSettingsPageState extends State<TeamSettingsPage> {
         setState(() {
           // Rebuild projects list after changes
         });
-      },
-    );
-  }
-
-  Widget _deleteTeamDialog() {
-    return GenericConfirmationDialog(
-      titleText: 'Delete This Team?',
-      contentText: 'This will delete the currently selected team as well as '
-          'well as all projects within it, and the tests within those '
-          'projects. This cannot be undone. '
-          'Are you absolutely certain you want to delete this team?',
-      declineText: 'No, go back',
-      confirmText: 'Yes, delete this team',
-      onConfirm: () async {
-        final success = await deleteTeam(widget.activeTeam);
-        if (success == true) {
-          if (!mounted) return;
-          Navigator.pop(context);
-          Navigator.pop(context, true);
-        } else {
-          if (!mounted) return;
-          Navigator.pop(context);
-        }
       },
     );
   }
@@ -143,7 +125,7 @@ class _TeamSettingsPageState extends State<TeamSettingsPage> {
         actionsPadding: EdgeInsets.symmetric(horizontal: 4),
         actions: [
           _SettingsMenuButton(
-            editNameCallback: () async {
+            editName: () async {
               final String? newName = await showModalBottomSheet<String>(
                 useSafeArea: true,
                 backgroundColor: Colors.transparent,
@@ -155,19 +137,39 @@ class _TeamSettingsPageState extends State<TeamSettingsPage> {
               );
 
               if (newName == null || newName == widget.activeTeam.title) return;
-              _firestore
-                  .collection('teams')
-                  .doc(widget.activeTeam.teamID)
-                  .update({'title': newName});
               setState(() {
                 widget.activeTeam.title = newName;
               });
+              widget.activeTeam.update();
             },
-            selectProjectsCallback: toggleMultiSelect,
-            deleteTeamCallback: () {
+            selectProjects: toggleMultiSelect,
+            deleteTeam: () {
               showDialog(
                 context: context,
-                builder: (context) => _deleteTeamDialog(),
+                builder: (context) => GenericConfirmationDialog(
+                  titleText: 'Delete This Team?',
+                  contentText:
+                      'This will delete the currently selected team as well as '
+                      'well as all projects within it, and the tests within those '
+                      'projects. This cannot be undone. '
+                      'Are you absolutely certain you want to delete this team?',
+                  declineText: 'No, go back',
+                  confirmText: 'Yes, delete this team',
+                  onConfirm: () async {
+                    final success = await widget.activeTeam.delete();
+                    if (success == true) {
+                      widget.member.teams?.remove(widget.activeTeam);
+                      widget.member.teamRefs
+                          .removeWhere((ref) => ref.id == widget.activeTeam.id);
+                      if (!context.mounted) return;
+                      Navigator.pop(context);
+                      Navigator.pop(context, true);
+                    } else {
+                      if (!context.mounted) return;
+                      Navigator.pop(context);
+                    }
+                  },
+                ),
               );
             },
           ),
@@ -183,7 +185,21 @@ class _TeamSettingsPageState extends State<TeamSettingsPage> {
                 padding: const EdgeInsets.symmetric(horizontal: 16.0),
                 child: _AvatarAndTitleRow(
                   title: widget.activeTeam.title,
-                  manageMembersCallback: _isLoadingTeamMembers
+                  coverImageUrl: widget.activeTeam.coverImageUrl,
+                  changeImage: () async {
+                    // Open image edit functionality
+                    final XFile? pickedFile = await ImagePicker()
+                        .pickImage(source: ImageSource.gallery);
+                    if (pickedFile != null) {
+                      final File imageFile = File(pickedFile.path);
+                      final coverImageUrl =
+                          await widget.activeTeam.addCoverImage(imageFile);
+                      setState(() {
+                        widget.activeTeam.coverImageUrl = coverImageUrl;
+                      });
+                    }
+                  },
+                  manageMembers: _isLoadingTeamMembers
                       ? null
                       : () {
                           showModalBottomSheet(
@@ -193,12 +209,12 @@ class _TeamSettingsPageState extends State<TeamSettingsPage> {
                             context: context,
                             builder: (BuildContext context) =>
                                 ManageTeamMembersForm(
-                              teamMembers: _teamMembers,
                               activeTeam: widget.activeTeam,
+                              teamMembers: widget.activeTeam.memberMap!,
                             ),
                           );
                         },
-                  inviteCallback: _isLoadingTeamMembers
+                  inviteMembers: _isLoadingTeamMembers
                       ? null
                       : () {
                           showModalBottomSheet(
@@ -208,14 +224,15 @@ class _TeamSettingsPageState extends State<TeamSettingsPage> {
                             context: context,
                             builder: (context) => InviteUserForm(
                               activeTeam: widget.activeTeam,
-                              teamMembers: _teamMembers,
+                              teamMembers:
+                                  widget.activeTeam.memberMap!.toSingleList(),
                             ),
                           );
                           // _showInviteDialog(context);
                         },
                 ),
               ),
-              SizedBox(height: 48),
+              const SizedBox(height: 24),
               Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 16.0),
                 child: Row(
@@ -241,7 +258,7 @@ class _TeamSettingsPageState extends State<TeamSettingsPage> {
                                   fontWeight: FontWeight.bold),
                             ),
                           ),
-                          SizedBox(width: 5),
+                          const SizedBox(width: 5),
                           ElevatedButton(
                             onPressed: _selectedProjects.isEmpty
                                 ? null
@@ -284,6 +301,7 @@ class _TeamSettingsPageState extends State<TeamSettingsPage> {
                             isScrollControlled: true,
                             context: context,
                             builder: (context) => CreateProjectForm(
+                              member: widget.member,
                               activeTeam: widget.activeTeam,
                             ),
                           );
@@ -307,56 +325,67 @@ class _TeamSettingsPageState extends State<TeamSettingsPage> {
                   ],
                 ),
               ),
-              SizedBox(height: 16),
+              const SizedBox(height: 16),
               if (_isLoadingProjects)
                 const CircularProgressIndicator()
               else
                 Expanded(
-                  child: ListView.separated(
-                    itemCount: _projects.length,
-                    itemBuilder: (context, index) {
-                      bool isSelected =
-                          _selectedProjects.contains(_projects[index]);
-                      return _ProjectListTile(
-                        isMultiSelectMode: _isMultiSelectMode,
-                        isSelected: isSelected,
-                        project: _projects[index],
-                        toggleProjectSelection: toggleProjectSelection,
-                        projectDeletedCallback: () {
-                          setState(() {
-                            _projects.removeAt(index);
-                            widget.activeTeam.projects
-                                .removeWhere((projectRef) {
-                              final bool test =
-                                  projectRef.id == _projects[index].projectID;
-                              if (test) {
-                                widget.activeTeam
-                                    .numProjects--; // dumb that I had to do this
+                  child: RefreshIndicator(
+                    onRefresh: () async {
+                      await _getProjects();
+                    },
+                    child: ListView.separated(
+                      itemCount: widget.activeTeam.projects!.length,
+                      itemBuilder: (context, index) {
+                        final project = widget.activeTeam.projects![index];
+                        bool isSelected = _selectedProjects.contains(project);
+                        return _ProjectListTile(
+                          isMultiSelectMode: _isMultiSelectMode,
+                          isSelected: isSelected,
+                          project: project,
+                          toggleProjectSelection: toggleProjectSelection,
+                          onTap: () async {
+                            if (_isMultiSelectMode) {
+                              toggleProjectSelection(project);
+                            } else {
+                              final status = await Navigator.push<String>(
+                                context,
+                                MaterialPageRoute(
+                                  builder: (context) => ProjectDetailsPage(
+                                    member: widget.member,
+                                    activeProject: project,
+                                  ),
+                                ),
+                              );
+                              if (status == 'deleted') {
+                                setState(() {
+                                  widget.activeTeam.projectRefs.removeAt(index);
+                                  widget.activeTeam.projects!.removeAt(index);
+                                });
                               }
-                              return test;
-                            });
-                          });
-                        },
-                      );
-                    },
-                    separatorBuilder: (BuildContext context, int index) {
-                      return _isMultiSelectMode
-                          ? Divider(
-                              color: Colors.white.withValues(alpha: 0.3),
-                              thickness: 1,
-                              indent: 50,
-                              endIndent: 16,
-                            )
-                          : Divider(
-                              color: Colors.white.withValues(alpha: 0.3),
-                              thickness: 1,
-                              indent: 16,
-                              endIndent: 16,
-                            );
-                    },
+                            }
+                          },
+                        );
+                      },
+                      separatorBuilder: (BuildContext context, int index) {
+                        return _isMultiSelectMode
+                            ? Divider(
+                                color: Colors.white.withValues(alpha: 0.3),
+                                thickness: 1,
+                                indent: 50,
+                                endIndent: 16,
+                              )
+                            : Divider(
+                                color: Colors.white.withValues(alpha: 0.3),
+                                thickness: 1,
+                                indent: 16,
+                                endIndent: 16,
+                              );
+                      },
+                    ),
                   ),
                 ),
-              SizedBox(height: 30),
+              const SizedBox(height: 30),
             ],
           ),
         ),
@@ -370,14 +399,14 @@ class _ProjectListTile extends StatelessWidget {
   final bool isSelected;
   final Project project;
   final void Function(Project) toggleProjectSelection;
-  final VoidCallback projectDeletedCallback;
+  final VoidCallback onTap;
 
   const _ProjectListTile({
     required this.isMultiSelectMode,
     required this.isSelected,
     required this.project,
     required this.toggleProjectSelection,
-    required this.projectDeletedCallback,
+    required this.onTap,
   });
 
   @override
@@ -433,40 +462,24 @@ class _ProjectListTile extends StatelessWidget {
       trailing: isMultiSelectMode
           ? null
           : Icon(Icons.chevron_right, color: Colors.white),
-      onTap: () async {
-        if (isMultiSelectMode) {
-          toggleProjectSelection(project);
-        } else {
-          final status = await Navigator.push<String>(
-            context,
-            MaterialPageRoute(
-              builder: (context) => ProjectDetailsPage(
-                activeProject: project,
-              ),
-            ),
-          );
-          if (status == 'deleted') {
-            projectDeletedCallback();
-          }
-        }
-      },
+      onTap: onTap,
     );
   }
 }
 
 class _SettingsMenuButton extends StatelessWidget {
-  final VoidCallback? editNameCallback;
-  // final VoidCallback? changeColorCallback;
-  final VoidCallback? selectProjectsCallback;
-  // final VoidCallback? archiveTeamCallback;
-  final VoidCallback? deleteTeamCallback;
+  final VoidCallback? editName;
+  // final VoidCallback? changeColor;
+  final VoidCallback? selectProjects;
+  // final VoidCallback? archiveTeam;
+  final VoidCallback? deleteTeam;
 
   const _SettingsMenuButton({
-    this.editNameCallback,
-    // this.changeColorCallback,
-    this.selectProjectsCallback,
-    // this.archiveTeamCallback,
-    this.deleteTeamCallback,
+    this.editName,
+    // this.changeColor,
+    this.selectProjects,
+    // this.archiveTeam,
+    this.deleteTeam,
   });
 
   static const ButtonStyle paddingButtonStyle = ButtonStyle(
@@ -510,7 +523,7 @@ class _SettingsMenuButton extends StatelessWidget {
                 Icons.edit_outlined,
                 color: Colors.white,
               ),
-              onPressed: editNameCallback,
+              onPressed: editName,
               child: Text(
                 'Edit Team Name',
                 style: whiteText,
@@ -523,7 +536,7 @@ class _SettingsMenuButton extends StatelessWidget {
             //     Icons.palette_outlined,
             //     color: Colors.white,
             //   ),
-            //   onPressed: changeColorCallback,
+            //   onPressed: changeColor,
             //   child: Text(
             //     'Change Team Color',
             //     style: whiteText,
@@ -536,7 +549,7 @@ class _SettingsMenuButton extends StatelessWidget {
                 Icons.check_circle_outlined,
                 color: Colors.white,
               ),
-              onPressed: selectProjectsCallback,
+              onPressed: selectProjects,
               child: Text(
                 'Select Projects',
                 style: whiteText,
@@ -549,7 +562,7 @@ class _SettingsMenuButton extends StatelessWidget {
             //     Icons.inventory_2_outlined,
             //     color: Colors.white,
             //   ),
-            //   onPressed: archiveTeamCallback,
+            //   onPressed: archiveTeam,
             //   child: Text(
             //     'Archive Team',
             //     style: whiteText,
@@ -560,7 +573,7 @@ class _SettingsMenuButton extends StatelessWidget {
               style: paddingButtonStyle,
               trailingIcon:
                   Icon(Icons.delete_outlined, color: Color(0xFFFD6265)),
-              onPressed: deleteTeamCallback,
+              onPressed: deleteTeam,
               child: Text(
                 'Delete Team',
                 style: TextStyle(color: Color(0xFFFD6265)),
@@ -579,14 +592,20 @@ class _SettingsMenuButton extends StatelessWidget {
 
 class _AvatarAndTitleRow extends StatelessWidget {
   final String title;
-  final VoidCallback? manageMembersCallback;
-  final VoidCallback? inviteCallback;
+  final String coverImageUrl;
+  final VoidCallback? changeImage;
+  final VoidCallback? manageMembers;
+  final VoidCallback? inviteMembers;
 
   const _AvatarAndTitleRow({
     required this.title,
-    required this.inviteCallback,
-    this.manageMembersCallback,
+    required this.coverImageUrl,
+    required this.changeImage,
+    required this.manageMembers,
+    required this.inviteMembers,
   });
+
+  static const double _rowHeight = 84;
 
   @override
   Widget build(BuildContext context) {
@@ -599,23 +618,16 @@ class _AvatarAndTitleRow extends StatelessWidget {
           child: Stack(
             alignment: Alignment.bottomRight,
             children: [
-              CircleAvatar(
-                radius: 36,
-                // TODO: Add actual image
-              ),
-              GestureDetector(
-                onTap: () async {
-                  // Open image edit functionality
-                  final XFile? pickedFile = await ImagePicker()
-                      .pickImage(source: ImageSource.gallery);
-                  if (pickedFile != null) {
-                    final File imageFile = File(pickedFile.path);
-                    // TODO: Submit image or something.
-                    print("Image selected: ${imageFile.path}");
-                  } else {
-                    print("No image selected.");
-                  }
-                },
+              coverImageUrl.isNotEmpty
+                  ? CircleAvatar(
+                      radius: _rowHeight / 2,
+                      backgroundImage: NetworkImage(coverImageUrl),
+                    )
+                  : CircleAvatar(
+                      radius: _rowHeight / 2,
+                    ),
+              InkWell(
+                onTap: changeImage,
                 child: CircleAvatar(
                   radius: 16,
                   backgroundColor: Colors.blue,
@@ -631,11 +643,12 @@ class _AvatarAndTitleRow extends StatelessWidget {
         ),
         // Column with Team Name and Team Members Row
         SizedBox(
-          // Height is 72 to match profile avatar on left of row
-          height: 72,
+          // Height is _rowHeight to match profile avatar on left of row
+          height: _rowHeight,
           // Width of 206 is exactly the width used by all the Positioned stuff
           width: 206,
           child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
             children: [
               Text(
                 title,
@@ -668,7 +681,7 @@ class _AvatarAndTitleRow extends StatelessWidget {
                       // Adjust for proper vertical alignment
                       top: 12,
                       child: GestureDetector(
-                        onTap: manageMembersCallback,
+                        onTap: manageMembers,
                         child: CircleAvatar(
                           radius: 12,
                           backgroundColor: Colors.blue,
@@ -687,7 +700,7 @@ class _AvatarAndTitleRow extends StatelessWidget {
                       // Align with the team avatars vertically
                       top: -6,
                       child: ElevatedButton(
-                        onPressed: inviteCallback,
+                        onPressed: inviteMembers,
                         style: ElevatedButton.styleFrom(
                           shape: RoundedRectangleBorder(
                               borderRadius: BorderRadius.circular(8)),

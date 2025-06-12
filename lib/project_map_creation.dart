@@ -1,21 +1,38 @@
 import 'dart:async';
+import 'dart:io';
 
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:p2bp_2025spring_mobile/assets.dart';
-import 'package:p2bp_2025spring_mobile/home_screen.dart';
 import 'package:p2bp_2025spring_mobile/theme.dart';
 import 'package:p2bp_2025spring_mobile/widgets.dart';
 
-import 'db_schema_classes.dart';
-import 'firestore_functions.dart';
+import 'db_schema_classes/member_class.dart';
+import 'db_schema_classes/project_class.dart';
+import 'db_schema_classes/standing_point_class.dart';
+import 'db_schema_classes/team_class.dart';
 import 'google_maps_functions.dart';
+import 'home_screen.dart';
 
 class ProjectMapCreation extends StatefulWidget {
-  final Project partialProjectData;
-  const ProjectMapCreation({super.key, required this.partialProjectData});
+  final Member member;
+  final Team team;
+  final String title;
+  final String description;
+  final String address;
+  final File? coverImage;
+
+  const ProjectMapCreation({
+    super.key,
+    required this.member,
+    required this.team,
+    required this.title,
+    required this.description,
+    required this.address,
+    this.coverImage,
+  });
 
   @override
   State<ProjectMapCreation> createState() => _ProjectMapCreationState();
@@ -57,7 +74,7 @@ class _ProjectMapCreationState extends State<ProjectMapCreation> {
 
   void _onMapCreated(GoogleMapController controller) {
     mapController = controller;
-    _moveToCurrentLocation(); // Ensure the map is centered on the current location
+    _moveToCurrentLocation();
   }
 
   Future<void> _checkAndFetchLocation() async {
@@ -120,8 +137,8 @@ class _ProjectMapCreationState extends State<ProjectMapCreation> {
           position: point,
           infoWindow: InfoWindow(
               title: title,
-              snippet:
-                  '${point.latitude.toStringAsFixed(5)}, ${point.latitude.toStringAsFixed(5)}',
+              snippet: '${point.latitude.toStringAsFixed(5)}, '
+                  '${point.longitude.toStringAsFixed(5)}',
               onTap: () {}),
           icon: standingPointEnabledIcon,
           onTap: () {
@@ -373,7 +390,7 @@ class _ProjectMapCreationState extends State<ProjectMapCreation> {
                   SafeArea(
                     child: _outsidePoint || _deleteMode
                         ? TestErrorText(
-                            padding: EdgeInsets.fromLTRB(60, 0, 50, 60),
+                            padding: EdgeInsets.fromLTRB(50, 0, 50, 60),
                             text: _errorText,
                           )
                         : SizedBox(),
@@ -389,19 +406,25 @@ class _ProjectMapCreationState extends State<ProjectMapCreation> {
       setState(() {
         _isLoading = true;
       });
-      await saveProject(
-        projectTitle: widget.partialProjectData.title,
-        description: widget.partialProjectData.description,
-        address: widget.partialProjectData.address,
-        polygonPoints: _polygons.first.points,
-        polygonArea: _polygons.first.getAreaInSquareFeet(),
-        standingPoints: _standingPoints,
-      );
-      if (!context.mounted) return;
 
+      await Project.createNew(
+        title: widget.title,
+        description: widget.description,
+        address: widget.address,
+        team: widget.team,
+        owner: widget.member,
+        polygon: _polygons.first,
+        standingPoints: _standingPoints,
+        coverImage: widget.coverImage,
+      );
+
+      if (!context.mounted) return;
+      // Navigate to HomeScreen after emptying navigator stack.
       Navigator.pushAndRemoveUntil(
         context,
-        MaterialPageRoute(builder: (context) => HomeScreen()),
+        MaterialPageRoute(
+          builder: (context) => HomeScreen(member: widget.member),
+        ),
         (Route route) => false,
       );
     } else {

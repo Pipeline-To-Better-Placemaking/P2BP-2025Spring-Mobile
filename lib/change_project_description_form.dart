@@ -52,7 +52,7 @@ class _ChangeProjectDescriptionFormState
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    SizedBox(width: 60),
+                    const SizedBox(width: 60),
                     Text(
                       "Edit Project Description",
                       style: TextStyle(
@@ -76,7 +76,7 @@ class _ChangeProjectDescriptionFormState
                     )
                   ],
                 ),
-                SizedBox(height: 10),
+                const SizedBox(height: 10),
                 Padding(
                   padding: const EdgeInsets.symmetric(horizontal: 16),
                   child: Align(
@@ -129,9 +129,9 @@ class _ChangeProjectDescriptionFormState
                     ),
                   ),
                 ),
-                SizedBox(height: 26),
+                const SizedBox(height: 26),
                 Padding(
-                  padding: EdgeInsets.symmetric(horizontal: 16),
+                  padding: const EdgeInsets.symmetric(horizontal: 16),
                   child: Column(
                     children: [
                       Text(
@@ -139,7 +139,7 @@ class _ChangeProjectDescriptionFormState
                         textAlign: TextAlign.start,
                         style: TextStyle(color: Colors.white, fontSize: 12),
                       ),
-                      SizedBox(height: 20),
+                      const SizedBox(height: 20),
                       Text(
                         "A well-written description helps collaborators understand the scope of the project and ensures clarity for future reference.",
                         textAlign: TextAlign.start,
@@ -148,7 +148,7 @@ class _ChangeProjectDescriptionFormState
                     ],
                   ),
                 ),
-                SizedBox(height: 30),
+                const SizedBox(height: 30),
               ],
             ),
           ),

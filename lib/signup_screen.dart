@@ -1,10 +1,10 @@
 import 'package:flutter/material.dart';
-import 'package:firebase_auth/firebase_auth.dart';
-import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/services.dart';
 import 'package:p2bp_2025spring_mobile/widgets.dart';
-import 'theme.dart';
+
+import 'db_schema_classes/member_class.dart';
 import 'login_screen.dart';
+import 'theme.dart';
 
 class SignUpScreen extends StatelessWidget {
   const SignUpScreen({super.key});
@@ -97,7 +97,9 @@ class SignUpScreen extends StatelessWidget {
                 //   ],
                 // ),
                 // const SizedBox(height: 20),
+
                 SignUpForm(),
+
                 const SizedBox(height: 20),
                 // Already have an account redirect
                 Center(
@@ -164,16 +166,13 @@ class _SignUpFormState extends State<SignUpForm> {
   bool _obscureText = true;
   bool _obscureConfirmText = true;
 
-  final FirebaseAuth _auth = FirebaseAuth.instance;
-  final FirebaseFirestore _firestore = FirebaseFirestore.instance;
-
   // Validation feedback variables
-  bool _hasUpperCase = false;
-  bool _hasLowerCase = false;
-  bool _hasDigits = false;
-  bool _hasSpecialCharacter = false;
-  bool _isLengthValid = false;
-  bool _isTypingPassword = false;
+  // bool _hasUpperCase = false;
+  // bool _hasLowerCase = false;
+  // bool _hasDigits = false;
+  // bool _hasSpecialCharacter = false;
+  // bool _isLengthValid = false;
+  // bool _isTypingPassword = false;
 
   @override
   void dispose() {
@@ -188,60 +187,53 @@ class _SignUpFormState extends State<SignUpForm> {
   Future<void> _registerUser() async {
     if (_formKey.currentState!.validate()) {
       try {
-        // Create user with email and password
-        UserCredential userCredential =
-            await _auth.createUserWithEmailAndPassword(
-          email: _emailController.text,
-          password: _passwordController.text,
+        if (_passwordController.text
+                .compareTo(_confirmPasswordController.text) !=
+            0) {
+          ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+            content: Text('Failed to register: passwords do not match'),
+          ));
+          return;
+        }
+
+        final String fullName = _fullNameController.text.trim();
+        final String email = _emailController.text.trim();
+
+        await Member.createNew(fullName, email, _passwordController.text);
+
+        if (!mounted) return;
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(
+              'Registration successful! A verification email has been sent '
+              'to $email. Please verify your email before logging in.',
+            ),
+          ),
         );
 
-        // Update the user's displayName with the full name entered during registration
-        await userCredential.user
-            ?.updateProfile(displayName: _fullNameController.text.trim());
-
-        // Add user data to Firestore
-        await _firestore.collection('users').doc(userCredential.user?.uid).set({
-          'fullName': _fullNameController.text.trim(),
-          'email': _emailController.text.trim(),
-          'creationTime': FieldValue.serverTimestamp(),
-        });
-
-        // Send email verification
-        if (userCredential.user != null) {
-          await userCredential.user!.sendEmailVerification();
-          if (!mounted) return;
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text(
-                'Registration successful! A verification email has been sent to ${_emailController.text.trim()}. Please verify your email before logging in.',
-              ),
-            ),
-          );
-        }
         if (!mounted) return;
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(content: Text('User Registered Successfully!')),
         );
-
         Navigator.pop(context);
-      } catch (e) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Failed to register: $e')),
-        );
+      } catch (e, s) {
+        print('Exception: $e');
+        print('Stacktrace: $s');
+        throw Exception('Failed to register because of exception: $e');
       }
     }
   }
 
-  void _checkPasswordConditions(String value) {
-    setState(() {
-      _isTypingPassword = true;
-      _hasUpperCase = value.contains(RegExp(r'[A-Z]'));
-      _hasLowerCase = value.contains(RegExp(r'[a-z]'));
-      _hasDigits = value.contains(RegExp(r'[0-9]'));
-      _hasSpecialCharacter = value.contains(RegExp(r'[!@#$%^&*(),.?":{}|<>]'));
-      _isLengthValid = value.length >= 12;
-    });
-  }
+  // void _checkPasswordConditions(String value) {
+  //   setState(() {
+  //     _isTypingPassword = true;
+  //     _hasUpperCase = value.contains(RegExp(r'[A-Z]'));
+  //     _hasLowerCase = value.contains(RegExp(r'[a-z]'));
+  //     _hasDigits = value.contains(RegExp(r'[0-9]'));
+  //     _hasSpecialCharacter = value.contains(RegExp(r'[!@#$%^&*(),.?":{}|<>]'));
+  //     _isLengthValid = value.length >= 12;
+  //   });
+  // }
 
   @override
   Widget build(BuildContext context) {
@@ -254,6 +246,7 @@ class _SignUpFormState extends State<SignUpForm> {
           // Full Name Input
           TextFormField(
             controller: _fullNameController,
+            style: TextStyle(color: Colors.white),
             decoration: InputDecoration(
               prefixIcon: Padding(
                 padding: EdgeInsets.only(left: 10, right: 30),
@@ -275,11 +268,21 @@ class _SignUpFormState extends State<SignUpForm> {
               ),
               filled: false,
             ),
+            validator: (value) {
+              if (value == null || value.isEmpty) {
+                return 'Please enter a name';
+              }
+              if (value.length < 3) {
+                return 'Please enter at least 3 characters';
+              }
+              return null;
+            },
           ),
           const SizedBox(height: 10),
           // Email Address Input
           TextFormField(
             controller: _emailController,
+            style: TextStyle(color: Colors.white),
             decoration: InputDecoration(
               prefixIcon: Padding(
                 padding: EdgeInsets.only(left: 10, right: 30),
@@ -320,7 +323,6 @@ class _SignUpFormState extends State<SignUpForm> {
           PasswordTextFormField(
             controller: _passwordController,
             obscureText: _obscureText,
-            onChanged: _checkPasswordConditions,
             decoration: InputDecoration(
               prefixIcon: const Padding(
                 padding: EdgeInsets.only(
@@ -345,8 +347,8 @@ class _SignUpFormState extends State<SignUpForm> {
               ),
               filled: false,
               suffixIcon: IconButton(
-                icon: const Icon(
-                  Icons.visibility,
+                icon: Icon(
+                  !_obscureText ? Icons.visibility : Icons.visibility_off,
                   color: Colors.grey,
                 ),
                 onPressed: () {
@@ -357,6 +359,15 @@ class _SignUpFormState extends State<SignUpForm> {
                 },
               ),
             ),
+            validator: (value) {
+              if (value == null || value.isEmpty) {
+                return 'Please enter a password';
+              }
+              if (value.length < 10) {
+                return 'Password must have at least 10 characters';
+              }
+              return null;
+            },
           ),
           const SizedBox(height: 10),
           // Confirm Password Input
@@ -387,7 +398,11 @@ class _SignUpFormState extends State<SignUpForm> {
               ),
               filled: false,
               suffixIcon: IconButton(
-                icon: const Icon(Icons.visibility, color: Colors.grey),
+                icon: Icon(
+                    !_obscureConfirmText
+                        ? Icons.visibility
+                        : Icons.visibility_off,
+                    color: Colors.grey),
                 onPressed: () {
                   // Toggle password visibility
                   setState(() {
@@ -396,6 +411,15 @@ class _SignUpFormState extends State<SignUpForm> {
                 },
               ),
             ),
+            validator: (value) {
+              if (value == null || value.isEmpty) {
+                return 'Please enter a password';
+              }
+              if (value.length < 10) {
+                return 'Password must have at least 10 characters';
+              }
+              return null;
+            },
           ),
           const SizedBox(height: 20),
           // Sign Up Button
